@@ -1,0 +1,9 @@
+2021/03/22-00:30:33.161 3 Reusing MANIFEST /home/xopc/.config/BraveSoftware/Brave-Browser/Default/Local Storage/leveldb/MANIFEST-000001
+2021/03/22-00:30:33.161 3 Recovering log #3
+2021/03/22-00:30:33.162 3 Reusing old log /home/xopc/.config/BraveSoftware/Brave-Browser/Default/Local Storage/leveldb/000003.log 
+2021/03/22-00:31:39.771 3 Level-0 table #5: started
+2021/03/22-00:31:39.781 3 Level-0 table #5: 87746 bytes OK
+2021/03/22-00:31:39.785 3 Delete type=0 #3
+2021/03/22-00:31:46.977 3 Level-0 table #7: started
+2021/03/22-00:31:46.987 3 Level-0 table #7: 80389 bytes OK
+2021/03/22-00:31:46.992 3 Delete type=0 #4

@@ -1,6 +1,6 @@
-#
-# wm independent hotkeys
-#
+# ---------------------------------------
+# ---------- PROGRAM LAUNCHING ----------
+# ---------------------------------------
 
 # terminal emulator
 super + Return
@@ -10,13 +10,16 @@ super + Return
 alt + space
 	rofi -show drun
 
+super + r; {w, m, f}
+    {brave-browser-stable, kitty alsamixer, kitty ranger}
+
+# ---------------------------------------
+# -------------- BSPWM ------------------
+# ---------------------------------------
+
 # make sxhkd reload its configuration files:
 super + Escape
 	pkill -USR1 -x sxhkd
-
-#
-# bspwm hotkeys
-#
 
 # quit/restart bspwm
 super + alt + {q,r}
@@ -30,9 +33,13 @@ super + {_,shift + }w
 super + m
 	bspc desktop -l next
 
-#
-# focus/swap
-#
+# ---------------------------------------
+# ------------ WORKSPACES ---------------
+# ---------------------------------------
+
+# Switch Active Workspaces
+alt + {Tab, shift + Tab}
+	bspc {desktop next.occupied -f, desktop prev.occupied -f}
 
 # focus the node in the given direction
 super + {_,shift + }{h,j,k,l}
@@ -46,9 +53,10 @@ super + {grave,Tab}
 # focus or send to the given desktop
 super + {_,shift + }{exclam, bracketleft, bracketright, equal, plus, asterisk, percent, parenleft}
 	bspc {desktop -f,node -d} {1, 2, 3, 4, 5, 6, 7, 8}
-#
-# preselect
-#
+
+# ----------------------------------------
+# ------------- PRESELECT ----------------
+# ----------------------------------------
 
 # preselect the direction
 super + ctrl;{h,j,k,l}
@@ -62,9 +70,9 @@ super + ctrl;{exclam, bracketleft, bracketright, equal, plus, asterisk, percent,
 super + ctrl;space
 	bspc node -p cancel
 
-#
-# move/resize
-#
+# ----------------------------------------
+# ----------- MOVE | RESIZE --------------
+# ----------------------------------------
 
 # expand a window by moving one of its side outward
 super + alt + {h,j,k,l}
@@ -77,3 +85,22 @@ super + alt + shift + {h,j,k,l}
 # move a floating window
 super + {Left,Down,Up,Right}
 	bspc node -v {-20 0,0 20,0 -20,20 0}
+
+# ---------------------------------
+# -------- SYSTEM KEYS -----------
+# ---------------------------------
+
+#Volume Control
+XF86AudioLowerVolume
+	ponymix unmute && ponymix decrease 5
+XF86AudioRaiseVolume
+	ponymix unmute && ponymix increase 5
+XF86AudioMute
+	ponymix toggle
+
+#Brightness control
+XF86MonBrightnessDown
+	light -U 5
+XF86MonBrightnessUp
+	light -A 5
+

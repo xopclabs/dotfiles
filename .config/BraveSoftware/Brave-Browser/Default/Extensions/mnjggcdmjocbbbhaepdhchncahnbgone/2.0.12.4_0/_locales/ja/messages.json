@@ -1,0 +1,188 @@
+{
+   "Dismiss": {
+      "message": "無視"
+   },
+   "Loading": {
+      "message": "読み込み中..."
+   },
+   "Options": {
+      "message": "オプション"
+   },
+   "Segment": {
+      "message": "セグメント"
+   },
+   "Segments": {
+      "message": "セグメント"
+   },
+   "add": {
+      "message": "追加"
+   },
+   "audioNotification": {
+      "message": "オーディオ通知をスキップ"
+   },
+   "autoSkip": {
+      "message": "自動スキップ"
+   },
+   "cancel": {
+      "message": "キャンセル"
+   },
+   "category": {
+      "message": "カテゴリ"
+   },
+   "categoryUpdate1": {
+      "message": "カテゴリはこちらです!"
+   },
+   "category_intro": {
+      "message": "インターミッション / イントロアニメーション"
+   },
+   "category_intro_short": {
+      "message": "インターミッション"
+   },
+   "category_outro": {
+      "message": "エンドカード/クレジット"
+   },
+   "category_selfpromo": {
+      "message": "無報酬 / セルフプロモーション"
+   },
+   "category_sponsor": {
+      "message": "スポンサー"
+   },
+   "channelDataNotFound": {
+      "message": "まだチャンネル ID が読み込まれてません。"
+   },
+   "channelWhitelisted": {
+      "message": "チャンネルをホワイトリストに登録しました!"
+   },
+   "chooseACategory": {
+      "message": "カテゴリーを選択"
+   },
+   "closePopup": {
+      "message": "ポップアップを閉じる"
+   },
+   "createdBy": {
+      "message": "作成者"
+   },
+   "customServerAddress": {
+      "message": "SponsorBlock サーバーアドレス"
+   },
+   "delete": {
+      "message": "削除"
+   },
+   "disable": {
+      "message": "無効"
+   },
+   "disableAutoSkip": {
+      "message": "自動スキップを無効にする"
+   },
+   "edit": {
+      "message": "編集"
+   },
+   "enableAutoSkip": {
+      "message": "自動スキップを有効にする"
+   },
+   "enableTestingServer": {
+      "message": "ベータテストサーバーを有効にする"
+   },
+   "errorCode": {
+      "message": "エラーコード: "
+   },
+   "fullName": {
+      "description": "Name of the extension.",
+      "message": "SponserBlock for YouTube - 動画のスポンサーセクションを自動でスキップする"
+   },
+   "guidelines": {
+      "message": "ガイドライン"
+   },
+   "hideButtons": {
+      "message": "YouTube プレイヤーにボタンを表示しない"
+   },
+   "hideDeleteButton": {
+      "message": "YouTube プレイヤーから削除ボタンを隠す"
+   },
+   "hourLower": {
+      "message": "時間"
+   },
+   "hoursLower": {
+      "message": "時間"
+   },
+   "incorrectCategory": {
+      "message": "カテゴリが違います"
+   },
+   "manualSkip": {
+      "message": "手動スキップ"
+   },
+   "minLower": {
+      "message": "分"
+   },
+   "minsLower": {
+      "message": "分"
+   },
+   "mobileUpdateInfo": {
+      "message": "m.youtube.com は現在サポートされています"
+   },
+   "preview": {
+      "message": "プレビュー"
+   },
+   "previewColor": {
+      "description": "Referring to submissions that have not been sent to the server yet.",
+      "message": "プレビューカラー"
+   },
+   "readTheGuidelines": {
+      "description": "Show the first time they submit or if they are \"high risk\"",
+      "message": "ガイドラインを読んでください!!"
+   },
+   "reportButtonTitle": {
+      "message": "報告"
+   },
+   "reset": {
+      "message": "リセット"
+   },
+   "save": {
+      "message": "保存"
+   },
+   "seekBarColor": {
+      "message": "シークバーのカラー"
+   },
+   "showButtons": {
+      "message": "YouTube プレイヤーにボタンを表示"
+   },
+   "showDeleteButton": {
+      "message": "YouTube プレイヤーから削除ボタンを表示する"
+   },
+   "showOverlay": {
+      "message": "シークバーに表示"
+   },
+   "skip": {
+      "message": "スキップ"
+   },
+   "skipOption": {
+      "description": "Used on the options page to describe the ways to skip the segment (auto skip, manual, etc.)",
+      "message": "スキップ オプション"
+   },
+   "skip_category": {
+      "message": "{0} をスキップしますか?"
+   },
+   "skipped": {
+      "message": "スキップしました"
+   },
+   "sourceCode": {
+      "description": "Used on Firefox Store Page",
+      "message": "ソースコード"
+   },
+   "submit": {
+      "message": "送信"
+   },
+   "success": {
+      "message": "成功しました!"
+   },
+   "unskip": {
+      "message": "スキップしない"
+   },
+   "voted": {
+      "message": "投票しました!"
+   },
+   "website": {
+      "description": "Used on Firefox Store Page",
+      "message": "ウェブサイト"
+   }
+}

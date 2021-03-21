@@ -1,0 +1,15 @@
+2021/03/22-00:31:41.182 164d Reusing MANIFEST /home/xopc/.config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_www.nordtheme.com_0.indexeddb.leveldb/MANIFEST-000001
+2021/03/22-00:31:41.182 164d Recovering log #15
+2021/03/22-00:31:41.183 164d Reusing old log /home/xopc/.config/BraveSoftware/Brave-Browser/Default/IndexedDB/https_www.nordtheme.com_0.indexeddb.leveldb/000015.log 
+2021/03/22-00:32:16.138 1765 Level-0 table #20: started
+2021/03/22-00:32:16.145 1765 Level-0 table #20: 3108 bytes OK
+2021/03/22-00:32:16.147 1765 Delete type=0 #15
+2021/03/22-00:32:16.147 1765 Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2021/03/22-00:32:16.147 1765 Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x01\x01\x02\x01\x10\x00r\x00e\x00s\x00o\x00u\x00r\x00c\x00e\x00s\x00:\x00/\x00p\x00o\x00r\x00t\x00s' @ 1213 : 1
+2021/03/22-00:32:16.147 1765 Compacting 1@1 + 1@2 files
+2021/03/22-00:32:16.149 1765 Generated table #21@1: 107 keys, 5252 bytes
+2021/03/22-00:32:16.149 1765 Compacted 1@1 + 1@2 files => 5252 bytes
+2021/03/22-00:32:16.151 1765 compacted to: files[ 0 0 1 0 0 0 0 ]
+2021/03/22-00:32:16.151 1765 Delete type=2 #17
+2021/03/22-00:32:16.151 1765 Delete type=2 #20
+2021/03/22-00:32:16.152 1765 Manual compaction at level-1 from '\x00\x01\x01\x02\x01\x10\x00r\x00e\x00s\x00o\x00u\x00r\x00c\x00e\x00s\x00:\x00/\x00p\x00o\x00r\x00t\x00s' @ 1213 : 1 .. (end); will stop at (end)
