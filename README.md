@@ -1,3 +1,3 @@
 # .dotfiles
 
-```us``` is en_us keyboard layouts file with my customised Programmers Dvorak layout. Put in in ```/etc/share/X11/xkb/symbols/```
+```us``` is keyboard layouts file with my custom Programmers Dvorak layout replacing dvorak-intl layout. Put in in ```/usr/share/X11/xkb/symbols/```
