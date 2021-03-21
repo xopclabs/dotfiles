@@ -1,0 +1,10 @@
+{
+  "extension": {
+    "coc-snippets": {
+      "disabled": true
+    },
+    "coc-python": {
+      "disabled": false
+    }
+  }
+}

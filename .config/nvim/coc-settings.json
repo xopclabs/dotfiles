@@ -1,0 +1,17 @@
+{
+  "coc.preferences.formatOnSaveFiletypes": ["css", "markdown","graphql", "html", "yaml",  "json"],
+
+  // python config
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.pylintArgs": [
+      "--extension-pkg-whitelish=pygame"
+  ],
+
+    "snippets.ultisnips.directories":
+    [
+    "UltiSnips",
+    "~/.config/nvim/utils/snips"
+    ]
+
+}

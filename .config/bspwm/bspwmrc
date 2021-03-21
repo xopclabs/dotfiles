@@ -1,0 +1,31 @@
+#! /bin/sh
+
+# Start UI thingies
+polybar example &
+picom --experimental-backends &
+
+# Remove x cursor
+xsetroot -cursor_name left_ptr & 
+
+# Monitor setup
+bspc monitor eDP-1 -d 1 3 5 7
+bspc monitor HDMI-2 -d 2 4 6 8 
+
+# Configs
+bspc config border_width         2
+bspc config window_gap          15
+
+bspc config split_ratio          0.5
+bspc config borderless_monocle   true
+bspc config gapless_monocle      true
+
+bspc config click_to_focus none
+bspc config focus_follows_pointer true
+
+bspc config remove_disabled_monitors true
+bspc config remove_unplugged_monitors true
+
+# Autostart
+xinput --set-prop "Logitech G102 Prodigy Gaming Mouse" "Coordinate Transformation Matrix" 1.5 0 0 0 1.5 0 0 0 1 &
+sxhkd -m 1 &
+setxkbmap -layout us,ru -variant dvorak-intl, -option grp:alt_shift_toggle &
