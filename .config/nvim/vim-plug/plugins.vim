@@ -22,7 +22,12 @@ call plug#begin('~/.config/nvim/autoload/plugged')
     Plug 'vim-airline/vim-airline'
     " Airline themes
     Plug 'vim-airline/vim-airline-themes'
-
+    " Better buffer exiting
+    Plug 'moll/vim-bbye'
+    " Icons
+    Plug 'ryanoasis/vim-devicons'
+    " Colorizer
+    Plug 'rrethy/vim-hexokinase', {'do': 'make hexokinase'}
 
 call plug#end()
 

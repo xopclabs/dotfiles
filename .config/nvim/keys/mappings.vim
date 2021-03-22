@@ -8,9 +8,15 @@ nnoremap <M-k>    :resize +2<CR>
 nnoremap <M-h>    :vertical resize -2<CR>
 nnoremap <M-l>    :vertical resize +2<CR>
 
-" Tab switching
-nnoremap gt :bnext<CR>
-nnoremap gT :bprevious<CR>
+" Splits
+nnoremap <Leader>v :vsp<CR>
+nnoremap <Leader>h :sp<CR>
+
+" Switching buffers
+nnoremap <TAB> :bnext<CR>
+nnoremap <S-TAB> :bprevious<CR>
+" Closing buffer
+nnoremap <Leader>w :Bdelete<CR>
 
 " ESC to jk/kj remap
 inoremap jk <Esc>
@@ -32,6 +38,3 @@ nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
-
-nnoremap <Leader>o o<Esc>^Da
-nnoremap <Leader>O O<Esc>^Da

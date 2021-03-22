@@ -7,7 +7,7 @@ super + Return
 	kitty
 
 # program launcher
-alt + space
+super + d
 	rofi -show drun
 
 super + r; {w, m, f}
@@ -25,13 +25,20 @@ super + Escape
 super + alt + {q,r}
 	bspc {quit,wm -r}
 
+# restart polybar
+super + shift + Escape
+	~/.config/polybar/launch-polybars.sh
+
 # close and kill
-super + {_,shift + }w
+super + {_,shift + }apostrophe
 	bspc node -{c,k}
 
 # alternate between the tiled and monocle layout
 super + m
 	bspc desktop -l next
+
+super + f
+    bspc node -t floating
 
 # ---------------------------------------
 # ------------ WORKSPACES ---------------
@@ -52,7 +59,7 @@ super + {grave,Tab}
 
 # focus or send to the given desktop
 super + {_,shift + }{exclam, bracketleft, bracketright, equal, plus, asterisk, percent, parenleft}
-	bspc {desktop -f,node -d} {1, 2, 3, 4, 5, 6, 7, 8}
+	bspc {desktop -f,node -f -d} {1, 2, 3, 4, 5, 6, 7, 8}
 
 # ----------------------------------------
 # ------------- PRESELECT ----------------

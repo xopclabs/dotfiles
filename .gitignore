@@ -1,5 +1,6 @@
-BraveSoftware/**
-configstore/**
-matplotlib/**
-pulse/**
-coc/**
+.config/BraveSoftware/**
+.config/configstore/**
+.config/matplotlib/**
+.config/pulse/**
+.config/coc/**
+.config/nvim/autoload/*
