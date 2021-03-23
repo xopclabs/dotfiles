@@ -27,7 +27,7 @@ call plug#begin('~/.config/nvim/autoload/plugged')
     " Icons
     Plug 'ryanoasis/vim-devicons'
     " Colorizer
-    Plug 'rrethy/vim-hexokinase', {'do': 'make hexokinase'}
+    Plug 'lilydjwg/colorizer'
 
 call plug#end()
 

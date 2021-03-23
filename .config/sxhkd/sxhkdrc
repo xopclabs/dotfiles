@@ -11,15 +11,15 @@ super + d
 	rofi -show drun
 
 super + r; {w, m, f}
-    {brave-browser-stable, kitty alsamixer, kitty ranger}
+    {firefox, kitty alsamixer, kitty ranger}
 
 # ---------------------------------------
 # -------------- BSPWM ------------------
 # ---------------------------------------
 
 # make sxhkd reload its configuration files:
-super + Escape
-	pkill -USR1 -x sxhkd
+super + ctrl + Escape
+	pkill -USR1 -x sxhkd && sxhkd -m 1
 
 # quit/restart bspwm
 super + alt + {q,r}
@@ -27,7 +27,7 @@ super + alt + {q,r}
 
 # restart polybar
 super + shift + Escape
-	~/.config/polybar/launch-polybars.sh
+	sh ~/.local/scripts/launch-polybar.sh
 
 # close and kill
 super + {_,shift + }apostrophe
@@ -57,24 +57,24 @@ super + {grave,Tab}
 	bspc {node,desktop} -f last
 
 
-# focus or send to the given desktop
+# focus or send to the given desktop 
 super + {_,shift + }{exclam, bracketleft, bracketright, equal, plus, asterisk, percent, parenleft}
-	bspc {desktop -f,node -f -d} {1, 2, 3, 4, 5, 6, 7, 8}
+	bspc {desktop -f,node -d} {1, 2, 3, 4, 5, 6, 7, 8}
 
 # ----------------------------------------
 # ------------- PRESELECT ----------------
 # ----------------------------------------
 
 # preselect the direction
-super + ctrl;{h,j,k,l}
+super + ctrl + {h,j,k,l}
 	bspc node -p {west,south,north,east}
 
 # preselect the ratio
-super + ctrl;{exclam, bracketleft, bracketright, equal, plus, asterisk, percent, parenleft, parenright}
+super + ctrl + {exclam, bracketleft, bracketright, equal, plus, asterisk, percent, parenleft, parenright}
 	bspc node -o 0.{1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 # cancel the preselection for the focused node
-super + ctrl;space
+super + ctrl + space
 	bspc node -p cancel
 
 # ----------------------------------------

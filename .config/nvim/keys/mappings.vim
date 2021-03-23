@@ -1,3 +1,6 @@
+" NERDTree
+nnoremap <Leader>t :NERDTreeToggle<CR>
+
 " Better nav for omnicomplete
 inoremap <expr> <M-j> ("\<C-n>")
 inoremap <expr> <M-k> ("\<C-p>")
