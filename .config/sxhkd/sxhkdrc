@@ -13,6 +13,9 @@ super + d
 super + r; {w, m, f}
     {firefox, kitty alsamixer, kitty ranger}
 
+Print
+    flameshot gui
+
 # ---------------------------------------
 # -------------- BSPWM ------------------
 # ---------------------------------------
@@ -34,11 +37,8 @@ super + {_,shift + }apostrophe
 	bspc node -{c,k}
 
 # alternate between the tiled and monocle layout
-super + m
-	bspc desktop -l next
-
-super + f
-    bspc node -t floating
+super + {_, shift + }f
+	bspc window -t {floating, pseudo_tiled}
 
 # ---------------------------------------
 # ------------ WORKSPACES ---------------
@@ -58,8 +58,8 @@ super + {grave,Tab}
 
 
 # focus or send to the given desktop 
-super + {_,shift + }{exclam, bracketleft, bracketright, equal, plus, asterisk, percent, parenleft}
-	bspc {desktop -f,node -d} {1, 2, 3, 4, 5, 6, 7, 8}
+super + {_,shift + }{exclam, bracketleft, bracketright, equal, braceright, braceleft, numbersign, parenright}
+	bspc {desktop -f,node -d} {1, 2, 3, 4, 8, 7, 6, 5}
 
 # ----------------------------------------
 # ------------- PRESELECT ----------------
@@ -110,4 +110,3 @@ XF86MonBrightnessDown
 	light -U 5
 XF86MonBrightnessUp
 	light -A 5
-

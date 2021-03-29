@@ -7,12 +7,12 @@ pkill polybar
 while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
 
 # polybar -rq dummy & 
-polybar -rq music &
 polybar -rq tray &
+polybar -rq stats &
 polybar -rq bspwm &
 
-polybar -rq music-ex &
 polybar -rq tray-ex &
+polybar -rq stats-ex &
 polybar -rq bspwm-ex &
 
 echo "Polybar launched..."

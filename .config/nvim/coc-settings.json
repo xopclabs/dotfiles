@@ -11,6 +11,7 @@
   },
 
   // python config
+  "python.pythonPath": "/home/xopc/anaconda3/bin/python",
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": true,
   "python.linting.pylintArgs": [
