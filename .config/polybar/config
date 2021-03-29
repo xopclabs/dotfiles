@@ -63,17 +63,17 @@ offset-x = 25
 
 [bar/stats]
 inherit = bar/base
-width = 13.2%
+width = 13.8%
 foreground = ${colors.color1}
-offset-x = 67.8%
+offset-x = 67.2%
 modules-left = battery cpu temperature 
 
 [bar/stats-ex]
 inherit = bar/stats
 monitor = HDMI2
-width = 11.2%
+width = 11.8%
 foreground = ${colors.color1}
-offset-x = 72.7%
+offset-x = 72.1%
 modules-left = battery cpu temperature 
 
 
@@ -275,7 +275,8 @@ interval = 2
 format-prefix = " "
 format-padding = 2
 format-foreground = ${colors.color2}
-label = %percentage%%
+label = %percentage:2:2%%
+
 
 [module/temperature]
 type = internal/temperature
