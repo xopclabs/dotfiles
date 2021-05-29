@@ -22,6 +22,7 @@
     [
     "UltiSnips",
     "~/.config/nvim/utils/snips"
-    ]
+    ],
+    "clangd.path": "/home/xopc/.config/coc/extensions/coc-clangd-data/install/11.0.0/clangd_11.0.0/bin/clangd"
 
 }
