@@ -1,4 +1,4 @@
 # Nord themed bspwm config
 
-![Desktop image](images/desktop.png)
+![Desktop image](images/image.png)
 
