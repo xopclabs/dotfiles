@@ -18,14 +18,14 @@ in {
             };
             dotDir = ".config/zsh";
 
+            history = {
+                path = "/home/xopc/.zsh_history";
+                ignoreAllDups = true;
+            };
+
             enableCompletion = true;
             enableAutosuggestions = true;
             syntaxHighlighting.enable = true;
-
-            # Tweak settings for history
-            history = {
-                path = "$HOME/.cache/zsh_history";
-            };
 
             # Set some aliases
             shellAliases = {
