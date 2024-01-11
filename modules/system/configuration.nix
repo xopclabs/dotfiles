@@ -90,6 +90,8 @@
         NIXOS_CONFIG = "$HOME/nix-config/nixos/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/nix-config";
         XDG_DATA_HOME = "$HOME/.local/share";
+        QT_QPA_PLATFORM = "wayland";
+        XDG_CURRENT_DESKTOP = "Sway";
         PASSWORD_STORE_DIR = "$HOME/.local/share/password-store";
         GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
         GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";

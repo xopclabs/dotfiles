@@ -7,6 +7,7 @@
       "${self}/hosts/${name}/user.nix"
       inputs.home-manager.nixosModule
       inputs.sops-nix.nixosModule.sops
+      inputs.sops-nix.homeManagerModules.sops
     ];
   }
 )
