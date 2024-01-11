@@ -10,6 +10,7 @@
         ./hyprland
         ./wofi
         ./waybar
+        ./ags
         ./vscode
         ./flameshot
 

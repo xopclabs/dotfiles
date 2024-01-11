@@ -24,6 +24,8 @@
             url = "github:Mic92/sops-nix";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+
+        ags.url = "github:Aylur/ags";
     };
 
     # All outputs for the system (configs)
@@ -41,10 +43,7 @@
                         # General configuration (users, networking, sound, etc)
                         ./modules/system/configuration.nix
                         # Hardware config (bootloader, kernel modules, filesystems, etc)
-                        # DO NOT USE MY HARDWARE CONFIG!! USE YOUR OWN!!
                         (./. + "/hosts/${hostname}/hardware-configuration.nix")
-                        home-manager.nixosModules.home-manager
-                        sops-nix.nixosModules.sops
                         {
                             home-manager = {
                                 useUserPackages = true;
@@ -62,6 +61,8 @@
                                 (import ./overlays)
                             ];
                         }
+                        home-manager.nixosModules.home-manager
+                        sops-nix.nixosModules.sops
                     ];
                     specialArgs = { inherit inputs; };
                 };
