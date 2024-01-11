@@ -6,8 +6,6 @@
         # gui
         firefox.enable = true;
         kitty.enable = true;
-        foot.enable = true;
-        waybar.enable = true;
         dunst.enable = true;
         hyprland.enable = true;
         wofi.enable = true;
