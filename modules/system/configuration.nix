@@ -93,8 +93,8 @@
         QT_QPA_PLATFORM = "wayland";
         XDG_CURRENT_DESKTOP = "Sway";
         PASSWORD_STORE_DIR = "$HOME/.local/share/password-store";
-        GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
-        GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
+        #GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
+        #GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
         MOZ_ENABLE_WAYLAND = "1";
         ZK_NOTEBOOK_DIR = "$HOME/notes";
         EDITOR = "nvim";

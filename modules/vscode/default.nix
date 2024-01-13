@@ -20,9 +20,10 @@ in {
 		vscodevim.vim
 	    ];
             userSettings = {
+               "window.titleBarStyle" = "custom";
                "workbench.colorTheme" = "Nord";
                "editor.fontSize" = 20;
-               "editor.fontFamily" = "'mononoki Nerd font','Monaco','Droid Sans Mono', 'monospace', monospace";
+               "editor.fontFamily" = "'Mononoki Nerd Font','Monaco','Droid Sans Mono', 'monospace', monospace";
                "editor.minimap.enabled" = false;
                "telemetry.telemetryLevel" = "off";
                "explorer.confirmDragAndDrop" = false;
