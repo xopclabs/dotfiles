@@ -4,6 +4,7 @@
     home.stateVersion = "24.05";
     imports = [
         # gui
+        ./gtk
         ./firefox
         ./kitty
         ./dunst

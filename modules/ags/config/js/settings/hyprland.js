@@ -60,7 +60,7 @@ export async function setupHyprland() {
     });
 
     batch.push(
-        `general:border_size ${border_width}`,
+        //`general:border_size ${border_width}`,
         `general:gaps_out ${wm_gaps}`,
         `general:gaps_in ${Math.floor(wm_gaps / 2)}`,
         `general:col.active_border rgba(${accent}ff)`,
