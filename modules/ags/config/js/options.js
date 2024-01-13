@@ -258,7 +258,7 @@ export default {
         }),
     },
 
-    workspaces: Option(7, {
+    workspaces: Option(8, {
         'category': 'Bar',
         'title': 'No. workspaces on bar and overview',
         'note': 'Set it to 0 to make it dynamic',

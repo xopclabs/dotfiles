@@ -103,6 +103,8 @@
         TERM="xterm-kitty";
     };
 
+    services.upower.enable = true;
+
     # Security 
     security = {
         sudo.enable = true;
@@ -116,7 +118,10 @@
     sound = {
         enable = true;
     };
-    hardware.pulseaudio.enable = true;
+    hardware.pulseaudio = {
+        enable = true;
+        support32Bit = true;
+    };
     security.rtkit.enable = true;
     services.pipewire = {
         enable = false;

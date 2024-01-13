@@ -25,7 +25,6 @@ export default ({ address, size: [w, h], class: c, title }) => Widget.Button({
         `,
         icon: icon(c),
     }),
-    on_secondary_click: () => dispatch(`closewindow address:${address}`),
     on_clicked: () => dispatch(`focuswindow address:${address}`)
         .then(() => App.closeWindow('overview')),
 
