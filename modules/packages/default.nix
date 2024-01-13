@@ -12,6 +12,7 @@ in {
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
             gnome.adwaita-icon-theme
+            brightnessctl
             sudo
             ripgrep
             ffmpeg

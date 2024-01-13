@@ -56,13 +56,9 @@ const Start = () => Widget.Box({
     class_name: 'start',
     children: [
         OverviewButton(),
-        SeparatorDot(),
         Workspaces(),
-        SeparatorDot(),
-        FocusedClient(),
         Widget.Box({ hexpand: true }),
         NotificationIndicator(),
-        SeparatorDot(Notifications, n => n.notifications.length > 0 || n.dnd),
     ],
 });
 
@@ -80,21 +76,10 @@ const End = () => Widget.Box({
         MediaIndicator(),
         Widget.Box({ hexpand: true }),
 
-        SubMenu({
-            items: submenuItems,
-            children: [
-                SysTray(),
-                ColorPicker(),
-            ],
-        }),
-
-        SeparatorDot(),
+        SysTray(),
         ScreenRecord(),
-        SeparatorDot(Recorder, r => r.recording),
-        SystemIndicators(),
-        SeparatorDot(Battery, b => b.available),
         BatteryBar(),
-        SeparatorDot(),
+        SystemIndicators(),
         PowerMenu(),
     ],
 });
