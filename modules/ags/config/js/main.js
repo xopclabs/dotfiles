@@ -7,12 +7,12 @@ import OSD from './osd/OSD.js';
 import Overview from './overview/Overview.js';
 import PowerMenu from './powermenu/PowerMenu.js';
 import QuickSettings from './quicksettings/QuickSettings.js';
-import ScreenCorners from './screencorner/ScreenCorners.js';
 import TopBar from './bar/TopBar.js';
 import Verification from './powermenu/Verification.js';
 import { init } from './settings/setup.js';
 import { forMonitors } from './utils.js';
 import { initWallpaper } from './settings/wallpaper.js';
+import { setTheme } from './settings/theme.js';
 import options from './options.js';
 
 initWallpaper();
@@ -22,8 +22,8 @@ const windows = () => [
     forMonitors(Lockscreen),
     forMonitors(Notifications),
     forMonitors(OSD),
-    forMonitors(ScreenCorners),
     forMonitors(TopBar),
+    setTheme('Nord'),
     Applauncher(),
     Dashboard(),
     Overview(),
