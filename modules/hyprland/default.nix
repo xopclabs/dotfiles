@@ -8,6 +8,13 @@ in {
     config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
             wofi swaybg swaylock swayidle xwayland wlsunset wl-clipboard hyprland
+            gnome.nautilus
+            gnome.baobab
+            gnome.gnome-calendar
+            gnome.gnome-boxes
+            gnome.gnome-system-monitor
+            gnome.gnome-control-center
+            gnome.gnome-software # for flatpak
 
         ];
         programs.zsh.shellAliases = { startx = "Hyprland"; };
