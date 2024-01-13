@@ -26,6 +26,10 @@
         };
 
         ags.url = "github:Aylur/ags";
+        nordic-gtk = {
+            url = "github:EliverLara/Nordic";
+            flake = false;
+        };
     };
 
     # All outputs for the system (configs)

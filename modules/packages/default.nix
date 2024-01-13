@@ -11,6 +11,7 @@ in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
+            gnome.adwaita-icon-theme
             sudo
             ripgrep
             ffmpeg
@@ -45,6 +46,7 @@ in {
             telegram-desktop
             neofetch
             clamav
+            libsForQt5.qt5.qtwayland
         ];
     };
 }

@@ -142,6 +142,22 @@
         "type": "github"
       }
     },
+    "nordic-gtk": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1703888671,
+        "narHash": "sha256-TOdKmBgPqWMjdf+TZ2DhqrDoS7XeLOTwLukO1cb73/I=",
+        "owner": "EliverLara",
+        "repo": "Nordic",
+        "rev": "638c2b4bca2ef4c36692306023e22a113cacf920",
+        "type": "github"
+      },
+      "original": {
+        "owner": "EliverLara",
+        "repo": "Nordic",
+        "type": "github"
+      }
+    },
     "nur": {
       "locked": {
         "lastModified": 1705002794,
@@ -163,6 +179,7 @@
         "home-manager": "home-manager",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixpkgs": "nixpkgs_2",
+        "nordic-gtk": "nordic-gtk",
         "nur": "nur",
         "sops-nix": "sops-nix"
       }

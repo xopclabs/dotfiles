@@ -4,6 +4,7 @@
     imports = [ ../../modules/default.nix ];
     config.modules = {
         # gui
+        gtk.enable = true;
         firefox.enable = true;
         kitty.enable = true;
         dunst.enable = true;
