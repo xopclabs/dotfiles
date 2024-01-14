@@ -35,6 +35,6 @@ export default ({ direction = 'left' } = {}) => HoverRevealer({
     child: Widget.Label({
         truncate: 'end',
         max_width_chars: 40,
-        label: Notifications.bind('notifications').transform(n => n.reverse()[0]?.summary || ''),
+        label: Notifications.bind('notifications').transform(n =>  n.reverse()[0]?.summary + '  ' || ''),
     }),
 });
