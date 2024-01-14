@@ -24,13 +24,13 @@ export default app => {
 
     const icon = Widget.Icon({
         icon: lookUpIcon(app.icon_name || '') ? app.icon_name || '' : '',
-        size: options.applauncher.icon_size.bind('value'),
+        size: options.applauncher.icon_size,
     });
 
     const textBox = Widget.Box({
         vertical: true,
         vpack: 'center',
-        children: app.description ? [title, description] : [title],
+        children: [title],
     });
 
     return Widget.Button({
