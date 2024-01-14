@@ -1,6 +1,6 @@
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import { ArrowToggleButton, Menu, opened } from '../ToggleButton.js';
-import themes from '../../themes.js';
+import themes from '../../../../ags_themes.js';
 import icons from '../../icons.js';
 import options from '../../options.js';
 import { setTheme, openSettings } from '../../settings/theme.js';

@@ -25,15 +25,17 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
 
-        ags.url = "github:Aylur/ags";
-        moreWaita = {
-            url = "github:somepaulo/MoreWaita";
-            flake = false;
+        nix-colors = {
+            url = "github:Misterio77/nix-colors";
+            inputs.nixpkgs.follows = "nixpkgs";
         };
+
+        ags.url = "github:Aylur/ags";
+        
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, ... }@inputs: 
+    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, ... }@inputs: 
         let
             system = "x86_64-linux"; #current system
             pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
@@ -52,7 +54,7 @@
                             home-manager = {
                                 useUserPackages = true;
                                 useGlobalPkgs = true;
-                                extraSpecialArgs = { inherit inputs; };
+                                extraSpecialArgs = { inherit inputs; inherit nix-colors; };
                                 # Home manager config (configures programs like firefox, zsh, eww, etc)
                                 users.xopc = (./. + "/hosts/${hostname}/user.nix");
                                 sharedModules = [
