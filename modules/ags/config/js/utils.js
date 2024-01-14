@@ -1,4 +1,5 @@
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
+import { exec } from 'resource:///com/github/Aylur/ags/utils.js';
 import cairo from 'cairo';
 import icons from './icons.js';
 import Gdk from 'gi://Gdk';
@@ -101,3 +102,15 @@ export function blurImg(img) {
             .catch(() => resolve(''));
     });
 }
+
+export function getLayout(target_kb) {
+    const devices = JSON.parse(exec('hyprctl -j devices'));
+    var keyboard = devices.keyboards.find(k => k.name === target_kb);
+    if (keyboard === undefined)
+        keyboard = devices.keyboards.find(k => k.name === 'at-translated-set-2-keyboard');
+    const activeKeymap = keyboard.active_keymap;
+    const layout = activeKeymap.slice(0, 2).toLowerCase();
+    return layout;
+}
+
+

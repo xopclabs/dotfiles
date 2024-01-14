@@ -1,5 +1,7 @@
+import Hyprland from 'resource:///com/github/Aylur/ags/service/hyprland.js';
 import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
+import Label from 'resource:///com/github/Aylur/ags/widget.js';
 import Notifications from 'resource:///com/github/Aylur/ags/service/notifications.js';
 import Bluetooth from 'resource:///com/github/Aylur/ags/service/bluetooth.js';
 import Audio from 'resource:///com/github/Aylur/ags/service/audio.js';
@@ -10,6 +12,16 @@ import Asusctl from '../../services/asusctl.js';
 import Indicator from '../../services/onScreenIndicator.js';
 import icons from '../../icons.js';
 import FontIcon from '../../misc/FontIcon.js';
+import options from '../../options.js';
+import { getLayout } from '../../utils.js';
+
+
+const LayoutIndicator = () => Widget.Label({
+    class_name: 'keyboardlayout',
+    yalign: 0.477,
+    xalign: 0.51,
+    connections: [[Hyprland, label => label.label = getLayout(options.keyboardTarget.value)]],
+})
 
 const ProfileIndicator = () => Widget.Icon()
     .bind('visible', Asusctl, 'profile', p => p !== 'Balanced')
@@ -90,6 +102,7 @@ export default () => PanelButton({
     },
     content: Widget.Box({
         children: [
+            LayoutIndicator(),
             Asusctl?.available && ProfileIndicator(),
             Asusctl?.available && ModeIndicator(),
             DNDIndicator(),
