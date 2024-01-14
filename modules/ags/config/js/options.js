@@ -10,7 +10,7 @@
 
 import { Option, resetOptions, getValues, apply, getOptions } from './settings/option.js';
 import { USER } from 'resource:///com/github/Aylur/ags/utils.js';
-import themes from './themes.js';
+import themes from '../../ags_themes.js';
 
 export default {
     reset: resetOptions,
@@ -157,7 +157,7 @@ export default {
     applauncher: {
         width: Option(500),
         height: Option(500),
-        icon_size: 30,
+        icon_size: Option(30),
     },
 
     bar: {
