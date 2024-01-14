@@ -59,16 +59,32 @@
         ]
       },
       "locked": {
-        "lastModified": 1704980804,
-        "narHash": "sha256-lPNNKdPqIYcjhhYIVwlajNt/HqVWbMOoSdNnwCvOP04=",
+        "lastModified": 1705169127,
+        "narHash": "sha256-j9OEtNxOIPWZWjbECVMkI1TO17SzlpHMm0LnVWKOR/g=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "93e804e7f8a1eb88bde6117cd5046501e66aa4bd",
+        "rev": "f2942f3385f1b35cc8a1abb03a45e29c9cb4d3c8",
         "type": "github"
       },
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "moreWaita": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1700249054,
+        "narHash": "sha256-A/XigUb903ebJo7TmhdqOm4uy5HWcCSHFaxhb5plPQE=",
+        "owner": "somepaulo",
+        "repo": "MoreWaita",
+        "rev": "05c406b47326cdb0f481486156a6c9c9b28ef304",
+        "type": "github"
+      },
+      "original": {
+        "owner": "somepaulo",
+        "repo": "MoreWaita",
         "type": "github"
       }
     },
@@ -81,11 +97,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1704936062,
-        "narHash": "sha256-S29+KmGZoe+dPI8iqvfg1FEgKcyUHh30r3EfK8+YjMA=",
+        "lastModified": 1705108826,
+        "narHash": "sha256-1xOzPcS8Zr4rqgLoaRwAcKqdCdzrBDaNwT+tiBdXf18=",
         "owner": "nix-community",
         "repo": "nix-vscode-extensions",
-        "rev": "7699526d3fb5e34fc02cf4614212cb69901cff76",
+        "rev": "92fd8c24719f08692c36b685de6884a20080edf0",
         "type": "github"
       },
       "original": {
@@ -142,29 +158,13 @@
         "type": "github"
       }
     },
-    "nordic-gtk": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1703888671,
-        "narHash": "sha256-TOdKmBgPqWMjdf+TZ2DhqrDoS7XeLOTwLukO1cb73/I=",
-        "owner": "EliverLara",
-        "repo": "Nordic",
-        "rev": "638c2b4bca2ef4c36692306023e22a113cacf920",
-        "type": "github"
-      },
-      "original": {
-        "owner": "EliverLara",
-        "repo": "Nordic",
-        "type": "github"
-      }
-    },
     "nur": {
       "locked": {
-        "lastModified": 1705002794,
-        "narHash": "sha256-kOd7hd8A1sGFZSYJGn+cEH3RSpGVAQ004Pd1lZabuIo=",
+        "lastModified": 1705182040,
+        "narHash": "sha256-sKqPxt8IcgQESwbW+XGTiqWjuwSUMwnluaZabxJQl3A=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "753418854902ccec235420cf3ee6b8bb9da3de67",
+        "rev": "db2db947af6421fade9fd94c20986e1c95e0b41f",
         "type": "github"
       },
       "original": {
@@ -177,9 +177,9 @@
       "inputs": {
         "ags": "ags",
         "home-manager": "home-manager",
+        "moreWaita": "moreWaita",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixpkgs": "nixpkgs_2",
-        "nordic-gtk": "nordic-gtk",
         "nur": "nur",
         "sops-nix": "sops-nix"
       }

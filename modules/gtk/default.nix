@@ -6,9 +6,9 @@ let
 
     gtk-theme = "Nordic";
 
-    nordtheme = pkgs.stdenv.mkDerivation {
-        name = "Nordic";
-        src = inputs.nordic-gtk;
+    icons = pkgs.stdenv.mkDerivation {
+        name = "MoreWaita";
+        src = inputs.moreWaita;
         installPhase = ''
             mkdir -p $out/share/icons
             mv * $out/share/icons
@@ -23,19 +23,19 @@ let
         "FiraCode"
         "Mononoki"
     ]; });
-
-    cursor-theme = "Qogir";
-    cursor-package = pkgs.qogir-icon-theme;
 in {
     options.modules.gtk = { enable = mkEnableOption "gtk"; };
     config = mkIf cfg.enable {
         home = {
             packages = with pkgs; [
+                libadwaita
                 adw-gtk3
                 font-awesome
                 nerdfonts
-                nordtheme
+                icons
+                nordic
                 dconf
+                gnome.adwaita-icon-theme
                 # papirus-icon-theme
                 # qogir-icon-theme
                 # whitesur-icon-theme
@@ -46,15 +46,9 @@ in {
                 # orchis-theme
             ];
             sessionVariables = {
-                XCURSOR_THEME = cursor-theme;
+                #XCURSOR_THEME = cursor-theme;
                 XCURSOR_SIZE = "24";
                 GTK_THEME = gtk-theme;
-            };
-            pointerCursor = {
-                package = cursor-package;
-                name = cursor-theme;
-                size = 24;
-            gtk.enable = true;
             };
             file = {
                 ".local/share/fonts" = {
@@ -81,11 +75,11 @@ in {
             enable = true;
             font.name = "Ubuntu";
             theme.name = gtk-theme;
-            cursorTheme = {
-                name = cursor-theme;
-                package = cursor-package;
-            };
-            #iconTheme.name = moreWaita.name;
+            #cursorTheme = {
+            #    name = cursor-theme;
+            #    package = cursor-package;
+            #};
+            iconTheme.name = icons.name;
             gtk3.extraCss = ''
                 headerbar, .titlebar,
                 .csd:not(.popup):not(tooltip):not(messagedialog) decoration{

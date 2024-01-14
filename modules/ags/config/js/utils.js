@@ -56,7 +56,7 @@ export function getAudioTypeIcon(icon) {
     const substitues = [
         ['audio-headset-bluetooth', icons.audio.type.headset],
         ['audio-card-analog-usb', icons.audio.type.speaker],
-        ['audio-card-analog-pci', icons.audio.type.card],
+        ['audio-card-analog-pci', icons.audio.type.speaker],
     ];
 
     return substitute(substitues, icon);

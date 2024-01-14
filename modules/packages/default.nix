@@ -12,6 +12,10 @@ in {
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
             gnome.adwaita-icon-theme
+            utillinux
+            usbutils
+            pciutils
+            busybox
             brightnessctl
             sudo
             ripgrep

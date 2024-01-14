@@ -33,7 +33,7 @@ class Indicator extends Service {
     speaker() {
         this.popup(
             Audio.speaker?.volume || 0,
-            getAudioTypeIcon(Audio.speaker?.icon_name || ''),
+            getAudioTypeIcon('audio-card-analog-usb'),
         );
     }
 

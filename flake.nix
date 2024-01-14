@@ -26,8 +26,8 @@
         };
 
         ags.url = "github:Aylur/ags";
-        nordic-gtk = {
-            url = "github:EliverLara/Nordic";
+        moreWaita = {
+            url = "github:somepaulo/MoreWaita";
             flake = false;
         };
     };

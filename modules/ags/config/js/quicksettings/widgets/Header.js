@@ -10,7 +10,6 @@ import { uptime } from '../../variables.js';
 export default () => Widget.Box({
     class_name: 'header horizontal',
     children: [
-        Avatar(),
         Widget.Box({
             hpack: 'end',
             vpack: 'center',
@@ -25,7 +24,7 @@ export default () => Widget.Box({
                 }),
                 Widget.Label({
                     class_name: 'uptime',
-                    label: uptime.bind().transform(v => `up: ${v}`),
+                    label: uptime.bind().transform(v => `uptime: ${v}`),
                 }),
                 Widget.Button({
                     on_clicked: openSettings,

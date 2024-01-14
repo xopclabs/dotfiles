@@ -157,7 +157,7 @@ export default {
     applauncher: {
         width: Option(500),
         height: Option(500),
-        icon_size: Option(52),
+        icon_size: 30,
     },
 
     bar: {

@@ -16,13 +16,12 @@ const Applauncher = () => {
             child: Widget.Box({
                 vertical: true,
                 children: [
-                    Widget.Separator({ hexpand: true }),
+                    //Widget.Separator({ hexpand: true }),
                     AppItem(app),
-                    Widget.Separator({ hexpand: true }),
+                    //Widget.Separator({ hexpand: true }),
                 ],
             }),
         })),
-        Widget.Separator({ hexpand: true }),
     ];
 
     let items = mkItems();
@@ -81,6 +80,6 @@ const Applauncher = () => {
 
 export default () => PopupWindow({
     name: WINDOW_NAME,
-    transition: 'slide_down',
+    transition: 'crossfade',
     child: Applauncher(),
 });
