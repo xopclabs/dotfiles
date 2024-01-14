@@ -14,7 +14,7 @@ class Recorder extends Service {
         });
     }
 
-    #path = GLib.get_home_dir() + '/Videos/Screencasting';
+    #path = GLib.get_home_dir() + '/screenshots';
     #file = '';
     #interval = 0;
 
@@ -74,7 +74,7 @@ class Recorder extends Service {
         if (!dependencies(['slurp', 'wayshot']))
             return;
 
-        const path = GLib.get_home_dir() + '/Pictures/Screenshots';
+        const path = GLib.get_home_dir() + '/screenshots';
         const file = `${path}/${now()}.png`;
         Utils.ensureDirectory(path);
 
@@ -85,7 +85,7 @@ class Recorder extends Service {
             '-s', await Utils.execAsync('slurp'),
         ]));
 
-        Utils.execAsync(['bash', '-c', `wl-copy < ${file}`]);
+        Utils.execAsync(['bash', '-c', `wl-copy --type image/png < ${file}`]);
 
         const res = await Utils.execAsync([
             'notify-send',

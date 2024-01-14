@@ -178,7 +178,7 @@ export default {
 
     battery: {
         show_percentage: Option(true, {
-            'persist': true,
+            'persist': false,
             'noReload': false,
             'category': 'exclude',
         }),
@@ -263,6 +263,8 @@ export default {
         'title': 'No. workspaces on bar and overview',
         'note': 'Set it to 0 to make it dynamic',
     }),
+
+    keyboardTarget: Option('architeuthis-dux'),
 
     temperature: '/sys/class/thermal/thermal_zone0/temp',
     systemFetchInterval: 5000,

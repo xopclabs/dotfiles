@@ -31,10 +31,6 @@ export default () => Widget.Box({
                     child: Widget.Icon(icons.ui.settings),
                 }),
                 Widget.Button({
-                    on_clicked: () => Lockscreen.lockscreen(),
-                    child: Widget.Icon(icons.lock),
-                }),
-                Widget.Button({
                     on_clicked: () => PowerMenu.action('shutdown'),
                     child: Widget.Icon(icons.powermenu.shutdown),
                 }),

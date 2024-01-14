@@ -143,10 +143,15 @@ $button-radius: if($bar-style == 'floating', max(0, $radii - $bar-spacing), $rad
             @include widget;
             min-width: $battery-bar-width;
             min-height: $battery-bar-height;
+            border-color: transparentize($widget-bg, 1);
 
             block.filled {
                 border-radius: max($radii - $border-width, 0);
                 background-image: $active-gradient;
+            }
+
+            block.empty {
+                border-radius: max($radii - $border-width, 0);
             }
         }
 
