@@ -15,7 +15,7 @@ const VolumeIndicator = (type = 'speaker') => Widget.Button({
             return;
 
         icon.icon = type === 'speaker'
-            ? getAudioTypeIcon(Audio[type].icon_name || '')
+            ? getAudioTypeIcon(Audio[type].icon_name === 'audio-card-pci' ? 'audio-card-analog-pci' : Audio[type].icon_name || '')
             : icons.audio.mic.high;
 
         icon.tooltip_text = `Volume ${Math.floor(Audio[type].volume * 100)}%`;
@@ -100,7 +100,7 @@ const SinkItem = stream => Widget.Button({
     child: Widget.Box({
         children: [
             Widget.Icon({
-                icon: getAudioTypeIcon(stream.icon_name || ''),
+                icon: getAudioTypeIcon(stream.icon_name === 'audio-card-pci' ? 'audio-card-analog-pci' : stream.icon_name || ''),
                 tooltip_text: stream.icon_name,
             }),
             Widget.Label((stream.description || '').split(' ').slice(0, 4).join(' ')),
