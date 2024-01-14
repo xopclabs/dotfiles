@@ -53,6 +53,8 @@ in {
                 };
 
                 general  = {
+                    layout = "master";
+                    resize_on_border = true;
                     gaps_in = 6;
                     gaps_out = 12;
                     border_size = 4;
@@ -70,15 +72,14 @@ in {
                 animations  = {
                     enabled = true;
                     animation = [
-                        #"windows,1,4,default,slide"
-                        #"borders,1,5,default"
-                        #"fadein,1,5,default"
-                        #"workspaces,1,3,default,vertslide"
+                        "windows,1,4,default,slide"
+                        "workspaces,1,6,default,slide"
                     ];
                 };
 
-                dwindle = {
-                    pseudotile = false;
+                master = {
+                    mfact = 0.6;
+                    new_is_master = false;
                 };
 
                 windowrulev2 = [
