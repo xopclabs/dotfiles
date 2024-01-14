@@ -9,11 +9,8 @@
         ./kitty
         ./dunst
         ./hyprland
-        ./wofi
-        ./waybar
         ./ags
         ./vscode
-        ./flameshot
 
         # cli
         ./nvim
