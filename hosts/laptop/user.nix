@@ -1,7 +1,10 @@
-{ config, lib, inputs, ...}:
+{ config, lib, inputs, nix-colors, ...}:
 
 {
-    imports = [ ../../modules/default.nix ];
+    imports = [ 
+        ../../modules/default.nix 
+        nix-colors.homeManagerModules.default
+    ];
     config.modules = {
         # gui
         gtk.enable = true;
@@ -26,4 +29,5 @@
         sops.enable = true;
         packages.enable = true;
     };
+    config.colorScheme = nix-colors.colorSchemes.nord;
 }

@@ -6,15 +6,6 @@ let
 
     gtk-theme = "Nordic";
 
-    icons = pkgs.stdenv.mkDerivation {
-        name = "MoreWaita";
-        src = inputs.moreWaita;
-        installPhase = ''
-            mkdir -p $out/share/icons
-            mv * $out/share/icons
-        '';
-    };
-
     nerdfonts = (pkgs.nerdfonts.override { fonts = [
         "Ubuntu"
         "UbuntuMono"
@@ -32,7 +23,6 @@ in {
                 adw-gtk3
                 font-awesome
                 nerdfonts
-                icons
                 nordic
                 dconf
                 gnome.adwaita-icon-theme

@@ -1,6 +1,6 @@
 import App from 'resource:///com/github/Aylur/ags/app.js';
 import options from '../options.js';
-import themes from '../themes.js';
+import themes from '../../../ags_themes.js';
 import { reloadScss } from './scss.js';
 import { setupHyprland } from './hyprland.js';
 import { wallpaper } from './wallpaper.js';
