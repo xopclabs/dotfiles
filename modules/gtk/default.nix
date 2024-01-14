@@ -36,7 +36,7 @@ in {
                 nordic
                 dconf
                 gnome.adwaita-icon-theme
-                # papirus-icon-theme
+                papirus-icon-theme
                 # qogir-icon-theme
                 # whitesur-icon-theme
                 # colloid-icon-theme
@@ -79,7 +79,8 @@ in {
             #    name = cursor-theme;
             #    package = cursor-package;
             #};
-            iconTheme.name = icons.name;
+            #iconTheme.name = icons.name;
+            iconTheme.name = "Papirus";
             gtk3.extraCss = ''
                 headerbar, .titlebar,
                 .csd:not(.popup):not(tooltip):not(messagedialog) decoration{
