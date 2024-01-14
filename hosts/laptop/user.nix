@@ -12,9 +12,7 @@
         kitty.enable = true;
         dunst.enable = true;
         hyprland.enable = true;
-        wofi.enable = true;
         vscode.enable = true;
-        flameshot.enable = true;
 
         # cli
         nvim.enable = true;

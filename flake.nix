@@ -64,7 +64,6 @@
                             nixpkgs.overlays = [
                                 # Add nur overlay for Firefox addons
                                 nur.overlay
-                                (import ./overlays)
                             ];
                         }
                         home-manager.nixosModules.home-manager
