@@ -25,8 +25,7 @@ in {
                 nerdfonts
                 nordic
                 dconf
-                gnome.adwaita-icon-theme
-                papirus-icon-theme
+                papirus-nord
                 # qogir-icon-theme
                 # whitesur-icon-theme
                 # colloid-icon-theme
@@ -65,11 +64,6 @@ in {
             enable = true;
             font.name = "Ubuntu";
             theme.name = gtk-theme;
-            #cursorTheme = {
-            #    name = cursor-theme;
-            #    package = cursor-package;
-            #};
-            #iconTheme.name = icons.name;
             iconTheme.name = "Papirus";
             gtk3.extraCss = ''
                 headerbar, .titlebar,
