@@ -13,7 +13,6 @@
         extraOptions = ''
             experimental-features = nix-command flakes
             keep-outputs = true
-            keep-derivations = true
         '';
     };
     nixpkgs.config.allowUnfree = true;
@@ -32,6 +31,8 @@
     environment.variables = {
         NIXOS_CONFIG = "$HOME/nix-config/nixos/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/nix-config";
+        GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
+        GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
         EDITOR = "nvim";
         TERM="xterm-kitty";
     };
@@ -44,6 +45,7 @@
         };
     };
 
+    services.gvfs.enable = true;
     # Do not touch
     system.stateVersion = "20.09";
 }
