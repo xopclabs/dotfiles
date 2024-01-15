@@ -10,7 +10,6 @@
         gtk.enable = true;
         firefox.enable = true;
         kitty.enable = true;
-        dunst.enable = true;
         hyprland.enable = true;
         vscode.enable = true;
 

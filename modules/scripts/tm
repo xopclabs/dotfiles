@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Count the number of tmux sessions
+session_count=$(tmux list-sessions | wc -l)
+
+# Check if there is more than 1 session
+if [ "$session_count" -gt 1 ]; then
+    # If there are multiple sessions, execute choose-tree
+    kitty -e tmux new -As main \; choose-tree &
+else
+    # If there is only one session, just attach
+    kitty -e tmux new -As main &
+fi
+

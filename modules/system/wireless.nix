@@ -1,6 +1,10 @@
 { config, pkgs, inputs, ... }:
 
 {
+    # Hosts
+    #networking.hosts = {};
+    #sops.secrets.hosts.path = "/etc/hosts";
+
     # Wifi
     networking = {
         networkmanager.enable = true;
@@ -28,6 +32,6 @@
         destination = "/etc/udev/rules.d/91-keyboard-mouse-wakeup.rules";
         })
     ];
-  services.udev.extraRules = ''
-  '';
+    services.udev.extraRules = ''
+    '';
 }

@@ -4,6 +4,7 @@
 
     home.packages = with pkgs; [
         sassc
+        swappy
     ];
 
     programs.ags = {
