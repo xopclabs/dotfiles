@@ -28,7 +28,7 @@
         portal = {
             enable = true;
             extraPortals = with pkgs; [
-                xdg-desktop-portal-wlr
+                xdg-desktop-portal-hyprland
                 xdg-desktop-portal-gtk
             ];
             config.common.default = "*";
@@ -43,5 +43,22 @@
         MOZ_ENABLE_WAYLAND = "1";
         DIRENV_LOG_FORMAT = "";
         DISABLE_QT5_COMPAT = "0";
+    };
+
+    # Screen sharing
+    security.rtkit.enable = true;
+
+    # enable pipewire with wlr support
+    services.pipewire = {
+        enable = true;
+        wireplumber.enable = true;
+    };
+    xdg.portal.wlr.settings = {
+        screencast = {
+            output_name = "eDP-1";
+            max_fps = 60;
+            chooser_type = "simple";
+            chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";		
+        };
     };
 }
