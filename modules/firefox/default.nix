@@ -2,7 +2,6 @@
 with lib;
 let
     cfg = config.modules.firefox;
-
 in {
     options.modules.firefox = { enable = mkEnableOption "firefox"; };
 
@@ -17,12 +16,12 @@ in {
             profiles.xopc = {
                # install extensions from nur
                extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-                   decentraleyes
-                   ublock-origin
-                   clearurls
-                   sponsorblock
-  		   bitwarden
-	           vimium
+                    decentraleyes
+                    ublock-origin
+                    clearurls
+                    sponsorblock
+                    bitwarden
+                    vimium
                 ];
                 settings = {
                     "browser.send_pings" = false;
@@ -43,7 +42,7 @@ in {
                     "geo.enabled" = false;
 
                     # Search engine
-		    "browser.search.defaultenginename" = "DuckDuckGo";
+                    "browser.search.defaultenginename" = "DuckDuckGo";
                     "browser.search.order.1" = "DuckDuckGo";
 
                     # Disable telemetry
@@ -91,11 +90,14 @@ in {
                     "privacy.firstparty.isolate" = true;
                     "network.http.sendRefererHeader" = 0;
                 };
-
-                # userChome.css to make it look better
-                userChrome = "
-                ";
+                userChrome = ''
+                    @import "firefox-nordic-theme/theme/nordic-theme.css";
+                '';
             };
+        };
+        home.file.".mozilla/firefox/xopc/chrome" = {
+            recursive = true;
+            source = ./firefox-nordic-theme;
         };
     };
 }
