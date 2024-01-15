@@ -14,7 +14,8 @@ in {
             xwayland.enable = true;
 
             settings = {
-                "$terminal" = "kitty -e zsh -c 'tmux attach -t home || tmux new -s home'";
+                "$terminal" = "kitty";
+                "$newterminal" = "kitty -e tmux";
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
@@ -23,8 +24,11 @@ in {
                 ];
 
                 exec-once = [
+                    "tmux new -s main"
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "ags -b hypr"
+                    "[workspace 7 silent] telegram-desktop"
+                    "[workspace 8 silent] slack"
                 ];
 
                 input  = {
@@ -110,12 +114,13 @@ in {
                     "CTRL SHIFT, Slash,  ${e} quit; ags -b hypr"
                     "$mod, L,       ${e} -t applauncher"
                     ", XF86PowerOff, ${e} -t powermenu"
-                    ", XF86Launch4,  ${e} -r 'recorder.start()'"
                     ",Print,         ${e} -r 'recorder.screenshot()'"
                     "SHIFT,Print,    ${e} -r 'recorder.screenshot(true)'"
-                    "$mod, Space, exec, $terminal" # xterm is a symlink, not actually xterm
+                    "CTRL,Print,  ${e} -r 'recorder.toggle()'"
+                    "$mod, Space, exec, $terminal"
+                    "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, firefox"
-                    "$mod, M, exec, $terminal -e ranger"
+                    "$mod, M, exec, kitty -e ranger"
                     "$mod, Semicolon, exec, swaylock -f"
 
                     "$mod, D, killactive"
