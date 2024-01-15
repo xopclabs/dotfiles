@@ -35,7 +35,7 @@
                 "color.orange": "#${base09}",
                 "theme.scheme": "dark",
                 "theme.bg": "#${base00}",
-                "theme.fg": "#${base05}",
+                "theme.fg": "#${base04}",
                 "theme.accent.accent": "$blue",
                 "theme.accent.fg": "#${base04}",
                 "theme.widget.bg": "$fg-color",
@@ -43,7 +43,7 @@
                 "border.color": "$fg-color",
                 "border.opacity": 100,
                 "border.width": 0,
-                "hypr.inactive_border": "rgba(${base00}ff)",
+                "hypr.inactive_border": "rgba(${base01}ff)",
                 "hypr.wm_gaps_multiplier": 1.5,
                 "font.font": "Mononoki Nerd Font",
                 "font.mono": "Mononoki Nerd Font",
@@ -77,7 +77,7 @@
                     "right"
                 ],
                 "notifications.width": 350,
-                "dashboard.sys_info_size": 35,
+                "dashboard.sys_info_size": 50,
                 "mpris.black_list": [
                     "Caprine"
                 ],

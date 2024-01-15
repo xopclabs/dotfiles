@@ -9,11 +9,10 @@
         enable = true;
         support32Bit = true;
     };
-    security.rtkit.enable = true;
     services.pipewire = {
-        enable = false;
-        alsa.enable = true;
-        alsa.support32Bit = true;
-        pulse.enable = true;
+        audio.enable = false;
+        alsa.enable = false;
+        alsa.support32Bit = false;
+        pulse.enable = false;
     };
 }

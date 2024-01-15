@@ -17,6 +17,7 @@
         # cli
         nvim.enable = true;
         zsh.enable = true;
+        tmux.enable = true;
         git.enable = true;
         gpg.enable = true;
         direnv.enable = true;

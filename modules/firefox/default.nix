@@ -85,6 +85,7 @@ in {
                     "browser.urlbar.suggest.topsites" = false;
                     "browser.uidensity" = 1;
                     "media.autoplay.enabled" = false;
+                    "media.peerconnection.enabled" = true;
                     "toolkit.zoomManager.zoomValues" = ".8,.90,.95,1,1.1,1.2";
                     
                     "privacy.firstparty.isolate" = true;

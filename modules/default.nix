@@ -14,6 +14,7 @@
 
         # cli
         ./nvim
+        ./tmux
         ./zsh
         ./git
         ./gpg
