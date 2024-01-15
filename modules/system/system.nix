@@ -33,6 +33,7 @@
         NIXOS_CONFIG_DIR = "$HOME/nix-config";
         GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
         GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
+        MOZ_ENABLE_WAYLAND = "1";
         EDITOR = "nvim";
         TERM="xterm-kitty";
     };

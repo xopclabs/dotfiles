@@ -50,7 +50,9 @@ in {
             slack
             telegram-desktop
             neofetch
+            afetch
             clamav
+            pipes
             libsForQt5.qt5.qtwayland
         ];
     };

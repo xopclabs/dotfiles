@@ -53,21 +53,6 @@ class Recorder extends Service {
         this.recording = false;
         this.changed('recording');
         GLib.source_remove(this.#interval);
-
-        const res = await Utils.execAsync([
-            'notify-send',
-            '-A', 'files=Show in Files',
-            '-A', 'view=View',
-            '-i', 'video-x-generic-symbolic',
-            'Screenrecord',
-            this.#file,
-        ]);
-
-        if (res === 'files')
-            Utils.execAsync('xdg-open ' + this.#path);
-
-        if (res === 'view')
-            Utils.execAsync('xdg-open ' + this.#file);
     }
 
     async screenshot(full = false) {
@@ -86,24 +71,6 @@ class Recorder extends Service {
         ]));
 
         Utils.execAsync(['bash', '-c', `wl-copy --type image/png < ${file}`]);
-
-        const res = await Utils.execAsync([
-            'notify-send',
-            '-A', 'files=Show in Files',
-            '-A', 'view=View',
-            '-A', 'edit=Edit',
-            '-i', file,
-            'Screenshot',
-            file,
-        ]);
-        if (res === 'files')
-            Utils.execAsync('xdg-open ' + path);
-
-        if (res === 'view')
-            Utils.execAsync('xdg-open ' + file);
-
-        if (res === 'edit')
-            Utils.execAsync(['swappy', '-f', file]);
 
         App.closeWindow('dashboard');
     }

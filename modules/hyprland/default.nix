@@ -14,7 +14,7 @@ in {
             xwayland.enable = true;
 
             settings = {
-                "$terminal" = "kitty";
+                "$terminal" = "kitty -e zsh -c 'tmux attach -t home || tmux new -s home'";
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
@@ -23,6 +23,7 @@ in {
                 ];
 
                 exec-once = [
+                    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "ags -b hypr"
                 ];
 
@@ -150,6 +151,7 @@ in {
                     ",XF86AudioPrev,    ${e} 'mpris?.previous()'"
                     ",XF86AudioNext,    ${e} 'mpris?.next()'"
                     ",XF86AudioMicMute, ${e} 'audio.microphone.isMuted = !audio.microphone.isMuted'"
+                    ",switch:on:[Lip switch], exec, systemctl suspend"
                 ];
             };
         };
@@ -210,11 +212,11 @@ in {
         services.swayidle = {
             enable = true;
             events = [
-                { event = "before-sleep"; command = "${pkgs.swaylock}/bin/swaylock"; }
+                { event = "before-sleep"; command = "${config.programs.swaylock.package}/bin/swaylock -f"; }
             ];
             timeouts = [
-                { timeout = 180; command = "${pkgs.swaylock-effects}/bin/swaylock -f"; }
-                { timeout = 1200; command = "${pkgs.systemd}/bin/systemctl hibernate"; }
+                { timeout = 180; command = "${config.programs.swaylock.package}/bin/swaylock -f"; }
+                { timeout = 3600; command = "${pkgs.systemd}/bin/systemctl hibernate"; }
             ];
         };
     };
