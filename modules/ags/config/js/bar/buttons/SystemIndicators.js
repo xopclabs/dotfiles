@@ -18,8 +18,7 @@ import { getLayout } from '../../utils.js';
 
 const LayoutIndicator = () => Widget.Label({
     class_name: 'keyboardlayout',
-    yalign: 0.477,
-    xalign: 0.51,
+    yalign: 0.3,
     connections: [[Hyprland, label => label.label = getLayout(options.keyboardTarget.value)]],
 })
 

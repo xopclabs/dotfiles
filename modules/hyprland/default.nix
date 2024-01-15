@@ -135,6 +135,9 @@ in {
                 ++ (map (w: ws w.key w.n) workspaces)
                 ++ (map (w: mvtows w.key w.n) workspaces);
 
+                bindm = [
+                    "$mod,mouse:272,movewindow"
+                ];
                 bindle = let e = "exec, ags -b hypr -r"; in [
                     ",XF86MonBrightnessUp,   ${e} 'brightness.screen += 0.05; indicator.display()'"
                     ",XF86MonBrightnessDown, ${e} 'brightness.screen -= 0.05; indicator.display()'"

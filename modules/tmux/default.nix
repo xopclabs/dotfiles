@@ -118,6 +118,7 @@ in {
             clock24 = true;
             newSession = true;
             shell = "${pkgs.zsh}/bin/zsh";
+            terminal = "screen-256color";
             extraConfig = ''
                 set-option -sa terminal-overrides ",xterm*:Tc"
                 bind v copy-mode

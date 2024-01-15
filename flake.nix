@@ -31,6 +31,11 @@
         };
 
         ags.url = "github:Aylur/ags";
+
+        firefox-nordic = {
+            url = "github:EliverLara/firefox-nordic-theme";
+            flake = false;
+        };
         
     };
 

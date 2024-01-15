@@ -34,6 +34,22 @@
         "type": "github"
       }
     },
+    "firefox-nordic": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1698616994,
+        "narHash": "sha256-78n4yG61H8EwkQnaSTHzWa7DLTBDhI0mny8ew5Uj8eQ=",
+        "owner": "EliverLara",
+        "repo": "firefox-nordic-theme",
+        "rev": "ec58807a191eae93483b5c900e175cb5ed14986c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "EliverLara",
+        "repo": "firefox-nordic-theme",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -210,6 +226,7 @@
     "root": {
       "inputs": {
         "ags": "ags",
+        "firefox-nordic": "firefox-nordic",
         "home-manager": "home-manager",
         "nix-colors": "nix-colors",
         "nix-vscode-extensions": "nix-vscode-extensions",
