@@ -5,7 +5,6 @@
     imports = [
         # gui
         ./gtk
-        ./firefox
         ./floorp
         ./kitty
         ./dunst
