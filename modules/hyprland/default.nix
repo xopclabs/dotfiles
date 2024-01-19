@@ -86,6 +86,10 @@ in {
                     new_is_master = false;
                 };
 
+                windowrule = [
+                    "size 40% 40%,^(org.gnome.Nautilus)$"
+                ];
+
                 windowrulev2 = [
                     "workspace 7, monitor 1,class:^(telegram-desktop)$"
                     "workspace 8, monitor 1,class:^(slack)$"

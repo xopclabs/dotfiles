@@ -1,6 +1,11 @@
 /*================ IMPORT COLORS ================*/
 @import "colors.css";
 
+:root {
+    /* This value should be updated here and in the userChrome.css */
+    --tst-sidepanel-hide-delay: .5s;
+}
+
 /*================== MAIN HEADER ==================*/
 toolbox#navigator-toolbox {
   border: 0 !important;
@@ -8,7 +13,7 @@ toolbox#navigator-toolbox {
 
 /*================== TABS BAR ==================*/
 #titlebar #TabsToolbar {
-  padding: 0px 0px 0px 0px !important;
+  display: none;
   background: var(--base_color1) !important;
 }
 .titlebar-spacer[type="pre-tabs"] {
