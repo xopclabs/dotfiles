@@ -6,6 +6,7 @@ let cfg =
     screen = pkgs.writeShellScriptBin "screen" ''${builtins.readFile ../scripts/screen}'';
     bandw = pkgs.writeShellScriptBin "bandw" ''${builtins.readFile ../scripts/bandw}'';
     maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
+    sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
     tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
 
 in {
@@ -15,6 +16,7 @@ in {
             screen 
             bandw 
             maintenance
+            sftpmpv
             tm
             gnome.adwaita-icon-theme
             utillinux
