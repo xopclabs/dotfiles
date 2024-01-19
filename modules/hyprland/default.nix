@@ -14,7 +14,7 @@ in {
             xwayland.enable = true;
 
             settings = {
-                "$terminal" = "kitty";
+                "$terminal" = "tm";
                 "$newterminal" = "kitty -e tmux";
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
@@ -119,7 +119,7 @@ in {
                     "CTRL,Print,  ${e} -r 'recorder.toggle()'"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
-                    "$mod, H, exec, firefox"
+                    "$mod, H, exec, floorp"
                     "$mod, M, exec, kitty -e ranger"
                     "$mod, Semicolon, exec, swaylock -f"
 

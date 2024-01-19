@@ -6,6 +6,7 @@
         # gui
         ./gtk
         ./firefox
+        ./floorp
         ./kitty
         ./dunst
         ./hyprland
