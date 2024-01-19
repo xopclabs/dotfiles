@@ -7,7 +7,7 @@ in {
     options.modules.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
         home.packages = [
-            screen bandw maintenance tm
+            screen bandw maintenance sftpmpv tm
         ];
     };
 }

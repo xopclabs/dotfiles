@@ -62,7 +62,7 @@ in {
 
         gtk = {
             enable = true;
-            font.name = "Mononoki Nerd Font";
+            font.name = "Ubuntu";
             theme.name = gtk-theme;
             iconTheme.name = "Papirus";
             gtk3.extraCss = ''

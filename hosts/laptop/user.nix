@@ -1,4 +1,4 @@
-{ config, lib, inputs, nix-colors, ...}:
+{ config, lib, inputs, nix-colors, zmk-nix, ...}:
 
 {
     imports = [ 
@@ -8,7 +8,7 @@
     config.modules = {
         # gui
         gtk.enable = true;
-        firefox.enable = true;
+        floorp.enable = true;
         kitty.enable = true;
         hyprland.enable = true;
         vscode.enable = true;
@@ -28,4 +28,5 @@
         packages.enable = true;
     };
     config.colorScheme = nix-colors.colorSchemes.nord;
+
 }
