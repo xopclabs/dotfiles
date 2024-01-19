@@ -18,6 +18,8 @@
 
         firefox-nordic.url = "github:EliverLara/firefox-nordic-theme";
         firefox-nordic.flake = false;
+
+        tmux-sessionx.url = "github:omerxx/tmux-sessionx";
     };
 
     # All outputs for the system (configs)
