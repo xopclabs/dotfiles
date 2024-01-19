@@ -61,7 +61,7 @@ in {
                         set -g @catppuccin_window_default_fill "number"
                         set -g @catppuccin_window_default_text "#W"
                         set -g @catppuccin_window_current_fill "number"
-                    set -g @catppuccin_window_current_background \"#${strings.toLower base01}\"
+                        set -g @catppuccin_window_current_background \"#${strings.toLower base01}\"
                         set -g @catppuccin_status_modules_right "directory date_time"
                         set -g @catppuccin_status_modules_left "session"
                         set -g @catppuccin_status_left_separator  " █"
