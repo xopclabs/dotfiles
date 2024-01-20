@@ -288,6 +288,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_6": {
+      "locked": {
+        "lastModified": 1704842529,
+        "narHash": "sha256-OTeQA+F8d/Evad33JMfuXC89VMetQbsU4qcaePchGr4=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "eabe8d3eface69f5bb16c18f8662a702f50c20d5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nur": {
       "locked": {
         "lastModified": 1705182040,
@@ -313,7 +329,8 @@
         "nixpkgs": "nixpkgs_3",
         "nur": "nur",
         "sops-nix": "sops-nix",
-        "tmux-sessionx": "tmux-sessionx"
+        "tmux-sessionx": "tmux-sessionx",
+        "zmk-nix": "zmk-nix"
       }
     },
     "sops-nix": {
@@ -367,6 +384,24 @@
         "owner": "omerxx",
         "repo": "tmux-sessionx",
         "type": "github"
+      }
+    },
+    "zmk-nix": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_6"
+      },
+      "locked": {
+        "lastModified": 1705765901,
+        "narHash": "sha256-DkimvUfjN+TIlMSBXPn2/Ef+BJAqXp4ggBY6iQSu7Ns=",
+        "ref": "refs/heads/main",
+        "rev": "84cc8ea22452d5732ffed1f6a65009526267a86f",
+        "revCount": 67,
+        "type": "git",
+        "url": "file:///home/xopc/zmk-nix"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/xopc/zmk-nix"
       }
     }
   },
