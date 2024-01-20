@@ -10,6 +10,7 @@ in {
             enable = true;
             automount = true;
             notify = false;
+            tray = "auto";
         };
     };
 }
