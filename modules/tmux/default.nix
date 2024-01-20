@@ -21,12 +21,12 @@ let
     '';
     catppuccin-tmux = pkgs.tmuxPlugins.mkTmuxPlugin {
         pluginName = "catppuccin";
-        version = "20231130";
+        version = "20240118";
         src = pkgs.fetchFromGitHub {
-            owner = "omerxx";
-            repo = "catppuccin-tmux";
-            rev = "e30336b79986e87b1f99e6bd9ec83cffd1da2017";
-            sha256 = "sha256-Ig6+pB8us6YSMHwSRU3sLr9sK+L7kbx2kgxzgmpR920=";
+            owner = "catppuccin";
+            repo = "tmux";
+            rev = "2ff900dc7a1579085cc2362fe459a1ecff78eec4";
+            sha256 = "sha256-78TRFzWUKLR4QuZeiXTa4SzWHxprWav93G21uUKzBfA=";
         };
         postInstall = ''
             echo "${theme}" > $target/catppuccin-dynamic.tmuxtheme
@@ -48,37 +48,40 @@ in {
                         set -g @sessionx-bind 'l'
                         set -g @sessionx-window-height '85%'
                         set -g @sessionx-window-width '75%'
+                        set -g @sessionx-preview-location 'right'
+                        set -g @sessionx-preview-ratio '55%'
                     '';
                 }
                 {
                     plugin = catppuccin-tmux;
                     extraConfig = with config.colorScheme.colors; ''
                         set -g @catppuccin_flavour 'dynamic'
-                        set -g @catppuccin_window_left_separator "█"
-                        set -g @catppuccin_window_right_separator "█ "
-                        set -g @catppuccin_window_middle_separator " █"
+                        set -g @catppuccin_window_left_separator " █"
+                        set -g @catppuccin_window_right_separator "█ "
+                        set -g @catppuccin_window_middle_separator "█"
                         set -g @catppuccin_window_number_position "right"
                         set -g @catppuccin_window_default_fill "number"
-                        set -g @catppuccin_window_default_text "#W"
+                        set -g @catppuccin_window_default_text "#W "
                         set -g @catppuccin_window_current_fill "number"
-                        set -g @catppuccin_window_current_background \"#${strings.toLower base01}\"
-                        set -g @catppuccin_status_modules_right "directory date_time"
+                        set -g @catppuccin_window_current_background "#${strings.toLower base01}"
+                        set -g @catppuccin_status_modules_right "date_time"
                         set -g @catppuccin_status_modules_left "session"
                         set -g @catppuccin_status_left_separator  " █"
                         set -g @catppuccin_status_right_separator "█ "
                         set -g @catppuccin_status_right_separator_inverse "no"
                         set -g @catppuccin_status_fill "icon"
                         set -g @catppuccin_status_connect_separator "no"
-                        set -g @catppuccin_window_current_text "#W#{?window_zoomed_flag,(),}"
+                        set -g @catppuccin_window_current_text "#W #{?window_zoomed_flag,(),}"
                         set -g @catppuccin_directory_text "#{b:pane_current_path}"
                         set -g @catppuccin_date_time_text "%H:%M"
                     '';
                 }
             ];
 
-            prefix = "C-b";
+            prefix = "C-t";
             escapeTime = 0;
             customPaneNavigationAndResize = true;
+            disableConfirmationPrompt = true;
             keyMode = "vi";
             mouse = true;
             clock24 = true;
@@ -89,12 +92,16 @@ in {
 
                 # Layout
                 set -g status-position top
+                set -g renumber-windows on
 
-                # Vim style pane selection
+                # Panes
                 bind n select-pane -L
                 bind e select-pane -D 
                 bind i select-pane -U
                 bind o select-pane -R
+                bind d kill-pane
+                bind q detach-client
+                bind b new-window
 
                 # Shift arrow to switch windows
                 bind -n S-Left  previous-window
@@ -103,9 +110,8 @@ in {
                 bind-key -T copy-mode-vi v send-keys -X begin-selection
                 bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
                 bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
-                bind-key b set-option status
-                bind '"' split-window -v -c "#{pane_current_path}"
-                bind % split-window -h -c "#{pane_current_path}"
+                bind h split-window -v -c "#{pane_current_path}"
+                bind s split-window -h -c "#{pane_current_path}"
             '';
         };
     };
