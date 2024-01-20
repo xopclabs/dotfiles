@@ -391,16 +391,17 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "dirtyRev": "5e472258b500da8922cdb70ae38c9acfe43f138b-dirty",
-        "dirtyShortRev": "5e47225-dirty",
-        "lastModified": 1705768614,
-        "narHash": "sha256-yr/xWio+S0zbV9iM47xipZ3uBeMHr6n6ggLY25rLJbg=",
-        "type": "git",
-        "url": "file:///home/xopc/zmk-nix"
+        "lastModified": 1705771446,
+        "narHash": "sha256-4UQSf9Ks88PhxUWGKwSVtxQhvbd22pThPACuFtGb/cY=",
+        "owner": "xopclabs",
+        "repo": "zmk-nix",
+        "rev": "147ea73944a87366cfa74580878425d234610dee",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/xopc/zmk-nix"
+        "owner": "xopclabs",
+        "repo": "zmk-nix",
+        "type": "github"
       }
     }
   },
