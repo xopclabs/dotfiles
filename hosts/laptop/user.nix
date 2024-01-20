@@ -14,6 +14,7 @@
         vscode.enable = true;
 
         # cli
+        udiskie.enable = true;
         nvim.enable = true;
         zsh.enable = true;
         tmux.enable = true;
