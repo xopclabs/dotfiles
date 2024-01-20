@@ -7,7 +7,6 @@ let cfg = config.modules.packages;
     maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
     sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
     tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
-
 in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
@@ -18,6 +17,10 @@ in {
             maintenance
             sftpmpv
             tm
+            # zmk-nix
+            inputs.zmk-nix.packages.${system}.firmware
+            inputs.zmk-nix.packages.${system}.flash
+            inputs.zmk-nix.packages.${system}.update
             # other
             utillinux
             iputils
@@ -61,5 +64,10 @@ in {
             pipes
             libsForQt5.qt5.qtwayland
         ];
+        services.udiskie = {
+            enable = true;
+            automount = true;
+            notify = true;
+        };
     };
 }

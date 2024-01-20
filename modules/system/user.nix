@@ -4,7 +4,7 @@
     programs.zsh.enable = true;
     # Set up user and enable sudo
     users.users.xopc = {
-        extraGroups = [ "input" "wheel" "networkmanager" ];
+        extraGroups = [ "input" "wheel" "networkmanager" "storage" ];
         shell = pkgs.zsh;
         isNormalUser = true;
     };
