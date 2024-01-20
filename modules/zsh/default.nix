@@ -38,20 +38,11 @@ in {
                 cat = "bat --paging=never --style=plain";
                 ls = "eza --icons=automatic";
                 tree = "eza --tree --icons=automatic";
-                reconfig = "sudo nixos-rebuild switch --flake $NIXOS_CONFIG_DIR --fast";
+                reconfig = "STARTDIR=$(pwd); cd ~/nix-config; nix flake lock --update-input zmk-nix; sudo nixos-rebuild switch --flake $NIXOS_CONFIG_DIR --fast; cd $STARTDIR";
             };
 
             # Source all plugins, nix-style
             plugins = [
-                {
-                    name = "auto-ls";
-                    src = pkgs.fetchFromGitHub {
-                        owner = "notusknot";
-                        repo = "auto-ls";
-                        rev = "62a176120b9deb81a8efec992d8d6ed99c2bd1a1";
-                        sha256 = "08wgs3sj7hy30x03m8j6lxns8r2kpjahb9wr0s0zyzrmr4xwccj0";
-                    };
-                }
                 {
                     name = "powerlevel10k";
                     src = pkgs.zsh-powerlevel10k;
