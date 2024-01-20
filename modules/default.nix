@@ -14,6 +14,7 @@
 
         # cli
         ./nvim
+        ./udiskie
         ./tmux
         ./zsh
         ./git

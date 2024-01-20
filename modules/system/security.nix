@@ -27,6 +27,7 @@
         protectKernelImage = true;
         # Swaylock
         pam.services.swaylock = {};
+        polkit.enable = true;
     };
     services.clamav = {
         daemon.enable = true;
