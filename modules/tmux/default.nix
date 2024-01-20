@@ -89,6 +89,7 @@ in {
             terminal = "screen-256color";
             extraConfig = with config.colorScheme.colors; ''
                 set-option -sa terminal-overrides ",xterm*:Tc"
+                set -as terminal-overrides ',*:indn@'
 
                 # Layout
                 set -g status-position top
