@@ -21,7 +21,7 @@
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
         
-        zmk-nix.url = "/home/xopc/zmk-nix";
+        zmk-nix.url = "github:xopclabs/zmk-nix";
     };
 
     # All outputs for the system (configs)
