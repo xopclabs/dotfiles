@@ -1,8 +1,7 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, inputs, ... }:
 
 with lib;
-let cfg = 
-    config.modules.packages;
+let cfg = config.modules.packages;
     screen = pkgs.writeShellScriptBin "screen" ''${builtins.readFile ../scripts/screen}'';
     bandw = pkgs.writeShellScriptBin "bandw" ''${builtins.readFile ../scripts/bandw}'';
     maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
@@ -13,12 +12,13 @@ in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
+            # scripts
             screen 
             bandw 
             maintenance
             sftpmpv
             tm
-            gnome.adwaita-icon-theme
+            # other
             utillinux
             iputils
             usbutils
@@ -26,6 +26,7 @@ in {
             busybox
             brightnessctl
             sudo
+            gnome.adwaita-icon-theme
             ripgrep
             ffmpeg
             tealdeer

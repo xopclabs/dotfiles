@@ -6,7 +6,7 @@ session_count=$(tmux list-sessions | wc -l)
 # Check if there is more than 1 session
 if [ "$session_count" -gt 1 ]; then
     # If there are multiple sessions, execute choose-tree
-    kitty -e tmux new -As main \; choose-tree &
+    kitty -e tmux new -As main \; run-shell $(tmux list-keys | grep sessionx.sh | awk '{print $NF}') &
 else
     # If there is only one session, just attach
     kitty -e tmux new -As main &
