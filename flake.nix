@@ -20,6 +20,8 @@
         firefox-nordic.flake = false;
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
+        
+        zmk-nix.url = "/home/xopc/zmk-nix";
     };
 
     # All outputs for the system (configs)

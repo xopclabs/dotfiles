@@ -45,8 +45,11 @@
             driSupport = true;
         };
     };
-
     services.gvfs.enable = true;
+
+    # Automounting
+    services.udisks2.enable = true;
+
     # Do not touch
     system.stateVersion = "20.09";
 }
