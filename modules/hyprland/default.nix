@@ -129,6 +129,7 @@ in {
 
                     "$mod, D, killactive"
                     "$mod, U, togglefloating"
+                    "$mod, U, pin"
                     "$mod, Y, fullscreen"
                     "CTRL ALT, Delete, exit"
 
