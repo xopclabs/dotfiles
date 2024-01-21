@@ -2,8 +2,6 @@
 
 with lib;
 let cfg = config.modules.packages;
-    screen = pkgs.writeShellScriptBin "screen" ''${builtins.readFile ../scripts/screen}'';
-    bandw = pkgs.writeShellScriptBin "bandw" ''${builtins.readFile ../scripts/bandw}'';
     maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
     sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
     tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
@@ -12,8 +10,6 @@ in {
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
             # scripts
-            screen 
-            bandw 
             maintenance
             sftpmpv
             tm
