@@ -39,8 +39,15 @@ in {
         programs.tmux = {
             enable = true;
             plugins = with pkgs.tmuxPlugins; [
-                vim-tmux-navigator
                 yank
+
+                {
+                    plugin = vim-tmux-navigator;
+                    extraConfig = ''
+                        bind-key -n C-l if-shell "$is_vim" "send-keys C-l"  "send-keys C-l"
+                    '';
+                }
+
                 {
                     plugin = inputs.tmux-sessionx.packages.${pkgs.system}.default;
                     extraConfig = ''
@@ -52,6 +59,7 @@ in {
                         set -g @sessionx-preview-ratio '55%'
                     '';
                 }
+
                 {
                     plugin = catppuccin-tmux;
                     extraConfig = with config.colorScheme.colors; ''
@@ -76,6 +84,7 @@ in {
                         set -g @catppuccin_date_time_text "%H:%M"
                     '';
                 }
+
             ];
 
             prefix = "C-t";
@@ -89,7 +98,6 @@ in {
             terminal = "screen-256color";
             extraConfig = with config.colorScheme.colors; ''
                 set-option -sa terminal-overrides ",xterm*:Tc"
-                set -as terminal-overrides ',*:indn@'
 
                 # Layout
                 set -g status-position top
@@ -111,6 +119,7 @@ in {
                 bind-key -T copy-mode-vi v send-keys -X begin-selection
                 bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
                 bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+                bind-key -n C-l if-shell "$is_vim" "send-keys C-l"  "send-keys C-l"
                 bind h split-window -v -c "#{pane_current_path}"
                 bind s split-window -h -c "#{pane_current_path}"
             '';
