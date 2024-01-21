@@ -7,7 +7,7 @@ in {
     config = mkIf cfg.enable {
 
         home.file.".config/nvim" = {
-            source = ./config;
+            source = ./nvim;
             recursive = true;
         };
         
