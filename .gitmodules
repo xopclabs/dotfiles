@@ -1,3 +1,6 @@
 [submodule "modules/nvim/nvim"]
 	path = modules/nvim/nvim
 	url = https://github.com/xopclabs/nvim
+[submodule "modules/ags/ags-config"]
+	path = modules/ags/ags-config
+	url = https://github.com/xopclabs/ags-config
