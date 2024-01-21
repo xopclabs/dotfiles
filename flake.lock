@@ -391,11 +391,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1705771446,
-        "narHash": "sha256-4UQSf9Ks88PhxUWGKwSVtxQhvbd22pThPACuFtGb/cY=",
+        "lastModified": 1705773654,
+        "narHash": "sha256-jZU7v4vsB6raipSqh/HmS5YnrWpGqEUWT7uoorh5+ck=",
         "owner": "xopclabs",
         "repo": "zmk-nix",
-        "rev": "147ea73944a87366cfa74580878425d234610dee",
+        "rev": "4ed68e343c02bf679ec77195218f6e8282601a66",
         "type": "github"
       },
       "original": {

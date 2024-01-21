@@ -42,7 +42,7 @@ in {
                 };
 
                 "device:kensington-expert-mouse" = {
-                    sensitivity = -0.35;
+                    sensitivity = -0.2;
                     accel_profile = "flat";
                 };
 
