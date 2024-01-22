@@ -38,9 +38,9 @@ in {
 
         programs.tmux = {
             enable = true;
+            tmuxinator.enable = true;
             plugins = with pkgs.tmuxPlugins; [
                 yank
-
                 {
                     plugin = vim-tmux-navigator;
                     extraConfig = ''
@@ -57,6 +57,11 @@ in {
                         set -g @sessionx-window-width '75%'
                         set -g @sessionx-preview-location 'right'
                         set -g @sessionx-preview-ratio '55%'
+                        set -g @sessionx-filter-current 'false'
+
+                        set -g @sessionx-bind-tree-mode 'ctrl-w'
+                        set -g @sessionx-bind-new-window 'ctrl-c'
+                        set -g @sessionx-bind-kill-session 'ctrl-d'
                     '';
                 }
 
