@@ -132,10 +132,10 @@ in {
                     "$mod, U, pin"
                     "$mod, Z, fullscreen"
                     "CTRL ALT, Delete, exit"
-                    "ALT, F8, exec, hyprctl switchxkblayout architeuthis-dux 0"
-                    "ALT, F8, exec, hyprctl switchxkblayout sweep-keyboard 0"
-                    "ALT, F9, exec, hyprctl switchxkblayout architeuthis-dux 1"
-                    "ALT, F9, exec, hyprctl switchxkblayout sweep-keyboard 1"
+                    ", XF86Tools, exec, hyprctl switchxkblayout architeuthis-dux 0"
+                    ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
+                    ", XF86Launch5, exec, hyprctl switchxkblayout architeuthis-dux 1"
+                    ", XF86Launch5, exec, hyprctl switchxkblayout sweep-keyboard 1"
 
                     (mvfocus "n" "l")
                     (mvfocus "e" "d")
