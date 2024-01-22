@@ -5,13 +5,10 @@ let
 in {
     options.modules.nvim = { enable = mkEnableOption "nvim"; };
     config = mkIf cfg.enable {
-
-        home.file.".config/nvim" = {
-            source = ./nvim;
-            recursive = true;
-        };
         
         home.packages = with pkgs; [
+            rnix-lsp nixfmt # Nix
+            lua-language-server stylua # Lua
         ];
 
         programs.neovim = {
@@ -26,6 +23,11 @@ in {
             shellAliases = {
                 vim = "nvim -i NONE";
             };
+        };
+
+        home.file.".config/nvim" = {
+            source = ./nvim;
+            recursive = true;
         };
 
     };
