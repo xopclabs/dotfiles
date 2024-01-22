@@ -130,8 +130,12 @@ in {
                     "$mod, D, killactive"
                     "$mod, U, togglefloating"
                     "$mod, U, pin"
-                    "$mod, Y, fullscreen"
+                    "$mod, Z, fullscreen"
                     "CTRL ALT, Delete, exit"
+                    "ALT, F8, exec, hyprctl switchxkblayout architeuthis-dux 0"
+                    "ALT, F8, exec, hyprctl switchxkblayout sweep-keyboard 0"
+                    "ALT, F9, exec, hyprctl switchxkblayout architeuthis-dux 1"
+                    "ALT, F9, exec, hyprctl switchxkblayout sweep-keyboard 1"
 
                     (mvfocus "n" "l")
                     (mvfocus "e" "d")

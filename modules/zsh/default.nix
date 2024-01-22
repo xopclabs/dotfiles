@@ -38,7 +38,7 @@ in {
                 cat = "bat --paging=never --style=plain";
                 ls = "eza --icons=automatic";
                 tree = "eza --tree --icons=automatic";
-                reconfig = "STARTDIR=$(pwd); cd $NIXOS_CONFIG_DIR; nix flake lock --update-input zmk-nix; sudo nixos-rebuild switch --flake .?submodules=1 --fast; cd $STARTDIR";
+                reconfig = "STARTDIR=$(pwd); cd $NIXOS_CONFIG_DIR; nix flake lock --update-input zmk-nix; sudo nixos-rebuild switch --flake \"$NIXOS_CONFIG_DIR?submodules=1\" --fast; cd $STARTDIR";
             };
 
             # Source all plugins, nix-style
