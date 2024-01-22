@@ -35,6 +35,10 @@ let
 in {
     options.modules.tmux = { enable = mkEnableOption "tmux"; };
     config = mkIf cfg.enable {
+        home.packages = with pkgs; [
+            tmux
+            tmuxinator
+        ];
 
         programs.tmux = {
             enable = true;

@@ -51,6 +51,13 @@
     services.devmon.enable = true;
     services.udisks2.enable = true;
 
+    # Docker support
+    virtualisation.docker = {
+        enable = true;
+        enableOnBoot = true;
+        rootless.enable = true;
+    };
+
     # Do not touch
     system.stateVersion = "20.09";
 }
