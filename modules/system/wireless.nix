@@ -20,7 +20,12 @@
         enable = true;
         powerOnBoot = true;
         settings.General.Experimental = true;
+        input = {
+            General.UserspaceHID = true;
+        };
     };
+    services.blueman.enable = true;
+
     # For wake-up with bluetooth
     services.udev.packages = [
         (pkgs.writeTextFile {

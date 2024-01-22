@@ -59,6 +59,7 @@ in {
             clamav
             pipes
             libsForQt5.qt5.qtwayland
+            wev
         ];
     };
 }
