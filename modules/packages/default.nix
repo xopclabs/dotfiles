@@ -5,6 +5,7 @@ let cfg = config.modules.packages;
     maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
     sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
     tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
+    wlprop = pkgs.writeShellScriptBin "wlprop" ''${builtins.readFile ../scripts/wlprop}'';
 in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
@@ -13,6 +14,7 @@ in {
             maintenance
             sftpmpv
             tm
+            wlprop
             # zmk-nix
             inputs.zmk-nix.packages.${system}.firmware
             inputs.zmk-nix.packages.${system}.flash

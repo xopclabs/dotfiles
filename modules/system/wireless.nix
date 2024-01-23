@@ -13,20 +13,16 @@
     sops.secrets."networkmanager.conf".path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
 
     # Bluetooth
-    environment.systemPackages = with pkgs; [
-        gnome.gnome-bluetooth
-    ];
     hardware.bluetooth = {
         enable = true;
         powerOnBoot = true;
-        package = pkgs.bluez5-experimental;
+        #package = pkgs.bluez5-experimental;
         settings.General.Experimental = true;
         input = {
             General.UserspaceHID = true;
         };
     };
     services.blueman.enable = true;
-
     # For wake-up with bluetooth
     services.udev.packages = [
         (pkgs.writeTextFile {
