@@ -61,4 +61,7 @@
             chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";		
         };
     };
+
+    # Opentabletdriver
+    hardware.opentabletdriver.enable = true;
 }

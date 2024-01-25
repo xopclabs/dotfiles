@@ -394,7 +394,7 @@
         "dirtyRev": "7bb358dcab980f47829760c502b858f8f57d85eb-dirty",
         "dirtyShortRev": "7bb358d-dirty",
         "lastModified": 1705951332,
-        "narHash": "sha256-n09Ks+j98W4ABiZtzJLp9DVZ0DHiUvhVe6TAOvhP6yE=",
+        "narHash": "sha256-mnvIKn0kpCbFADFdY3NcWGZplMGNZcSwajkiJUee4l0=",
         "type": "git",
         "url": "file:///home/xopc/zmk-nix"
       },
