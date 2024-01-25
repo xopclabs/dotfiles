@@ -37,6 +37,9 @@ in {
                         natural_scroll = true;
                         scroll_factor = 0.25;
                     };
+                    tablet = {
+                        transform = 2;
+                    };
                     kb_layout = "us,ru";
                     kb_options = "grp:alt_shift_toggle";
                 };
@@ -93,6 +96,9 @@ in {
                 windowrulev2 = [
                     "workspace 7, monitor 1,class:^(telegram-desktop)$"
                     "workspace 8, monitor 1,class:^(slack)$"
+                    "float, title:(Picture-in-Picture)"
+                    "move onscreen cursor -50 -50, title:(Picture-in-Picture)" 
+                    "pin, title:(Picture-in-Picture)" "keepaspectratio, title:(Picture-in-Picture)" 
                 ];
 
                 # binds
@@ -132,10 +138,6 @@ in {
                     "$mod, U, pin"
                     "$mod, Z, fullscreen"
                     "CTRL ALT, Delete, exit"
-                    ", XF86Tools, exec, hyprctl switchxkblayout architeuthis-dux 0"
-                    ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
-                    ", XF86Launch5, exec, hyprctl switchxkblayout architeuthis-dux 1"
-                    ", XF86Launch5, exec, hyprctl switchxkblayout sweep-keyboard 1"
 
                     (mvfocus "n" "l")
                     (mvfocus "e" "d")
@@ -169,6 +171,12 @@ in {
                     ",XF86AudioNext,    ${e} 'mpris?.next()'"
                     ",XF86AudioMicMute, ${e} 'audio.microphone.isMuted = !audio.microphone.isMuted'"
                     ",switch:on:[Lip switch], exec, systemctl suspend"
+                    ", XF86Tools, exec, hyprctl switchxkblayout architeuthis-dux 0"
+                    ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
+                    ", XF86Tools, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 0"
+                    ", XF86Launch5, exec, hyprctl switchxkblayout architeuthis-dux 1"
+                    ", XF86Launch5, exec, hyprctl switchxkblayout sweep-keyboard 1"
+                    ", XF86Launch5, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 1"
                 ];
             };
         };
