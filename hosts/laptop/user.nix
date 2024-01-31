@@ -12,6 +12,7 @@
         kitty.enable = true;
         hyprland.enable = true;
         vscode.enable = true;
+        mpv.enable = true;
 
         # cli
         udiskie.enable = true;

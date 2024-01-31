@@ -20,7 +20,6 @@
     # Boot settings: clean /tmp/, latest kernel and enable bootloader
     boot = {
         tmp.cleanOnBoot = true;
-        kernelPackages = pkgs.linuxKernel.packages.linux_6_7;
         loader = {
             systemd-boot.enable = true;
             systemd-boot.editor = false;
