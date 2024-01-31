@@ -38,7 +38,10 @@ in {
                 cat = "bat --paging=never --style=plain";
                 ls = "eza --icons=automatic";
                 tree = "eza --tree --icons=automatic";
+                grep = "grep";
                 reconfig = "STARTDIR=$(pwd); cd $NIXOS_CONFIG_DIR; nix flake lock --update-input zmk-nix; sudo nixos-rebuild switch --flake \"$NIXOS_CONFIG_DIR?submodules=1\" --fast; cd $STARTDIR";
+                slack = "slack --ozone-platform=wayland --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer
+";
             };
 
             # Source all plugins, nix-style

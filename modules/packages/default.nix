@@ -49,7 +49,6 @@ in {
             python3 
             lua 
             zig 
-            mpv 
             pqiv
             wf-recorder 
             slack
