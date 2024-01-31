@@ -30,9 +30,10 @@
             extraPortals = with pkgs; [
                 xdg-desktop-portal-hyprland
                 xdg-desktop-portal-gtk
-                xdg-desktop-portal-wlr
             ];
-            config.common.default = "*";
+            config = {
+                common.default = [ "hyprland" "gtk" ];
+            };
         };
     };
 
@@ -46,9 +47,9 @@
         DISABLE_QT5_COMPAT = "0";
     };
 
+
     # Screen sharing
     security.rtkit.enable = true;
-
     # enable pipewire with wlr support
     services.pipewire = {
         enable = true;
@@ -62,6 +63,7 @@
             chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";		
         };
     };
+    environment.systemPackages = with pkgs; [ xwaylandvideobridge ];
 
     # Opentabletdriver
     hardware.opentabletdriver.enable = true;

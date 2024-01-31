@@ -96,9 +96,20 @@ in {
                 windowrulev2 = [
                     "workspace 7, monitor 1,class:^(telegram-desktop)$"
                     "workspace 8, monitor 1,class:^(slack)$"
+
                     "float, title:(Picture-in-Picture)"
                     "move onscreen cursor -50 -50, title:(Picture-in-Picture)" 
                     "pin, title:(Picture-in-Picture)" "keepaspectratio, title:(Picture-in-Picture)" 
+
+                    "float, title:(Floorp — Sharing Indicator)"
+                    "move 50% 2%, title:(Floorp — Sharing Indicator)" 
+                    "noinitialfocus, title:(Floorp — Sharing Indicator)" 
+
+                    "opacity 0.0 override 0.0 override,class:^(xwaylandvideobridge)$"
+                    "noanim,class:^(xwaylandvideobridge)$"
+                    "noinitialfocus,class:^(xwaylandvideobridge)$"
+                    "maxsize 1 1,class:^(xwaylandvideobridge)$"
+                    "noblur,class:^(xwaylandvideobridge)$"
                 ];
 
                 # binds
