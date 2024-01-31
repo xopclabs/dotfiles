@@ -11,6 +11,7 @@
         ./hyprland
         ./ags
         ./vscode
+        ./mpv
 
         # cli
         ./nvim
