@@ -12,6 +12,9 @@ in {
                 "Shift+Left"  = "playlist-prev";
                 "Shift+Right"  = "playlist-next";
             };
+            config = {
+                loop-file = "inf";
+            };
         };
     };
 }
