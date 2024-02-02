@@ -57,6 +57,8 @@ in {
                     disable_hyprland_logo = true;
                     disable_autoreload = true;
                     enable_swallow = true;
+                    #swallow_regex = "^(kitty|tmux)$";
+                    swallow_regex = "kitty|tmux";
                 };
 
                 general  = {
@@ -102,7 +104,9 @@ in {
                     "pin, title:(Picture-in-Picture)" "keepaspectratio, title:(Picture-in-Picture)" 
 
                     "float, title:(Floorp — Sharing Indicator)"
+                    "nomaximizerequest, title:(Floorp — Sharing Indicator)"
                     "move 50% 2%, title:(Floorp — Sharing Indicator)" 
+                    "noshadow, title:(Floorp — Sharing Indicator)" 
                     "noinitialfocus, title:(Floorp — Sharing Indicator)" 
 
                     "opacity 0.0 override 0.0 override,class:^(xwaylandvideobridge)$"
