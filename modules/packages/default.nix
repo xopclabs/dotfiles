@@ -72,6 +72,7 @@ in {
             wev
             pavucontrol
             rnote
+            tio
         ];
     };
 }
