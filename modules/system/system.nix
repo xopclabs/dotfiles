@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+ {config, pkgs, inputs, ... }:
 
 {
     # Nix settings, auto cleanup and enable flakes
@@ -43,6 +43,19 @@
         opengl = {
             enable = true;
             driSupport = true;
+        };
+        nvidia = {
+            modesetting.enable = true;
+            powerManagement.enable = false;
+            open = false;
+            nvidiaSettings = false;
+            package = config.boot.kernelPackages.nvidiaPackages.stable;
+            prime = {
+                reverseSync.enable = true;
+                allowExternalGpu = false;
+                intelBusId = "PCI:0:2:0";
+                nvidiaBusId = "PCI:1:0:0";
+            };
         };
     };
 
