@@ -18,7 +18,7 @@ in {
             recursive = true;
             source = ./theme;
         };
-        home.file.".floorp/xopc/chrome/colors.css".text = with config.colorScheme.colors; ''
+        home.file.".floorp/xopc/chrome/colors.css".text = with config.colorScheme.palette; ''
             :root {
             /*Dark*/
             --dark_color1: #${base00};
@@ -85,7 +85,7 @@ in {
             }
             }
         '';
-        home.file."nix-config/modules/floorp/theme/treestyletab.css".text = with config.colorScheme.colors; ''
+        home.file."nix-config/modules/floorp/theme/treestyletab.css".text = with config.colorScheme.palette; ''
                 :root {
                 /* This value should be updated here and in the userChrome.css */
                     --tst-sidepanel-hide-delay: 0s;

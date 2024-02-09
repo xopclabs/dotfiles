@@ -16,7 +16,7 @@
         ];
     };
 
-    xdg.configFile."ags_themes.js".text = with config.colorScheme.colors; ''
+    xdg.configFile."ags_themes.js".text = with config.colorScheme.palette; ''
         import { Theme, WP, lightColors } from './ags/js/settings/theme.js';
 
         export default [

@@ -67,8 +67,8 @@ in {
                     gaps_in = 6;
                     gaps_out = 12;
                     border_size = 4;
-                    "col.active_border" = "0xff${config.colorScheme.colors.base0D}";
-                    "col.inactive_border" = "0xff${config.colorScheme.colors.base00}";
+                    "col.active_border" = "0xff${config.colorScheme.palette.base0D}";
+                    "col.inactive_border" = "0xff${config.colorScheme.palette.base00}";
                 };
 
                 decoration = {
@@ -202,7 +202,7 @@ in {
         programs.swaylock = {
             enable = true;
             package = pkgs.swaylock-effects;
-            settings = with config.colorScheme.colors; let 
+            settings = with config.colorScheme.palette; let 
                 black = base03;
                 white = base04;
                 blue = base0D;
