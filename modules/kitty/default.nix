@@ -14,7 +14,7 @@ in {
             keybindings = {
 		"ctrl+backspace" = "send_text all \\x17";
             };
-	    settings = with config.colorScheme.colors; {
+	    settings = with config.colorScheme.palette; {
 		font_family = "mononoki Nerd Font";
         adjust_line_height = 5;
 		font_size = 18;
