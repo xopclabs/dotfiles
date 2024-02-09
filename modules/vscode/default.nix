@@ -44,6 +44,11 @@ in {
                "python.languageServer" = "Pylance";
                "terminal.integrated.fontFamily" = "'mononoki Nerd Font'";
                "remote.autoForwardPortsSource" = "hybrid";
+               "jupyter.widgetScriptSources" = [
+                   "jsdelivr.com"
+                   "unpkg.com"
+               ];
+               "jupyter.askForKernelRestart" = false;
             };
         };
     };
