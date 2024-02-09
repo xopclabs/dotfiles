@@ -3,7 +3,7 @@
 with lib;
 let
     cfg = config.modules.tmux;
-    theme = with config.colorScheme.colors; ''
+    theme = with config.colorScheme.palette; ''
         # --> Catppuccin (Dynamic)
         thm_bg=\"#${strings.toLower base00}\"
         thm_fg=\"#${strings.toLower base05}\"
@@ -71,7 +71,7 @@ in {
 
                 {
                     plugin = catppuccin-tmux;
-                    extraConfig = with config.colorScheme.colors; ''
+                    extraConfig = with config.colorScheme.palette; ''
                         set -g @catppuccin_flavour 'dynamic'
                         set -g @catppuccin_window_left_separator " █"
                         set -g @catppuccin_window_right_separator "█ "
@@ -105,7 +105,7 @@ in {
             clock24 = true;
             shell = "${pkgs.zsh}/bin/zsh";
             terminal = "screen-256color";
-            extraConfig = with config.colorScheme.colors; ''
+            extraConfig = with config.colorScheme.palette; ''
                 set-option -sa terminal-overrides ",xterm*:Tc"
 
                 # Layout
