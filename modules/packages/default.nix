@@ -73,6 +73,7 @@ in {
             pavucontrol
             rnote
             tio
+            chromium
         ];
     };
 }

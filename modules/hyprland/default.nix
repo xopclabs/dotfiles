@@ -58,7 +58,8 @@ in {
                     disable_autoreload = true;
                     enable_swallow = true;
                     #swallow_regex = "^(kitty|tmux)$";
-                    swallow_regex = "kitty|tmux";
+                    #swallow_regex = "kitty|tmux";
+                    swallow_regex = "tmux";
                 };
 
                 general  = {
