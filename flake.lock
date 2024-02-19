@@ -5,7 +5,6 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1707406749,
         "narHash": "sha256-gAPKQ24+CWBZVvZaq166Y5JUgJaxLtPyH42mV29/MK4=",
         "owner": "Aylur",
         "repo": "ags",
