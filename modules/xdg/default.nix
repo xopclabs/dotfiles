@@ -26,6 +26,7 @@ in {
             publicShare = "$HOME/other/";
             templates = "$HOME/other/";
         };
+        /*
         xdg.mimeApps = rec {
             enable = true;
             associations.added = defaultApplications;
@@ -66,5 +67,6 @@ in {
                 "image/x-icns" = image-viewer;
             };
         };
+        */
     };
 }
