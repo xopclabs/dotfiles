@@ -64,7 +64,4 @@
         };
     };
     environment.systemPackages = with pkgs; [ xwaylandvideobridge ];
-
-    # Opentabletdriver
-    hardware.opentabletdriver.enable = true;
 }
