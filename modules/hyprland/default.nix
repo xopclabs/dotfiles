@@ -102,19 +102,25 @@ in {
 
                     "float, title:(Picture-in-Picture)"
                     "move onscreen cursor -50 -50, title:(Picture-in-Picture)" 
-                    "pin, title:(Picture-in-Picture)" "keepaspectratio, title:(Picture-in-Picture)" 
+                    "pin, title:(Picture-in-Picture)" 
+                    "keepaspectratio, title:(Picture-in-Picture)" 
 
-                    "float, title:(Floorp — Sharing Indicator)"
-                    "nomaximizerequest, title:(Floorp — Sharing Indicator)"
-                    "move 50% 2%, title:(Floorp — Sharing Indicator)" 
-                    "noshadow, title:(Floorp — Sharing Indicator)" 
-                    "noinitialfocus, title:(Floorp — Sharing Indicator)" 
+                    "float, title:(Extension:.*)"
+                    "move onscreen cursor -50 -50, title:(Extension:.*)" 
+                    "pin, title:(Extension:.*)" 
+                    "keepaspectratio, title:(Extension:.*)" 
 
-                    "opacity 0.0 override 0.0 override,class:^(xwaylandvideobridge)$"
-                    "noanim,class:^(xwaylandvideobridge)$"
-                    "noinitialfocus,class:^(xwaylandvideobridge)$"
-                    "maxsize 1 1,class:^(xwaylandvideobridge)$"
-                    "noblur,class:^(xwaylandvideobridge)$"
+                    "float, title:(.*Sharing Indicator)"
+                    "nomaximizerequest, title:(.*Sharing Indicator)"
+                    "move 50% 2%, title:(.*Sharing Indicator)" 
+                    "noshadow, title:(.*Sharing Indicator)" 
+                    "noinitialfocus, title:(.*Sharing Indicator)" 
+
+                    "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
+                    "noanim,class:(xwaylandvideobridge)"
+                    "noinitialfocus,class:(xwaylandvideobridge)"
+                    "maxsize 1 1,class:(xwaylandvideobridge)"
+                    "noblur,class:(xwaylandvideobridge)"
                 ];
 
                 # binds
