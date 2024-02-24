@@ -26,7 +26,6 @@ in {
                         vimium
                         tree-style-tab
                     ];
-                search.default = "DuckDuckGo";
                 extraConfig = ''
 /****************************************************************************************
  * Fastfox                                                                              *
