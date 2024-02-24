@@ -17,7 +17,10 @@
         enable = true;
         powerOnBoot = true;
         #package = pkgs.bluez5-experimental;
-        settings.General.Experimental = true;
+        settings.General = {
+            Experimental = true;
+            MultiProfile = "multiple";
+        };
         input = {
             General.UserspaceHID = true;
         };
