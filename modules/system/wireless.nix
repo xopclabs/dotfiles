@@ -20,6 +20,7 @@
         settings.General = {
             Experimental = true;
             MultiProfile = "multiple";
+            Enable = "Source,Sink,Media,Socket";
         };
         input = {
             General.UserspaceHID = true;
