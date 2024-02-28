@@ -82,8 +82,8 @@ in {
                 animations  = {
                     enabled = true;
                     animation = [
-                        "windows,1,4,default,slide"
-                        "workspaces,1,6,default,slide"
+                        "windows,1,2,default,slide"
+                        "workspaces,1,3,default,slide"
                     ];
                 };
 
