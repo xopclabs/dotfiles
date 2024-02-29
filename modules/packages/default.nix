@@ -47,6 +47,7 @@ in {
             gnupg 
             bat
             unzip 
+            lm_sensors
             lowdown 
             zk
             grim 
@@ -74,6 +75,7 @@ in {
             rnote
             tio
             chromium
+            stremio
         ];
     };
 }
