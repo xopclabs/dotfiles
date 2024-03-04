@@ -40,10 +40,15 @@
     };
     services.upower.enable = true;
 
+    environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; }; # Force intel-media-driver
     hardware = {
         opengl = {
             enable = true;
             driSupport = true;
+            extraPackages = with pkgs; [
+              intel-media-driver
+              intel-vaapi-driver
+            ];
         };
         nvidia = {
             modesetting.enable = true;

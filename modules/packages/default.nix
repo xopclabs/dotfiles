@@ -78,6 +78,7 @@ in {
             tio
             chromium
             stremio
+            moonlight-qt
         ];
     };
 }
