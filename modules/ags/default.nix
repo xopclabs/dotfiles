@@ -63,8 +63,6 @@
                 "battery.bar.full": false,
                 "battery.low": 30,
                 "battery.medium": 50,
-                "desktop.wallpaper.fg": "#fff",
-                "desktop.wallpaper.img": "/home/xopc/.config/ags/assets/nord.png",
                 "desktop.screen_corners": false,
                 "desktop.clock.enable": false,
                 "desktop.clock.position": "center center",
