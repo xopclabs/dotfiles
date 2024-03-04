@@ -81,6 +81,7 @@ in {
             chromium
             stremio
             moonlight-qt
+            melt
         ];
     };
 }
