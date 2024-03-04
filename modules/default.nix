@@ -15,6 +15,7 @@
         ./mpv
 
         # cli
+        ./awscli
         ./nvim
         ./udiskie
         ./tmux
