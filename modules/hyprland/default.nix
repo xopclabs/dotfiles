@@ -1,6 +1,10 @@
 { inputs, pkgs, lib, config, ... }:
 
-let cfg = config.modules.hyprland;
+let 
+    cfg = config.modules.hyprland;
+    swaylock = "${config.programs.swaylock.package}/bin/swaylock";
+    systemctl = "${pkgs.systemd}/bin/systemctl";
+    hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
 in {
     options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
     config = lib.mkIf cfg.enable {
@@ -192,7 +196,8 @@ in {
                     ",XF86AudioPrev,    ${e} 'mpris?.previous()'"
                     ",XF86AudioNext,    ${e} 'mpris?.next()'"
                     ",XF86AudioMicMute, ${e} 'audio.microphone.isMuted = !audio.microphone.isMuted'"
-                    ",switch:on:[Lip switch], exec, systemctl suspend"
+                    ",switch:on:[Lid switch], exec, systemctl suspend"
+                    ",switch:off:[Lid switch], exec, freshman_start"
                     ", XF86Tools, exec, hyprctl switchxkblayout architeuthis-dux 0"
                     ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
                     ", XF86Tools, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 0"
@@ -259,11 +264,12 @@ in {
         services.swayidle = {
             enable = true;
             events = [
-                { event = "before-sleep"; command = "${config.programs.swaylock.package}/bin/swaylock -f"; }
+                { event = "before-sleep"; command = "${swaylock} -f"; }
             ];
             timeouts = [
-                { timeout = 180; command = "${config.programs.swaylock.package}/bin/swaylock -f"; }
-                { timeout = 3600; command = "${pkgs.systemd}/bin/systemctl hibernate"; }
+                { timeout = 600; command = "${swaylock} -f"; }
+                { timeout = 3600; command = "${systemctl} hibernate"; }
+                { timeout = 300; command = "${hyprctl} dispatch dpms off"; resumeCommand = "${hyprctl} dispatch dpms on"; }
             ];
         };
     };

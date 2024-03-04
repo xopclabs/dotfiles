@@ -15,6 +15,7 @@ let cfg = config.modules.packages;
     maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
     sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
     tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
+    freshman_start = pkgs.writeShellScriptBin "freshman_start" ''${builtins.readFile ../scripts/freshman_start}'';
 in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
@@ -23,6 +24,7 @@ in {
             maintenance
             sftpmpv
             tm
+            freshman_start
             # zmk-nix
             inputs.zmk-nix.packages.${system}.firmware
             inputs.zmk-nix.packages.${system}.flash
