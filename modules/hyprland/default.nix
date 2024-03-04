@@ -48,9 +48,9 @@ in {
                     kb_options = "grp:alt_shift_toggle";
                 };
 
-                "device:kensington-expert-mouse" = {
+                device = {
+                    name = "kensington-expert-mouse";
                     sensitivity = -0.2;
-                    accel_profile = "flat";
                 };
 
                 gestures = {
@@ -115,7 +115,6 @@ in {
                     "keepaspectratio, title:(Extension:.*)" 
 
                     "float, title:(.*Sharing Indicator)"
-                    "nomaximizerequest, title:(.*Sharing Indicator)"
                     "move 50% 2%, title:(.*Sharing Indicator)" 
                     "noshadow, title:(.*Sharing Indicator)" 
                     "noinitialfocus, title:(.*Sharing Indicator)" 
