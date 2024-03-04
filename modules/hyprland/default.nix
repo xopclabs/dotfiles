@@ -51,7 +51,9 @@ in {
                 device = {
                     name = "kensington-expert-mouse";
                     sensitivity = -0.2;
+                    accel_profile = "flat";
                 };
+
 
                 gestures = {
                     workspace_swipe = true;
