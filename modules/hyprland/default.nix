@@ -105,15 +105,15 @@ in {
                     "pin, title:(Picture-in-Picture)" 
                     "keepaspectratio, title:(Picture-in-Picture)" 
 
-                    "float, title:(Extension:.*)"
-                    "move onscreen cursor -50 -50, title:(Extension:.*)" 
-                    "pin, title:(Extension:.*)" 
-                    "keepaspectratio, title:(Extension:.*)" 
+                    "float, title:(Extension:)(.*)$"
+                    "move onscreen cursor -50 -50, title:(Extension:)(.*)$" 
+                    "pin, title:(Extension:)(.*)$" 
+                    "keepaspectratio, title:(Extension:)(.*)$" 
 
-                    "float, title:(.*Sharing Indicator)"
-                    "move 50% 2%, title:(.*Sharing Indicator)" 
-                    "noshadow, title:(.*Sharing Indicator)" 
-                    "noinitialfocus, title:(.*Sharing Indicator)" 
+                    "float, title:(.*)(Sharing Indicator)$"
+                    "move 50% 2%, title:(.*)(Sharing Indicator)$" 
+                    "noshadow, title:(.*)(Sharing Indicator)$" 
+                    "noinitialfocus, title:(.*)(Sharing Indicator)$" 
 
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
                     "noanim,class:(xwaylandvideobridge)"
