@@ -28,6 +28,7 @@ in {
                 ];
 
                 exec-once = [
+                    "hyprctl keyword device:name kensington-expert-mouse:accel_profile flat"
                     "tmux new -s main"
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "ags -b hypr"
@@ -36,6 +37,7 @@ in {
                 ];
 
                 input  = {
+                    accel_profile = "flat";
                     follow_mouse = true;
                     touchpad = {
                         natural_scroll = true;
@@ -51,7 +53,6 @@ in {
                 device = {
                     name = "kensington-expert-mouse";
                     sensitivity = -0.2;
-                    accel_profile = "flat";
                 };
 
 

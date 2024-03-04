@@ -14,7 +14,7 @@
 
         nix-colors.url = "github:Misterio77/nix-colors";
 
-        ags.url = "github:Aylur/ags";
+        ags.url = "github:Aylur/ags/f681ba237a09bb0ad0c27d8792badcb4a4116e7a";
 
         firefox-nordic.url = "github:EliverLara/firefox-nordic-theme";
         firefox-nordic.flake = false;
