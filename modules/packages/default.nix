@@ -16,6 +16,7 @@ let cfg = config.modules.packages;
     sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
     tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
     freshman_start = pkgs.writeShellScriptBin "freshman_start" ''${builtins.readFile ../scripts/freshman_start}'';
+    hyprshot = pkgs.writeShellScriptBin "hyprshot" ''${builtins.readFile ../scripts/hyprshot}'';
 in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
@@ -25,6 +26,7 @@ in {
             sftpmpv
             tm
             freshman_start
+            hyprshot
             # zmk-nix
             inputs.zmk-nix.packages.${system}.firmware
             inputs.zmk-nix.packages.${system}.flash

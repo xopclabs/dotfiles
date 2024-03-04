@@ -12,7 +12,7 @@ in {
     options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
     config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
-            wayshot xwayland wlsunset wl-clipboard hyprlock hypridle hyprpaper hyprland
+            xwayland wlsunset wl-clipboard jq hyprpicker hyprlock hypridle hyprpaper hyprland
         ];
 
         wayland.windowManager.hyprland = {
@@ -149,9 +149,8 @@ in {
                     "CTRL SHIFT, Slash,  ${e} quit; ags -b hypr"
                     "$mod, L,       ${e} -t applauncher"
                     ", XF86PowerOff, ${e} -t powermenu"
-                    ",Print,         ${e} -r 'recorder.screenshot()'"
-                    "SHIFT,Print,    ${e} -r 'recorder.screenshot(true)'"
-                    "CTRL,Print,  ${e} -r 'recorder.toggle()'"
+                    ",Print, exec, hyprshot -m region -F --clipboard-only"
+                    "SHIFT,Print, exec, hyprshot -F --clipboard-only"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, floorp"
