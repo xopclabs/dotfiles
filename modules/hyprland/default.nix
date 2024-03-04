@@ -2,6 +2,7 @@
 
 let 
     cfg = config.modules.hyprland;
+    wallpaper = "/home/xopc/.config/ags/assets/nord.png";
     swaylock = "${config.programs.swaylock.package}/bin/swaylock";
     systemctl = "${pkgs.systemd}/bin/systemctl";
     hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
@@ -9,7 +10,7 @@ in {
     options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
     config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
-            wayshot swww swaylock-effects swayidle xwayland wlsunset wl-clipboard hyprland
+            wayshot swaylock-effects swayidle xwayland wlsunset wl-clipboard hyprpaper hyprland
         ];
 
         wayland.windowManager.hyprland = {
@@ -28,6 +29,7 @@ in {
                 ];
 
                 exec-once = [
+                    "hyprpaper"
                     "tmux new -s main"
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "ags -b hypr"
@@ -274,5 +276,13 @@ in {
                 { timeout = 300; command = "${hyprctl} dispatch dpms off"; resumeCommand = "${hyprctl} dispatch dpms on"; }
             ];
         };
+
+        # Wallpaper
+        home.file.".config/hypr/hyprpaper.conf".text = with config.colorScheme.palette; ''
+            preload = ${wallpaper}
+            wallpaper = eDP-1,${wallpaper}
+            splash = false
+            ipc = off
+        '';
     };
 }
