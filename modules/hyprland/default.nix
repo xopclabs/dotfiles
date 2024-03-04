@@ -32,6 +32,7 @@ in {
 
                 exec-once = [
                     "hyprpaper"
+                    "hypridle"
                     "tmux new -s main"
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "ags -b hypr"
