@@ -16,6 +16,7 @@
         mpv.enable = true;
 
         # cli
+        awscli.enable = true;
         udiskie.enable = true;
         nvim.enable = true;
         zsh.enable = true;
