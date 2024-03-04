@@ -34,6 +34,7 @@ in {
                     "ags -b hypr"
                     "[workspace 7 silent] telegram-desktop"
                     "[workspace 8 silent] slack"
+                    "freshman_start"
                 ];
 
                 input  = {
@@ -269,7 +270,7 @@ in {
                 { event = "before-sleep"; command = "${swaylock} -f"; }
             ];
             timeouts = [
-                { timeout = 600; command = "${swaylock} -f"; }
+                #{ timeout = 600; command = "${swaylock} -f"; }
                 { timeout = 3600; command = "${systemctl} hibernate"; }
                 { timeout = 300; command = "${hyprctl} dispatch dpms off"; resumeCommand = "${hyprctl} dispatch dpms on"; }
             ];
