@@ -2,15 +2,17 @@
 
 let 
     cfg = config.modules.hyprland;
-    wallpaper = "/home/xopc/.config/ags/assets/nord.png";
-    swaylock = "${config.programs.swaylock.package}/bin/swaylock";
+    lock = "${pkgs.hyprlock}/bin/hyprlock";
     systemctl = "${pkgs.systemd}/bin/systemctl";
     hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
+
+    monitor1 = "eDP-1";
+    wallpaper = "/home/xopc/.config/ags/assets/nord.png";
 in {
     options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
     config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
-            wayshot swaylock-effects swayidle xwayland wlsunset wl-clipboard hyprpaper hyprland
+            wayshot xwayland wlsunset wl-clipboard hyprlock hypridle hyprpaper hyprland
         ];
 
         wayland.windowManager.hyprland = {
@@ -25,7 +27,7 @@ in {
                 "$altMod" = "SUPER_CTRL";
 
                 monitor = [
-                    "eDP-1, 1920x1080@60, 0x0, 1"
+                    "${monitor1}, 1920x1080@60, 0x0, 1"
                 ];
 
                 exec-once = [
@@ -154,7 +156,7 @@ in {
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, floorp"
                     "$mod, M, exec, kitty -e ranger"
-                    "$mod, Semicolon, exec, swaylock -f"
+                    "$mod, Semicolon, exec, ${lock}"
 
                     "$mod, D, killactive"
                     "$mod, U, togglefloating"
@@ -214,73 +216,82 @@ in {
 
         programs.zsh.shellAliases = { startx = "Hyprland"; };
 
-        # Swaylock
-        programs.swaylock = {
-            enable = true;
-            package = pkgs.swaylock-effects;
-            settings = with config.colorScheme.palette; let 
-                black = base03;
-                white = base04;
-                blue = base0D;
-                red = base08;
-                orange = base09;
-                yellow = base0A;
-                green = base0B;
-                transparent = "ffffff00";
-            in {
-                screenshots = true;
-                indicator = true;
-                disable-caps-lock-text = true;
-                #grace = 2;
-                effect-blur = "30x5";
-                font = "Mononoki Nerd Font";
-                font-size = 18;
-                # Static
-                ring-color = white;
-                inside-color = black;
-                ring-clear-color = green;
-                inside-clear-color = black;
-                ring-caps-lock-color = orange;
-                inside-caps-lock-color = black;
-                ring-ver-color = yellow;
-                inside-ver-color = black;
-                ring-wrong-color = red;
-                inside-wrong-color = black;
-                line-uses-ring = true;
-                separator-color = transparent;
-                text-color = transparent;
-                text-clear-color = transparent;
-                text-caps-lock-color = transparent;
-                text-ver-color = transparent;
-                text-wrong-color = transparent;
-                layout-bg-color = transparent;
-                layout-border-color = transparent;
-                layout-text-color = white;
-                # Reactive
-                key-hl-color = green;
-                bs-hl-color = red;
-                caps-lock-bs-hl-color = orange;
-                caps-lock-key-hl-color = orange;
-            };
-        };
+        home.file.".config/hypr/hyprlock.conf".text = with config.colorScheme.palette; ''
+            $text_color = rgba(${base04}FF)
+            $entry_background_color = rgba(${base01}FF)
+            $entry_border_color = rgba(${base0D}FF)
+            $entry_color = rgba(${base04}FF)
+            $font_family = Mononoki Nerd Font
+            $font_family_clock = Mononoki Nerd Font
 
-        # Swayidle
-        services.swayidle = {
-            enable = true;
-            events = [
-                { event = "before-sleep"; command = "${swaylock} -f"; }
-            ];
-            timeouts = [
-                #{ timeout = 600; command = "${swaylock} -f"; }
-                { timeout = 3600; command = "${systemctl} hibernate"; }
-                { timeout = 300; command = "${hyprctl} dispatch dpms off"; resumeCommand = "${hyprctl} dispatch dpms on"; }
-            ];
-        };
+            background {
+                path = screenshot
+                blur_size = 7
+                blur_passes = 4
+            }
+            input-field {
+                monitor = ${monitor1}
+                size = 250, 50
+                outline_thickness = 2
+                dots_size = 0.1
+                dots_spacing = 0.3
+                outer_color = $entry_border_color
+                inner_color = $entry_background_color
+                font_color = $entry_color
+                # fade_on_empty = true
+                rounding = 8
+
+                position = 0, 20
+                halign = center
+                valign = center
+            }
+
+            label { # Clock
+                monitor =
+                text = $TIME
+                color = $text_color
+                font_size = 65
+                font_family = $font_family_clock
+
+                position = 0, 300
+                halign = center
+                valign = center
+            }
+            label { # "locked" text
+                monitor =
+                text = locked
+                color = $text_color
+                font_size = 14
+                font_family = $font_family
+
+                position = 0, 50
+                halign = center
+                valign = bottom
+            }
+        '';
+
+        home.file.".config/hypr/hypridle.conf".text = ''
+            listener {
+                timeout = 600                              # 10 min
+                on-timeout = ${lock}                       # lock screen when timeout has passed
+            }
+
+            listener {
+                timeout = 300                              # 5min
+                on-timeout = ${hyprctl} dispatch dpms off  # screen off when timeout has passed
+                on-resume = ${hyprctl} dispatch dpms on    # screen on when activity is detected after timeout has fired.
+            }
+
+            listener {
+                timeout = 1800                             # 30min
+                on-timeout = ${systemctl} suspend          # suspend pc
+            }
+        '';
 
         # Wallpaper
-        home.file.".config/hypr/hyprpaper.conf".text = with config.colorScheme.palette; ''
+        home.file.".config/hypr/hyprpaper.conf".text = ''
             preload = ${wallpaper}
-            wallpaper = eDP-1,${wallpaper}
+            wallpaper = ${monitor1},${wallpaper}
             splash = false
             ipc = off
         '';
