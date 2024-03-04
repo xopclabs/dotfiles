@@ -28,7 +28,6 @@ in {
                 ];
 
                 exec-once = [
-                    "hyprctl keyword device:name kensington-expert-mouse:accel_profile flat"
                     "tmux new -s main"
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "ags -b hypr"
@@ -38,7 +37,6 @@ in {
                 ];
 
                 input  = {
-                    accel_profile = "flat";
                     follow_mouse = true;
                     touchpad = {
                         natural_scroll = true;
@@ -50,12 +48,6 @@ in {
                     kb_layout = "us,ru";
                     kb_options = "grp:alt_shift_toggle";
                 };
-
-                device = {
-                    name = "kensington-expert-mouse";
-                    sensitivity = -0.2;
-                };
-
 
                 gestures = {
                     workspace_swipe = true;
@@ -209,7 +201,14 @@ in {
                     ", XF86Launch5, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 1"
                 ];
             };
-        };
+            extraConfig = ''
+                device {
+                  name=kensington-expert-mouse
+                  accel_profile=flat
+                  sensitivity=-0.2
+                }
+              '';
+    };
 
         programs.zsh.shellAliases = { startx = "Hyprland"; };
 
