@@ -7,7 +7,7 @@ in {
     options.modules.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
         home.packages = [
-            maintenance sftpmpv tm freshman_start
+            maintenance sftpmpv tm freshman_start hyprshot
         ];
     };
 }
