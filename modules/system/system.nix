@@ -17,7 +17,6 @@
     };
     nixpkgs.config.allowUnfree = true;
 
-    # Boot settings: clean /tmp/, latest kernel and enable bootloader
     boot = {
         tmp.cleanOnBoot = true;
         kernelPackages = pkgs.linuxPackages_latest;
@@ -27,19 +26,26 @@
             efi.canTouchEfiVariables = true;
             timeout = 2;
         };
+        # Disable Nvidia dGPU
+        extraModprobeConfig = ''
+          blacklist nouveau
+          options nouveau modeset=0
+        '';
+        blacklistedKernelModules = [ "nouveau" "nvidia" "nvidia_drm" "nvidia_modeset" ];
     };
+    # Disable Nvidia dGPU
+    services.udev.extraRules = ''
+          # Remove NVIDIA USB xHCI Host Controller devices, if present
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{power/control}="auto", ATTR{remove}="1"
+          # Remove NVIDIA USB Type-C UCSI devices, if present
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{power/control}="auto", ATTR{remove}="1"
+          # Remove NVIDIA Audio devices, if present
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
+          # Remove NVIDIA VGA/3D controller devices
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
+    '';
 
-    environment.variables = {
-        NIXOS_CONFIG = "$HOME/nix-config/nixos/configuration.nix";
-        NIXOS_CONFIG_DIR = "$HOME/nix-config";
-        GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
-        GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
-        MOZ_ENABLE_WAYLAND = "1";
-        EDITOR = "nvim";
-        TERM="xterm-kitty";
-    };
-    services.upower.enable = true;
-
+    # Enable quicksync
     environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; }; # Force intel-media-driver
     hardware = {
         opengl = {
@@ -50,21 +56,10 @@
               intel-vaapi-driver
             ];
         };
-        nvidia = {
-            modesetting.enable = true;
-            powerManagement.enable = false;
-            open = false;
-            nvidiaSettings = false;
-            package = config.boot.kernelPackages.nvidiaPackages.stable;
-            prime = {
-                reverseSync.enable = true;
-                allowExternalGpu = false;
-                intelBusId = "PCI:0:2:0";
-                nvidiaBusId = "PCI:1:0:0";
-            };
-        };
     };
 
+    # Battery?
+    services.upower.enable = true;
     # Automounting
     services.gvfs.enable = true;
     services.devmon.enable = true;
@@ -75,6 +70,17 @@
         enable = true;
         enableOnBoot = true;
         rootless.enable = true;
+    };
+
+    # System env variables
+    environment.variables = {
+        NIXOS_CONFIG = "$HOME/nix-config/nixos/configuration.nix";
+        NIXOS_CONFIG_DIR = "$HOME/nix-config";
+        GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
+        GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
+        MOZ_ENABLE_WAYLAND = "1";
+        EDITOR = "nvim";
+        TERM="xterm-kitty";
     };
 
     # Do not touch
