@@ -7,7 +7,6 @@ let
     hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
 
     monitor1 = "eDP-1";
-    wallpaper = "/home/xopc/.config/ags/assets/nord.png";
 in {
     options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
     config = lib.mkIf cfg.enable {
@@ -195,6 +194,7 @@ in {
                     ",XF86AudioPrev,    ${e} 'mpris?.previous()'"
                     ",XF86AudioNext,    ${e} 'mpris?.next()'"
                     ",XF86AudioMicMute, ${e} 'audio.microphone.isMuted = !audio.microphone.isMuted'"
+                    ",switch:on:[Lid switch], exec, ${lock}"
                     ",switch:on:[Lid switch], exec, systemctl suspend"
                     ",switch:off:[Lid switch], exec, freshman_start"
                     ", XF86Tools, exec, hyprctl switchxkblayout architeuthis-dux 0"
@@ -289,9 +289,13 @@ in {
         '';
 
         # Wallpaper
+        home.file.".config/hypr/wallpaper" = {
+            recursive = true;
+            source = ./wallpaper;
+        };
         home.file.".config/hypr/hyprpaper.conf".text = ''
-            preload = ${wallpaper}
-            wallpaper = ${monitor1},${wallpaper}
+            preload = ${config.xdg.configHome}/hypr/wallpaper/nord.png
+            wallpaper = ${monitor1},${config.xdg.configHome}/hypr/wallpaper/nord.png
             splash = false
             ipc = off
         '';
