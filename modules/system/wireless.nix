@@ -45,12 +45,12 @@
         (pkgs.writeTextFile {
         name = "bluetooth_udev";
         text = ''
-            SUBSYSTEM=="usb", ATTRS{idVendor}=="8087", ATTRS{idProduct}=="0a2b" RUN+="/bin/sh -c 'echo enabled > /sys$env{DEVPATH}/../power/wakeup;'"
+            SUBSYSTEM=="usb", ATTRS{idVendor}=="2b89", ATTRS{idProduct}=="8761" RUN+="/bin/sh -c 'echo enabled > /sys$env{DEVPATH}/../power/wakeup;'"
         '';
-
         destination = "/etc/udev/rules.d/91-keyboard-mouse-wakeup.rules";
         })
     ];
     services.udev.extraRules = ''
+        SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0a2b", ATTR{authorized}="0"
     '';
 }
