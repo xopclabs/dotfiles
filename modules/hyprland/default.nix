@@ -3,15 +3,17 @@
 let 
     cfg = config.modules.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    systemctl = "${pkgs.systemd}/bin/systemctl";
-    hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
-
     monitor1 = "eDP-1";
 in {
-    options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
+    options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
+    imports = [
+        ./hyprlock.nix
+        ./hypridle.nix
+        ./hyprpaper.nix
+    ]; 
     config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
-            xwayland wlsunset wl-clipboard jq hyprpicker hypridle hyprpaper
+            xwayland wlsunset wl-clipboard hypridle hyprpaper
         ];
 
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
@@ -214,94 +216,6 @@ in {
               '';
     };
 
-        programs.zsh.shellAliases = { startx = "Hyprland"; };
-
-        programs.hyprlock = with config.colorScheme.palette;
-        let
-            text_color = "rgba(${base04}FF)";
-            entry_background_color = "rgba(${base01}FF)";
-            entry_border_color = "rgba(${base0D}FF)";
-            entry_color = "rgba(${base04}FF)";
-            font_family = "Mononoki Nerd Font";
-            font_family_clock = "Mononoki Nerd Font";
-        in { 
-            enable = true;
-            backgrounds = [
-                {
-                    path = "screenshot";
-                    blur_size = 7;
-                    blur_passes = 4;
-                }
-            ];
-            input-fields = [
-                {
-                    monitor = monitor1;
-                    size = {width = 250; height = 50;};
-                    outline_thickness = 2;
-                    dots_size = 0.1;
-                    dots_spacing = 0.3;
-                    outer_color = entry_border_color;
-                    inner_color = entry_background_color;
-                    font_color = entry_color;
-                    rounding = 8;
-                    position = {x = 0; y = 20;};
-                    halign = "center";
-                    valign = "center";
-                } 
-            ];
-
-            labels = [
-                {
-                    monitor = "";
-                    text = "$TIME";
-                    color = text_color;
-                    font_size = 65;
-                    font_family = font_family_clock;
-                    position = {x = 0; y = 300;};
-                    halign = "center";
-                    valign = "center";
-                }
-                { # "locked" text
-                    monitor = "";
-                    text = "locked";
-                    color = text_color;
-                    font_size = 14;
-                    font_family = font_family;
-                    position = {x = 0; y= 50;};
-                    halign = "center";
-                    valign = "bottom";
-                }
-            ];
-        };
-
-        home.file.".config/hypr/hypridle.conf".text = ''
-            listener {
-                timeout = 300                              # 5min
-                on-timeout = ${hyprctl} dispatch dpms off  # screen off when timeout has passed
-                on-resume = ${hyprctl} dispatch dpms on    # screen on when activity is detected after timeout has fired.
-            }
-
-            #listener {
-            #    timeout = 600                              # 10 min
-            #    on-timeout = ${lock}                       # lock screen when timeout has passed
-            #}
-
-            listener {
-                timeout = 1800                             # 30min
-                on-timeout = ${systemctl} suspend          # suspend pc
-            }
-        '';
-
-        # Wallpaper
-        home.file.".config/hypr/wallpaper" = {
-            recursive = true;
-            source = ./wallpaper;
-        };
-        home.file.".config/hypr/hyprpaper.conf".text = ''
-            preload = ${config.xdg.configHome}/hypr/wallpaper/nord.png
-            wallpaper = ${monitor1},${config.xdg.configHome}/hypr/wallpaper/nord.png
-            splash = false
-            ipc = off
-        '';
+    programs.zsh.shellAliases = { startx = "Hyprland"; };
     };
 }
