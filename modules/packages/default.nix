@@ -31,7 +31,15 @@ in {
             inputs.zmk-nix.packages.${system}.firmware
             inputs.zmk-nix.packages.${system}.flash
             inputs.zmk-nix.packages.${system}.update
-            # other
+            # dev-tools
+            cmake
+            mesa
+            pkg-config
+            git 
+            python3 
+            lua 
+            zig 
+            # linux utils
             utillinux
             iputils
             usbutils
@@ -39,12 +47,10 @@ in {
             busybox
             brightnessctl
             sudo
-            gnome.adwaita-icon-theme
             ripgrep
             ffmpeg
             tealdeer
             eza 
-            ranger
             htop 
             fzf
             pass 
@@ -60,28 +66,26 @@ in {
             imagemagick 
             age 
             libnotify
-            git 
-            python3 
-            lua 
-            zig 
             pqiv
             wf-recorder 
+            neofetch
+            clamav
+            pipes
+            tio
+            wev
+            melt
+            # gui/tui
+            gnome.adwaita-icon-theme
+            ranger
             slack
             discord
             telegram-desktop
-            neofetch
-            afetch
-            clamav
-            pipes
             libsForQt5.qt5.qtwayland
-            wev
             pavucontrol
             rnote
-            tio
             chromium
             stremio
             moonlight-qt
-            melt
         ];
     };
 }
