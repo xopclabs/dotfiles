@@ -21,12 +21,14 @@
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
         
-        #zmk-nix.url = "github:xopclabs/zmk-nix";
         zmk-nix.url = "/home/xopc/zmk-nix";
+
+        hyprland.url = "github:hyprwm/Hyprland";
+        hyprlock.url = "github:hyprwm/hyprlock";
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, ... }@inputs: 
+    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, hyprland, hyprlock, ... }@inputs: 
         let
             system = "x86_64-linux"; #current system
             pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
@@ -49,7 +51,9 @@
                                 # Home manager config (configures programs like firefox, zsh, eww, etc)
                                 users.xopc = (./. + "/hosts/${hostname}/user.nix");
                                 sharedModules = [
-                                    inputs.sops-nix.homeManagerModules.sops
+                                    sops-nix.homeManagerModules.sops
+                                    hyprland.homeManagerModules.default
+                                    hyprlock.homeManagerModules.default
                                 ];
                             };
                             nixpkgs.overlays = [

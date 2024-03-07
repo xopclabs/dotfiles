@@ -11,7 +11,7 @@ in {
     options.modules.hyprland= { enable = lib.mkEnableOption "hyprland"; };
     config = lib.mkIf cfg.enable {
         home.packages = with pkgs; [
-            xwayland wlsunset wl-clipboard jq hyprpicker hyprlock hypridle hyprpaper hyprland
+            xwayland wlsunset wl-clipboard jq hyprpicker hypridle hyprpaper
         ];
 
         wayland.windowManager.hyprland = {
@@ -272,15 +272,15 @@ in {
 
         home.file.".config/hypr/hypridle.conf".text = ''
             listener {
-                timeout = 600                              # 10 min
-                on-timeout = ${lock}                       # lock screen when timeout has passed
-            }
-
-            listener {
                 timeout = 300                              # 5min
                 on-timeout = ${hyprctl} dispatch dpms off  # screen off when timeout has passed
                 on-resume = ${hyprctl} dispatch dpms on    # screen on when activity is detected after timeout has fired.
             }
+
+            #listener {
+            #    timeout = 600                              # 10 min
+            #    on-timeout = ${lock}                       # lock screen when timeout has passed
+            #}
 
             listener {
                 timeout = 1800                             # 30min
