@@ -26,7 +26,7 @@
         # Extra security
         protectKernelImage = true;
         # Swaylock
-        pam.services.swaylock = {};
+        pam.services.hyprlock.text = "auth include login";
         polkit.enable = true;
     };
     services.clamav = {
