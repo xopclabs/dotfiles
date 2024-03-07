@@ -32,5 +32,4 @@
         packages.enable = true;
     };
     config.colorScheme = nix-colors.colorSchemes.nord;
-
 }
