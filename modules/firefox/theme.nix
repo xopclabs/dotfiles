@@ -85,7 +85,7 @@ in {
             }
             }
         '';
-        home.file."nix-config/modules/firefox/theme/treestyletab.css".text = with config.colorScheme.palette; ''
+        home.file."dotfiles/modules/firefox/theme/treestyletab.css".text = with config.colorScheme.palette; ''
                 :root {
                 /* This value should be updated here and in the userChrome.css */
                     --tst-sidepanel-hide-delay: 0s;
