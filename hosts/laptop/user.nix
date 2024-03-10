@@ -12,6 +12,7 @@
         firefox.enable = true;
         kitty.enable = true;
         hyprland.enable = true;
+        ags.enable = true;
         vscode.enable = true;
         mpv.enable = true;
 
