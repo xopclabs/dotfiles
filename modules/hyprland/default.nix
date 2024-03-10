@@ -32,11 +32,12 @@ in {
                 ];
 
                 exec-once = [
+                    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprpaper"
                     "hypridle"
-                    "tmux new -s main"
-                    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+                    "waybar"
                     "ags -b hypr"
+                    "tmux new -s main"
                     "[workspace 7 silent] telegram-desktop"
                     "[workspace 8 silent] slack"
                     "freshman_start"
@@ -71,18 +72,18 @@ in {
                 general  = {
                     layout = "master";
                     resize_on_border = true;
-                    gaps_in = 6;
-                    gaps_out = 12;
+                    gaps_in = 9;
+                    gaps_out = 18;
                     border_size = 4;
                     "col.active_border" = "0xff${base0D}";
-                    "col.inactive_border" = "0xff${base00}";
+                    "col.inactive_border" = "0xff${base01}";
                 };
 
                 decoration = {
-                    rounding = 8;
-                    drop_shadow = false;
-                    shadow_range = 60;
-                    "col.shadow" = "0x66000000";
+                    rounding = 1;
+                    drop_shadow = true;
+                    shadow_range = 30;
+                    "col.shadow" = "0x8800000";
                 };
 
                 animations  = {
@@ -149,6 +150,7 @@ in {
                     ];
                 in [
                     "CTRL SHIFT, Slash,  ${e} quit; ags -b hypr"
+                    "CTRL SHIFT, Slash,  exec, pkill waybar; waybar"
                     "$mod, L,       ${e} -t applauncher"
                     ", XF86PowerOff, ${e} -t powermenu"
                     ",Print, exec, hyprshot -m region -F --clipboard-only"
@@ -189,13 +191,7 @@ in {
                     ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.05; indicator.speaker()'"
                 ];
 
-                bindl = let e = "exec, ags -b hypr -r"; in [
-                    ",XF86AudioPlay,    ${e} 'mpris?.playPause()'"
-                    ",XF86AudioStop,    ${e} 'mpris?.stop()'"
-                    ",XF86AudioPause,   ${e} 'mpris?.pause()'"
-                    ",XF86AudioPrev,    ${e} 'mpris?.previous()'"
-                    ",XF86AudioNext,    ${e} 'mpris?.next()'"
-                    ",XF86AudioMicMute, ${e} 'audio.microphone.isMuted = !audio.microphone.isMuted'"
+                bindl = [
                     ",switch:on:[Lid switch], exec, ${lock}"
                     ",switch:on:[Lid switch], exec, systemctl suspend"
                     ",switch:off:[Lid switch], exec, freshman_start"

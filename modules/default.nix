@@ -10,6 +10,7 @@
         ./kitty
         ./dunst
         ./hyprland
+        ./waybar
         ./ags
         ./vscode
         ./mpv
