@@ -18,8 +18,8 @@ in {
 
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
             enable = true;
-            systemd.enable = true;
             xwayland.enable = true;
+            systemd.enable = true;
 
             settings = {
                 "$terminal" = "tm";
