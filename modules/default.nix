@@ -4,13 +4,14 @@
     home.stateVersion = "24.05";
     imports = [
         # gui
+        ./hyprland
+        ./waybar
+        ./rofi
         ./gtk
         ./floorp
         ./firefox
         ./kitty
         ./dunst
-        ./hyprland
-        ./waybar
         ./vscode
         ./mpv
 
@@ -22,12 +23,12 @@
         ./zsh
         ./git
         ./gpg
-        ./direnv
         ./ssh
 
         # system
         ./xdg
         ./sops
     	./packages
+    	./scripts
     ];
 }

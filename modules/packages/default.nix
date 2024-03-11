@@ -12,21 +12,10 @@ let cfg = config.modules.packages;
             --add-flags "--ozone-platform=wayland --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer"
         '';
     });
-    maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
-    sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
-    tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
-    freshman_start = pkgs.writeShellScriptBin "freshman_start" ''${builtins.readFile ../scripts/freshman_start}'';
-    hyprshot = pkgs.writeShellScriptBin "hyprshot" ''${builtins.readFile ../scripts/hyprshot}'';
 in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
-            # scripts
-            maintenance
-            sftpmpv
-            tm
-            freshman_start
-            hyprshot
             # zmk-nix
             inputs.zmk-nix.packages.${system}.firmware
             inputs.zmk-nix.packages.${system}.flash
