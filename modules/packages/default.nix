@@ -63,6 +63,7 @@ in {
             tio
             wev
             melt
+            pfetch
             # gui/tui
             gnome.adwaita-icon-theme
             ranger
