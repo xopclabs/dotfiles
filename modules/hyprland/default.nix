@@ -73,7 +73,7 @@ in {
                     layout = "master";
                     resize_on_border = true;
                     gaps_in = 9;
-                    gaps_out = "0,18,0,0";
+                    gaps_out = "0,0,0,18";
                     border_size = 4;
                     "col.active_border" = "0xff${base0D}";
                     "col.inactive_border" = "0xff${base01}";
