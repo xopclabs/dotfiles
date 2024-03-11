@@ -22,11 +22,12 @@
         zmk-nix.url = "/home/xopc/zmk-nix";
 
         hyprlock.url = "github:hyprwm/hyprlock";
+        waybar.url = "github:Alexays/Waybar";
         #hyprland.url = "github:hyprwm/Hyprland";
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, hyprlock, ... }@inputs: 
+    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, hyprlock, waybar, ... }@inputs: 
         let
             system = "x86_64-linux"; #current system
             pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;

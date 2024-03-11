@@ -48,6 +48,22 @@
         "type": "github"
       }
     },
+    "flake-compat_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1696426674,
+        "narHash": "sha256-kvjfFW7WAETZlt09AgDn1MrtKzP7t90Vf7vypd3OL1U=",
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "rev": "0f9255e01c2351cc7d116c072cb317785dd33b33",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib_2"
@@ -311,6 +327,22 @@
     },
     "nixpkgs_6": {
       "locked": {
+        "lastModified": 1704538339,
+        "narHash": "sha256-1734d3mQuux9ySvwf6axRWZRBhtcZA9Q8eftD6EZg6U=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "46ae0210ce163b3cba6c7da08840c1d63de9c701",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_7": {
+      "locked": {
         "lastModified": 1704842529,
         "narHash": "sha256-OTeQA+F8d/Evad33JMfuXC89VMetQbsU4qcaePchGr4=",
         "owner": "NixOS",
@@ -351,6 +383,7 @@
         "nur": "nur",
         "sops-nix": "sops-nix",
         "tmux-sessionx": "tmux-sessionx",
+        "waybar": "waybar",
         "zmk-nix": "zmk-nix"
       }
     },
@@ -422,15 +455,35 @@
         "type": "github"
       }
     },
-    "zmk-nix": {
+    "waybar": {
       "inputs": {
+        "flake-compat": "flake-compat_2",
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "dirtyRev": "e76eebe135bc7eb9dec946b7f6a01fccf63cae61-dirty",
-        "dirtyShortRev": "e76eebe-dirty",
-        "lastModified": 1707418790,
+        "lastModified": 1709625704,
+        "narHash": "sha256-9zUqV1wxUAuRRBMQCUZEf5FjIKMeTEhWTLOfL4+9EiE=",
+        "owner": "Alexays",
+        "repo": "Waybar",
+        "rev": "4c46d7d245a6c06644d6a0e8857f7140556202ce",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Alexays",
+        "repo": "Waybar",
+        "type": "github"
+      }
+    },
+    "zmk-nix": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_7"
+      },
+      "locked": {
+        "lastModified": 1710183436,
         "narHash": "sha256-KnlE5mEnYoeew42npoexNPsXA57KKsHAMShnIE8juA4=",
+        "ref": "refs/heads/main",
+        "rev": "3267abeaa1f427580b7ac4bd3a883ae421a6e002",
+        "revCount": 90,
         "type": "git",
         "url": "file:///home/xopc/zmk-nix"
       },
