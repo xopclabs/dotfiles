@@ -28,7 +28,7 @@ in {
                 "$altMod" = "SUPER_CTRL";
 
                 monitor = [
-                    "${monitor1}, 1920x1080@60, 0x0, 1"
+                    "${monitor1}, 1920x1080@60, 0x0, auto"
                 ];
 
                 exec-once = [
@@ -73,14 +73,14 @@ in {
                     layout = "master";
                     resize_on_border = true;
                     gaps_in = 9;
-                    gaps_out = 18;
+                    gaps_out = "0,18,0,0";
                     border_size = 4;
                     "col.active_border" = "0xff${base0D}";
                     "col.inactive_border" = "0xff${base01}";
                 };
 
                 decoration = {
-                    rounding = 1;
+                    rounding = 0;
                     drop_shadow = true;
                     shadow_range = 30;
                     "col.shadow" = "0x8800000";
