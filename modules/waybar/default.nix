@@ -137,6 +137,7 @@ in {
                         format-icons = [
                             "" "" "" "" ""
                         ];
+                        interval = 5;
                         tooltip-format = "{capacity:0>2}%";
                         states = {
                             warning = 20;
@@ -355,19 +356,19 @@ in {
             }
 
             #battery { color: @battery-color; }
-            #battery.warning { color: @critical; }
-            #battery.good { color: @warning; }
-            #battery.great { color: @battery-color; }
-            #battery.full { color: @gbattery-color; }
-            #battery.warning.discharging {
-                color: @warning;
-            }
             #battery.critical.discharging {
                 animation-timing-function: linear;
                 animation-iteration-count: infinite;
                 animation-direction: alternate;
                 animation-name: blink-critical;
                 animation-duration: 1s;
+            }
+            #battery.warning { color: @critical; }
+            #battery.good { color: @warning; }
+            #battery.great { color: @battery-color; }
+            #battery.full { color: @gbattery-color; }
+            #battery.warning.discharging {
+                color: @warning;
             }
 
 
