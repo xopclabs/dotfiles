@@ -14,8 +14,6 @@
 
         nix-colors.url = "github:Misterio77/nix-colors";
 
-        ags.url = "github:Aylur/ags/f681ba237a09bb0ad0c27d8792badcb4a4116e7a";
-
         firefox-nordic.url = "github:EliverLara/firefox-nordic-theme";
         firefox-nordic.flake = false;
 
@@ -23,12 +21,12 @@
         
         zmk-nix.url = "/home/xopc/zmk-nix";
 
-        hyprland.url = "github:hyprwm/Hyprland";
         hyprlock.url = "github:hyprwm/hyprlock";
+        #hyprland.url = "github:hyprwm/Hyprland";
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, hyprland, hyprlock, ... }@inputs: 
+    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, hyprlock, ... }@inputs: 
         let
             system = "x86_64-linux"; #current system
             pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
@@ -52,8 +50,8 @@
                                 users.xopc = (./. + "/hosts/${hostname}/user.nix");
                                 sharedModules = [
                                     sops-nix.homeManagerModules.sops
-                                    hyprland.homeManagerModules.default
                                     hyprlock.homeManagerModules.default
+                                    #hyprland.homeManagerModules.default
                                 ];
                             };
                             nixpkgs.overlays = [
