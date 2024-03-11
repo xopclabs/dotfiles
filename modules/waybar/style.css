@@ -1,0 +1,160 @@
+@import "colors.css";
+
+/* Reset all styles */
+* {
+	border: none;
+	border-radius: 0;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	box-shadow: none;
+	text-shadow: none;
+	-gtk-icon-shadow: none;
+}
+
+/* The whole bar */
+#waybar {
+	background: @background;
+	color: @foreground;
+	font-family: "Mononoki Nerd Font";
+	font-size: 14pt;
+	font-weight: bold;
+	margin: 0px;
+}
+
+/* Each module */
+#workspaces,
+#tray,
+#group-status,
+#language,
+#network,
+#battery,
+#group-control,
+#pulseaudio,
+#backlight,
+#clock,
+#group-power,
+#custom-power,
+#custom-lock,
+#custom-quit,
+#custom-reboot {
+	margin-left: 0.5rem;
+	margin-right: 0.5rem;
+}
+
+/* Each module in order of appearance */
+/* Top */
+#workspaces button {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem; 
+    font-size: 14pt;
+    color: @text;
+    background-color: @workspaces-background;
+}
+#workspaces button.visible {
+    background-color: @workspaces-visible;
+}
+#workspaces button.active {
+    background-color: @workspaces-active;
+}
+#workspaces button.urgent {
+    background-color: @warning;
+}
+#workspaces button:hover {
+    text-shadow: inherit;
+    transition: none;
+    border: none;
+    background: none;
+    background-color: @workspaces-hover-background;
+}
+#workspaces button.active:hover {
+    background-color: @workspaces-active;
+    color: @workspaces-background;
+}
+
+
+/* Bottom */
+#tray, 
+#group-status,
+#group-control,
+#clock,
+#group-power {
+    background-color: @dynamic-lightblack;
+    margin: 0.5rem;
+}
+#group-status *,
+#group-control *,
+#group-power * {
+    margin: 0px;
+    padding: 0.5rem;
+}
+    
+/* Status group*/
+#language {
+    color: @language-color;
+}
+
+#network {
+    color: @network-color;
+}
+#network.disconnected {
+    color: @warning;
+}
+
+#battery { color: @battery-color; }
+#battery.warning { color: @critical; }
+#battery.good { color: @warning; }
+#battery.great { color: @battery-color; }
+#battery.full { color: @gbattery-color; }
+#battery.warning.discharging {
+    color: @warning;
+}
+#battery.critical.discharging {
+	animation-timing-function: linear;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-name: blink-critical;
+	animation-duration: 1s;
+}
+
+
+/* Control group */
+#pulseaudio-slider, 
+#pulseaudio-slider *, 
+#group-audio { margin: 0; padding: 0; }
+#pulseaudio-slider highlight { background-color: @audio-color; }
+#pulseaudio { color: @audio-color; }
+
+#backlight-slider, 
+#backlight-slider *, 
+#group-backlight { margin: 0; padding: 0; }
+#backlight { color: @backlight-color; }
+#backlight-slider highlight { background-color: @backlight-color; }
+
+/* Power group */
+
+#custom-power { color: @power-color; padding-bottom: 6px; }
+#custom-reboot { color: @reboot-color; }
+#custom-lock { color: @lock-color; }
+#custom-quit { color: @quit-color; }
+
+/* Slider-related CSS */
+slider {
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+
+trough {
+    min-height: 80px;
+    min-width: 10px;
+    border-radius: 5px;
+}
+
+highlight {
+    min-width: 10px;
+    border-radius: 5px;
+}
