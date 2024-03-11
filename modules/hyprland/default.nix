@@ -149,7 +149,7 @@ in {
                         { key = "p"; n = "8"; }
                     ];
                 in [
-                    "CTRL SHIFT, Slash,  exec, pkill waybar; waybar"
+                    "CTRL SHIFT, Slash,  exec, pkill waybar & waybar"
                     "$mod, L, exec, launcher"
                     ", XF86PowerOff, exec, powermenu"
                     ",Print, exec, hyprshot -m region -F --clipboard-only"
