@@ -13,6 +13,7 @@
         kitty.enable = true;
         hyprland.enable = true;
         waybar.enable = true;
+        rofi.enable = true;
         vscode.enable = true;
         mpv.enable = true;
 
@@ -24,13 +25,13 @@
         tmux.enable = true;
         git.enable = true;
         gpg.enable = true;
-        direnv.enable = true;
         ssh.enable = true;
 
         # system
         xdg.enable = true;
         sops.enable = true;
         packages.enable = true;
+        scripts.enable = true;
     };
     config.colorScheme = nix-colors.colorSchemes.nord;
 }

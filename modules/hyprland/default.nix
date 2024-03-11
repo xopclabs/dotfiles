@@ -28,7 +28,7 @@ in {
                 "$altMod" = "SUPER_CTRL";
 
                 monitor = [
-                    "${monitor1}, 1920x1080@60, 0x0, auto"
+                    "${monitor1}, 1920x1080@60, 0x0, 1"
                 ];
 
                 exec-once = [
@@ -149,10 +149,9 @@ in {
                         { key = "p"; n = "8"; }
                     ];
                 in [
-                    "CTRL SHIFT, Slash,  ${e} quit; ags -b hypr"
                     "CTRL SHIFT, Slash,  exec, pkill waybar; waybar"
-                    "$mod, L,       ${e} -t applauncher"
-                    ", XF86PowerOff, ${e} -t powermenu"
+                    "$mod, L, exec, launcher"
+                    ", XF86PowerOff, exec, powermenu"
                     ",Print, exec, hyprshot -m region -F --clipboard-only"
                     "SHIFT,Print, exec, hyprshot -F --clipboard-only"
                     "$mod, Space, exec, $terminal"

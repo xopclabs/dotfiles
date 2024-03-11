@@ -3,14 +3,20 @@
 with lib;
 let 
     cfg = config.modules.scripts;
+    maintenance = pkgs.writeShellScriptBin "maintenance" ''${builtins.readFile ../scripts/maintenance}'';
+    sftpmpv = pkgs.writeShellScriptBin "sftpmpv" ''${builtins.readFile ../scripts/sftpmpv}'';
+    tm = pkgs.writeShellScriptBin "tm" ''${builtins.readFile ../scripts/tm}'';
+    freshman_start = pkgs.writeShellScriptBin "freshman_start" ''${builtins.readFile ../scripts/freshman_start}'';
+    hyprshot = pkgs.writeShellScriptBin "hyprshot" ''${builtins.readFile ../scripts/hyprshot}'';
 in {
     options.modules.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
         home.packages = [
-            maintenance 
-            sftpmpv 
-            tm 
-            freshman_start 
+            # scripts
+            maintenance
+            sftpmpv
+            tm
+            freshman_start
             hyprshot pkgs.jq pkgs.hyprpicker
         ];
     };
