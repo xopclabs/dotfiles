@@ -9,7 +9,8 @@ in {
             settings.mainBar."hyprland/workspaces" = {
                 window-rewrite-default = "󱗜";
                 window-rewrite = {
-                    "title<.*youtube.*>" = "󰗃";
+                    "title<.*YouTube.*>" = "󰗃";
+                    "title<.*Dreaming Spanish.*>" = "";
                     "class<firefox>" = "󰈹";
                     "class<floorp>" = "󰈹";
                     "class<kitty>" = "";
