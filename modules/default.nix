@@ -27,7 +27,6 @@
 
         # system
         ./xdg
-        ./sops
     	./packages
     	./scripts
     ];

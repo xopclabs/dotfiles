@@ -36,7 +36,7 @@
     services.gnome.gnome-keyring.enable = true;
 
     sops = {
-        defaultSopsFile = ../../secrets.yaml;
+        defaultSopsFile = ../secrets.yaml;
         age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
     };
 }
