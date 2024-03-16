@@ -3,7 +3,7 @@
     inherit system;
     specialArgs = { inherit inputs self; };
     modules = [
-      "${self}/hosts/${name}/hardware-configuration.nix"
+      "${self}/hosts/${name}/system/hardware-configuration.nix"
       "${self}/hosts/${name}/user.nix"
     ];
   }
