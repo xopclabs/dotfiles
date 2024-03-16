@@ -8,7 +8,6 @@ in {
     config = mkIf cfg.enable {
         sops = {
             defaultSopsFile = ../../secrets.yaml;
-            age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
             age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
         };
     };
