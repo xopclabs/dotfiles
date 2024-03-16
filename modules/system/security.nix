@@ -37,7 +37,6 @@
 
     sops = {
         defaultSopsFile = ../../secrets.yaml;
-        age.keyFile = "/home/xopc/.config/sops/age/keys.txt";
         age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
     };
 }
