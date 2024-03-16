@@ -3,8 +3,8 @@
 {
     imports = [ 
         ../../modules/default.nix 
+        ./sops.nix
         inputs.nix-colors.homeManagerModules.default
-        inputs.sops-nix.homeManagerModules.sops
         inputs.hyprlock.homeManagerModules.default
         #inputs.hyprland.homeManagerModules.default
     ];
@@ -32,7 +32,6 @@
 
         # system
         xdg.enable = true;
-        sops.enable = true;
         packages.enable = true;
         scripts.enable = true;
     };

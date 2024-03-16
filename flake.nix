@@ -39,9 +39,9 @@
                     modules = [
                         { networking.hostName = hostname; }
                         # General configuration (users, networking, sound, etc)
-                        ./modules/system/configuration.nix
+                        (./. + "/hosts/${hostname}/system/configuration.nix")
                         # Hardware config (bootloader, kernel modules, filesystems, etc)
-                        (./. + "/hosts/${hostname}/hardware-configuration.nix")
+                        (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
                         {
                             home-manager = {
                                 useUserPackages = true;
@@ -50,6 +50,7 @@
                                 users."${username}" = (./. + "/hosts/${hostname}/user.nix");
                             };
                             nixpkgs.overlays = [ inputs.nur.overlay ];
+                            sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
                         inputs.home-manager.nixosModules.home-manager
                         inputs.sops-nix.nixosModules.sops
