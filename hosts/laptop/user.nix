@@ -1,9 +1,12 @@
-{ config, lib, inputs, nix-colors, zmk-nix, ...}:
+{ config, lib, inputs, ...}:
 
 {
     imports = [ 
         ../../modules/default.nix 
-        nix-colors.homeManagerModules.default
+        inputs.nix-colors.homeManagerModules.default
+        inputs.sops-nix.homeManagerModules.sops
+        inputs.hyprlock.homeManagerModules.default
+        #inputs.hyprland.homeManagerModules.default
     ];
     config.modules = {
         # gui
@@ -33,5 +36,5 @@
         packages.enable = true;
         scripts.enable = true;
     };
-    config.colorScheme = nix-colors.colorSchemes.nord;
+    config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

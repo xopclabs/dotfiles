@@ -27,13 +27,13 @@
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, nur, nix-vscode-extensions, sops-nix, nix-colors, hyprlock, waybar, ... }@inputs: 
+    outputs = { home-manager, nixpkgs, ... }@inputs: 
         let
-            system = "x86_64-linux"; #current system
+            system = "x86_64-linux";
             pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
             lib = nixpkgs.lib;
 
-            mkSystem = pkgs: system: hostname:
+            mkSystem = pkgs: system: hostname: username:
                 pkgs.lib.nixosSystem {
                     system = system;
                     modules = [
@@ -46,31 +46,22 @@
                             home-manager = {
                                 useUserPackages = true;
                                 useGlobalPkgs = true;
-                                extraSpecialArgs = { inherit inputs; inherit nix-colors; };
-                                # Home manager config (configures programs like firefox, zsh, eww, etc)
-                                users.xopc = (./. + "/hosts/${hostname}/user.nix");
-                                sharedModules = [
-                                    sops-nix.homeManagerModules.sops
-                                    hyprlock.homeManagerModules.default
-                                    #hyprland.homeManagerModules.default
-                                ];
+                                extraSpecialArgs = { inherit inputs; };
+                                users."${username}" = (./. + "/hosts/${hostname}/user.nix");
                             };
-                            nixpkgs.overlays = [
-                                # Add nur overlay for Firefox addons
-                                nur.overlay
-                            ];
+                            nixpkgs.overlays = [ inputs.nur.overlay ];
                         }
-                        home-manager.nixosModules.home-manager
-                        sops-nix.nixosModules.sops
+                        inputs.home-manager.nixosModules.home-manager
+                        inputs.sops-nix.nixosModules.sops
                     ];
                     specialArgs = { inherit inputs; };
                 };
 
         in {
             nixosConfigurations = {
-                # Now, defining a new system is can be done in one line
-                #                                Architecture   Hostname
-                laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop";
+                #                                Architecture   Hostname Username
+                laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
+                #dev = mkSystem inputs.nixpkgs    "x86_64-linux" "dev"    "xopc";
             };
     };
 }
