@@ -3,22 +3,27 @@
 with lib;
 let 
     cfg = config.modules.vscode;
+    vscode = pkgs.vscode.overrideAttrs (old: {
+        installPhase = old.installPhase + ''
+          rm $out/bin/code
+          makeWrapper $out/lib/vscode/code $out/bin/code \
+            --add-flags "--enable-features=UseOzonePlatform --ozone-platform=wayland"
+        '';
+    });
 in {
     options.modules.vscode = { enable = mkEnableOption "vscode"; };
     config = mkIf cfg.enable {
-        home.packages = with pkgs; [
-            vscode
-        ];
-	programs.vscode = {
+        programs.vscode = {
             enable = true;
+            package = vscode;
             extensions = with pkgs.vscode-extensions; [
                 arcticicestudio.nord-visual-studio-code
-		ms-python.python
-		ms-python.vscode-pylance
-		ms-vscode-remote.remote-containers
-		ms-vscode-remote.remote-ssh
-		vscodevim.vim
-	    ];
+                ms-python.python
+                ms-python.vscode-pylance
+                ms-vscode-remote.remote-containers
+                ms-vscode-remote.remote-ssh
+                vscodevim.vim
+            ];
             userSettings = {
                "window.titleBarStyle" = "custom";
                "workbench.colorTheme" = "Nord";
