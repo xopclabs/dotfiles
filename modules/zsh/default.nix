@@ -26,7 +26,7 @@ in {
 
 
             enableCompletion = true;
-            enableAutosuggestions = true;
+            autosuggestion.enable = true;
             syntaxHighlighting.enable = true;
 
             # Set some aliases

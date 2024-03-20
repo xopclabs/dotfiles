@@ -27,7 +27,7 @@
         zsh.enable = true;
         tmux.enable = true;
         git.enable = true;
-        gpg.enable = true;
+        gpg.enable = false;
         ssh.enable = true;
 
         # system
