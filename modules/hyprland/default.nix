@@ -156,7 +156,7 @@ in {
                     "SHIFT,Print, exec, hyprshot -F --clipboard-only"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
-                    "$mod, H, exec, floorp"
+                    "$mod, H, exec, firefox"
                     "$mod, M, exec, kitty -e ranger"
                     "$mod, Semicolon, exec, ${lock}"
 

@@ -265,6 +265,10 @@ in {
                     box-shadow: unset;
                     outline: unset;
                 }
+
+                #tabbar-container {
+                    margin-left: -5px;
+                }
         '';
     };
 }
