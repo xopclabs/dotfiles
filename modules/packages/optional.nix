@@ -38,6 +38,7 @@ in {
             chromium
             stremio
             moonlight-qt
+            aseprite
         ];
     };
 }
