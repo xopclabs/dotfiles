@@ -4,6 +4,7 @@ let
     cfg = config.modules.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     monitor1 = "eDP-1";
+    monitor2 = "HDMI-A-2";
 in {
     options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
     imports = [
@@ -29,6 +30,7 @@ in {
 
                 monitor = [
                     "${monitor1}, 1920x1080@60, 0x0, 1"
+                    "${monitor2}, 1920x1080@75, 1920x0, 1"
                 ];
 
                 exec-once = [
@@ -104,8 +106,8 @@ in {
                 ];
 
                 windowrulev2 = [
-                    "workspace 7, monitor 1,class:^(telegram-desktop)$"
-                    "workspace 8, monitor 1,class:^(slack)$"
+                    "workspace 7, monitor ${monitor1},class:^(telegram-desktop)$"
+                    "workspace 8, monitor ${monitor1},class:^(slack)$"
 
                     "float, title:(Picture-in-Picture)"
                     "move onscreen cursor -50 -50, title:(Picture-in-Picture)" 
@@ -127,6 +129,18 @@ in {
                     "noinitialfocus,class:(xwaylandvideobridge)"
                     "maxsize 1 1,class:(xwaylandvideobridge)"
                     "noblur,class:(xwaylandvideobridge)"
+                ];
+
+                # workspace rules
+                workspace = [
+                    "1, monitor:${monitor2}"
+                    "2, monitor:${monitor2}"
+                    "3, monitor:${monitor2}"
+                    "4, monitor:${monitor2}"
+                    "5, monitor:${monitor1}"
+                    "6, monitor:${monitor1}"
+                    "7, monitor:${monitor1}"
+                    "8, monitor:${monitor1}"
                 ];
 
                 # binds
