@@ -12,7 +12,7 @@ in
         font_family = "Mononoki Nerd Font";
         font_family_clock = "Mononoki Nerd Font";
     in { 
-        enable = true;
+        enable = false;
         backgrounds = [
             {
                 path = "screenshot";
