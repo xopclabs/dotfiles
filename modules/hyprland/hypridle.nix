@@ -17,9 +17,9 @@ in
         #    on-timeout = ${lock}                       # lock screen when timeout has passed
         # }
 
-        listener {
-            timeout = 1800                             # 30min
-            on-timeout = ${systemctl} suspend          # suspend pc
-        }
+        # listener {
+        #    timeout = 1800                             # 30min
+        #    on-timeout = ${systemctl} suspend          # suspend pc
+        # }
     '';
 }

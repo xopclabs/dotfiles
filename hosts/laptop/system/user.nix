@@ -10,10 +10,10 @@
     };
 
     # Set up locales (timezone and keyboard layout)
-    time.timeZone = "Asia/Tbilisi";
     i18n.defaultLocale = "en_US.UTF-8";
     console = {
         font = "Lat2-Terminus16";
         keyMap = "us";
     };
+    services.automatic-timezoned.enable = true;
 }
