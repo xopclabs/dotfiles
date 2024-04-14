@@ -495,11 +495,10 @@
         "nixpkgs": "nixpkgs_7"
       },
       "locked": {
-        "lastModified": 1712595415,
-        "narHash": "sha256-51R4DSW6/WFF2rl6q6njfE5V+h0nuct8PXGKlkVUVZY=",
-        "ref": "refs/heads/main",
-        "rev": "8d77c20b92194e7b7a500727cf94a1074d5cd9be",
-        "revCount": 91,
+        "dirtyRev": "dc6b18ea2ee74f95a652513054fca48ce43e1f6c-dirty",
+        "dirtyShortRev": "dc6b18e-dirty",
+        "lastModified": 1713126420,
+        "narHash": "sha256-oRafq3UJTRQ4u20BdcOsnMyYOg10ESwrULwjjShqFOQ=",
         "type": "git",
         "url": "file:///home/xopc/zmk-nix"
       },
