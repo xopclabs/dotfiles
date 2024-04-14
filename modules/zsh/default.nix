@@ -41,7 +41,7 @@ in {
                 grep = "grep";
                 reconfig = "STARTDIR=$(pwd); cd $NIXOS_CONFIG_DIR; nix flake lock --update-input zmk-nix; sudo nixos-rebuild switch --flake \"$NIXOS_CONFIG_DIR?submodules=1\" --fast; cd $STARTDIR";
                 slack = "slack --ozone-platform=wayland --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer";
-                visecret = "nix-shell -p sops --run \"sops $NIXOS_CONFIG_DIR/secrets.yaml\"";
+                visecret = "nix-shell -p sops --run \"sops $NIXOS_CONFIG_DIR/hosts/laptop/secrets.yaml\"";
             };
 
             # Source all plugins, nix-style

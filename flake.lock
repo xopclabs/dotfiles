@@ -495,10 +495,11 @@
         "nixpkgs": "nixpkgs_7"
       },
       "locked": {
-        "dirtyRev": "3267abeaa1f427580b7ac4bd3a883ae421a6e002-dirty",
-        "dirtyShortRev": "3267abe-dirty",
-        "lastModified": 1710183436,
+        "lastModified": 1712595415,
         "narHash": "sha256-51R4DSW6/WFF2rl6q6njfE5V+h0nuct8PXGKlkVUVZY=",
+        "ref": "refs/heads/main",
+        "rev": "8d77c20b92194e7b7a500727cf94a1074d5cd9be",
+        "revCount": 91,
         "type": "git",
         "url": "file:///home/xopc/zmk-nix"
       },
