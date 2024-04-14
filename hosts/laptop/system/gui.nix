@@ -8,6 +8,9 @@
     # Install fonts
     fonts = {
         packages = with pkgs; [
+            noto-fonts
+            noto-fonts-cjk
+            noto-fonts-extra
             jetbrains-mono
             roboto
             openmoji-color
