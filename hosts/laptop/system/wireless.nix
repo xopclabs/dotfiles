@@ -19,7 +19,7 @@
             };
             vps = {
                 configFile = config.sops.secrets."vpn/vps".path;
-                autostart = false;
+                autostart = true;
             };
         };
     };
