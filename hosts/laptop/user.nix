@@ -29,6 +29,7 @@
         git.enable = true;
         gpg.enable = false;
         ssh.enable = true;
+        nh.enable = true;
 
         # system
         xdg.enable = true;
