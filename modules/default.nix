@@ -24,6 +24,7 @@
         ./git
         ./gpg
         ./ssh
+        ./nh
 
         # system
         ./xdg
