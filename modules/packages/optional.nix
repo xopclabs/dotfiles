@@ -39,6 +39,7 @@ in {
             stremio
             moonlight-qt
             aseprite
+            tigervnc
         ];
     };
 }
