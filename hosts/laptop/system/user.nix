@@ -2,9 +2,10 @@
 
 {
     programs.zsh.enable = true;
+    programs.adb.enable = true;
     # Set up user and enable sudo
     users.users.xopc = {
-        extraGroups = [ "input" "wheel" "networkmanager" "storage" ];
+        extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" ];
         shell = pkgs.zsh;
         isNormalUser = true;
     };
