@@ -54,6 +54,9 @@ in {
                    "unpkg.com"
                ];
                "jupyter.askForKernelRestart" = false;
+               "twinny.ollamaHostname" = "";
+               "twinny.ollamaApiPort" = "443";
+               "twinny.ollamaUseTls" = true;
             };
         };
     };
