@@ -26,6 +26,7 @@
         pass 
         gnupg 
         bat
+        zip
         unzip 
         lm_sensors
         lowdown 
