@@ -25,6 +25,7 @@
         ./gpg
         ./ssh
         ./nh
+        ./ranger
 
         # system
         ./xdg
