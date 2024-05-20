@@ -72,6 +72,7 @@ in {
                 };
 
                 general  = {
+                    allow_tearing = true;
                     layout = "master";
                     resize_on_border = true;
                     gaps_in = 9;
@@ -80,6 +81,10 @@ in {
                     "col.active_border" = "0xff${base0D}";
                     "col.inactive_border" = "0xff${base01}";
                 };
+
+                env = [
+                    "WLR_DRM_NO_ATOMIC,1"
+                ];
 
                 decoration = {
                     rounding = 0;
@@ -129,6 +134,7 @@ in {
                     "noinitialfocus,class:(xwaylandvideobridge)"
                     "maxsize 1 1,class:(xwaylandvideobridge)"
                     "noblur,class:(xwaylandvideobridge)"
+                    "immediate,class:^(steam_app_38400)$"
                 ];
 
                 # workspace rules
