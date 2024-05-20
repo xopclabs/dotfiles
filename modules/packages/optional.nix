@@ -40,6 +40,7 @@ in {
             moonlight-qt
             aseprite
             tigervnc
+            steam
         ];
     };
 }
