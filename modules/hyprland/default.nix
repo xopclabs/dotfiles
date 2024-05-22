@@ -8,7 +8,7 @@ let
 in {
     options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
     imports = [
-        ./hyprlock.nix
+        #./hyprlock.nix
         ./hypridle.nix
         ./hyprpaper.nix
     ]; 

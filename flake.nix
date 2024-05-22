@@ -20,10 +20,6 @@
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
         
         zmk-nix.url = "/home/xopc/zmk-nix";
-
-        hyprlock.url = "github:hyprwm/hyprlock";
-        waybar.url = "github:Alexays/Waybar";
-        #hyprland.url = "github:hyprwm/Hyprland";
     };
 
     # All outputs for the system (configs)
