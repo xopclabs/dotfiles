@@ -5,8 +5,6 @@
         ../../modules/default.nix 
         ./sops.nix
         inputs.nix-colors.homeManagerModules.default
-        inputs.hyprlock.homeManagerModules.default
-        #inputs.hyprland.homeManagerModules.default
     ];
     config.modules = {
         # gui

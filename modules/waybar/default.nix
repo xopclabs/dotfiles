@@ -9,7 +9,6 @@ in {
     config = mkIf cfg.enable {
         programs.waybar = {
             enable = true;
-            package = inputs.waybar.packages.${pkgs.system}.default;
             settings = {
                 mainBar = let
                     drawer-config = {
