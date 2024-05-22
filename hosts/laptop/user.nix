@@ -9,7 +9,6 @@
     config.modules = {
         # gui
         gtk.enable = true;
-        floorp.enable = true;
         firefox.enable = true;
         kitty.enable = true;
         hyprland.enable = true;

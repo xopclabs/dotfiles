@@ -8,7 +8,6 @@
         ./waybar
         ./rofi
         ./gtk
-        ./floorp
         ./firefox
         ./kitty
         ./dunst

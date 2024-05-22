@@ -3,7 +3,8 @@
 
     # All inputs for the system
     inputs = {
-        home-manager.url = "github:xopclabs/home-manager/floorp-browser";
+        #nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+        home-manager.url = "github:xopclabs/home-manager/916f0b6c75c1e36bc82a9096d315e698d8392d4a";
         home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
         nur.url = "github:nix-community/NUR";
