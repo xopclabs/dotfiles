@@ -3,7 +3,6 @@
 
     # All inputs for the system
     inputs = {
-        #nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
         home-manager.url = "github:xopclabs/home-manager/916f0b6c75c1e36bc82a9096d315e698d8392d4a";
         home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -26,10 +25,6 @@
     # All outputs for the system (configs)
     outputs = { home-manager, nixpkgs, ... }@inputs: 
         let
-            system = "x86_64-linux";
-            pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-            lib = nixpkgs.lib;
-
             mkSystem = pkgs: system: hostname: username:
                 pkgs.lib.nixosSystem {
                     system = system;
@@ -59,7 +54,6 @@
             nixosConfigurations = {
                 #                                Architecture   Hostname Username
                 laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
-                #dev = mkSystem inputs.nixpkgs    "x86_64-linux" "dev"    "xopc";
             };
     };
 }
