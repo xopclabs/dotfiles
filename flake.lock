@@ -99,8 +99,8 @@
       },
       "original": {
         "owner": "xopclabs",
-        "ref": "floorp-browser",
         "repo": "home-manager",
+        "rev": "916f0b6c75c1e36bc82a9096d315e698d8392d4a",
         "type": "github"
       }
     },
