@@ -4,7 +4,7 @@
     # All inputs for the system
     inputs = {
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-        home-manager.url = "github:xopclabs/home-manager/916f0b6c75c1e36bc82a9096d315e698d8392d4a";
+        home-manager.url = "github:nix-community/home-manager";
         home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
         nur.url = "github:nix-community/NUR";
