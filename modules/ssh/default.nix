@@ -13,6 +13,9 @@ in {
         programs.ssh = {
             enable = true;
             includes = [ "hosts_config" ];
+            extraConfig = ''
+                StrictHostKeyChecking no
+            '';
         };
     };
 }
