@@ -36,7 +36,7 @@
         libnotify
         pqiv
         neofetch
-        clamav
+        #clamav
         pipes
         tio
         melt
