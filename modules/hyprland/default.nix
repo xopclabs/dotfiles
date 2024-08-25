@@ -29,8 +29,8 @@ in {
                 "$altMod" = "SUPER_CTRL";
 
                 monitor = [
-                    "${monitor1}, 1920x1080@60, 0x0, 1"
-                    "${monitor2}, 1920x1080@75, 1920x0, 1"
+                    "${monitor1}, 1920x1080@60, 1920x0, 1"
+                    "${monitor2}, 1920x1080@75, 0x0, 1"
                 ];
 
                 exec-once = [
@@ -59,7 +59,7 @@ in {
                 };
 
                 gestures = {
-                    workspace_swipe = true;
+                    workspace_swipe = false;
                 };
 
                 misc = {
@@ -67,8 +67,7 @@ in {
                     disable_autoreload = true;
                     enable_swallow = true;
                     #swallow_regex = "^(kitty|tmux)$";
-                    #swallow_regex = "kitty|tmux";
-                    swallow_regex = "tmux";
+                    swallow_regex = "kitty|tmux|(S|s)tremio";
                 };
 
                 general  = {
@@ -103,7 +102,6 @@ in {
 
                 master = {
                     mfact = 0.6;
-                    new_is_master = false;
                 };
 
                 windowrule = [
@@ -119,10 +117,10 @@ in {
                     "pin, title:(Picture-in-Picture)" 
                     "keepaspectratio, title:(Picture-in-Picture)" 
 
-                    "float, title:(Extension: \(Bitwarden - Free Password Manager\) - Bitwarden — Mozilla Firefox)"
-                    "move onscreen cursor -50 -50, title:(Extension: \(Bitwarden - Free Password Manager\) - Bitwarden — Mozilla Firefox)" 
-                    "pin, title:(Extension: \(Bitwarden - Free Password Manager\) - Bitwarden — Mozilla Firefox)" 
-                    "keepaspectratio, title:(Extension: \(Bitwarden - Free Password Manager\) - Bitwarden — Mozilla Firefox)" 
+                    "float, title:^(.*Extension.*)$"
+                    "move onscreen cursor -50 -50, title:^(.*Extension.*)$" 
+                    "pin, title:^(.*Extension.*)$" 
+                    "keepaspectratio, title:^(.*Extension.*)$" 
 
                     "float, title:(.*)(Sharing Indicator)"
                     "move 50% 2%, title:(.*)(Sharing Indicator)" 

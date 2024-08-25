@@ -6,14 +6,12 @@ let
     browser = "firefox.desktop";
     file-manager = "org.gnome.Nautilus.desktop";
     image-viewer = "org.gnome.Loupe.desktop";
-    torrent = "transmission-gtk.desktop";
 in {
     options.modules.xdg = { enable = mkEnableOption "xdg"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             gnome.nautilus
             loupe
-            transmission-gtk
         ];
         xdg.userDirs = {
             enable = true;
