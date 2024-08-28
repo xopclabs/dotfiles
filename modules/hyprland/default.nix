@@ -40,8 +40,8 @@ in {
                     "waybar"
                     "ags -b hypr"
                     "tmux new -s main"
-                    "[workspace 7 silent] telegram-desktop"
-                    "[workspace 8 silent] slack"
+                    "[workspace 7 silent] proxychains4 telegram-desktop"
+                    "[workspace 8 silent] proxychains4 slack"
                     "freshman_start"
                 ];
 
