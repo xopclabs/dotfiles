@@ -8,5 +8,6 @@
         ./audio.nix
         ./security.nix
         ./gui.nix
+        ./vpn.nix
     ];
 }

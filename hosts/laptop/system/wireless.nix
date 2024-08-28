@@ -1,27 +1,10 @@
 { config, pkgs, inputs, ... }:
 
 {
-    sops.secrets."vpn/home".path = "/etc/wireguard/home.conf";
-    sops.secrets."vpn/home_fallback".path = "/etc/wireguard/home_fallback.conf";
-    sops.secrets."vpn/vps".path = "/etc/wireguard/vps.conf";
     # Wifi
     networking = {
         networkmanager.enable = true;
         wireless.iwd.enable = true;
-        wg-quick.interfaces = {
-            home = {
-                configFile = config.sops.secrets."vpn/home".path;
-                autostart = false;
-            };
-            home_fallback = {
-                configFile = config.sops.secrets."vpn/home_fallback".path;
-                autostart = false;
-            };
-            vps = {
-                configFile = config.sops.secrets."vpn/vps".path;
-                autostart = false;
-            };
-        };
     };
     sops.secrets."networkmanager.conf".path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
 
