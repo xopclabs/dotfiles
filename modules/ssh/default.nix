@@ -15,6 +15,8 @@ in {
             includes = [ "hosts_config" ];
             extraConfig = ''
                 StrictHostKeyChecking no
+                ServerAliveInterval 60
+                ServerAliveCountMax 120
             '';
         };
     };
