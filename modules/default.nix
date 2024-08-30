@@ -13,6 +13,7 @@
         ./dunst
         ./vscode
         ./mpv
+        ./zen
 
         # cli
         ./awscli
