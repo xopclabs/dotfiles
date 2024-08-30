@@ -6,7 +6,10 @@
         networkmanager.enable = true;
         wireless.iwd.enable = true;
     };
-    sops.secrets."networkmanager.conf".path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
+    sops.secrets."networkmanager.conf" = {
+        path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
+        restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
+    };
 
     # Bluetooth
     hardware.bluetooth = {
