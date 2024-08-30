@@ -23,13 +23,34 @@
     };
 
     # XRay
-    sops.secrets."xray/vps".path = "/etc/xray/config.json";
-    sops.secrets."xray/vps".mode = "0666";
-    sops.secrets."xray/vps".owner = config.users.users.xopc.name;
-    sops.secrets."xray/vps".group = config.users.users.xopc.group;
     services.xray = {
         enable = true;
-        settingsFile = config.sops.secrets."xray/vps".path;
+        settingsFile = "/etc/xray/config.json";
+    };
+    # Define the systemd subscription service
+    sops.secrets."xray/subscription" = {
+        restartUnits = [ "xray-update-subscription.service" ];
+    };
+    systemd.services.xray-update-subscription = {
+        description = "Download xray config and restart xray service";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        script = ''
+            ${pkgs.curl}/bin/curl -fLo /etc/xray/config.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription".path})
+        '';
+        serviceConfig = {
+            Type = "oneshot";
+            ExecStartPost = "${pkgs.systemd}/bin/systemctl restart xray.service";
+        };
+    };
+    # Define the systemd timer
+    systemd.timers.xray-update-subscription = {
+        description = "Timer for downloading xray config every 12 hours";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+            OnCalendar = "daily";
+            Unit = "xray-update-subscription.service";
+        };
     };
     programs.proxychains = {
         enable = true;
