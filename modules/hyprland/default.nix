@@ -5,6 +5,8 @@ let
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     monitor1 = "eDP-1";
     monitor2 = "HDMI-A-2";
+    cursorTheme = "OpenZone_Black";
+    cursorSize = 24;
 in {
     options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
     imports = [
@@ -16,6 +18,13 @@ in {
         home.packages = with pkgs; [
             xwayland wlsunset wl-clipboard hypridle hyprpaper
         ];
+
+        home.pointerCursor = {
+            name = cursorTheme;
+            package = pkgs.openzone-cursors;
+            size = cursorSize;
+            gtk.enable = true;
+        };
 
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
             enable = true;
@@ -35,6 +44,7 @@ in {
 
                 exec-once = [
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+                    "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
                     "hyprpaper"
                     "hypridle"
                     "waybar"
@@ -83,6 +93,8 @@ in {
 
                 env = [
                     "WLR_DRM_NO_ATOMIC,1"
+                    "XCURSOR_THEME,${cursorTheme}"
+                    "XCURSOR_SIZE,${toString cursorSize}"
                 ];
 
                 decoration = {
