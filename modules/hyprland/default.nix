@@ -51,7 +51,7 @@ in {
                     "ags -b hypr"
                     "tmux new -s main"
                     "[workspace 7 silent] proxychains4 telegram-desktop"
-                    "[workspace 8 silent] proxychains4 slack"
+                    "[workspace 8 silent] slack"
                     "freshman_start"
                 ];
 
