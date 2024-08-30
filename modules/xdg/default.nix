@@ -1,9 +1,9 @@
-{ pkgs, lib, config, ... }:
+{ inputs, pkgs, lib, config, ... }:
 
 with lib;
 let 
     cfg = config.modules.xdg;
-    browser = "firefox.desktop";
+    browser = "zen.desktop";
     file-manager = "org.gnome.Nautilus.desktop";
     image-viewer = "org.gnome.Loupe.desktop";
 in {
@@ -36,7 +36,7 @@ in {
                 "application/xhtml+xml" = browser;
                 "text/html" = browser;
 
-                "x-scheme-handler/magnet" = torrent;
+                #"x-scheme-handler/magnet" = torrent;
                 "application/pdf" = browser;
 
                 "image/jpeg" = image-viewer;

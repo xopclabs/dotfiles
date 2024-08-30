@@ -16,6 +16,7 @@
         rofi.enable = true;
         vscode.enable = true;
         mpv.enable = true;
+        zen.enable = true;
 
         # cli
         awscli.enable = true;
