@@ -14,6 +14,7 @@
         ./vscode
         ./mpv
         ./zen
+        ./kicad
 
         # cli
         ./awscli
