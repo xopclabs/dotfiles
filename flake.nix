@@ -20,8 +20,6 @@
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
         
-        zmk-nix.url = "/home/xopc/zmk-nix";
-
         zen-browser.url = "github:MarceColl/zen-browser-flake";
     };
 

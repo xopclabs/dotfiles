@@ -17,10 +17,6 @@ in {
     options.modules.packages = { enable = mkEnableOption "packages"; };
     config = mkIf cfg.enable {
     	home.packages = with pkgs; [
-            # zmk-nix
-            inputs.zmk-nix.packages.${system}.firmware
-            inputs.zmk-nix.packages.${system}.flash
-            inputs.zmk-nix.packages.${system}.update
             # gui/tui
             grim 
             slurp 

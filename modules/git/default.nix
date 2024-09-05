@@ -15,10 +15,6 @@ in {
             extraConfig = {
                 github.user = name;
                 push.autoSetupRemote = true; 
-                credential = {
-                    helper = "${pkgs.git.override {withLibsecret = true;}}/bin/git-credential-libsecret";
-                    credentialStore = "secretservice";
-                };
             };
         };
     };
