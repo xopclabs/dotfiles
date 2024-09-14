@@ -54,9 +54,18 @@ in {
                    "unpkg.com"
                ];
                "jupyter.askForKernelRestart" = false;
-               "twinny.ollamaHostname" = "";
-               "twinny.ollamaApiPort" = "443";
-               "twinny.ollamaUseTls" = true;
+
+               "vim.easymotion" = true;
+               "files.exclude" = {
+                    "**/__pycache__" = true;
+                    "**/.ipynb_checkpoints" = true;
+                };
+               "search.exclude" = {
+                    "**/__pycache__" = true;
+                    "**/.ipynb_checkpoints" = true;
+                    "**/node_modules" = true;
+                    "**/build" = true;
+                };
             };
         };
     };
