@@ -1,5 +1,4 @@
 { pkgs, lib, config, ... }:
-
 with lib;
 let 
     cfg = config.modules.ssh;
@@ -15,7 +14,7 @@ in {
             includes = [ "hosts_config" ];
             extraConfig = ''
                 StrictHostKeyChecking no
-                ServerAliveInterval 60
+                ServerAliveInterval 10
                 ServerAliveCountMax 120
             '';
         };
