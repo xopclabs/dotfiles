@@ -16,7 +16,7 @@
         rofi.enable = true;
         vscode.enable = true;
         mpv.enable = true;
-        zen.enable = true;
+        zen.enable = false;
         kicad.enable = true;
 
         # cli
