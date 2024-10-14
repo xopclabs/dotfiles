@@ -27,7 +27,6 @@ in {
             gnome.adwaita-icon-theme
             ranger
             slack
-            discord
             telegram-desktop
             libsForQt5.qt5.qtwayland
             pavucontrol

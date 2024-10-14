@@ -20,7 +20,7 @@
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
         
-        zen-browser.url = "github:MarceColl/zen-browser-flake";
+        #zen-browser.url = "github:MarceColl/zen-browser-flake";
     };
 
     # All outputs for the system (configs)

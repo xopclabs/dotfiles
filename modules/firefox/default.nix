@@ -9,7 +9,7 @@ in {
     options.modules.firefox = { enable = mkEnableOption "firefox"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
-             firefox
+             #firefox
         ];
         programs.firefox = {
             enable = true;
