@@ -5,7 +5,7 @@
     programs.adb.enable = true;
     # Set up user and enable sudo
     users.users.xopc = {
-        extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" ];
+        extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" ];
         shell = pkgs.zsh;
         isNormalUser = true;
     };
