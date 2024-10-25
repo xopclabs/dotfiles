@@ -48,7 +48,6 @@ in {
                     "hyprpaper"
                     "hypridle"
                     "waybar"
-                    "ags -b hypr"
                     "tmux new -s main"
                     "[workspace 7 silent] proxychains4 telegram-desktop"
                     "[workspace 8 silent] slack"
@@ -167,7 +166,6 @@ in {
                     resizeactive = binding "$altMod" "resizeactive";
                     mvwindow = binding "$altMod" "movewindow";
                     mvtows = binding "$altMod" "movetoworkspace";
-                    e = "exec, ags -b hypr";
                     workspaces = [
                         { key = "a"; n = "1"; } 
                         { key = "r"; n = "2"; }
