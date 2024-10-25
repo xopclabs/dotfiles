@@ -3,11 +3,24 @@
 {
     # Wifi
     networking = {
-        networkmanager.enable = true;
+        networkmanager = {
+            enable = true;
+            #settings = {
+            #    ipv4.method = "auto";
+            #    ipv6.method = "disabled";
+            #};
+        };
         wireless.iwd.enable = true;
+        enableIPv6 = false;
     };
-    sops.secrets."networkmanager.conf" = {
+    # Disable ipv6
+    boot.kernelParams = ["ipv6.disable=1"];
+    sops.secrets."networkmanager/networkmanager.conf" = {
         path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
+        restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
+    };
+    sops.secrets."networkmanager/home" = {
+        path = "/etc/NetworkManager/system-connections/home.nmconnection";
         restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
     };
 

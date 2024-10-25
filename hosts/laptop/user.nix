@@ -17,7 +17,7 @@
         vscode.enable = true;
         mpv.enable = true;
         zen.enable = false;
-        kicad.enable = true;
+        kicad.enable = false;
 
         # cli
         awscli.enable = true;
