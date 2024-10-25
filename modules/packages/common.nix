@@ -41,5 +41,6 @@
         tio
         melt
         pfetch
+        sops
     ];
 }
