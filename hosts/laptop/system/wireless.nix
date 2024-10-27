@@ -23,6 +23,10 @@
         path = "/etc/NetworkManager/system-connections/home.nmconnection";
         restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
     };
+    sops.secrets."networkmanager/hotspot" = {
+        path = "/etc/NetworkManager/system-connections/hotspot.nmconnection";
+        restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
+    };
 
     # Bluetooth
     hardware.bluetooth = {
