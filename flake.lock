@@ -83,6 +83,24 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "inputs": {
+        "systems": "systems_2"
+      },
+      "locked": {
+        "lastModified": 1710146030,
+        "narHash": "sha256-SZ5L6eA7HJ/nmkzGG7/ISclqe6oZdOZTNoesiInkXPQ=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "b1d9ab70662946ef0850d488da1c9019f3a9752a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -270,6 +288,116 @@
         "type": "github"
       }
     },
+    "plover": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "plover": "plover_2",
+        "plover-machine-hid": "plover-machine-hid",
+        "plover-stroke": "plover-stroke",
+        "plover2cat": "plover2cat",
+        "plover_plugins_registry": "plover_plugins_registry",
+        "rtf-tokenize": "rtf-tokenize",
+        "xkbcommon": "xkbcommon"
+      },
+      "locked": {
+        "lastModified": 1722066345,
+        "narHash": "sha256-RKtEImKCzXyywMSD1+kWM1rnB1qYiEfcXVfmTJ90SPg=",
+        "owner": "LilleAila",
+        "repo": "plover-flake",
+        "rev": "23cc1bf1b15a26869a17b97373d073234c52d760",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LilleAila",
+        "ref": "linux-uinput-fixed",
+        "repo": "plover-flake",
+        "type": "github"
+      }
+    },
+    "plover-machine-hid": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1707772199,
+        "narHash": "sha256-o5CUQ7tX9ChTUr32hh4ptS37YFyUDwS54j9wRp8kxuc=",
+        "owner": "dnaq",
+        "repo": "plover-machine-hid",
+        "rev": "45e90785ac7afd1b8714a308599aa3b6b6db3677",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dnaq",
+        "repo": "plover-machine-hid",
+        "type": "github"
+      }
+    },
+    "plover-stroke": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1652559629,
+        "narHash": "sha256-A75OMzmEn0VmDAvmQCp6/7uptxzwWJTwsih3kWlYioA=",
+        "owner": "openstenoproject",
+        "repo": "plover_stroke",
+        "rev": "e717a1983b58dcba644153a542dbf8514425a39b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "openstenoproject",
+        "repo": "plover_stroke",
+        "type": "github"
+      }
+    },
+    "plover2cat": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1721079194,
+        "narHash": "sha256-CZpNDJtJ7rTWdHVVxItSJmmAYOkse9LpkJR60CxDMp8=",
+        "owner": "greenwyrt",
+        "repo": "plover2CAT",
+        "rev": "217f6adffdb71c712dd639ce5dcb9fdf277fca73",
+        "type": "github"
+      },
+      "original": {
+        "owner": "greenwyrt",
+        "repo": "plover2CAT",
+        "type": "github"
+      }
+    },
+    "plover_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1722066221,
+        "narHash": "sha256-zJDyzKN/qGqdknZGi/bce7ViXv06tw9WBwKubrSn6uI=",
+        "owner": "LilleAila",
+        "repo": "plover",
+        "rev": "1782a7d58e7b75bd503d8d6815ecefb45c4dca53",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LilleAila",
+        "ref": "linux-uinput",
+        "repo": "plover",
+        "type": "github"
+      }
+    },
+    "plover_plugins_registry": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1721506796,
+        "narHash": "sha256-XMCUXl1koOt/PRB4xyEBOc5ycp00PSI4kjk40dGJsik=",
+        "owner": "openstenoproject",
+        "repo": "plover_plugins_registry",
+        "rev": "9cee587b4a5ab9f7fc10f612bc142b1a90b9cb01",
+        "type": "github"
+      },
+      "original": {
+        "owner": "openstenoproject",
+        "repo": "plover_plugins_registry",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "firefox-nordic": "firefox-nordic",
@@ -278,8 +406,25 @@
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixpkgs": "nixpkgs_2",
         "nur": "nur",
+        "plover": "plover",
         "sops-nix": "sops-nix",
         "tmux-sessionx": "tmux-sessionx"
+      }
+    },
+    "rtf-tokenize": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1633915168,
+        "narHash": "sha256-zwD2sRYTY1Kmm/Ag2hps9VRdUyQoi4zKtDPR+F52t9A=",
+        "owner": "openstenoproject",
+        "repo": "rtf_tokenize",
+        "rev": "509b009b97077d5abcebe53d46ca6b67c3438a2c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "openstenoproject",
+        "repo": "rtf_tokenize",
+        "type": "github"
       }
     },
     "sops-nix": {
@@ -316,6 +461,21 @@
         "type": "github"
       }
     },
+    "systems_2": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
     "tmux-sessionx": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -332,6 +492,23 @@
       "original": {
         "owner": "omerxx",
         "repo": "tmux-sessionx",
+        "type": "github"
+      }
+    },
+    "xkbcommon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1720215817,
+        "narHash": "sha256-+jCzUnZWz2/jzzMR50cpR7gfk0XXL5ioK7kK7b2dLmU=",
+        "owner": "sde1000",
+        "repo": "python-xkbcommon",
+        "rev": "870f6f31b833d3526fd256b96832d9375647ef34",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sde1000",
+        "ref": "v1.0.1",
+        "repo": "python-xkbcommon",
         "type": "github"
       }
     }
