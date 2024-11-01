@@ -10,7 +10,7 @@ in {
     options.modules.xdg = { enable = mkEnableOption "xdg"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
-            gnome.nautilus
+            nautilus
             loupe
         ];
         xdg.userDirs = {
