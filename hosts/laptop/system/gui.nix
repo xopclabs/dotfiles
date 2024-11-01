@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, lib, ... }:
 
 {
     # Remove unecessary preinstalled packages
@@ -44,7 +44,7 @@
     environment.variables = {
         XDG_DATA_HOME = "$HOME/.local/share";
         QT_QPA_PLATFORM = "wayland";
-        XDG_CURRENT_DESKTOP = "Sway";
+        QT_QPA_PLATFORMTHEME = "qt5ct";
         MOZ_ENABLE_WAYLAND = "1";
         DIRENV_LOG_FORMAT = "";
         DISABLE_QT5_COMPAT = "0";
@@ -66,11 +66,25 @@
             chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";		
         };
     };
-    environment.systemPackages = with pkgs; [ xwaylandvideobridge ];
+    environment.systemPackages = with pkgs; [ 
+        xwaylandvideobridge 
+        libsForQt5.qtstyleplugin-kvantum
+        libsForQt5.qt5ct
+        kdePackages.qtstyleplugin-kvantum
+        kdePackages.qt6ct
+    ];
 
     # Hyprland cachix
     nix.settings = {
         substituters = ["https://hyprland.cachix.org"];
         trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
     };
+
+/*
+    qt5 = { 
+       enable = true; 
+       style = lib.mkForce "kvantum"; 
+       platformTheme = lib.mkForce "qt5ct"; 
+    }; 
+*/
 }
