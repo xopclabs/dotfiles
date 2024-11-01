@@ -42,6 +42,15 @@
           ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
           # Remove NVIDIA VGA/3D controller devices
           ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
+          # Steno stuff
+          # Allow read/write to ttyACM0 serial port
+          KERNEL=="ttyACM0", MODE="0666"
+          # Allow uinput as non-root user (in input group)
+          KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
+          # Sweep keyboard plover-HID non-root access. 
+          #
+          # Make sure to `sudo chmod a+rw /dev/hidraw*` afterwards if things still aren't working
+          SUBSYSTEM=="hidraw", ATTRS{idVendor}=="Ox1D50", ATTRS{idProduct}=="0x615E", MODE="0660"
     '';
 
     # Enable quicksync

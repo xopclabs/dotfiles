@@ -20,7 +20,8 @@
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
         
-        #zen-browser.url = "github:MarceColl/zen-browser-flake";
+        plover.url = "github:LilleAila/plover-flake/linux-uinput-fixed";
+        plover.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)

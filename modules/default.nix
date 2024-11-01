@@ -15,6 +15,7 @@
         ./mpv
         ./zen
         ./kicad
+        ./plover
 
         # cli
         ./awscli
