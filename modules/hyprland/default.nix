@@ -58,6 +58,7 @@ in {
                     "[workspace 7 silent] proxychains4 telegram-desktop"
                     "[workspace 8 silent] slack"
                     "freshman_start"
+                    "plover"
                 ];
 
                 input  = {
