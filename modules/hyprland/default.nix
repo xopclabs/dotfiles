@@ -49,6 +49,7 @@ in {
                     "hypridle"
                     "waybar"
                     "tmux new -s main"
+                    "plover"
                     "[workspace 7 silent] proxychains4 telegram-desktop"
                     "[workspace 8 silent] slack"
                     "freshman_start"
@@ -120,24 +121,37 @@ in {
                 ];
 
                 windowrulev2 = [
+                    # Fix telegram and slack
                     "workspace 7, monitor ${monitor1},class:^(telegram-desktop)$"
                     "workspace 8, monitor ${monitor1},class:^(slack)$"
 
-                    "float, title:(Picture-in-Picture)"
-                    "move onscreen cursor -50 -50, title:(Picture-in-Picture)" 
-                    "pin, title:(Picture-in-Picture)" 
-                    "keepaspectratio, title:(Picture-in-Picture)" 
+                    # PiP are floating and pinned, resizing according to aspect ratio
+                    "float, title:^(Picture-in-Picture)$"
+                    "pin, title:^(Picture-in-Picture)$" 
+                    "keepaspectratio, title:^(Picture-in-Picture)$" 
 
+                    # Plover modal windows are floating and pinned
+                    "float, title:^(Plover: .*)$"
+                    "pin, title:^(Plover: .*)$" 
+                    "move onscreen cursor -50% -50%, title:^(Plover: .*)$"
+                    # Paper Tape size
+                    "minsize 250 400, title:^(Plover: Paper Tape)$"
+                    "maxsize 300 800, title:^(Plover: Paper Tape)$"
+
+                    # Float firefox extensions 
+                    # (doesn't work though, since float rule is static and firefox intializes extensions with an empty initialTitle)
                     "float, title:^(.*Extension.*)$"
                     "move onscreen cursor -50 -50, title:^(.*Extension.*)$" 
                     "pin, title:^(.*Extension.*)$" 
                     "keepaspectratio, title:^(.*Extension.*)$" 
 
+                    # Fix Shaing Indicator of firefox
                     "float, title:(.*)(Sharing Indicator)"
                     "move 50% 2%, title:(.*)(Sharing Indicator)" 
                     "noshadow, title:(.*)(Sharing Indicator)" 
                     "noinitialfocus, title:(.*)(Sharing Indicator)" 
 
+                    # XWayland stuff
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
                     "noanim,class:(xwaylandvideobridge)"
                     "noinitialfocus,class:(xwaylandvideobridge)"
@@ -146,7 +160,6 @@ in {
                     "immediate,class:^(steam_app_38400)$"
                 ];
 
-                # workspace rules
                 workspace = [
                     "1, monitor:${monitor2}"
                     "2, monitor:${monitor2}"
