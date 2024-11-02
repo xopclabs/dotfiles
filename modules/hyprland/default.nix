@@ -7,6 +7,8 @@ let
     monitor2 = "HDMI-A-2";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
+    hypr_windowrule = pkgs.writeShellScriptBin "hypr_windowrule.sh" ''${builtins.readFile ../hyprland/hypr_windowrule.sh}'';
+    bar_restart = pkgs.writeShellScriptBin "bar_restart.sh" ''${builtins.readFile ../hyprland/bar_restart.sh}'';
 in {
     options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
     imports = [
@@ -15,8 +17,10 @@ in {
         ./hyprpaper.nix
     ]; 
     config = lib.mkIf cfg.enable {
-        home.packages = with pkgs; [
-            xwayland wlsunset wl-clipboard hypridle hyprpaper
+        home.packages = [
+            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.hypridle pkgs.hyprpaper
+            bar_restart
+            hypr_windowrule pkgs.socat
         ];
 
         home.pointerCursor = {
@@ -48,8 +52,9 @@ in {
                     "hyprpaper"
                     "hypridle"
                     "waybar"
+                    "bar_restart.sh"
+                    "hypr_windowrule.sh"
                     "tmux new -s main"
-                    "plover"
                     "[workspace 7 silent] proxychains4 telegram-desktop"
                     "[workspace 8 silent] slack"
                     "freshman_start"
@@ -249,8 +254,8 @@ in {
                   sensitivity=-0.2
                 }
               '';
-    };
+        };
 
-    programs.zsh.shellAliases = { startx = "Hyprland"; };
+        programs.zsh.shellAliases = { startx = "Hyprland"; };
     };
 }
