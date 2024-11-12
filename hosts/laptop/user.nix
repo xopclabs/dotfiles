@@ -17,7 +17,7 @@
         vscode.enable = true;
         mpv.enable = true;
         zen.enable = false;
-        kicad.enable = false;
+        kicad.enable = true;
         plover.enable = true;
 
         # cli

@@ -143,6 +143,9 @@ in {
                     # Paper Tape size
                     "minsize 250 400, title:^(Plover: Paper Tape)$"
                     "maxsize 300 800, title:^(Plover: Paper Tape)$"
+                    # Lookup
+                    "minsize 300 300, title:^(Plover: Lookup)$"
+                    "maxsize 600 600, title:^(Plover: Lookup)$"
 
                     # Float firefox extensions 
                     # (doesn't work though, since float rule is static and firefox intializes extensions with an empty initialTitle)

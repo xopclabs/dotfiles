@@ -34,8 +34,8 @@ in {
                "explorer.confirmDragAndDrop" = false;
                "git.confirmSync" = false;
                "explorer.confirmDelete" = false;
-               "dev.containers.copyGitConfig" = false;
-               "dev.containers.gitCredentialHelperConfigLocation" = "none";
+               "dev.containers.copyGitConfig" = true;
+               #"dev.containers.gitCredentialHelperConfigLocation" = "none";
                "notebook.cellToolbarLocation" = {
                    "default" = "right";
                    "jupyter-notebook" = "right";
@@ -45,7 +45,7 @@ in {
                "editor.tabSize" = 4;
                "editor.wordWrap" = "off";
                "git.autofetch" = true;
-               "git.defaultBranchName" = "master";
+               "git.defaultBranchName" = "main";
                "python.languageServer" = "Pylance";
                "terminal.integrated.fontFamily" = "'mononoki Nerd Font'";
                "remote.autoForwardPortsSource" = "hybrid";
