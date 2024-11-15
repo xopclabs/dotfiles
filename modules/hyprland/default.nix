@@ -257,6 +257,18 @@ in {
                   accel_profile=flat
                   sensitivity=-0.2
                 }
+                device {
+                  name=nordic-2.4g-wireless-receiver-mouse
+                  accel_profile=flat
+                  sensitivity=-0.25
+                  natural_scroll=true
+                }
+                device {
+                  name=protoarc-em03-mouse
+                  accel_profile=flat
+                  sensitivity=-0.25
+                  natural_scroll=true
+                }
               '';
         };
 
