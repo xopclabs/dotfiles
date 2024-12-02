@@ -105,9 +105,11 @@ in {
 
                 decoration = {
                     rounding = 0;
-                    drop_shadow = true;
-                    shadow_range = 30;
-                    "col.shadow" = "0x8800000";
+                    shadow = {
+                        enabled = true;
+                        range = 30;
+                        color = "0x8800000";
+                    };
                 };
 
                 animations  = {
