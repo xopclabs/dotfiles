@@ -9,12 +9,14 @@
             #    ipv4.method = "auto";
             #    ipv6.method = "disabled";
             #};
+            dns = "systemd-resolved";
         };
         wireless.iwd.enable = true;
-        enableIPv6 = false;
+        # enableIPv6 = false;
     };
+    services.resolved.enable = true;
     # Disable ipv6
-    boot.kernelParams = ["ipv6.disable=1"];
+    # boot.kernelParams = ["ipv6.disable=1"];
     sops.secrets."networkmanager/networkmanager.conf" = {
         path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
         restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
