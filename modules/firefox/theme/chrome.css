@@ -1326,7 +1326,7 @@ Firefox `userChrome.css` for Tree Style Tab
   /*transition: all 0ms 0s !important;*/
   min-width: var(--thin-tab-width) !important;
   max-width: var(--thin-tab-width) !important;
-  z-index: 2;
+  z-index: 3;
 }
 #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:hover,
 #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar {
@@ -1334,7 +1334,7 @@ Firefox `userChrome.css` for Tree Style Tab
   transition: all 300ms !important;
   min-width: var(--wide-tab-width) !important;
   max-width: var(--wide-tab-width) !important;
-  z-index: 1;
+  z-index: 3;
 }
 #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:hover {
   margin-right: calc((var(--wide-tab-width) - var(--thin-tab-width)) * -1) !important;
