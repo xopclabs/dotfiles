@@ -5,15 +5,6 @@ let
     cfg = config.modules.gtk;
 
     gtk-theme = "Nordic";
-
-    nerdfonts = (pkgs.nerdfonts.override { fonts = [
-        "Ubuntu"
-        "UbuntuMono"
-        "CascadiaCode"
-        "FantasqueSansMono"
-        "FiraCode"
-        "Mononoki"
-    ]; });
 in {
     options.modules.gtk = { enable = mkEnableOption "gtk"; };
 
@@ -23,7 +14,11 @@ in {
                 libadwaita
                 adw-gtk3
                 font-awesome
-                nerdfonts
+                nerd-fonts.ubuntu
+                nerd-fonts.ubuntu-mono
+                nerd-fonts.fantasque-sans-mono
+                nerd-fonts.fira-code
+                nerd-fonts.mononoki
                 nordic
                 dconf
                 papirus-nord
@@ -34,14 +29,16 @@ in {
                 GTK_THEME = gtk-theme;
             };
             file = {
+                /*
                 ".local/share/fonts" = {
                     recursive = true;
-                    source = "${nerdfonts}/share/fonts/truetype/NerdFonts";
+                    source = "${pkgs.nerd-fonts.m}/share/fonts/truetype/NerdFonts";
                 };
                 ".fonts" = {
                     recursive = true;
-                    source = "${nerdfonts}/share/fonts/truetype/NerdFonts";
+                    source = "${pkgs.nerd-fonts}/share/fonts/truetype/NerdFonts";
                 };
+                */
                 ".config/gtk-4.0/gtk.css" = {
                     text = ''
                     window.messagedialog .response-area > button,

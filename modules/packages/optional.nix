@@ -24,7 +24,7 @@ in {
             ffmpeg
             wev
             wf-recorder 
-            gnome.adwaita-icon-theme
+            adwaita-icon-theme
             ranger
             slack
             telegram-desktop
