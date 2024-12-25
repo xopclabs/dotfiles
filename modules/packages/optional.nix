@@ -38,6 +38,7 @@ in {
             tigervnc
             steam
             hiddify-app
+            libreoffice
         ];
     };
 }
