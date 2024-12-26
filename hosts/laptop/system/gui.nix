@@ -1,5 +1,14 @@
 { config, pkgs, inputs, lib, ... }:
 
+let
+  times-new-roman = pkgs.runCommand "times-new-roman-only" {} ''
+    mkdir -p $out/share/fonts/truetype
+    # Copy only Times New Roman TTFs from corefonts
+    cp ${pkgs.corefonts}/share/fonts/truetype/Times_New_Roman*.ttf \
+       $out/share/fonts/truetype/
+    chmod 444 $out/share/fonts/truetype/Times_New_Roman*.ttf
+  '';
+in
 {
     # Remove unecessary preinstalled packages
     environment.defaultPackages = [ ];
@@ -8,7 +17,7 @@
     # Install fonts
     fonts = {
         packages = with pkgs; [
-            corefonts
+            times-new-roman-only
             noto-fonts
             noto-fonts-cjk-sans
             noto-fonts-extra
@@ -22,6 +31,9 @@
         fontconfig = {
             hinting.autohint = true;
             defaultFonts = {
+              serif = [  "Noto Serif" ];
+              sansSerif = [ "DejaVu Sans" ];
+              monospace = [ "Mononoki Nerd Font Mono" ];
               emoji = [ "OpenMoji Color" ];
             };
         };
