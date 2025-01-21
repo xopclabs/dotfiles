@@ -7,7 +7,7 @@ in {
     config = mkIf cfg.enable {
         
         home.packages = with pkgs; [
-            nixfmt # Nix
+            nixfmt-classic # Nix
             lua-language-server stylua # Lua
         ];
 
