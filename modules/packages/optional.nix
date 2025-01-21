@@ -10,8 +10,9 @@ let cfg = config.modules.packages;
             --argv0 ${pkgs.proxychains}/bin/proxychains4 \
             --prefix XDG_DATA_DIRS : $GSETTINGS_SCHEMAS_PATH \
             --prefix PATH : ${lib.makeBinPath [pkgs.xdg-utils]} \
-            --add-flags "--ozone-platform=wayland --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer" \
-            --add-flags "--proxy-server='socks5://localhost:10808'" 
+            --add-flags "--ozone-platform=wayland --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer"
+            #--add-flags "--ozone-platform=wayland --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer" \
+            #--add-flags "--proxy-server='socks5://localhost:10808'" 
     '';
   });
 in {

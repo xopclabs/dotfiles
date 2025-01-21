@@ -4,7 +4,7 @@
     # Wireguard
     sops.secrets."vpn/home".path = "/etc/wireguard/home.conf";
     sops.secrets."vpn/home_fallback".path = "/etc/wireguard/home_fallback.conf";
-    sops.secrets."vpn/vps".path = "/etc/wireguard/vps.conf";
+    sops.secrets."vpn/beta".path = "/etc/wireguard/beta.conf";
     networking = {
         wg-quick.interfaces = {
             home = {
@@ -15,8 +15,8 @@
                 configFile = config.sops.secrets."vpn/home_fallback".path;
                 autostart = false;
             };
-            vps = {
-                configFile = config.sops.secrets."vpn/vps".path;
+            beta = {
+                configFile = config.sops.secrets."vpn/beta".path;
                 autostart = false;
             };
         };
@@ -28,7 +28,7 @@
         settingsFile = "/etc/xray/config.json";
     };
     # Define the systemd subscription service
-    sops.secrets."xray/subscription" = {
+    sops.secrets."xray/subscription-beta" = {
         restartUnits = [ "xray-update-subscription.service" ];
     };
     systemd.services.xray-update-subscription = {
@@ -36,7 +36,7 @@
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
         script = ''
-            ${pkgs.curl}/bin/curl -fLo /etc/xray/config.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription".path})
+            ${pkgs.curl}/bin/curl -fLo /etc/xray/config.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
         '';
         serviceConfig = {
             Type = "oneshot";

@@ -17,7 +17,7 @@ in
     # Install fonts
     fonts = {
         packages = with pkgs; [
-            times-new-roman-only
+            times-new-roman
             noto-fonts
             noto-fonts-cjk-sans
             noto-fonts-extra
@@ -98,7 +98,7 @@ in
     qt5 = { 
        enable = true; 
        style = lib.mkForce "kvantum"; 
-       platformTheme = lib.mkForce "qt5ct"; 
+       platformTheme.name = lib.mkForce "qt5ct"; 
     }; 
 */
 }

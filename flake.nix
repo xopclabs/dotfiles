@@ -43,7 +43,7 @@
                                 extraSpecialArgs = { inherit inputs; };
                                 users."${username}" = (./. + "/hosts/${hostname}/user.nix");
                             };
-                            nixpkgs.overlays = [ inputs.nur.overlay ];
+                            nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
                         inputs.home-manager.nixosModules.home-manager
