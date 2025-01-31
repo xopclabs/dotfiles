@@ -42,5 +42,6 @@
         melt
         pfetch
         sops
+        devenv
     ];
 }
