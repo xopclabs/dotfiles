@@ -13,6 +13,7 @@
         extraOptions = ''
             experimental-features = nix-command flakes
             keep-outputs = true
+            trusted-users = root xopc
         '';
     };
     nixpkgs.config.allowUnfree = true;
