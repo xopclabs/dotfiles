@@ -53,6 +53,17 @@
           SUBSYSTEM=="hidraw", ATTRS{driver}=="hid-generic", MODE="0660", GROUP="input"
     '';
 
+    # To prevent open lid waking up from suspend
+    systemd.services.disable-xhc-wakeup = {
+        description = "Disable XHC as a wake source";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "multi-user.target" ];
+        serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${pkgs.coreutils}/bin/echo XHC > /proc/acpi/wakeup'";
+        };
+    };
+
     # Enable quicksync
     environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; }; # Force intel-media-driver
     hardware = {
