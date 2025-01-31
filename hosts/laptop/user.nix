@@ -18,7 +18,7 @@
         mpv.enable = true;
         zen.enable = false;
         kicad.enable = true;
-        plover.enable = true;
+        plover.enable = false;
 
         # cli
         awscli.enable = true;
