@@ -71,7 +71,7 @@ in {
                         transform = 2;
                     };
                     kb_layout = "us,ru";
-                    kb_options = "grp:alt_shift_toggle";
+                    kb_options = "grp:alt_shift_toggle,compose:ralt";
                 };
 
                 gestures = {
