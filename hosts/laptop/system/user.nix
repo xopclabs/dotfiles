@@ -2,6 +2,7 @@
 
 {
     programs.zsh.enable = true;
+    programs.direnv.enable = true;
     programs.adb.enable = true;
     # Set up user and enable sudo
     users.users.xopc = {
