@@ -38,7 +38,7 @@ in {
             moonlight-qt
             tigervnc
             steam
-            hiddify-app
+            # hiddify-app
             libreoffice
         ];
     };
