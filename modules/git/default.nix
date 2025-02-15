@@ -12,12 +12,17 @@ in {
             enable = true;
             userName = name;
             userEmail = email;
+            signing = {
+                gpgPath = "${pkgs.openssh}/bin/ssh";
+                signByDefault = true;
+                key = "${config.home.homeDirectory}/.ssh/id_ed25519";
+            };
             extraConfig = {
                 github.user = name;
                 push.autoSetupRemote = true; 
-                gpg.format = "ssh";
-                commit.gpgSign = true;
-                user.signingkey = "${config.home.homeDirectory}/.ssh/id_ed25519";
+                #gpg.format = "ssh";
+                #commit.gpgSign = true;
+                #user.signingkey = "${config.home.homeDirectory}/.ssh/id_ed25519";
             };
         };
     };
