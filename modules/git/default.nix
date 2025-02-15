@@ -18,11 +18,7 @@ in {
                 key = "${config.home.homeDirectory}/.ssh/id_ed25519";
             };
             extraConfig = {
-                github.user = name;
                 push.autoSetupRemote = true; 
-                #gpg.format = "ssh";
-                #commit.gpgSign = true;
-                #user.signingkey = "${config.home.homeDirectory}/.ssh/id_ed25519";
             };
         };
     };
