@@ -13,7 +13,7 @@ in {
             userName = name;
             userEmail = email;
             signing = {
-                gpgPath = "${pkgs.openssh}/bin/ssh";
+                format = "ssh";
                 signByDefault = true;
                 key = "${config.home.homeDirectory}/.ssh/id_ed25519";
             };
