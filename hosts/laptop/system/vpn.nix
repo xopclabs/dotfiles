@@ -64,4 +64,22 @@
             };
         };
     };
+
+
+    # Make Ollama accessible as if it was locally
+    sops.secrets."ollama" = {
+        restartUnits = [ "caddy.service" ];
+    };
+    services.caddy = {
+        enable = true;
+        environmentFile = config.sops.secrets.ollama.path;
+        extraConfig = ''
+            :11434 {
+                reverse_proxy https://ollama.conv2d.com {
+                    header_up Authorization "Bearer {env.TOKEN}"
+                    header_up Host "ollama.conv2d.com"
+                }
+            }
+        '';
+    };
 }
