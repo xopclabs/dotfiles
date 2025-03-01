@@ -14,6 +14,7 @@ in {
                     "class<firefox>" = "󰈹";
                     "class<floorp>" = "󰈹";
                     "class<kitty>" = "";
+                    "class<Cursor>" = "󰨞";
                     "class<code(-url-handler)?>" = "󰨞";
                     "class<org\\.telegram\\.desktop>" = "";
                     "class<libreoffice-calc>" = "󰈛";
