@@ -138,6 +138,9 @@ in {
                     "pin, title:^(Picture-in-Picture)$" 
                     "keepaspectratio, title:^(Picture-in-Picture)$" 
 
+                    # Cursor modal windows are moved to the cursor
+                    "move onscreen cursor -50% -50%, title:^(Cursor)$"
+
                     # Plover modal windows are floating and pinned
                     "float, title:^(Plover: .*)$"
                     "pin, title:^(Plover: .*)$" 
