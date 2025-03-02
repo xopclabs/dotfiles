@@ -1,12 +1,14 @@
 { config, pkgs, inputs, lib, ... }:
 
 let
-  times-new-roman = pkgs.runCommand "times-new-roman-only" {} ''
+  corefonts-subset = pkgs.runCommand "corefonts-subset" {} ''
     mkdir -p $out/share/fonts/truetype
-    # Copy only Times New Roman TTFs from corefonts
-    cp ${pkgs.corefonts}/share/fonts/truetype/Times_New_Roman*.ttf \
-       $out/share/fonts/truetype/
-    chmod 444 $out/share/fonts/truetype/Times_New_Roman*.ttf
+    # Copy only subset of fonts from corefonts
+    for font in Times_New_Roman Arial Comic_Sans_MS; do
+        echo $font
+        cp "${pkgs.corefonts}/share/fonts/truetype/$font"*.ttf "$out/share/fonts/truetype/"
+        chmod 444 "$out/share/fonts/truetype/$font"*.ttf
+    done
   '';
 in
 {
@@ -18,7 +20,7 @@ in
     fonts = {
         packages = with pkgs; [
             #times-new-roman
-            corefonts
+            corefonts-subset
             noto-fonts
             noto-fonts-cjk-sans
             noto-fonts-extra
