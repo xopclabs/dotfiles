@@ -17,7 +17,7 @@ in {
             profiles.xopc = {
                 isDefault = true;
                 # install extensions from nur
-                extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+                extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
                         decentraleyes
                         ublock-origin
                         clearurls
