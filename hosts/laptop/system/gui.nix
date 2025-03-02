@@ -17,7 +17,8 @@ in
     # Install fonts
     fonts = {
         packages = with pkgs; [
-            times-new-roman
+            #times-new-roman
+            corefonts
             noto-fonts
             noto-fonts-cjk-sans
             noto-fonts-extra
