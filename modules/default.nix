@@ -28,6 +28,7 @@
         ./ssh
         ./nh
         ./ranger
+        ./btop
 
         # system
         ./xdg
