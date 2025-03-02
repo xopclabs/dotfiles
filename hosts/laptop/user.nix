@@ -31,6 +31,7 @@
         ssh.enable = true;
         nh.enable = true;
         ranger.enable = true;
+        btop.enable = true;
 
         # system
         xdg.enable = true;
