@@ -84,7 +84,7 @@ in
         };
     };
     environment.systemPackages = with pkgs; [ 
-        xwaylandvideobridge 
+        kdePackages.xwaylandvideobridge 
         libsForQt5.qtstyleplugin-kvantum
         libsForQt5.qt5ct
         kdePackages.qtstyleplugin-kvantum
