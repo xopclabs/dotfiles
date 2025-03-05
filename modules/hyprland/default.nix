@@ -3,8 +3,8 @@
 let 
     cfg = config.modules.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    monitor1 = "eDP-1";
-    monitor2 = "HDMI-A-2";
+    monitor_internal = "eDP-1";
+    monitor_external = "HDMI-A-2";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
     hypr_windowrule = pkgs.writeShellScriptBin "hypr_windowrule.sh" ''${builtins.readFile ../hyprland/hypr_windowrule.sh}'';
@@ -14,13 +14,13 @@ in {
     imports = [
         #./hyprlock.nix
         ./hypridle.nix
-        ./hyprpaper.nix
+        ./display.nix
     ]; 
     config = lib.mkIf cfg.enable {
         home.packages = [
-            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.hypridle pkgs.hyprpaper
+            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.hypridle  pkgs.socat
             bar_restart
-            hypr_windowrule pkgs.socat
+            hypr_windowrule
         ];
 
         home.pointerCursor = {
@@ -41,15 +41,15 @@ in {
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
-                monitor = [
-                    "${monitor1}, 1920x1080@60, 1920x0, 1"
-                    "${monitor2}, 1920x1080@75, 0x0, 1"
-                ];
+                #monitor = [
+                #    "${monitor_internal}, 1920x1080@60, 1920x0, 1"
+                #    "${monitor_external}, 1920x1080@75, 0x0, 1"
+                #];
 
                 exec-once = [
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
-                    "hyprpaper"
+                    "swww-daemon"
                     "hypridle"
                     "waybar"
                     "bar_restart.sh"
@@ -65,7 +65,7 @@ in {
                     follow_mouse = true;
                     touchpad = {
                         natural_scroll = true;
-                        scroll_factor = 0.25;
+                        scroll_factor = 0.5;
                     };
                     tablet = {
                         transform = 2;
@@ -130,8 +130,8 @@ in {
 
                 windowrulev2 = [
                     # Fix telegram and slack
-                    "workspace 7, monitor ${monitor1},class:^(telegram-desktop)$"
-                    "workspace 8, monitor ${monitor1},class:^(slack)$"
+                    "workspace 7, monitor ${monitor_internal},class:^(telegram-desktop)$"
+                    "workspace 8, monitor ${monitor_internal},class:^(slack)$"
 
                     # PiP are floating and pinned, resizing according to aspect ratio
                     "float, title:^(Picture-in-Picture)$"
@@ -175,14 +175,14 @@ in {
                 ];
 
                 workspace = [
-                    "1, monitor:${monitor2}"
-                    "2, monitor:${monitor2}"
-                    "3, monitor:${monitor2}"
-                    "4, monitor:${monitor2}"
-                    "5, monitor:${monitor1}"
-                    "6, monitor:${monitor1}"
-                    "7, monitor:${monitor1}"
-                    "8, monitor:${monitor1}"
+                    "1, monitor:${monitor_external}"
+                    "2, monitor:${monitor_external}"
+                    "3, monitor:${monitor_external}"
+                    "4, monitor:${monitor_external}"
+                    "5, monitor:${monitor_internal}"
+                    "6, monitor:${monitor_internal}"
+                    "7, monitor:${monitor_internal}"
+                    "8, monitor:${monitor_internal}"
                 ];
 
                 # binds
