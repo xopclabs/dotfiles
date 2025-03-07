@@ -247,6 +247,22 @@
     },
     "nixpkgs_4": {
       "locked": {
+        "lastModified": 1738797219,
+        "narHash": "sha256-KRwX9Z1XavpgeSDVM/THdFd6uH8rNm/6R+7kIbGa+2s=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "1da52dd49a127ad74486b135898da2cef8c62665",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "1da52dd49a127ad74486b135898da2cef8c62665",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
         "lastModified": 1731763621,
         "narHash": "sha256-ddcX4lQL0X05AYkrkV2LMFgGdRvgap7Ho8kgon3iWZk=",
         "owner": "NixOS",
@@ -261,7 +277,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_5": {
+    "nixpkgs_6": {
       "locked": {
         "lastModified": 1711333969,
         "narHash": "sha256-5PiWGn10DQjMZee5NXzeA6ccsv60iLu+Xtw+mfvkUAs=",
@@ -300,28 +316,24 @@
     "plover": {
       "inputs": {
         "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs_4",
         "plover": "plover_2",
         "plover-machine-hid": "plover-machine-hid",
         "plover-stroke": "plover-stroke",
         "plover2cat": "plover2cat",
         "plover_plugins_registry": "plover_plugins_registry",
-        "rtf-tokenize": "rtf-tokenize",
-        "xkbcommon": "xkbcommon"
+        "rtf-tokenize": "rtf-tokenize"
       },
       "locked": {
-        "lastModified": 1738509711,
-        "narHash": "sha256-1pZ8M0YnHbw+6cIKJJqibRN66xTna4YSjepbpUCWQSk=",
-        "owner": "LilleAila",
+        "lastModified": 1741319064,
+        "narHash": "sha256-/FL6Kc1cTALO7Xs62MKUM7WMy4e37c0n670hoOpQrhA=",
+        "owner": "dnaq",
         "repo": "plover-flake",
-        "rev": "849e4cd4f5a54a907ef5993c8f2de2b99381fd41",
+        "rev": "993bc5d2b6a5b723a56dd04c410e16edcf8b959a",
         "type": "github"
       },
       "original": {
-        "owner": "LilleAila",
-        "ref": "linux-uinput-fixed",
+        "owner": "dnaq",
         "repo": "plover-flake",
         "type": "github"
       }
@@ -361,11 +373,11 @@
     "plover2cat": {
       "flake": false,
       "locked": {
-        "lastModified": 1737759823,
-        "narHash": "sha256-GLZ8+GoCxkQ6lgxuvuRhrPY6zjgDyk5sWdCX7C7aE1c=",
+        "lastModified": 1740191225,
+        "narHash": "sha256-rAHNYkmEHLvnsKBkirCizGYJNgDzu1XEnLh54fmTW/U=",
         "owner": "greenwyrt",
         "repo": "plover2CAT",
-        "rev": "ea3da35f2d5ed2f5a8715b2406438dc85a0ead40",
+        "rev": "c5187632e5e7a633c141704b1a59d9a5703ecd73",
         "type": "github"
       },
       "original": {
@@ -377,16 +389,15 @@
     "plover_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1738509631,
-        "narHash": "sha256-hLhILKVLGFSA/dsSQd0YVJyfnSWp6nUqe42j7xvfwmw=",
-        "owner": "LilleAila",
+        "lastModified": 1741240379,
+        "narHash": "sha256-DojJEuuVNd5/AR3DzmBe+1KJzFwy7GXstPabyZb6ArE=",
+        "owner": "openstenoproject",
         "repo": "plover",
-        "rev": "5279766d11ad6405eb08e168a01c438f25d103de",
+        "rev": "1234ae6253f26f8e40f48eaa87a96ae26aa42c7e",
         "type": "github"
       },
       "original": {
-        "owner": "LilleAila",
-        "ref": "linux-uinput",
+        "owner": "openstenoproject",
         "repo": "plover",
         "type": "github"
       }
@@ -438,7 +449,7 @@
     },
     "sops-nix": {
       "inputs": {
-        "nixpkgs": "nixpkgs_4"
+        "nixpkgs": "nixpkgs_5"
       },
       "locked": {
         "lastModified": 1741043164,
@@ -487,7 +498,7 @@
     "tmux-sessionx": {
       "inputs": {
         "flake-parts": "flake-parts_2",
-        "nixpkgs": "nixpkgs_5"
+        "nixpkgs": "nixpkgs_6"
       },
       "locked": {
         "lastModified": 1736251564,
@@ -521,23 +532,6 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "xkbcommon": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1720215817,
-        "narHash": "sha256-+jCzUnZWz2/jzzMR50cpR7gfk0XXL5ioK7kK7b2dLmU=",
-        "owner": "sde1000",
-        "repo": "python-xkbcommon",
-        "rev": "870f6f31b833d3526fd256b96832d9375647ef34",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sde1000",
-        "ref": "v1.0.1",
-        "repo": "python-xkbcommon",
         "type": "github"
       }
     }
