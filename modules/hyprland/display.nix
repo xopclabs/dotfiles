@@ -39,8 +39,8 @@ in {
                         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 2 ${monitor_external}"
                         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 3 ${monitor_external}"
                         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 4 ${monitor_external}"
-                        "${pkgs.swww}/bin/swww img -o ${monitor_external} $(${pkgs.busybox}/bin/find ~/.config/hypr/wallpaper \\( -type f -o -type l \\) | ${pkgs.busybox}/bin/shuf -n 1)"
-                        "${pkgs.swww}/bin/swww img -o ${monitor_internal} $(${pkgs.busybox}/bin/find ~/.config/hypr/wallpaper \\( -type f -o -type l \\) | ${pkgs.busybox}/bin/shuf -n 1)"
+                        "${pkgs.swww}/bin/swww img -o ${monitor_external} ~/.config/hypr/wallpaper/nord.png"
+                        "${pkgs.swww}/bin/swww img -o ${monitor_internal} ~/.config/hypr/wallpaper/nord.png"
                     ];
                 };
             }
@@ -57,7 +57,7 @@ in {
                     ];
                     exec = builtins.concatStringsSep ", " [
                         "${pkgs.hyprland}/bin/hyprctl keyword monitor \"${monitor_external}, disable\""
-                        "${pkgs.swww}/bin/swww img -o ${monitor_internal} $(${pkgs.busybox}/bin/find ~/.config/hypr/wallpaper \\( -type f -o -type l \\) | ${pkgs.busybox}/bin/shuf -n 1)"
+                        "${pkgs.swww}/bin/swww img -o ${monitor_internal} ~/.config/hypr/wallpaper/nord.png"
                     ];
                 };
             }
