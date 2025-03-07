@@ -9,6 +9,16 @@ let
     cursorSize = 24;
     hypr_windowrule = pkgs.writeShellScriptBin "hypr_windowrule.sh" ''${builtins.readFile ../hyprland/hypr_windowrule.sh}'';
     bar_restart = pkgs.writeShellScriptBin "bar_restart.sh" ''${builtins.readFile ../hyprland/bar_restart.sh}'';
+    screenrecord = pkgs.writeShellScriptBin "screenrecord.sh" ''
+        # Check if wf-recorder is currently running
+        if pgrep -x wf-recorder > /dev/null; then
+            echo "Stopping wf-recorder..."
+            pkill -SIGINT wf-recorder
+        else
+            echo "Starting wf-recorder..."
+            wf-recorder -g "$(slurp)" -f ~/screenshots/$(date +'%Y-%m-%d_%H-%M-%S').mkv &
+        fi
+    '';
 in {
     options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
     imports = [
@@ -18,9 +28,10 @@ in {
     ]; 
     config = lib.mkIf cfg.enable {
         home.packages = [
-            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.hypridle  pkgs.socat
+            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
             bar_restart
             hypr_windowrule
+            screenrecord
         ];
 
         home.pointerCursor = {
@@ -208,6 +219,7 @@ in {
                     "$mod, L, exec, launcher"
                     ", XF86PowerOff, exec, powermenu"
                     ",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
+                    "SHIFT,Print, exec, screenrecord.sh"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, firefox"
