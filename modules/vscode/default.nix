@@ -19,7 +19,7 @@ in {
             profiles.default = {
                 extensions = with pkgs.vscode-extensions; [
                     arcticicestudio.nord-visual-studio-code
-                    ms-python.python
+                    #ms-python.python
                     ms-python.vscode-pylance
                     ms-vscode-remote.remote-containers
                     ms-vscode-remote.remote-ssh
