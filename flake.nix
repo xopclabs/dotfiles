@@ -66,7 +66,10 @@
             nixosConfigurations = {
                 #                                Architecture   Hostname Username
                 laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
-                pleyba = mkHome   inputs.nixpkgs "x86_64-linux" "server";
             };
+            homeConfigurations = {
+                #                                Architecture   Hostname
+                pleyba = mkHome   inputs.nixpkgs "x86_64-linux" "server";
+            }
     };
 }
