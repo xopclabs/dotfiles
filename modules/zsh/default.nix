@@ -20,7 +20,7 @@ in {
             dotDir = ".config/zsh";
 
             history = {
-                path = "/home/xopc/.zsh_history";
+                path = "/home/${config.home.username}/.zsh_history";
                 ignoreAllDups = true;
             };
 
