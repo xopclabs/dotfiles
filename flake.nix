@@ -62,6 +62,7 @@
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
+    			inputs.sops-nix.homeManagerModules.sops
                     ];
                     extraSpecialArgs = { inherit inputs; };
                 };
