@@ -1,3 +1,4 @@
+
 {
     description = "NixOS configuration";
 
@@ -19,12 +20,12 @@
         firefox-nordic.flake = false;
 
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
-        
+
         plover.url = "github:dnaq/plover-flake";
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, ... }@inputs: 
+    outputs = { home-manager, nixpkgs, ... }@inputs:
         let
             mkSystem = pkgs: system: hostname: username:
                 pkgs.lib.nixosSystem {
@@ -53,14 +54,16 @@
                 };
             mkHome = pkgs: system: hostname:
                 home-manager.lib.homeManagerConfiguration {
-                    system = system;
-                    config = {
-                        allowUnfree = true;
+                    pkgs = import nixpkgs {
+                        system = system;
+                        config = {
+                            allowUnfree = true;
+                        };
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
                     ];
-                    specialArgs = { inherit inputs; };
+                    extraSpecialArgs = { inherit inputs; };
                 };
         in {
             nixosConfigurations = {
@@ -69,7 +72,7 @@
             };
             homeConfigurations = {
                 #                                Architecture   Hostname
-                pleyba = mkHome   inputs.nixpkgs "x86_64-linux" "server";
-            }
+                server = mkHome   inputs.nixpkgs "x86_64-linux" "server";
+            };
     };
 }
