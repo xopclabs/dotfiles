@@ -52,7 +52,7 @@
                     ];
                     specialArgs = { inherit inputs; };
                 };
-            mkHome = pkgs: system: hostname:
+            mkHome = pkgs: system: hostname: username:
                 home-manager.lib.homeManagerConfiguration {
                     pkgs = import nixpkgs {
                         system = system;
@@ -63,6 +63,12 @@
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
     			inputs.sops-nix.homeManagerModules.sops
+			{
+			    home = {
+			        username = username;
+			        homeDirectory = "/home/${username}";
+			    };
+			}
                     ];
                     extraSpecialArgs = { inherit inputs; };
                 };
@@ -72,8 +78,8 @@
                 laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
             };
             homeConfigurations = {
-                #                                Architecture   Hostname
-                server = mkHome   inputs.nixpkgs "x86_64-linux" "server";
+                #                                Architecture   Hostname Username
+                server = mkHome   inputs.nixpkgs "x86_64-linux" "server" "pleyba";
             };
     };
 }

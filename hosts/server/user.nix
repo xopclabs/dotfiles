@@ -3,7 +3,6 @@
 {
     imports = [ 
         ../../modules/default.nix 
-        ./home.nix
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
@@ -23,4 +22,8 @@
         xdg.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
+
+    # Let home-manager manage itself
+    config.programs.home-manager.enable = true;
+
 }
