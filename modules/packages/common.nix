@@ -17,7 +17,6 @@
         pciutils
         busybox
         brightnessctl
-        sudo
         ripgrep
         tealdeer
         eza 

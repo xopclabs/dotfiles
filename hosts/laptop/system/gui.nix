@@ -13,7 +13,7 @@ let
 in
 {
     # Remove unecessary preinstalled packages
-    environment.defaultPackages = [ ];
+    environment.defaultPackages = [ pkgs.sudo ];
     services.xserver.desktopManager.xterm.enable = false;
 
     # Install fonts
