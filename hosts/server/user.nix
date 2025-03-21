@@ -9,7 +9,7 @@
         # cli
         awscli.enable = false;
         nvim.enable = false;
-        zsh.enable = true;
+        zsh.enable = false;
         tmux.enable = true;
         git.enable = true;
         gpg.enable = false;
