@@ -9,7 +9,7 @@
         # cli
         awscli.enable = false;
         nvim.enable = false;
-        zsh.enable = false;
+        zsh.enable = true;
         tmux.enable = true;
         git.enable = true;
         gpg.enable = false;
@@ -23,6 +23,8 @@
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 
+    # Make non-nix packages work
+    config.targets.genericLinux.enable = true;
     # Let home-manager manage itself
     config.programs.home-manager.enable = true;
 

@@ -79,7 +79,7 @@
             };
             homeConfigurations = {
                 #                                Architecture   Hostname Username
-                pleyba = mkHome   inputs.nixpkgs "x86_64-linux" "server" "pleyba";
+                server = mkHome   inputs.nixpkgs "x86_64-linux" "server" "pleyba";
             };
     };
 }
