@@ -30,6 +30,7 @@
                 tm -p remote
             '';
         };
+        fzf.enable = true;
         starship.enable = true;
         tmux = {
             enable = true;

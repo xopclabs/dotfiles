@@ -23,7 +23,6 @@ in {
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             zsh
-            fzf
             zsh-fzf-tab
             zoxide
             eza
@@ -69,7 +68,6 @@ in {
                     "sudo"
                     "eza"
                     "zoxide"
-                    "fzf"
                 ];
                 extraConfig = ''
                     # Completion

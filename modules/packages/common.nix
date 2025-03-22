@@ -16,13 +16,12 @@
         usbutils
         pciutils
         busybox
-	ps
+	    ps
         brightnessctl
         ripgrep
         tealdeer
         eza 
         htop 
-        fzf
         pass 
         gnupg 
         bat

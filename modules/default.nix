@@ -30,6 +30,7 @@
         ./nh
         ./ranger
         ./btop
+        ./fzf
 
         # system
         ./xdg
