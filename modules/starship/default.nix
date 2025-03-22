@@ -1,36 +1,52 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.starship;
-
-in {
-    options.modules.starship = { 
-        enable = mkEnableOption "starship"; 
-        icon = mkOption {
-            type = types.str;
-            default = "󱄅";
-            description = "The icon to use for the starship prompt";
-        };
+let 
+    cfg = config.modules.starship;
+    # Semantically named color variables
+    colors = with config.colorScheme.palette; {
+        bg_primary = base0B;
+        bg_secondary = base0D;
+        bg_tertiary = base0A;
+        bg_default = base00;
+        
+        fg_primary = base00;
+        fg_secondary = base05;
+        fg_tertiary = base01;
+        
+        accent_success = base0B;
+        accent_error = base08;
+        accent_warning = base09;
+        accent_info = base0C;
+        accent_purple = base0E;
     };
+in {
+    options.modules.starship = { enable = mkEnableOption "starship"; };
     config = mkIf cfg.enable {
         programs.starship = {
             enable = true;
             enableZshIntegration = true;
         };
-        home.file."${config.xdg.configHome}/starship.toml".text = with config.colorScheme.palette; ''
+        home.file."${config.xdg.configHome}/starship.toml".text = with colors; ''
+            # Main prompt format (left side)
             format = """\
-            [ ](bg:#${base00} fg:#${base0B})\
+            [ ](fg:#${bg_default} bg:#${bg_default})\
             $os\
             $username\
-            [](fg:#${base0B} bg:#${base0D})\
+            [ ](fg:#${bg_primary} bg:#${bg_secondary})\
             $directory\
-            [](fg:#${base0D} bg:#${base0A})\
             $git_branch\
             $git_status\
             $git_metrics\
-            [](fg:#${base0A} bg:#${base00})\
             $character\
             """
+            
+            # Right side prompt format
+            right_format = """\
+            $conda\
+            $cmd_duration\
+            """
+            
             add_newline = false
 
             [line_break]
@@ -39,7 +55,7 @@ in {
             [os]
             disabled = false
             format = "[ $symbol ]($style)"
-            style = "bg:#${base0B} fg:#${base00}"
+            style = "bg:#${bg_primary} fg:#${fg_primary}"
 
             [os.symbols]
             Windows = "󰍲"
@@ -67,46 +83,48 @@ in {
 
             [username]
             show_always = true
-            style_user = "bg:#${base0B} fg:#${base00}"
-            style_root = "bg:#${base0B} fg:#${base00}"
+            style_user = "bg:#${bg_primary} fg:#${fg_primary}"
+            style_root = "bg:#${bg_primary} fg:#${accent_error}"
             format = '[ $user ]($style)'            
 
             [directory]
             format = "[ 󰉋 $path ]($style)"
-            style = "fg:#${base05} bg:#${base0D}"
+            style = "fg:#${fg_secondary} bg:#${bg_secondary}"
 
             [git_branch]
-            format = '[ $symbol$branch(:$remote_branch) ]($style)'
+            format = '[](fg:#${bg_default} bg:#${bg_tertiary})[ $symbol$branch(:$remote_branch) ]($style)[](fg:#${bg_tertiary} bg:#${bg_default})'
             symbol = " "
-            style = "fg:#${base01} bg:#${base0A}"
+            style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
+            disabled = false
 
             [git_status]
             format = '[$all_status]($style)'
-            style = "fg:#${base01} bg:#${base0A}"
+            style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
+            disabled = false
 
             [git_metrics]
             format = "([+$added]($added_style))[ ]($added_style)"
-            added_style = "fg:#${base01} bg:#${base0A}"
-            deleted_style = "fg:#${base08} bg:#${base01}"
+            added_style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
+            deleted_style = "fg:#${accent_error} bg:#${bg_tertiary}"
             disabled = false
-
-            [hg_branch]
-            format = "[ $symbol$branch ]($style)"
-            symbol = " "
-
-            [cmd_duration]
-            format = "[  $duration ]($style)"
-            style = "fg:#${base06} bg:#${base01}"
+            only_nonzero_diffs = true
 
             [character]
-            success_symbol = '[ ➜](bold #${base0B}) '
-            error_symbol = '[ ✗](#${base08}) '
+            success_symbol = '[ ➜](bold #${accent_success}) '
+            error_symbol = '[ ✗](#${accent_error}) '
 
-            [time]
-            disabled = false
-            time_format = "%R" # Hour:Minute Format
-            style = "bg:#${base01}"
-            format = '[[󱑍 $time ](bg:#${base02} fg:#${base0C})]($style)'
+            # Conda environment - only shown when active
+            [conda]
+            format = '[ $symbol$environment ]($style)'
+            symbol = " "
+            style = "fg:#${fg_primary} bg:#${accent_info}"
+            ignore_base = false
+
+            # Command duration - only shown when a command takes longer than min_time
+            [cmd_duration]
+            min_time = 1000
+            format = '[ 󱑎 $duration ]($style)'
+            style = "fg:#${fg_primary} bg:#${accent_purple}"
         '';
     };
 }
