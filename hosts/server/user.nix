@@ -38,6 +38,7 @@
 
         # system
         xdg.enable = true;
+        scripts.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 
