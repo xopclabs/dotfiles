@@ -7,13 +7,9 @@
     ];
     config.modules = {
         # cli
-        awscli.enable = false;
-        nvim.enable = false;
         zsh.enable = true;
         tmux.enable = true;
         git.enable = true;
-        gpg.enable = false;
-        ssh.enable = false;
         nh.enable = true;
         ranger.enable = true;
         btop.enable = true;

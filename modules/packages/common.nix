@@ -16,6 +16,7 @@
         usbutils
         pciutils
         busybox
+	ps
         brightnessctl
         ripgrep
         tealdeer
