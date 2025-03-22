@@ -29,8 +29,12 @@ if tmux has-session 2>/dev/null; then
     # Count the number of tmux sessions
     session_count=$(tmux list-sessions | wc -l)
 
+    # Check if connected via SSH
+    if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
+        # When connected via SSH, just attach without session manager
+        tmux attach-session
     # Check if there is more than 1 session
-    if [ "$session_count" -gt 1 ]; then
+    elif [ "$session_count" -gt 1 ]; then
         # If there are multiple sessions, attach and run session manager
         tmux new-session -As "$session_name" \; run-shell "$(tmux list-keys | grep sessionx.sh | awk '{print $NF}')"
     else
