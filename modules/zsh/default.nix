@@ -72,6 +72,7 @@ in {
                 extraConfig = ''
                     # Completion
                     zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+                    zstyle ':completion:*' matcher-list 'm:{A-Z}={A-Za-z}'
                 '' 
                 + ''
                     # fzf-tab
@@ -81,6 +82,7 @@ in {
                     zstyle ':fzf-tab:complete:ls:*' fzf-preview 'eza -1 --color=always --icons=always $realpath'
                     zstyle ':fzf-tab:complete:eza:*' fzf-preview 'eza -1 --color=always --icons=always $realpath'
                     zstyle ':fzf-tab:*' switch-group '<' '>'
+                    zstyle ':fzf-tab:*' use-fzf-default-opts yes
                     # Popup in tmux
                     # zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
                 '' 
