@@ -3,7 +3,14 @@
 with lib;
 let cfg = config.modules.zsh;
 in {
-    options.modules.zsh = { enable = mkEnableOption "zsh"; };
+    options.modules.zsh = { 
+        enable = mkEnableOption "zsh"; 
+        envExtra = mkOption {
+            type = types.lines;
+            default = "";
+            description = "Extra commands that should be added to .zshenv";
+        };
+    };
 
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
@@ -24,6 +31,7 @@ in {
                 ignoreAllDups = true;
             };
 
+            envExtra = cfg.envExtra;
 
             enableCompletion = true;
             autosuggestion.enable = true;
