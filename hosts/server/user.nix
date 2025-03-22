@@ -3,6 +3,7 @@
 {
     imports = [ 
         ../../modules/default.nix 
+        ./home.nix
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
@@ -45,10 +46,4 @@
         scripts.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
-
-    # Make non-nix packages work
-    config.targets.genericLinux.enable = true;
-    # Let home-manager manage itself
-    config.programs.home-manager.enable = true;
-
 }

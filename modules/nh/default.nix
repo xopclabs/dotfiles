@@ -4,10 +4,17 @@ with lib;
 let cfg = config.modules.nh;
 
 in {
-    options.modules.nh = { enable = mkEnableOption "nh"; };
+    options.modules.nh = { 
+        enable = mkEnableOption "nh"; 
+    };
     config = mkIf cfg.enable {
-        home.packages = with pkgs; [
-            nh
-        ];
+        programs.nh = {
+            enable = true;
+            clean = {
+                enable = true;
+                dates = "weekly";
+                extraArgs = "--delete-older-than 7d";
+            };
+        };
     };
 }
