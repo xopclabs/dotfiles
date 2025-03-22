@@ -29,10 +29,7 @@
                 tm -p remote
             '';
         };
-        starship = {
-            enable = true;
-            icon = "󰕈";
-        };
+        starship.enable = true;
         tmux = {
             enable = true;
             statusPosition = "bottom";
