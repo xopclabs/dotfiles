@@ -21,7 +21,7 @@ in {
             format = """\
             [ ](bg:#${base00} fg:#${base0B})\
             [ ${cfg.icon} ](bg:#${base0B} fg:#${base00})\
-            [](fg:#${base0B} bg:#${base02})\
+            [ ](fg:#${base0B} bg:#${base02})\
             $time\
             [](fg:#${base02} bg:#${base0D})\
             $directory\
@@ -34,12 +34,12 @@ in {
             """
 
             [directory]
-            format = "[ 󰉋  $path ]($style)"
+            format = "[ 󰉋 $path ]($style)"
             style = "fg:#${base05} bg:#${base0D}"
 
             [git_branch]
             format = '[ $symbol$branch(:$remote_branch) ]($style)'
-            symbol = "  "
+            symbol = " "
             style = "fg:#${base01} bg:#${base0A}"
 
             [git_status]
@@ -68,7 +68,7 @@ in {
             disabled = false
             time_format = "%R" # Hour:Minute Format
             style = "bg:#${base01}"
-            format = '[[ 󱑍 $time ](bg:#${base02} fg:#${base0C})]($style)'
+            format = '[[󱑍 $time ](bg:#${base02} fg:#${base0C})]($style)'
         '';
     };
 }
