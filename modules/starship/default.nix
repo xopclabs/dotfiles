@@ -126,7 +126,6 @@ in {
             format = '[ $symbol$loaded ]($style)'
             symbol = " "
             style = "fg:#${fg_primary} bg:#${accent_info}"
-            ignore_base = false
 
             [nix_shell]
             format = '[ $symbol $state ]($style)'
