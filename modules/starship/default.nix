@@ -43,6 +43,8 @@ in {
             
             # Right side prompt format
             right_format = """\
+            $direnv\
+            $nix_shell\
             $conda\
             $cmd_duration\
             """
@@ -119,6 +121,17 @@ in {
             symbol = " "
             style = "fg:#${fg_primary} bg:#${accent_info}"
             ignore_base = false
+
+            [direnv]
+            format = '[ $symbol$loaded ]($style)'
+            symbol = " "
+            style = "fg:#${fg_primary} bg:#${accent_info}"
+            ignore_base = false
+
+            [nix_shell]
+            format = '[ $symbol $state ]($style)'
+            symbol = " "
+            style = "fg:#${fg_primary} bg:#${accent_info}"
 
             # Command duration - only shown when a command takes longer than min_time
             [cmd_duration]
