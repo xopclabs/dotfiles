@@ -25,6 +25,9 @@
             unset __conda_setup
             # <<< conda initialize <<<
             '';
+            initContent = lib.mkOrder 100 ''
+                tm -p remote
+            '';
         };
         tmux = {
             enable = true;

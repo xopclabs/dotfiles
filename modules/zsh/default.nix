@@ -10,6 +10,11 @@ in {
             default = "";
             description = "Extra commands that should be added to .zshenv";
         };
+        initContent = mkOption {
+            type = types.lines;
+            default = "";
+            description = "Init content that should be added to .zshrc";
+        };
     };
 
     config = mkIf cfg.enable {
@@ -32,6 +37,7 @@ in {
             };
 
             envExtra = cfg.envExtra;
+            initContent = cfg.initContent;
 
             enableCompletion = true;
             autosuggestion.enable = true;
