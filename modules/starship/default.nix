@@ -20,10 +20,9 @@ in {
         home.file."${config.xdg.configHome}/starship.toml".text = with config.colorScheme.palette; ''
             format = """\
             [ ](bg:#${base00} fg:#${base0B})\
-            [ ${cfg.icon} ](bg:#${base0B} fg:#${base00})\
-            [ ](fg:#${base0B} bg:#${base02})\
-            $time\
-            [](fg:#${base02} bg:#${base0D})\
+            $os\
+            $username\
+            [](fg:#${base0B} bg:#${base0D})\
             $directory\
             [](fg:#${base0D} bg:#${base0A})\
             $git_branch\
@@ -36,6 +35,41 @@ in {
 
             [line_break]
             disabled = true
+
+            [os]
+            disabled = false
+            format = "[ $symbol ]($style)"
+            style = "bg:#${base0B} fg:#${base00}"
+
+            [os.symbols]
+            Windows = "󰍲"
+            Ubuntu = "󰕈"
+            SUSE = ""
+            Raspbian = "󰐿"
+            Mint = "󰣭"
+            Macos = "󰀵"
+            Manjaro = ""
+            Linux = "󰌽"
+            Gentoo = "󰣨"
+            Fedora = "󰣛"
+            Alpine = ""
+            Amazon = ""
+            Android = ""
+            Arch = "󰣇"
+            Artix = "󰣇"
+            EndeavourOS = ""
+            CentOS = ""
+            Debian = "󰣚"
+            Redhat = "󱄛"
+            RedHatEnterprise = "󱄛"
+            Pop = ""
+            NixOS = ""
+
+            [username]
+            show_always = true
+            style_user = "bg:#${base0B} fg:#${base00}"
+            style_root = "bg:#${base0B} fg:#${base00}"
+            format = '[ $user ]($style)'            
 
             [directory]
             format = "[ 󰉋 $path ]($style)"
@@ -51,7 +85,7 @@ in {
             style = "fg:#${base01} bg:#${base0A}"
 
             [git_metrics]
-            format = "([+$added]($added_style))[]($added_style)"
+            format = "([+$added]($added_style))[ ]($added_style)"
             added_style = "fg:#${base01} bg:#${base0A}"
             deleted_style = "fg:#${base08} bg:#${base01}"
             disabled = false
