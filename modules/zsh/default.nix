@@ -3,12 +3,24 @@
 with lib;
 let cfg = config.modules.zsh;
 in {
-    options.modules.zsh = { enable = mkEnableOption "zsh"; };
+    options.modules.zsh = { 
+        enable = mkEnableOption "zsh"; 
+        envExtra = mkOption {
+            type = types.lines;
+            default = "";
+            description = "Extra commands that should be added to .zshenv";
+        };
+        initContent = mkOption {
+            type = types.lines;
+            default = "";
+            description = "Init content that should be added to .zshrc";
+        };
+    };
 
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             zsh
-            zsh-powerlevel10k
+            #zsh-powerlevel10k
         ];
 
         programs.zsh = {
@@ -20,10 +32,12 @@ in {
             dotDir = ".config/zsh";
 
             history = {
-                path = "/home/xopc/.zsh_history";
+                path = "/home/${config.home.username}/.zsh_history";
                 ignoreAllDups = true;
             };
 
+            envExtra = cfg.envExtra;
+            initContent = cfg.initContent;
 
             enableCompletion = true;
             autosuggestion.enable = true;
@@ -45,16 +59,16 @@ in {
 
             # Source all plugins, nix-style
             plugins = [
-                {
-                    name = "powerlevel10k";
-                    src = pkgs.zsh-powerlevel10k;
-                    file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
-                }
-                {
-                    name = "powerlevel10k-config";
-                    src = lib.cleanSource ./p10k;
-                    file = "p10k.zsh";
-                }
+                # {
+                #     name = "powerlevel10k";
+                #     src = pkgs.zsh-powerlevel10k;
+                #     file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
+                # }
+                # {
+                #     name = "powerlevel10k-config";
+                #     src = lib.cleanSource ./p10k;
+                #     file = "p10k.zsh";
+                # }
             ];
 
         };

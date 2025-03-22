@@ -5,7 +5,7 @@ let
 in {
     config = {
         programs.firefox = {
-            profiles.xopc = {
+            profiles."${config.home.username}" = {
                 userChrome = ''
                     @import "chrome.css";
                 '';
@@ -14,11 +14,11 @@ in {
                 '';
             };
         };
-        home.file.".mozilla/firefox/xopc/chrome" = {
+        home.file.".mozilla/firefox/${config.home.username}/chrome" = {
             recursive = true;
             source = ./theme;
         };
-        home.file.".mozilla/firefox/xopc/chrome/colors.css".text = with config.colorScheme.palette; ''
+        home.file.".mozilla/firefox/${config.home.username}/chrome/colors.css".text = with config.colorScheme.palette; ''
             :root {
             /*Dark*/
             --dark_color1: #${base00};
