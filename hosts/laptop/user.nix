@@ -33,6 +33,7 @@
         nh.enable = true;
         ranger.enable = true;
         btop.enable = true;
+        fzf.enable = true;
 
         # system
         xdg.enable = true;
