@@ -33,7 +33,19 @@ let
         '';
     };
 in {
-    options.modules.tmux = { enable = mkEnableOption "tmux"; };
+    options.modules.tmux = { 
+        enable = mkEnableOption "tmux";
+        statusPosition = mkOption {
+            type = types.enum [ "top" "bottom" ];
+            default = "top";
+            description = "Position of the status bar";
+        };
+        prefixKey = mkOption {
+            type = types.str;
+            default = "C-t";
+            description = "Prefix key combination for tmux";
+        };
+    };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             tmux
@@ -51,7 +63,6 @@ in {
                         bind-key -n C-l if-shell "$is_vim" "send-keys C-l"  "send-keys C-l"
                     '';
                 }
-
                 {
                     plugin = inputs.tmux-sessionx.packages.${pkgs.system}.default;
                     extraConfig = ''
@@ -68,7 +79,6 @@ in {
                         set -g @sessionx-bind-kill-session 'ctrl-d'
                     '';
                 }
-
                 {
                     plugin = catppuccin-tmux;
                     extraConfig = with config.colorScheme.palette; ''
@@ -93,10 +103,9 @@ in {
                         set -g @catppuccin_date_time_text "%H:%M"
                     '';
                 }
-
             ];
 
-            prefix = "C-t";
+            prefix = cfg.prefixKey;
             escapeTime = 0;
             customPaneNavigationAndResize = true;
             disableConfirmationPrompt = true;
@@ -109,7 +118,7 @@ in {
                 set-option -sa terminal-overrides ",xterm*:Tc"
 
                 # Layout
-                set -g status-position top
+                set -g status-position ${cfg.statusPosition}
                 set -g renumber-windows on
 
                 # Panes

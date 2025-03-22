@@ -23,6 +23,7 @@
         ./udiskie
         ./tmux
         ./zsh
+        ./starship
         ./git
         ./gpg
         ./ssh

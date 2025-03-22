@@ -25,6 +25,7 @@
         udiskie.enable = true;
         nvim.enable = true;
         zsh.enable = true;
+        starship.enable = true;
         tmux.enable = true;
         git.enable = true;
         gpg.enable = false;
