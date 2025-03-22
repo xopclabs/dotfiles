@@ -32,6 +32,10 @@ in {
             [](fg:#${base0A} bg:#${base00})\
             $character\
             """
+            add_newline = false
+
+            [line_break]
+            disabled = true
 
             [directory]
             format = "[ 󰉋 $path ]($style)"
