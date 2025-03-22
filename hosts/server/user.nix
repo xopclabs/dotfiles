@@ -26,7 +26,11 @@
             # <<< conda initialize <<<
             '';
         };
-        tmux.enable = true;
+        tmux = {
+            enable = true;
+            statusPosition = "bottom";
+            prefixKey = "C-Space";
+        };
         git.enable = true;
         nh.enable = true;
         ranger.enable = true;
