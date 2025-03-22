@@ -1,0 +1,57 @@
+{ config, lib, inputs, ...}:
+
+{
+    imports = [ 
+        ../../modules/default.nix 
+        inputs.nix-colors.homeManagerModules.default
+    ];
+    config.modules = {
+        # cli
+        zsh = {
+            enable = true;
+            envExtra = ''
+            # >>> conda initialize >>>
+            # !! Contents within this block are managed by 'conda init' !!
+            __conda_setup="$('/home/ubuntu/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+            if [ $? -eq 0 ]; then
+                eval "$__conda_setup"
+            else
+                if [ -f "/home/ubuntu/miniconda3/etc/profile.d/conda.sh" ]; then
+                    . "/home/ubuntu/miniconda3/etc/profile.d/conda.sh"
+                else
+                    export PATH="/home/ubuntu/miniconda3/bin:$PATH"
+                fi
+            fi
+            unset __conda_setup
+            # <<< conda initialize <<<
+            '';
+            initContent = lib.mkOrder 100 ''
+                tm -p remote
+            '';
+        };
+        starship = {
+            enable = true;
+            icon = "󰕈";
+        };
+        tmux = {
+            enable = true;
+            statusPosition = "bottom";
+            prefixKey = "C-Space";
+        };
+        git.enable = true;
+        nh.enable = true;
+        ranger.enable = true;
+        btop.enable = true;
+
+        # system
+        xdg.enable = true;
+        scripts.enable = true;
+    };
+    config.colorScheme = inputs.nix-colors.colorSchemes.nord;
+
+    # Make non-nix packages work
+    config.targets.genericLinux.enable = true;
+    # Let home-manager manage itself
+    config.programs.home-manager.enable = true;
+
+}

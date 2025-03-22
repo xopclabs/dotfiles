@@ -47,7 +47,7 @@ in {
             systemd.enable = true;
 
             settings = {
-                "$terminal" = "tm";
+                "$terminal" = "kitty -e tm";
                 "$newterminal" = "kitty -e tmux";
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";

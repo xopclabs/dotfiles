@@ -14,7 +14,7 @@ in {
         programs.firefox = {
             enable = true;
             # Privacy about:config settings
-            profiles.xopc = {
+            profiles."${config.home.username}" = {
                 isDefault = true;
                 # install extensions from nur
                 extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
