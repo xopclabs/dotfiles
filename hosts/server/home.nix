@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 {
     # Environment variables
@@ -6,6 +6,9 @@
         sessionVariables = {
             FLAKE = "$HOME/dotfiles";
         };
+	packages = with pkgs; [
+            uv
+        ];
     };
 
     # Make non-nix packages work

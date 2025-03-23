@@ -18,6 +18,10 @@ in {
             default = "";
             description = "Init content that should be added to .zshrc";
         };
+        completionInit = mkOption {
+            type = types.lines;
+            default = "";
+        };
     };
 
     config = mkIf cfg.enable {
@@ -33,6 +37,7 @@ in {
 
             envExtra = cfg.envExtra;
             initContent = lib.mkOrder 100 cfg.initContent;
+            completionInit = cfg.completionInit;
 
             history = {
                 path = "${config.home.homeDirectory}/.zsh_history";
