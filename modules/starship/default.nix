@@ -30,7 +30,7 @@ in {
         home.file."${config.xdg.configHome}/starship.toml".text = with colors; ''
             # Main prompt format (left side)
             format = """\
-            [ ](fg:#${bg_default} bg:#${bg_default})\
+            [](fg:#${bg_default} bg:#${bg_default})\
             $os\
             $username\
             [ ](fg:#${bg_primary} bg:#${bg_secondary})\
@@ -47,6 +47,7 @@ in {
             $nix_shell\
             $conda\
             $cmd_duration\
+            [](fg:#${bg_default} bg:#${bg_default})\
             """
             
             add_newline = false
@@ -135,7 +136,7 @@ in {
             # Command duration - only shown when a command takes longer than min_time
             [cmd_duration]
             min_time = 1000
-            format = '[ 󱑎 $duration ]($style)'
+            format = '[ 󱑎 $duration]($style)'
             style = "fg:#${fg_primary} bg:#${accent_purple}"
         '';
     };
