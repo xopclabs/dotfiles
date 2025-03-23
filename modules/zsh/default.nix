@@ -32,7 +32,7 @@ in {
             dotDir = ".config/zsh";
 
             envExtra = cfg.envExtra;
-            initContent = cfg.initContent;
+            initContent = lib.mkOrder 100 cfg.initContent;
 
             history = {
                 path = "${config.home.homeDirectory}/.zsh_history";
@@ -53,7 +53,7 @@ in {
                 rm = "rm -rifv";
                 mv = "mv -iv";
                 cp = "cp -riv";
-                cat = "bat";
+                cat = "bat --paging=never --style=plain";
                 visecret = "sops $NIXOS_CONFIG_DIR/hosts/laptop/secrets.yaml";
             };
 
