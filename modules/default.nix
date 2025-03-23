@@ -31,6 +31,9 @@
         ./ranger
         ./btop
         ./fzf
+        ./eza
+        ./bat
+        ./zoxide
 
         # system
         ./xdg

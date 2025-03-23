@@ -7,6 +7,12 @@
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
+        # essentials
+        git.enable = true;
+        gpg.enable = false;
+        ssh.enable = true;
+        xdg.enable = true;
+
         # gui
         gtk.enable = true;
         firefox.enable = true;
@@ -21,22 +27,23 @@
         plover.enable = true;
 
         # cli
+        zsh.enable = true;
+        tmux.enable = true;
+        starship.enable = true;
+        eza.enable = true;
+        zoxide.enable = true;
+        bat.enable = true;
+        fzf.enable = true;
+
+        # cli tools
         awscli.enable = true;
         udiskie.enable = true;
         nvim.enable = true;
-        zsh.enable = true;
-        starship.enable = true;
-        tmux.enable = true;
-        git.enable = true;
-        gpg.enable = false;
-        ssh.enable = true;
-        nh.enable = true;
         ranger.enable = true;
         btop.enable = true;
-        fzf.enable = true;
+        nh.enable = true;
 
-        # system
-        xdg.enable = true;
+        # extras
         packages.enable = true;
         scripts.enable = true;
     };
