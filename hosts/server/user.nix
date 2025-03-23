@@ -7,6 +7,10 @@
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
+        # essentials
+        git.enable = true;
+        xdg.enable = true;
+
         # cli
         zsh = {
             enable = true;
@@ -26,24 +30,27 @@
             unset __conda_setup
             # <<< conda initialize <<<
             '';
-            initContent = lib.mkOrder 100 ''
+            initContent = ''
                 tm -p remote
             '';
         };
-        fzf.enable = true;
-        starship.enable = true;
         tmux = {
             enable = true;
             statusPosition = "bottom";
             prefixKey = "C-Space";
         };
-        git.enable = true;
+        starship.enable = true;
+        eza.enable = true;
+        zoxide.enable = true;
+        bat.enable = true;
+        fzf.enable = true;
+
+        # cli tools
         nh.enable = true;
         ranger.enable = true;
         btop.enable = true;
 
-        # system
-        xdg.enable = true;
+        # extras
         scripts.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
