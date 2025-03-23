@@ -47,7 +47,6 @@ in {
             $nix_shell\
             $conda\
             $cmd_duration\
-            [](fg:#${bg_default} bg:#${bg_default})\
             """
             
             add_newline = false
@@ -136,7 +135,7 @@ in {
             # Command duration - only shown when a command takes longer than min_time
             [cmd_duration]
             min_time = 1000
-            format = '[ 󱑎 $duration]($style)'
+            format = '[ 󱑎 $duration ]($style)'
             style = "fg:#${fg_primary} bg:#${accent_purple}"
         '';
     };
