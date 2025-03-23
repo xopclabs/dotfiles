@@ -6,7 +6,7 @@
         sessionVariables = {
             FLAKE = "$HOME/dotfiles";
         };
-	packages = with pkgs; [
+        packages = with pkgs; [
             uv
         ];
     };
