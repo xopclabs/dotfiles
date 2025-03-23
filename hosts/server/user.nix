@@ -33,9 +33,6 @@
             initContent = ''
                 tm -p remote
             '';
-            completionInit = ''
-                eval "$(uvx --generate-shell-completion zsh)"
-            '';
         };
         tmux = {
             enable = true;
