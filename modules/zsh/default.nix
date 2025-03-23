@@ -24,8 +24,7 @@ in {
         home.packages = with pkgs; [
             zsh
             zsh-fzf-tab
-            zoxide
-            eza
+            zsh-fast-syntax-highlighting
         ];
 
         programs.zsh = {
@@ -47,17 +46,14 @@ in {
 
             enableCompletion = true;
             autosuggestion.enable = true;
-            syntaxHighlighting.enable = true;
+            historySubstringSearch.enable = true;
 
             shellAliases = {
                 mkdir = "mkdir -vp";
                 rm = "rm -rifv";
                 mv = "mv -iv";
                 cp = "cp -riv";
-                cat = "bat --paging=never --style=plain";
-                tree = "eza --tree --icons=automatic";
-                grep = "grep";
-                reconfig = "STARTDIR=$(pwd); cd $NIXOS_CONFIG_DIR; sudo nixos-rebuild switch --flake \"$NIXOS_CONFIG_DIR?submodules=1\" --fast; cd $STARTDIR";
+                cat = "bat";
                 visecret = "sops $NIXOS_CONFIG_DIR/hosts/laptop/secrets.yaml";
             };
 
@@ -66,8 +62,6 @@ in {
                 plugins = [ 
                     "git"
                     "sudo"
-                    "eza"
-                    "zoxide"
                 ];
                 extraConfig = ''
                     # Completion
@@ -85,14 +79,6 @@ in {
                     zstyle ':fzf-tab:*' use-fzf-default-opts yes
                     # Popup in tmux
                     # zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
-                '' 
-                + ''
-                    # Icons for eza
-                    zstyle ':omz:plugins:eza' 'icons' yes
-                ''
-                + ''
-                    # Redefine cd to use zoxide
-                    export ZOXIDE_CMD_OVERRIDE="cd"
                 '';
             };
 
@@ -101,7 +87,12 @@ in {
                 {
                     name = pkgs.zsh-fzf-tab.pname;
                     src = pkgs.zsh-fzf-tab.src;
-                    file = "fzf-tab.zsh";
+                    file = "fzf-tab.plugin.zsh";
+                }
+                {
+                    name = pkgs.zsh-fast-syntax-highlighting.pname;
+                    src = pkgs.zsh-fast-syntax-highlighting.src;
+                    file = "fast-syntax-highlighting.plugin.zsh";
                 }
             ] ++ [
                 (mkIf cfg.p10k.enable {
