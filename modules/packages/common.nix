@@ -7,7 +7,6 @@
         mesa
         pkg-config
         git 
-        python3 
         lua 
         zig 
         # linux utils
@@ -16,7 +15,7 @@
         usbutils
         pciutils
         busybox
-	    ps
+        ps
         brightnessctl
         ripgrep
         tealdeer

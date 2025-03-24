@@ -42,6 +42,7 @@ in {
             # hiddify-app
             libreoffice
             vlc
+            python3
         ];
     };
 }
