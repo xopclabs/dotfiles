@@ -30,9 +30,6 @@
             unset __conda_setup
             # <<< conda initialize <<<
             '';
-            initContent = ''
-                tm -p remote
-            '';
         };
         tmux = {
             enable = true;
