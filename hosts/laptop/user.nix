@@ -11,7 +11,10 @@
         git.enable = true;
         gpg.enable = false;
         ssh.enable = true;
-        xdg.enable = true;
+        xdg = {
+            enable = true;
+            video-player = "vlc.desktop";
+        };
 
         # gui
         gtk.enable = true;
@@ -21,7 +24,7 @@
         waybar.enable = true;
         rofi.enable = true;
         vscode.enable = true;
-        mpv.enable = true;
+        mpv.enable = false;
         zen.enable = false;
         kicad.enable = true;
         plover.enable = true;

@@ -41,6 +41,7 @@ in {
             code-cursor
             # hiddify-app
             libreoffice
+            vlc
         ];
     };
 }
