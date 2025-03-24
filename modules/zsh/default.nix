@@ -67,6 +67,7 @@ in {
                 plugins = [ 
                     "git"
                     "sudo"
+                    "aws"
                 ];
                 extraConfig = ''
                     # Completion
