@@ -1,13 +1,27 @@
 { inputs, pkgs, lib, config, ... }:
 
 with lib;
-let 
-    cfg = config.modules.xdg;
-    browser = "zen.desktop";
-    file-manager = "org.gnome.Nautilus.desktop";
-    image-viewer = "org.gnome.Loupe.desktop";
+let cfg = config.modules.xdg;
 in {
-    options.modules.xdg = { enable = mkEnableOption "xdg"; };
+    options.modules.xdg = { 
+        enable = mkEnableOption "xdg"; 
+        browser = mkOption {
+            type = types.str;
+            default = "firefox.desktop";
+        };
+        file-manager = mkOption {
+            type = types.str;
+            default = "nautilus.desktop";
+        };
+        image-viewer = mkOption {
+            type = types.str;
+            default = "loupe.desktop";
+        };
+        video-player = mkOption {
+            type = types.str;
+            default = "vlc.desktop";
+        };
+    };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             nautilus
@@ -24,47 +38,53 @@ in {
             publicShare = "$HOME/other/";
             templates = "$HOME/other/";
         };
-        /*
         xdg.mimeApps = rec {
             enable = true;
             associations.added = defaultApplications;
             defaultApplications = {
-                "inode/directory" = file-manager;
+                "inode/directory" = cfg.file-manager;
 
-                "x-scheme-handler/http" = browser;
-                "x-scheme-handler/https" = browser;
-                "application/xhtml+xml" = browser;
-                "text/html" = browser;
+                "x-scheme-handler/http" = cfg.browser;
+                "x-scheme-handler/https" = cfg.browser;
+                "application/xhtml+xml" = cfg.browser;
+                "text/html" = cfg.browser;
 
                 #"x-scheme-handler/magnet" = torrent;
-                "application/pdf" = browser;
+                "application/pdf" = cfg.browser;
 
-                "image/jpeg" = image-viewer;
-                "image/bmp" = image-viewer;
-                "image/gif" = image-viewer;
-                "image/jpg" = image-viewer;
-                "image/pjpeg" = image-viewer;
-                "image/png" = image-viewer;
-                "image/tiff" = image-viewer;
-                "image/webp" = image-viewer;
-                "image/x-bmp" = image-viewer;
-                "image/x-gray" = image-viewer;
-                "image/x-icb" = image-viewer;
-                "image/x-ico" = image-viewer;
-                "image/x-png" = image-viewer;
-                "image/x-portable-anymap" = image-viewer;
-                "image/x-portable-bitmap" = image-viewer;
-                "image/x-portable-graymap" = image-viewer;
-                "image/x-portable-pixmap" = image-viewer;
-                "image/x-xbitmap" = image-viewer;
-                "image/x-xpixmap" = image-viewer;
-                "image/x-pcx" = image-viewer;
-                "image/svg+xml" = image-viewer;
-                "image/svg+xml-compressed" = image-viewer;
-                "image/vnd.wap.wbmp" = image-viewer;
-                "image/x-icns" = image-viewer;
+                "image/jpeg" = cfg.image-viewer;
+                "image/bmp" = cfg.image-viewer;
+                "image/gif" = cfg.image-viewer;
+                "image/jpg" = cfg.image-viewer;
+                "image/pjpeg" = cfg.image-viewer;
+                "image/png" = cfg.image-viewer;
+                "image/tiff" = cfg.image-viewer;
+                "image/webp" = cfg.image-viewer;
+                "image/x-bmp" = cfg.image-viewer;
+                "image/x-gray" = cfg.image-viewer;
+                "image/x-icb" = cfg.image-viewer;
+                "image/x-ico" = cfg.image-viewer;
+                "image/x-png" = cfg.image-viewer;
+                "image/x-portable-anymap" = cfg.image-viewer;
+                "image/x-portable-bitmap" = cfg.image-viewer;
+                "image/x-portable-graymap" = cfg.image-viewer;
+                "image/x-portable-pixmap" = cfg.image-viewer;
+                "image/x-xbitmap" = cfg.image-viewer;
+                "image/x-xpixmap" = cfg.image-viewer;
+                "image/x-pcx" = cfg.image-viewer;
+                "image/svg+xml" = cfg.image-viewer;
+                "image/svg+xml-compressed" = cfg.image-viewer;
+                "image/vnd.wap.wbmp" = cfg.image-viewer;
+                "image/x-icns" = cfg.image-viewer;
+
+                "video/mp4" = cfg.video-player;
+                "video/mpeg" = cfg.video-player;
+                "video/quicktime" = cfg.video-player;
+                "video/x-msvideo" = cfg.video-player;
+                "video/x-ms-asf" = cfg.video-player;
+                "video/x-ms-wmv" = cfg.video-player;
+                
             };
         };
-        */
     };
 }
