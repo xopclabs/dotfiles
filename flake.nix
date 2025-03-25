@@ -36,16 +36,9 @@
                         (./. + "/hosts/${hostname}/system/configuration.nix")
                         # Hardware config (bootloader, kernel modules, filesystems, etc)
                         (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
-                        # home-mananger and sops configuration as NixOS modules
-                        inputs.home-manager.nixosModules.home-manager
+                        # sops as NixOS module
                         inputs.sops-nix.nixosModules.sops
                         {
-                            home-manager = {
-                                useUserPackages = true;
-                                useGlobalPkgs = true;
-                                extraSpecialArgs = { inherit inputs; };
-                                users."${username}" = (./. + "/hosts/${hostname}/user.nix");
-                            };
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
@@ -56,6 +49,7 @@
                 home-manager.lib.homeManagerConfiguration {
                     pkgs = import nixpkgs {
                         system = system;
+                        overlays = [ inputs.nur.overlays.default ];
                         config = {
                             allowUnfree = true;
                         };
@@ -79,6 +73,7 @@
             };
             homeConfigurations = {
                 #                                Architecture   Hostname Username
+                xopc = mkHome    inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
                 pleyba = mkHome   inputs.nixpkgs "x86_64-linux" "server" "pleyba";
             };
     };

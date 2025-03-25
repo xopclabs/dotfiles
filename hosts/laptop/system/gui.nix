@@ -42,6 +42,8 @@ in
         };
     };
 
+   programs.dconf.enable = true; 
+
     # Wayland stuff: enable XDG integration, allow sway to use brillo
     xdg = {
         autostart.enable = true;

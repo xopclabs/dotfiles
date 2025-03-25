@@ -4,6 +4,7 @@
     imports = [ 
         ../../modules/default.nix 
         ./sops.nix
+        ./home.nix
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
