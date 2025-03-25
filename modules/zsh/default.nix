@@ -5,29 +5,11 @@ let cfg = config.modules.zsh;
 in {
     options.modules.zsh = { 
         enable = mkEnableOption "zsh"; 
-        p10k = {
-            enable = mkEnableOption "p10k";
-        };
-        envExtra = mkOption {
-            type = types.lines;
-            default = "";
-        };
-        initExtraFirst = mkOption {
-            type = types.lines;
-            default = "";
-        };
-        initExtraBeforeCompInit = mkOption {
-            type = types.lines;
-            default = "";
-        };
-        completionInit = mkOption {
-            type = types.lines;
-            default = "";
-        };
-        initExtra = mkOption {
-            type = types.lines;
-            default = "";
-        };
+        envExtra = mkOption { type = types.lines; default = ""; };
+        initExtraFirst = mkOption { type = types.lines; default = ""; };
+        initExtraBeforeCompInit = mkOption { type = types.lines; default = ""; };
+        completionInit = mkOption { type = types.lines; default = ""; };
+        initExtra = mkOption { type = types.lines; default = ""; };
     };
 
     config = mkIf cfg.enable {
@@ -112,19 +94,7 @@ in {
                     src = pkgs.zsh-fast-syntax-highlighting.src;
                     file = "fast-syntax-highlighting.plugin.zsh";
                 }
-            ] ++ [
-                (mkIf cfg.p10k.enable {
-                    name = pkgs.zsh-powerlevel10k.pname;
-                    src = pkgs.zsh-powerlevel10k;
-                    file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
-                })
-                (mkIf cfg.p10k.enable {
-                    name = "powerlevel10k-config";
-                    src = lib.cleanSource ./p10k;
-                    file = "p10k.zsh";
-                })
             ];
-
         };
     };
 }
