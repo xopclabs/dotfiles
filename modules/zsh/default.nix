@@ -11,14 +11,20 @@ in {
         envExtra = mkOption {
             type = types.lines;
             default = "";
-            description = "Extra commands that should be added to .zshenv";
         };
-        initContent = mkOption {
+        initExtraFirst = mkOption {
             type = types.lines;
             default = "";
-            description = "Init content that should be added to .zshrc";
+        };
+        initExtraBeforeCompInit = mkOption {
+            type = types.lines;
+            default = "";
         };
         completionInit = mkOption {
+            type = types.lines;
+            default = "";
+        };
+        initExtra = mkOption {
             type = types.lines;
             default = "";
         };
@@ -36,8 +42,14 @@ in {
             dotDir = ".config/zsh";
 
             envExtra = cfg.envExtra;
-            initContent = lib.mkOrder 100 cfg.initContent;
+            initExtraFirst = cfg.initExtraFirst;
+            initExtraBeforeCompInit = cfg.initExtraBeforeCompInit;
             completionInit = cfg.completionInit;
+            initExtra = ''
+                bindkey -r '^T'
+                bindkey -r '^S'
+                bindkey '^S' fzf-file-widget
+            '' + cfg.initExtra;
 
             history = {
                 path = "${config.home.homeDirectory}/.zsh_history";
