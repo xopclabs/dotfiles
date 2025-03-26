@@ -59,14 +59,10 @@ in {
 
         # Install optional dependencies
         home.packages = with pkgs; [
-            ffmpeg
-            _7zz
             poppler
             jq
             fd
             ripgrep
-            fzf
-            zoxide
             imagemagick
         ];
     };

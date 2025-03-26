@@ -10,8 +10,6 @@ in {
 
         home.packages = with pkgs; [
             fd
-            bat
-            eza
         ];
 
         programs.fzf = {
@@ -35,7 +33,7 @@ in {
                 header = "#${base05}";
             };
             fileWidgetOptions = [
-                "--preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+                "--preview 'bat --color=always --style=numbers --line-range=:500 {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
             ];
             changeDirWidgetOptions = [
                 "--preview 'eza -1 --color=always --icons=always {}'"
