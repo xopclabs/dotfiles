@@ -4,6 +4,7 @@
     imports = [ 
         ../../modules/default.nix 
         ./home.nix
+        ./sops.nix
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
@@ -44,6 +45,7 @@
         fzf.enable = true;
 
         # cli tools
+        awscli.enable = true;
         nh.enable = true;
         yazi.enable = true;
         btop.enable = true;

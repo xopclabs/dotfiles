@@ -1,7 +1,13 @@
 keys:
-  - &primary age17k8jp2whraxnl94c52tqxnnslyvazcx2gtjdr5fxlxgky3n86shq4lsu2c
+  - &personal age17k8jp2whraxnl94c52tqxnnslyvazcx2gtjdr5fxlxgky3n86shq4lsu2c
+  - &work age1fsg3cfw5tz5vt5hkpvsfz8a8fsz65mfqsaj3uk6vxpt3l2pe6d5s86pgpd
 creation_rules:
   - path_regex: hosts/laptop/secrets.yaml$
     key_groups:
       - age:
-        - *primary
+        - *personal
+  - path_regex: hosts/server/secrets.yaml$
+    key_groups:
+      - age:
+        - *work
+        - *personal
