@@ -29,11 +29,13 @@
         ./ssh
         ./nh
         ./ranger
+        ./yazi
         ./btop
         ./fzf
         ./eza
         ./bat
         ./zoxide
+        ./tldr
 
         # system
         ./xdg

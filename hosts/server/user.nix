@@ -44,8 +44,9 @@
 
         # cli tools
         nh.enable = true;
-        ranger.enable = true;
+        yazi.enable = true;
         btop.enable = true;
+        tldr.enable = true;
 
         # extras
         scripts.enable = true;

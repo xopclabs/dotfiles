@@ -43,9 +43,10 @@
         awscli.enable = true;
         udiskie.enable = true;
         nvim.enable = true;
-        ranger.enable = true;
+        yazi.enable = true;
         btop.enable = true;
         nh.enable = true;
+        tldr.enable = true;
 
         # extras
         packages.enable = true;
