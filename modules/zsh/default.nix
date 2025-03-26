@@ -28,9 +28,9 @@ in {
             initExtraBeforeCompInit = cfg.initExtraBeforeCompInit;
             completionInit = cfg.completionInit;
             initExtra = ''
-                bindkey -r '^T'
-                bindkey -r '^S'
-                bindkey '^S' fzf-file-widget
+                export FZF_COMPLETION_TRIGGER=""
+                bindkey '^S' fzf-completion
+                bindkey '^I' $fzf_default_completion
             '' + cfg.initExtra;
 
             history = {

@@ -17,9 +17,9 @@ in {
         programs.fzf = {
             enable = true;
             enableZshIntegration = true;
-            defaultCommand = "fd --type f --hidden --exclude .git --strip-cwd-prefix";
-            fileWidgetCommand = "fd --type f --hidden --exclude .git --strip-cwd-prefix";
-            changeDirWidgetCommand = "fd --type d --hidden --exclude .git --strip-cwd-prefix";
+            defaultCommand = "fd --type f --hidden --exclude .git";
+            fileWidgetCommand = "fd --type f --hidden --exclude .git";
+            changeDirWidgetCommand = "fd --type d --hidden --exclude .git";
             colors = with config.colorScheme.palette; {
                 fg = "#${base05}";
                 "fg+" = "#${base06}";
@@ -42,7 +42,6 @@ in {
             ];
             historyWidgetOptions = [
                 "--sort"
-                "--exact"
             ];
         };
     };
