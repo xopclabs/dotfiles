@@ -14,7 +14,6 @@ in {
 
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
-            zsh
             zsh-fzf-tab
             zsh-fast-syntax-highlighting
         ];
@@ -31,6 +30,19 @@ in {
                 export FZF_COMPLETION_TRIGGER=""
                 bindkey '^S' fzf-completion
                 bindkey '^I' $fzf_default_completion
+
+                # Modified fzf function that uses the smart preview.
+                _fzf_comprun() {
+                    local command=$1
+                    shift
+
+                    case "$command" in
+                        cd|mv|cp|rm) fzf "$@" --preview 'see {}' ;;
+                        cursor|code|nvim|vim)
+                            fzf "$@" --walker file,hidden --preview 'see {}' --bind 'ctrl-/:change-preview-window(down|hidden|)' ;;
+                        *) fzf "$@" ;;
+                    esac
+                }
             '' + cfg.initExtra;
 
             history = {
@@ -45,7 +57,6 @@ in {
 
             enableCompletion = true;
             autosuggestion.enable = true;
-            historySubstringSearch.enable = true;
 
             shellAliases = {
                 mkdir = "mkdir -vp";

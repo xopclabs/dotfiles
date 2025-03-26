@@ -26,7 +26,6 @@
         rofi.enable = true;
         vscode.enable = true;
         mpv.enable = false;
-        zen.enable = false;
         kicad.enable = true;
         plover.enable = true;
 

@@ -19,11 +19,9 @@
         brightnessctl
         ripgrep
         tealdeer
-        eza 
         htop 
         pass 
         gnupg 
-        bat
         zip
         unzip 
         lm_sensors
