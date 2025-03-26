@@ -29,6 +29,7 @@
             fi
             unset __conda_setup
             # <<< conda initialize <<<
+            export CONDA_CHANGEPS1=false
             '';
         };
         tmux = {
