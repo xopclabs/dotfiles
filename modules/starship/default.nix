@@ -30,10 +30,8 @@ in {
         home.file."${config.xdg.configHome}/starship.toml".text = with colors; ''
             # Main prompt format (left side)
             format = """\
-            [](fg:#${bg_default} bg:#${bg_default})\
             $os\
             $username\
-            [ ](fg:#${bg_primary} bg:#${bg_secondary})\
             $directory\
             $git_branch\
             $git_status\
@@ -90,12 +88,12 @@ in {
             format = '[ $user ]($style)'            
 
             [directory]
-            format = "[ 󰉋 $path ]($style)"
+            format = "[ 󰉋  $path ]($style)"
             style = "fg:#${fg_secondary} bg:#${bg_secondary}"
 
             [git_branch]
-            format = '[](fg:#${bg_default} bg:#${bg_tertiary})[ $symbol$branch(:$remote_branch) ]($style)[](fg:#${bg_tertiary} bg:#${bg_default})'
-            symbol = " "
+            format = '[](fg:#${bg_default} bg:#${bg_tertiary})[ $symbol $branch(:$remote_branch) ]($style)[](fg:#${bg_tertiary} bg:#${bg_default})'
+            symbol = ""
             style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
             disabled = false
 
