@@ -21,120 +21,133 @@ let
         accent_purple = base0E;
     };
 in {
-    options.modules.starship = { enable = mkEnableOption "starship"; };
+    options.modules.starship = {
+        enable = mkEnableOption "starship";
+        aws = {
+            enable = mkEnableOption "aws module";
+        };
+    };
     config = mkIf cfg.enable {
         programs.starship = {
             enable = true;
             enableZshIntegration = true;
+            settings = with colors; {
+                format = concatStrings [
+                    "$os"
+                    "$username"
+                    (optionalString cfg.aws.enable "$aws")
+                    "$directory"
+                    "$git_branch"
+                    "$git_status"
+                    "$git_metrics"
+                    "$character"
+                ];
+                
+                right_format = concatStrings [
+                    "$direnv"
+                    "$nix_shell"
+                    "$conda"
+                    "$cmd_duration"
+                ];
+                
+                add_newline = false;
+
+                line_break = {
+                    disabled = true;
+                };
+
+                os = {
+                    disabled = false;
+                    format = "[ $symbol ]($style)";
+                    style = "bg:#${bg_primary} fg:#${fg_primary}";
+                    symbols = {
+                        Windows = "󰍲";
+                        Ubuntu = "󰕈";
+                        Macos = "󰀵";
+                        Amazon = "";
+                        Arch = "󰣇";
+                        Debian = "󰣚";
+                        NixOS = "";
+                    };
+                };
+
+                username = {
+                    show_always = true;
+                    style_user = "bg:#${bg_primary} fg:#${fg_primary}";
+                    style_root = "bg:#${bg_primary} fg:#${accent_error}";
+                    format = "[ $user ]($style)";
+                };
+
+                hostname = {
+                    ssh_only = true;
+                    ssh_symbol = " ";
+                    format = "[@ $hostname ]($style)";
+                    style = "fg:#${fg_primary} bg:#${bg_primary}";
+                    disabled = false;
+                };
+
+                aws = mkIf cfg.aws.enable {
+                    format = "[ $symbol $region ]($style)";
+                    style = "fg:#${fg_primary} bg:#${accent_warning}";
+                    symbol = " ";
+                };
+
+                directory = {
+                    format = "[ 󰉋  $path ]($style)";
+                    style = "fg:#${fg_secondary} bg:#${bg_secondary}";
+                };
+
+                git_branch = {
+                    format = "[](fg:#${bg_default} bg:#${bg_tertiary})[ $symbol $branch(:$remote_branch) ]($style)[](fg:#${bg_tertiary} bg:#${bg_default})";
+                    symbol = "";
+                    style = "fg:#${fg_tertiary} bg:#${bg_tertiary}";
+                    disabled = false;
+                };
+
+                git_status = {
+                    format = "[$all_status]($style)";
+                    style = "fg:#${fg_tertiary} bg:#${bg_tertiary}";
+                    disabled = false;
+                };
+
+                git_metrics = {
+                    format = "([+$added]($added_style))[ ]($added_style)";
+                    added_style = "fg:#${fg_tertiary} bg:#${bg_tertiary}";
+                    deleted_style = "fg:#${accent_error} bg:#${bg_tertiary}";
+                    disabled = false;
+                    only_nonzero_diffs = true;
+                };
+
+                character = {
+                    success_symbol = "[ ➜](bold #${accent_success}) ";
+                    error_symbol = "[ ](bold #${accent_error}) ";
+                };
+
+                conda = {
+                    format = "[ $symbol$environment ]($style)";
+                    symbol = " ";
+                    style = "fg:#${fg_primary} bg:#${accent_info}";
+                    ignore_base = false;
+                };
+
+                direnv = {
+                    format = "[ $symbol$loaded ]($style)";
+                    symbol = " ";
+                    style = "fg:#${fg_primary} bg:#${accent_info}";
+                };
+
+                nix_shell = {
+                    format = "[ $symbol $state ]($style)";
+                    symbol = " ";
+                    style = "fg:#${fg_primary} bg:#${accent_info}";
+                };
+
+                cmd_duration = {
+                    min_time = 1000;
+                    format = "[ 󱑎 $duration ]($style)";
+                    style = "fg:#${fg_primary} bg:#${accent_purple}";
+                };
+            };
         };
-        home.file."${config.xdg.configHome}/starship.toml".text = with colors; ''
-            # Main prompt format (left side)
-            format = """\
-            $os\
-            $username\
-            $hostname\
-            [ ](bg:#${bg_primary} fg:#${fg_primary})\
-            $aws\
-            $directory\
-            $git_branch\
-            $git_status\
-            $git_metrics\
-            $character\
-            """
-            
-            # Right side prompt format
-            right_format = """\
-            $direnv\
-            $nix_shell\
-            $conda\
-            $cmd_duration\
-            """
-            
-            add_newline = false
-
-            [line_break]
-            disabled = true
-
-            [os]
-            disabled = false
-            format = "[ $symbol ]($style)"
-            style = "bg:#${bg_primary} fg:#${fg_primary}"
-
-            [os.symbols]
-            Windows = "󰍲"
-            Ubuntu = "󰕈"
-            Macos = "󰀵"
-            Amazon = ""
-            Arch = "󰣇"
-            Debian = "󰣚"
-            NixOS = ""
-
-            [username]
-            show_always = true
-            style_user = "bg:#${bg_primary} fg:#${fg_primary}"
-            style_root = "bg:#${bg_primary} fg:#${accent_error}"
-            format = '[ $user]($style)'            
-
-            [hostname]
-            ssh_only = true
-            ssh_symbol = " "
-            format = '[@$hostname]($style)'
-            style = "fg:#${fg_primary} bg:#${bg_primary}"
-            disabled = false
-
-            [aws]
-            format = "[ $symbol $region ]($style)"
-            style = "fg:#${fg_primary} bg:#${accent_warning}"
-            symbol = " "
-
-            [directory]
-            format = "[ 󰉋  $path ]($style)"
-            style = "fg:#${fg_secondary} bg:#${bg_secondary}"
-
-            [git_branch]
-            format = '[](fg:#${bg_default} bg:#${bg_tertiary})[ $symbol $branch(:$remote_branch) ]($style)[](fg:#${bg_tertiary} bg:#${bg_default})'
-            symbol = ""
-            style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
-            disabled = false
-
-            [git_status]
-            format = '[$all_status]($style)'
-            style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
-            disabled = false
-
-            [git_metrics]
-            format = "([+$added]($added_style))[ ]($added_style)"
-            added_style = "fg:#${fg_tertiary} bg:#${bg_tertiary}"
-            deleted_style = "fg:#${accent_error} bg:#${bg_tertiary}"
-            disabled = false
-            only_nonzero_diffs = true
-
-            [character]
-            success_symbol = '[ ➜](bold #${accent_success}) '
-            error_symbol = '[ ✗](#${accent_error}) '
-
-            # Conda environment - only shown when active
-            [conda]
-            format = '[ $symbol$environment ]($style)'
-            symbol = " "
-            style = "fg:#${fg_primary} bg:#${accent_info}"
-            ignore_base = false
-
-            [direnv]
-            format = '[ $symbol$loaded ]($style)'
-            symbol = " "
-            style = "fg:#${fg_primary} bg:#${accent_info}"
-
-            [nix_shell]
-            format = '[ $symbol $state ]($style)'
-            symbol = " "
-            style = "fg:#${fg_primary} bg:#${accent_info}"
-
-            # Command duration - only shown when a command takes longer than min_time
-            [cmd_duration]
-            min_time = 1000
-            format = '[ 󱑎 $duration ]($style)'
-            style = "fg:#${fg_primary} bg:#${accent_purple}"
-        '';
     };
 }
