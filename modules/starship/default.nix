@@ -45,7 +45,7 @@ in {
                     "$os"
                     "$username"
                     "$hostname"
-                    "[ ](bg:${green})"
+                    "[ ](bg:#${green} fg:#${fg})"
                     (optionalString cfg.aws.enable "$aws")
                     "$directory"
                     "$git_branch"
