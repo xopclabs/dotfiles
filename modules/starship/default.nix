@@ -50,8 +50,8 @@ in {
                     "$directory"
                     "$git_branch"
                     "$git_commit"
-                    "$git_status"
                     "$git_metrics"
+                    "$git_status"
                     "$character"
                 ];
                 
@@ -128,6 +128,14 @@ in {
                     disabled = false;
                 };
 
+                git_metrics = {
+                    format = "([+$added]($added_style)[-$deleted ]($deleted_style))";
+                    added_style = "bg:#${git_bg} fg:#${green}";
+                    deleted_style = "bg:#${git_bg} fg:#${red}";
+                    disabled = false;
+                    only_nonzero_diffs = true;
+                };
+
                 git_status = {
                     format = "([$ahead$behind$diverged ]($style))";
                     ahead = "⇡\${count}";
@@ -135,18 +143,6 @@ in {
                     behind = "⇣\${count}";
                     style = "bg:#${git_bg} fg:#${git_fg} ";
                     disabled = false;
-                };
-
-                git_metrics = {
-                    format = concatStrings [
-                        "([+$added]($added_style))"
-                        "([-$deleted]($deleted_style))"
-			            "[ ](bg:#${git_bg})"
-                    ];
-                    added_style = "bg:#${git_bg} fg:#${green}";
-                    deleted_style = "bg:#${git_bg} fg:#${red}";
-                    disabled = false;
-                    only_nonzero_diffs = true;
                 };
 
                 character = {
