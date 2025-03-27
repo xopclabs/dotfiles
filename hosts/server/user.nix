@@ -39,7 +39,10 @@
             statusPosition = "bottom";
             prefixKey = "C-Space";
         };
-        starship.enable = true;
+        starship = {
+            enable = true;
+            aws.enable = true;
+        };
         eza.enable = true;
         zoxide.enable = true;
         bat.enable = true;
