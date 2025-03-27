@@ -34,6 +34,7 @@ in {
             $username\
             $hostname\
             [ ](bg:#${bg_primary} fg:#${fg_primary})\
+            $aws\
             $directory\
             $git_branch\
             $git_status\
@@ -62,25 +63,10 @@ in {
             [os.symbols]
             Windows = "󰍲"
             Ubuntu = "󰕈"
-            SUSE = ""
-            Raspbian = "󰐿"
-            Mint = "󰣭"
             Macos = "󰀵"
-            Manjaro = ""
-            Linux = "󰌽"
-            Gentoo = "󰣨"
-            Fedora = "󰣛"
-            Alpine = ""
             Amazon = ""
-            Android = ""
             Arch = "󰣇"
-            Artix = "󰣇"
-            EndeavourOS = ""
-            CentOS = ""
             Debian = "󰣚"
-            Redhat = "󱄛"
-            RedHatEnterprise = "󱄛"
-            Pop = ""
             NixOS = ""
 
             [username]
@@ -95,6 +81,11 @@ in {
             format = '[@$hostname]($style)'
             style = "fg:#${fg_primary} bg:#${bg_primary}"
             disabled = false
+
+            [aws]
+            format = "[ $symbol $region ]($style)"
+            style = "fg:#${fg_primary} bg:#${accent_warning}"
+            symbol = " "
 
             [directory]
             format = "[ 󰉋  $path ]($style)"
