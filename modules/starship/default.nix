@@ -44,6 +44,8 @@ in {
                 format = concatStrings [
                     "$os"
                     "$username"
+                    "$hostname"
+                    "[ ](bg:${green})"
                     (optionalString cfg.aws.enable "$aws")
                     "$directory"
                     "$git_branch"
@@ -84,12 +86,12 @@ in {
                     show_always = true;
                     style_user = "bg:#${green} fg:#${fg}";
                     style_root = "bg:#${red} fg:#${fg}";
-                    format = "[$user ]($style)";
+                    format = "[$user]($style)";
                 };
                 hostname = {
                     ssh_only = true;
                     ssh_symbol = "";
-                    format = "[@ $hostname ]($style)";
+                    format = "[@$hostname]($style)";
                     style = "bg:#${green} fg:#${fg} ";
                     disabled = false;
                 };
@@ -97,7 +99,7 @@ in {
                 aws = mkIf cfg.aws.enable {
                     format = "[ $symbol $region ]($style)";
                     style = "bg:#${orange} fg:#${fg} ";
-                    symbol = " ";
+                    symbol = "";
                 };
 
                 directory = {
