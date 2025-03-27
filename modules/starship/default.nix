@@ -32,6 +32,8 @@ in {
             format = """\
             $os\
             $username\
+            $hostname\
+            [ ](bg:#${bg_primary} fg:#${fg_primary})\
             $directory\
             $git_branch\
             $git_status\
@@ -85,7 +87,14 @@ in {
             show_always = true
             style_user = "bg:#${bg_primary} fg:#${fg_primary}"
             style_root = "bg:#${bg_primary} fg:#${accent_error}"
-            format = '[ $user ]($style)'            
+            format = '[ $user]($style)'            
+
+            [hostname]
+            ssh_only = true
+            ssh_symbol = " "
+            format = '[@$hostname]($style)'
+            style = "fg:#${fg_primary} bg:#${bg_primary}"
+            disabled = false
 
             [directory]
             format = "[ 󰉋  $path ]($style)"
