@@ -100,6 +100,7 @@ in {
                     format = "[ $symbol $region ]($style)";
                     style = "bg:#${orange} fg:#${fg} ";
                     symbol = "";
+                    force_display = true;
                 };
 
                 directory = {
@@ -139,7 +140,8 @@ in {
                 git_metrics = {
                     format = concatStrings [
                         "([+$added]($added_style))"
-                        "([-$deleted ]($deleted_style))"
+                        "([-$deleted]($deleted_style))"
+			"[ ](bg:#${git_bg})"
                     ];
                     added_style = "bg:#${git_bg} fg:#${green}";
                     deleted_style = "bg:#${git_bg} fg:#${red}";
