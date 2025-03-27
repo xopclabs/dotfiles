@@ -46,7 +46,6 @@
         fzf.enable = true;
 
         # cli tools
-        awscli.enable = true;
         nh.enable = true;
         yazi.enable = true;
         btop.enable = true;
