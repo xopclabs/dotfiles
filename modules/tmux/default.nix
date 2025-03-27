@@ -142,5 +142,9 @@ in {
                 bind s split-window -h -c "#{pane_current_path}"
             '';
         };
+
+        programs.zsh.shellAliases = {
+            ssh = "ssh-tmux";
+        };
     };
 }
