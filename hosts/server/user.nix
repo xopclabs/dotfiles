@@ -15,6 +15,7 @@
         # cli
         zsh = {
             enable = true;
+            envFile.enable = true;
             envExtra = ''
             # >>> conda initialize >>>
             # !! Contents within this block are managed by 'conda init' !!

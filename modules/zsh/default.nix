@@ -22,7 +22,7 @@ in {
             zsh-fast-syntax-highlighting
         ];
 
-        sops.secrets."environment" = mkIf cfg.envFile.enable { 
+        sops.secrets."env" = mkIf cfg.envFile.enable { 
             path = cfg.envFile.path;
         };
 
@@ -38,6 +38,7 @@ in {
                 # Source env file if exitsts
                 if [[ -f "${cfg.envFile.path}" ]]; then
                     source "${cfg.envFile.path}"
+                fi
 
                 export FZF_COMPLETION_TRIGGER=""
                 bindkey '^S' fzf-completion
