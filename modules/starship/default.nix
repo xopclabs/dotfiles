@@ -3,22 +3,45 @@
 with lib;
 let 
     cfg = config.modules.starship;
-    # Semantically named color variables
+    # Nord theme colors
     colors = with config.colorScheme.palette; {
-        bg_primary = base0B;
-        bg_secondary = base0D;
-        bg_tertiary = base0A;
-        bg_default = base00;
+  /*
+  base00: "#2E3440"
+  base01: "#3B4252"
+  base02: "#434C5E"
+  base03: "#4C566A"
+  base04: "#D8DEE9"
+  base05: "#E5E9F0"
+  base06: "#ECEFF4"
+  base07: "#8FBCBB"
+  base08: "#BF616A"
+  base09: "#D08770"
+  base0A: "#EBCB8B"
+  base0B: "#A3BE8C"
+  base0C: "#88C0D0"
+  base0D: "#81A1C1"
+  base0E: "#B48EAD"
+  base0F: "#5E81AC"
+  */
+
+        gray_darkest = base00;
+        gray_darker = base01;
+        gray_lighter = base02;
+        gray_lightest = base03;
         
-        fg_primary = base00;
-        fg_secondary = base05;
-        fg_tertiary = base01;
+        white_darkest = base04;
+        white_darker = base05;
+        white_lightest = base06;
         
-        accent_success = base0B;
-        accent_error = base08;
-        accent_warning = base09;
-        accent_info = base0C;
-        accent_purple = base0E;
+        teal = base07;
+        red = base08;
+        orange = base09;
+        yellow = base0A;
+        green = base0B;
+        cyan = base0C;
+        blue = base0D;
+        purple = base0E;
+        blue_dark = base0F;
     };
 in {
     options.modules.starship = {
@@ -31,13 +54,18 @@ in {
         programs.starship = {
             enable = true;
             enableZshIntegration = true;
-            settings = with colors; {
+            settings = with colors; let
+                fg = gray_darkest;
+                git_bg = gray_darker;
+                git_fg = white_darkest;
+            in {
                 format = concatStrings [
                     "$os"
                     "$username"
                     (optionalString cfg.aws.enable "$aws")
                     "$directory"
                     "$git_branch"
+                    "$git_commit"
                     "$git_status"
                     "$git_metrics"
                     "$character"
@@ -59,7 +87,7 @@ in {
                 os = {
                     disabled = false;
                     format = "[ $symbol ]($style)";
-                    style = "bg:#${bg_primary} fg:#${fg_primary}";
+                    style = "bg:#${green} fg:#${fg}";
                     symbols = {
                         Windows = "󰍲";
                         Ubuntu = "󰕈";
@@ -67,85 +95,102 @@ in {
                         Amazon = "";
                         Arch = "󰣇";
                         Debian = "󰣚";
-                        NixOS = "";
+                        NixOS = "󱄅";
                     };
                 };
-
                 username = {
                     show_always = true;
-                    style_user = "bg:#${bg_primary} fg:#${fg_primary}";
-                    style_root = "bg:#${bg_primary} fg:#${accent_error}";
-                    format = "[ $user ]($style)";
+                    style_user = "bg:#${green} fg:#${fg}";
+                    style_root = "bg:#${red} fg:#${fg}";
+                    format = "[$user ]($style)";
                 };
-
                 hostname = {
                     ssh_only = true;
-                    ssh_symbol = " ";
+                    ssh_symbol = "";
                     format = "[@ $hostname ]($style)";
-                    style = "fg:#${fg_primary} bg:#${bg_primary}";
+                    style = "bg:#${green} fg:#${fg} ";
                     disabled = false;
                 };
 
                 aws = mkIf cfg.aws.enable {
                     format = "[ $symbol $region ]($style)";
-                    style = "fg:#${fg_primary} bg:#${accent_warning}";
+                    style = "bg:#${orange} fg:#${fg} ";
                     symbol = " ";
                 };
 
                 directory = {
-                    format = "[ 󰉋  $path ]($style)";
-                    style = "fg:#${fg_secondary} bg:#${bg_secondary}";
+                    format = "[ 󰉋 $path ]($style)";
+                    style = "bg:#${blue} fg:#${fg} ";
                 };
 
                 git_branch = {
-                    format = "[](fg:#${bg_default} bg:#${bg_tertiary})[ $symbol $branch(:$remote_branch) ]($style)[](fg:#${bg_tertiary} bg:#${bg_default})";
+                    format = concatStrings [
+                        "[ $symbol $branch(:$remote_branch) ]($style)"
+                    ];
                     symbol = "";
-                    style = "fg:#${fg_tertiary} bg:#${bg_tertiary}";
+                    style = "bg:#${git_bg} fg:#${git_fg}";
+                    only_attached = true;
+                    disabled = false;
+                };
+
+                git_commit = {
+                    format = concatStrings [
+                        "[$hash$tag ]($style)"
+                    ];
+                    style = "bg:#${git_bg} fg:#${git_fg}";
+                    tag_symbol = "";
+                    tag_disabled = false;
                     disabled = false;
                 };
 
                 git_status = {
-                    format = "[$all_status]($style)";
-                    style = "fg:#${fg_tertiary} bg:#${bg_tertiary}";
+                    format = "[$ahead$behind$diverged]($style)";
+                    ahead = "⇡\${count}";
+                    diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
+                    behind = "⇣\${count}";
+                    style = "bg:#${git_bg} fg:#${git_fg} ";
                     disabled = false;
                 };
 
                 git_metrics = {
-                    format = "([+$added]($added_style))[ ]($added_style)";
-                    added_style = "fg:#${fg_tertiary} bg:#${bg_tertiary}";
-                    deleted_style = "fg:#${accent_error} bg:#${bg_tertiary}";
+                    format = concatStrings [
+                        "([+$added]($added_style))"
+                        "([-$deleted ]($deleted_style))"
+                    ];
+                    added_style = "bg:#${git_bg} fg:#${green}";
+                    deleted_style = "bg:#${git_bg} fg:#${red}";
                     disabled = false;
                     only_nonzero_diffs = true;
                 };
 
                 character = {
-                    success_symbol = "[ ➜](bold #${accent_success}) ";
-                    error_symbol = "[ ](bold #${accent_error}) ";
+                    success_symbol = "[ ➜](bold #${green}) ";
+                    error_symbol = "[ ](bold #${red}) ";
                 };
 
                 conda = {
                     format = "[ $symbol$environment ]($style)";
                     symbol = " ";
-                    style = "fg:#${fg_primary} bg:#${accent_info}";
+                    style = "bg:#${cyan} fg:#${fg}";
                     ignore_base = false;
                 };
 
                 direnv = {
                     format = "[ $symbol$loaded ]($style)";
                     symbol = " ";
-                    style = "fg:#${fg_primary} bg:#${accent_info}";
+                    style = "bg:#${cyan} fg:#${fg}";
                 };
 
                 nix_shell = {
                     format = "[ $symbol $state ]($style)";
                     symbol = " ";
-                    style = "fg:#${fg_primary} bg:#${accent_info}";
+                    style = "bg:#${cyan} fg:#${fg}";
                 };
 
                 cmd_duration = {
                     min_time = 1000;
                     format = "[ 󱑎 $duration ]($style)";
-                    style = "fg:#${fg_primary} bg:#${accent_purple}";
+                    style = "bg:#${purple} fg:#${fg}";
                 };
             };
         };
