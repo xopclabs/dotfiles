@@ -120,7 +120,7 @@ in {
 
                 git_commit = {
                     format = concatStrings [
-                        "[$hash$tag ]($style)"
+                        "([$hash$tag ]($style))"
                     ];
                     style = "bg:#${git_bg} fg:#${git_fg}";
                     tag_symbol = "";
@@ -129,7 +129,7 @@ in {
                 };
 
                 git_status = {
-                    format = "[$ahead$behind$diverged]($style)";
+                    format = "([$ahead$behind$diverged ]($style))";
                     ahead = "⇡\${count}";
                     diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
                     behind = "⇣\${count}";
@@ -141,7 +141,7 @@ in {
                     format = concatStrings [
                         "([+$added]($added_style))"
                         "([-$deleted]($deleted_style))"
-			"[ ](bg:#${git_bg})"
+			            "[ ](bg:#${git_bg})"
                     ];
                     added_style = "bg:#${git_bg} fg:#${green}";
                     deleted_style = "bg:#${git_bg} fg:#${red}";
