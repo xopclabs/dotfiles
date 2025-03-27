@@ -5,6 +5,10 @@ let cfg = config.modules.zsh;
 in {
     options.modules.zsh = { 
         enable = mkEnableOption "zsh"; 
+        envFile = {
+            enable = mkEnableOption "envFile";
+            path = mkOption { type = types.path; default="${config.xdg.configHome}/.env"; };
+        };
         envExtra = mkOption { type = types.lines; default = ""; };
         initExtraFirst = mkOption { type = types.lines; default = ""; };
         initExtraBeforeCompInit = mkOption { type = types.lines; default = ""; };
@@ -18,6 +22,10 @@ in {
             zsh-fast-syntax-highlighting
         ];
 
+        sops.secrets."environment" = mkIf cfg.envFile.enable { 
+            path = cfg.envFile.path;
+        };
+
         programs.zsh = {
             enable = true;
             dotDir = ".config/zsh";
@@ -27,6 +35,10 @@ in {
             initExtraBeforeCompInit = cfg.initExtraBeforeCompInit;
             completionInit = cfg.completionInit;
             initExtra = ''
+                # Source env file if exitsts
+                if [[ -f "${cfg.envFile.path}" ]]; then
+                    source "${cfg.envFile.path}"
+
                 export FZF_COMPLETION_TRIGGER=""
                 bindkey '^S' fzf-completion
                 bindkey '^I' $fzf_default_completion
@@ -38,7 +50,7 @@ in {
 
                     case "$command" in
                         cd|mv|cp|rm) fzf "$@" --preview 'see {}' ;;
-                        cursor|code|nvim|vim)
+                        cursor|code|nvim|vim|bat|cat)
                             fzf "$@" --walker file,hidden --preview 'see {}' --bind 'ctrl-/:change-preview-window(down|hidden|)' ;;
                         *) fzf "$@" ;;
                     esac
