@@ -162,7 +162,7 @@ in {
                 };
 
                 nix_shell = {
-                    format = "[ $symbol $state ]($style)";
+                    format = "[ $symbol$state ]($style)";
                     symbol = " ";
                     style = "bg:#${cyan} fg:#${fg}";
                 };
