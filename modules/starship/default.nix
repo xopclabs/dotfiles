@@ -127,7 +127,7 @@ in {
                 };
 
                 git_metrics = {
-                    format = "([+$added]($added_style)[-$deleted ]($deleted_style))";
+                    format = "(([+$added]($added_style))([-$deleted]($deleted_style))[ ](bg:#${git_bg}))";
                     added_style = "bg:#${git_bg} fg:#${green}";
                     deleted_style = "bg:#${git_bg} fg:#${red}";
                     disabled = false;
