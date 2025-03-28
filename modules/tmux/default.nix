@@ -45,6 +45,7 @@ in {
             default = "C-t";
             description = "Prefix key combination for tmux";
         };
+        mouse.enable = mkEnableOption "tmux mouse";
     };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
@@ -110,7 +111,7 @@ in {
             customPaneNavigationAndResize = true;
             disableConfirmationPrompt = true;
             keyMode = "vi";
-            mouse = true;
+            mouse = cfg.mouse.enable;
             clock24 = true;
             shell = "${pkgs.zsh}/bin/zsh";
             terminal = "screen-256color";
