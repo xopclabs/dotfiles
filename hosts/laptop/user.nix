@@ -31,7 +31,10 @@
 
         # cli
         zsh.enable = true;
-        tmux.enable = true;
+        tmux = {
+            enable = true;
+            mouse.enable = true;
+        };
         starship.enable = true;
         eza.enable = true;
         zoxide.enable = true;
