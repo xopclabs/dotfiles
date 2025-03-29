@@ -25,8 +25,10 @@ in {
                     "class<blueman>" = "";
                     "class<chromium-browser>" = "";
                     "class<Chromium-browser>" = "";
+                    "class<yazi>" = "";
                     "class<ranger>" = "";
                     "class<(kitty|ranger)> title<ranger.*>" = "";
+                    "class<(kitty|yazi)> title<yazi.*>" = "";
                     "class<mpv>" = "";
                     "class<rofi>" = "󱄅";
                     "class<firefox> title<.*Slack.*>" = "󰒱";
