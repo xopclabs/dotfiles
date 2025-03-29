@@ -8,7 +8,8 @@ in {
     config = mkIf cfg.enable {
         programs.yazi = {
             enable = true;
-            enableZshIntegration = true;
+            enableZshIntegration = config.modules.zsh.enable;
+            shellWrapperName = "y";
 
             settings = {
                 manager = {
@@ -35,7 +36,7 @@ in {
                 };
                 icon = {
                     exts = [
-                        { name = "py"; text = ""; fg = "red"; }
+                        { name = "py"; text = ""; fg = "blue"; }
                     ]; 
                 };
             };
@@ -53,12 +54,9 @@ in {
             '';
         };
 
-        programs.zsh.shellAliases = {
-            y = "yazi";
-        };
-
         # Install optional dependencies
         home.packages = with pkgs; [
+            mktemp
             poppler
             jq
             fd
