@@ -27,7 +27,6 @@ in {
             wev
             wf-recorder 
             adwaita-icon-theme
-            ranger
             slack
             telegram-desktop
             libsForQt5.qt5.qtwayland
