@@ -14,6 +14,10 @@ in {
             };
             config = {
                 loop-file = "inf";
+                cache = "yes";
+                cache-secs = 300;
+                cache-on-disk = "yes";
+                demuxer-cache-dir = "${config.xdg.configHome}/.cache/mpv";
             };
         };
     };
