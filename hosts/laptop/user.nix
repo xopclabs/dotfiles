@@ -25,7 +25,7 @@
         waybar.enable = true;
         rofi.enable = true;
         vscode.enable = true;
-        mpv.enable = false;
+        mpv.enable = true;
         kicad.enable = true;
         plover.enable = true;
 
