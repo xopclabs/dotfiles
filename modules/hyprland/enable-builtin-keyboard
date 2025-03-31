@@ -1,0 +1,11 @@
+# Force-enable the built-in keyboard
+
+# Name of the built-in keyboard (as shown in hyprctl devices)
+BUILTIN_KB="at-translated-set-2-keyboard"
+
+# Force enable the built-in keyboard
+hyprctl keyword "device[$BUILTIN_KB]:enabled" true
+
+# Notify the user
+notify-send "Forced: Built-in keyboard enabled"
+
