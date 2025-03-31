@@ -117,6 +117,7 @@ in {
             terminal = "screen-256color";
             extraConfig = with config.colorScheme.palette; ''
                 set-option -sa terminal-overrides ",xterm*:Tc"
+                set-option -ga terminal-overrides ",*-256color:Tc"
 
                 # Layout
                 set -g status-position ${cfg.statusPosition}
