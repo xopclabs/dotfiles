@@ -135,10 +135,15 @@ in {
                 };
 
                 git_status = {
-                    format = "([$ahead$behind$diverged ]($style))";
+                    format = "([$ahead_behind$untracked$modified$deleted$renamed$staged$conflicted ]($style))";
                     ahead = "⇡\${count}";
                     diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
                     behind = "⇣\${count}";
+                    untracked = "?\${count}";
+                    modified = "!\${count}";
+                    staged = "+\${count}";
+                    deleted = "\${count}";
+                    conflicted = "\${count}";
                     style = "bg:#${git_bg} fg:#${git_fg} ";
                     disabled = false;
                 };
