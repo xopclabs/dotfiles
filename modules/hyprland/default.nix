@@ -7,9 +7,11 @@ let
     monitor_external = "HDMI-A-2";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
-    hypr_windowrule = pkgs.writeShellScriptBin "hypr_windowrule.sh" ''${builtins.readFile ../hyprland/hypr_windowrule.sh}'';
-    bar_restart = pkgs.writeShellScriptBin "bar_restart.sh" ''${builtins.readFile ../hyprland/bar_restart.sh}'';
-    screenrecord = pkgs.writeShellScriptBin "screenrecord.sh" ''
+    hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ../hyprland/hypr-windowrule}'';
+    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ../hyprland/bar-restart}'';
+    autodisable-builtin-keyboard = pkgs.writeShellScriptBin "autodisable-builtin-keyboard" ''${builtins.readFile ../hyprland/autodisable-builtin-keyboard}'';
+    enable-builtin-keyboard = pkgs.writeShellScriptBin "enable-builtin-keyboard" ''${builtins.readFile ../hyprland/enable-builtin-keyboard}'';
+    screenrecord = pkgs.writeShellScriptBin "screenrecord" ''
         # Check if wf-recorder is currently running
         if pgrep -x wf-recorder > /dev/null; then
             echo "Stopping wf-recorder..."
@@ -29,9 +31,12 @@ in {
     config = lib.mkIf cfg.enable {
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
-            bar_restart
-            hypr_windowrule
+            pkgs.libinput
+            bar-restart
+            hypr-windowrule
             screenrecord
+            autodisable-builtin-keyboard
+            enable-builtin-keyboard
         ];
 
         home.pointerCursor = {
@@ -63,8 +68,8 @@ in {
                     "swww-daemon"
                     "hypridle"
                     "waybar"
-                    "bar_restart.sh"
-                    "hypr_windowrule.sh"
+                    "bar-restart"
+                    "hypr-windowrule"
                     "tmux new -s main"
                     "[workspace 7 silent] proxychains4 telegram-desktop"
                     "[workspace 8 silent] slack"
@@ -219,7 +224,7 @@ in {
                     "$mod, L, exec, launcher"
                     ", XF86PowerOff, exec, powermenu"
                     ",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
-                    "SHIFT,Print, exec, screenrecord.sh"
+                    "SHIFT,Print, exec, screenrecord"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, firefox"
@@ -257,13 +262,15 @@ in {
                 ];
 
                 bindl = [
+                    ",switch:on:[Lid switch], exec, enable-builtin-keyboard"
                     ",switch:on:[Lid switch], exec, ${lock}"
                     ",switch:on:[Lid switch], exec, systemctl suspend"
                     ",switch:off:[Lid switch], exec, freshman_start"
-                    ", XF86Tools, exec, hyprctl switchxkblayout architeuthis-dux 0"
+                    ",switch:off:[Lid switch], exec, enable-builtin-keyboard"
+                
+                    # F13, F14 binds for keyboard layouts
                     ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
                     ", XF86Tools, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 0"
-                    ", XF86Launch5, exec, hyprctl switchxkblayout architeuthis-dux 1"
                     ", XF86Launch5, exec, hyprctl switchxkblayout sweep-keyboard 1"
                     ", XF86Launch5, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 1"
                 ];
