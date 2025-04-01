@@ -24,7 +24,10 @@
         hyprland.enable = true;
         waybar.enable = true;
         rofi.enable = true;
-        vscode.enable = true;
+        vscode = {
+            enable = true;
+            mutable = true;
+        };
         mpv.enable = true;
         kicad.enable = true;
         plover.enable = true;
