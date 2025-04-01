@@ -30,12 +30,12 @@
         when = "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)";
     }
     {
-        key = "space t h";
+        key = "space t v";
         command = "workbench.action.splitEditor";
         when = "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)";
     }
     {
-        key = "space t v";
+        key = "space t h";
         command = "workbench.action.splitEditorDown";
         when = "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)";
     }

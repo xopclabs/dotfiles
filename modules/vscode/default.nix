@@ -14,13 +14,10 @@ let
 
     sysDir = config.xdg.configHome;
     userSettingsPath = "${sysDir}/${configDir}/User/settings.json";
+    userSettingsPathCursor = "${sysDir}/Cursor/User/settings.json";
     keybindingsPath = "${sysDir}/${configDir}/User/keybindings.json";
+    keybindingsPathCursor = "${sysDir}/Cursor/User/keybindings.json";
 in {
-    # imports = [
-    #     ./userSettings.nix
-    #     ./keybindings.nix
-    # ];
-
     options.modules.vscode = { 
         enable = mkEnableOption "vscode"; 
         mutable = mkEnableOption "mutable configuration"; 
@@ -32,6 +29,8 @@ in {
                 removeExistingVSCodeSettings = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
                     rm -rf "${userSettingsPath}"
                     rm -rf "${keybindingsPath}"
+                    rm -rf "${userSettingsPathCursor}"
+                    rm -rf "${keybindingsPathCursor}"
                 '';
 
                 overwriteVSCodeSymlink = let
@@ -42,15 +41,18 @@ in {
                 in lib.hm.dag.entryAfter [ "linkGeneration" ] ''
                     rm -rf "${userSettingsPath}"
                     rm -rf "${keybindingsPath}"
+                    rm -rf "${userSettingsPathCursor}"
+                    rm -rf "${keybindingsPathCursor}"
                     cat ${jsonSettings} | ${pkgs.jq}/bin/jq --monochrome-output > "${userSettingsPath}"
                     cat ${jsonKeybindings} | ${pkgs.jq}/bin/jq --monochrome-output > "${keybindingsPath}"
+                    cat ${jsonSettings} | ${pkgs.jq}/bin/jq --monochrome-output > "${userSettingsPathCursor}"
+                    cat ${jsonKeybindings} | ${pkgs.jq}/bin/jq --monochrome-output > "${keybindingsPathCursor}"
                 '';
             };
         };
 
         programs.vscode = {
             enable = true;
-            # package = vscode;
 
             profiles.default = {
                 userSettings = import ./userSettings.nix;
@@ -64,23 +66,6 @@ in {
                     vscodevim.vim
                 ];
             };
-        };
-
-        # Copy settings and keybindings to Cursor
-        home.file = {
-            "${config.xdg.configHome}/Code/User/settings.json".onChange = ''
-                mkdir -pv ${config.xdg.configHome}/Cursor/User
-                cp -av \
-                ${config.xdg.configHome}/Code/User/settings.json \
-                ${config.xdg.configHome}/Cursor/User
-            '';
-
-            "${config.xdg.configHome}/Code/User/keybindings.json".onChange = ''
-                mkdir -pv ${config.xdg.configHome}/Cursor/User
-                cp -av \
-                ${config.xdg.configHome}/Code/User/keybindings.json \
-                ${config.xdg.configHome}/Cursor/User
-            '';
         };
     };
 }
