@@ -1,16 +1,10 @@
-{ config, lib, ... }:
-
-with lib;
-let 
-    cfg = config.modules.vscode;
-in {
-    config.programs.vscode.profiles.default.userSettings = mkIf cfg.enable {
-        editor.fontSize = 20;
-        editor.fontFamily = "'Mononoki Nerd Font','Monaco','Droid Sans Mono', 'monospace', monospace";
-        editor.minimap.enabled = false;
-        telemetry.telemetryLevel = "off";
-        explorer.confirmDragAndDrop = false;
-        git.confirmSync = false;
+{
+    editor.fontSize = 20;
+    editor.fontFamily = "'Mononoki Nerd Font','Monaco','Droid Sans Mono', 'monospace', monospace";
+    editor.minimap.enabled = false;
+    telemetry.telemetryLevel = "off";
+    explorer.confirmDragAndDrop = false;
+    git.confirmSync = false;
         explorer.confirmDelete = false;
         dev.containers.copyGitConfig = true;
         notebook.cellToolbarLocation = {
@@ -51,5 +45,4 @@ in {
         window.customTitleBarVisibility = "auto";
         files.autoSave = "onFocusChange";
         workbench.colorTheme = "Nord";
-    };
 }
