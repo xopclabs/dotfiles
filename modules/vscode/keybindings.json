@@ -68,6 +68,25 @@
         "when": "vim.mode == 'Normal' && editorTextFocus && foldersViewVisible"
     },
     
+    // Terminal
+    {
+        "command": "workbench.action.terminal.new",
+        "key": "ctrl+t n",
+        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+    },
+    {
+        "command": "workbench.action.terminal.focus",
+        "key": "ctrl+t s",
+        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+    },
+    {
+        "command": "workbench.action.terminal.toggleTerminal",
+        "key": "ctrl+t d",
+        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus || terminalFocus)"
+    },
+
+    
+    
     // Code actions
     {
         "command": "editor.action.codeAction",
@@ -241,6 +260,9 @@
     {
         "command": "-aichat.newchataction",
         "key": "ctrl+l",
-        "when": null
-    }
+    },
+    {
+        "key": "ctrl+i",
+        "command": "-composer.startComposerPrompt"
+    },
 ]
