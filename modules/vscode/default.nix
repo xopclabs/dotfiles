@@ -3,52 +3,16 @@
 with lib;
 let 
     cfg = config.modules.vscode;
-    vscodePname = config.programs.vscode.package.pname;
-
-    configDir = {
-        "vscode" = "Code";
-        "cursor" = "Cursor";
-    }.${vscodePname};
-
-    sysDir = config.xdg.configHome;
-    userSettingsPath = "${sysDir}/${configDir}/User/settings.json";
-    userSettingsPathCursor = "${sysDir}/Cursor/User/settings.json";
-    keybindingsPath = "${sysDir}/${configDir}/User/keybindings.json";
-    keybindingsPathCursor = "${sysDir}/Cursor/User/keybindings.json";
 in {
-    options.modules.vscode = { 
-        enable = mkEnableOption "vscode"; 
-        mutable = mkEnableOption "mutable configuration"; 
-    };
+    options.modules.vscode = { enable = mkEnableOption "vscode"; };
 
     config = mkIf cfg.enable {
-        home = {
-            file.".config/Code/User/settings.json".source = ./settings.json;
-            file.".config/Code/User/keybindings.json".source = ./keybindings.json;
-            activation = mkIf cfg.mutable {
-                removeExistingVSCodeSettings = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
-                    rm -rf "${userSettingsPath}"
-                    rm -rf "${keybindingsPath}"
-                    rm -rf "${userSettingsPathCursor}"
-                    rm -rf "${keybindingsPathCursor}"
-                '';
 
-                overwriteVSCodeSymlink = let
-                    userSettings = readFile ./settings.json;
-                    keybindings = readFile ./keybindings.json;
-                    jsonSettings = pkgs.writeText "tmp_vscode_settings" userSettings;
-                    jsonKeybindings = pkgs.writeText "tmp_vscode_keybindings" keybindings;
-                in lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-                    rm -rf "${userSettingsPath}"
-                    rm -rf "${keybindingsPath}"
-                    rm -rf "${userSettingsPathCursor}"
-                    rm -rf "${keybindingsPathCursor}"
-                    cp ${jsonSettings} "${userSettingsPath}"
-                    cp ${jsonKeybindings} "${keybindingsPath}"
-                    cp ${jsonSettings} "${userSettingsPathCursor}"
-                    cp ${jsonKeybindings} "${keybindingsPathCursor}"
-                '';
-            };
+        home.file = {
+            "${config.xdg.configHome}/Code/User/settings.json".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/settings.json";
+            "${config.xdg.configHome}/Code/User/keybindings.json".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/keybindings.json";
+            "${config.xdg.configHome}/Cursor/User/settings.json".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/settings.json";
+            "${config.xdg.configHome}/Cursor/User/keybindings.json".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/keybindings.json";
         };
 
         programs.vscode = {
