@@ -1,0 +1,94 @@
+{
+    "chat": {
+        "editor": {
+            "fontSize": 16
+        }
+    },
+    "dev": {
+        "containers": {
+            "copyGitConfig": true
+        }
+    },
+    "editor": {
+        "codeLensFontFamily": "'Monaco'",
+        "fontFamily": "'Mononoki Nerd Font','Monaco','Droid Sans Mono', 'monospace', monospace",
+        "fontSize": 20,
+        "inlineSuggest": {
+            "enabled": true
+        },
+        "minimap": {
+            "enabled": false
+        },
+        "suggestSelection": "first",
+        "tabSize": 4,
+        "wordWrap": "off"
+    },
+    "explorer": {
+        "confirmDelete": false,
+        "confirmDragAndDrop": false
+    },
+    "files": {
+        "autoSave": "onFocusChange",
+        "exclude": {
+            "**/.ipynb_checkpoints": true,
+            "**/__pycache__": true
+        }
+    },
+    "git": {
+        "autofetch": true,
+        "confirmSync": false,
+        "defaultBranchName": "main"
+    },
+    "jupyter": {
+        "askForKernelRestart": false,
+        "widgetScriptSources": [
+            "jsdelivr.com",
+            "unpkg.com"
+        ]
+    },
+    "notebook": {
+        "cellToolbarLocation": {
+            "default": "right",
+            "jupyter-notebook": "right"
+        }
+    },
+    "python": {
+        "languageServer": "Pylance"
+    },
+    "remote": {
+        "autoForwardPortsSource": "hybrid"
+    },
+    "search": {
+        "exclude": {
+            "**/.ipynb_checkpoints": true,
+            "**/__pycache__": true,
+            "**/build": true,
+            "**/node_modules": true
+        }
+    },
+    "telemetry": {
+        "telemetryLevel": "off"
+    },
+    "terminal": {
+        "integrated": {
+            "fontFamily": "'mononoki Nerd Font'",
+            "fontSize": 16
+        }
+    },
+    "vim": {
+        "easymotion": true
+    },
+    "window": {
+        "customTitleBarVisibility": "auto",
+        "titleBarStyle": "custom"
+    },
+    "workbench": {
+        "activityBar": {
+            "orientation": "vertical"
+        },
+        "colorTheme": "Nord"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    }
+}

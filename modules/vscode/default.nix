@@ -7,8 +7,6 @@ let
 
     configDir = {
         "vscode" = "Code";
-        "vscode-insiders" = "Code - Insiders";
-        "vscodium" = "VSCodium";
         "cursor" = "Cursor";
     }.${vscodePname};
 
@@ -25,6 +23,8 @@ in {
 
     config = mkIf cfg.enable {
         home = {
+            file.".config/Code/User/settings.json".source = ./settings.json;
+            file.".config/Code/User/keybindings.json".source = ./keybindings.json;
             activation = mkIf cfg.mutable {
                 removeExistingVSCodeSettings = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
                     rm -rf "${userSettingsPath}"
@@ -34,36 +34,36 @@ in {
                 '';
 
                 overwriteVSCodeSymlink = let
-                    userSettings = config.programs.vscode.profiles.default.userSettings;
-                    keybindings = config.programs.vscode.profiles.default.keybindings;
-                    jsonSettings = pkgs.writeText "tmp_vscode_settings" (builtins.toJSON userSettings);
-                    jsonKeybindings = pkgs.writeText "tmp_vscode_keybindings" (builtins.toJSON keybindings);
+                    userSettings = readFile ./settings.json;
+                    keybindings = readFile ./keybindings.json;
+                    jsonSettings = pkgs.writeText "tmp_vscode_settings" userSettings;
+                    jsonKeybindings = pkgs.writeText "tmp_vscode_keybindings" keybindings;
                 in lib.hm.dag.entryAfter [ "linkGeneration" ] ''
                     rm -rf "${userSettingsPath}"
                     rm -rf "${keybindingsPath}"
                     rm -rf "${userSettingsPathCursor}"
                     rm -rf "${keybindingsPathCursor}"
-                    cat ${jsonSettings} | ${pkgs.jq}/bin/jq --monochrome-output > "${userSettingsPath}"
-                    cat ${jsonKeybindings} | ${pkgs.jq}/bin/jq --monochrome-output > "${keybindingsPath}"
-                    cat ${jsonSettings} | ${pkgs.jq}/bin/jq --monochrome-output > "${userSettingsPathCursor}"
-                    cat ${jsonKeybindings} | ${pkgs.jq}/bin/jq --monochrome-output > "${keybindingsPathCursor}"
+                    cp ${jsonSettings} "${userSettingsPath}"
+                    cp ${jsonKeybindings} "${keybindingsPath}"
+                    cp ${jsonSettings} "${userSettingsPathCursor}"
+                    cp ${jsonKeybindings} "${keybindingsPathCursor}"
                 '';
             };
         };
 
         programs.vscode = {
             enable = true;
-
             profiles.default = {
-                userSettings = import ./userSettings.nix;
-                keybindings = import ./keybindings.nix;
                 extensions = with pkgs.vscode-extensions; [
                     arcticicestudio.nord-visual-studio-code
                     ms-python.python
                     ms-python.vscode-pylance
+                    ms-toolsai.jupyter-keymap
                     ms-vscode-remote.remote-containers
                     ms-vscode-remote.remote-ssh
                     vscodevim.vim
+                    mkhl.direnv
+                    bbenoist.nix
                 ];
             };
         };
