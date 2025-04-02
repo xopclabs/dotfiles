@@ -42,5 +42,25 @@ in {
                 "--sort"
             ];
         };
+
+        programs.zsh.initExtra = ''
+            export FZF_COMPLETION_TRIGGER=""
+            bindkey '^S' fzf-completion
+            bindkey '^I' $fzf_default_completion
+
+            # Modified fzf function that uses the smart preview.
+            _fzf_comprun() {
+                local command=$1
+                shift
+
+                case "$command" in
+                    cd|mv|cp|rm) fzf "$@" --preview 'see {}' ;;
+                    cursor|code|nvim|vim|bat|cat)
+                        fzf "$@" --walker file,hidden --preview 'see {}' --bind 'ctrl-/:change-preview-window(down|hidden|)' ;;
+                    *) fzf "$@" ;;
+                esac
+            }
+        '';
+
     };
 }
