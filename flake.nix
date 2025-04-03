@@ -72,9 +72,9 @@
                 laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
             };
             homeConfigurations = {
-                #                                Architecture   Hostname Username
-                xopc = mkHome    inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
-                pleyba = mkHome   inputs.nixpkgs "x86_64-linux" "server" "pleyba";
+                #                              Architecture   Hostname Username
+                xopc   = mkHome inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
+                pleyba = mkHome inputs.nixpkgs "x86_64-linux" "server" "pleyba";
             };
     };
 }
