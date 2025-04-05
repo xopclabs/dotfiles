@@ -141,10 +141,6 @@ in {
                 };
 
                 windowrule = [
-                    "size 40% 40%,^(org.gnome.Nautilus)$"
-                ];
-
-                windowrulev2 = [
                     # Fix telegram and slack
                     "workspace 7, monitor ${monitor_internal},class:^(telegram-desktop)$"
                     "workspace 8, monitor ${monitor_internal},class:^(slack)$"
@@ -188,6 +184,9 @@ in {
                     "maxsize 1 1,class:(xwaylandvideobridge)"
                     "noblur,class:(xwaylandvideobridge)"
                     "immediate,class:^(steam_app_38400)$"
+
+                    # IDK why did I needed this
+                    "size 40% 40%,class:(org.gnome.Nautilus)"
                 ];
 
                 workspace = [
