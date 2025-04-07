@@ -91,5 +91,8 @@
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
-    "diffEditor.maxComputationTime": 0
+    "diffEditor.maxComputationTime": 0,
+    "update.showReleaseNotes": false,
+    "update.mode": "none",
+    "terminal.integrated.fontLigatures": true
 }
