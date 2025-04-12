@@ -42,6 +42,7 @@ in {
             libreoffice
             vlc
             python3
+            blender
         ];
     };
 }
