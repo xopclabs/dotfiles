@@ -98,6 +98,7 @@ in {
                     disable_hyprland_logo = true;
                     disable_autoreload = true;
                     enable_swallow = true;
+                    enable_anr_dialog = false;
                     #swallow_regex = "^(kitty|tmux)$";
                     swallow_regex = "kitty|tmux|(S|s)tremio";
                 };
