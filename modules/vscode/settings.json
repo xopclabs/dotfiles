@@ -94,5 +94,6 @@
     "diffEditor.maxComputationTime": 0,
     "update.showReleaseNotes": false,
     "update.mode": "none",
-    "terminal.integrated.fontLigatures": true
+    "terminal.integrated.fontLigatures": true,
+    "editor.wordWrap": "on"
 }
