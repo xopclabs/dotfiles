@@ -165,12 +165,10 @@ in {
                     "minsize 300 300, title:^(Plover: Lookup)$"
                     "maxsize 600 600, title:^(Plover: Lookup)$"
 
-                    # Float firefox extensions 
-                    # (doesn't work though, since float rule is static and firefox intializes extensions with an empty initialTitle)
-                    "float, title:^(.*Extension.*)$"
-                    "move onscreen cursor -50 -50, title:^(.*Extension.*)$" 
-                    "pin, title:^(.*Extension.*)$" 
-                    "keepaspectratio, title:^(.*Extension.*)$" 
+                    # Float telegram media viewer popups
+                    "float, class:org.telegram.desktop, title:Media viewer"
+                    "keepaspectratio, class:org.telegram.desktop, title:Media viewer" 
+                    "size <80% <80%, class:org.telegram.desktop, title:Media viewer"
 
                     # Fix Shaing Indicator of firefox
                     "float, title:(.*)(Sharing Indicator)"
