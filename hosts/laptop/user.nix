@@ -22,6 +22,7 @@
         firefox.enable = true;
         kitty.enable = true;
         hyprland.enable = true;
+        hypridle.enable = true;
         waybar.enable = true;
         rofi.enable = true;
         vscode.enable = true;
