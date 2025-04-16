@@ -66,7 +66,6 @@ in {
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
                     "swww-daemon"
-                    "hypridle"
                     "waybar"
                     "bar-restart"
                     "hypr-windowrule"
