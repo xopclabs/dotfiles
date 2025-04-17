@@ -4,7 +4,8 @@ let
     cfg = config.modules.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     monitor_internal = "eDP-1";
-    monitor_external = "HDMI-A-2";
+    monitor_external1 = "HDMI-A-2";
+    monitor_external2 = "DP-1";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ../hyprland/hypr-windowrule}'';
@@ -58,8 +59,9 @@ in {
                 "$altMod" = "SUPER_CTRL";
 
                 #monitor = [
+                #    "${monitor_external1}, 1920x1080@75, 0x0, 1"
+                #    "${monitor_external2}, 1920x1080@75, 0x0, 1"
                 #    "${monitor_internal}, 1920x1080@60, 1920x0, 1"
-                #    "${monitor_external}, 1920x1080@75, 0x0, 1"
                 #];
 
                 exec-once = [
@@ -188,10 +190,10 @@ in {
                 ];
 
                 workspace = [
-                    "1, monitor:${monitor_external}"
-                    "2, monitor:${monitor_external}"
-                    "3, monitor:${monitor_external}"
-                    "4, monitor:${monitor_external}"
+                    "1, monitor:${monitor_external1}, monitor:${monitor_external2}"
+                    "2, monitor:${monitor_external1}, monitor:${monitor_external2}"
+                    "3, monitor:${monitor_external1}, monitor:${monitor_external2}"
+                    "4, monitor:${monitor_external1}, monitor:${monitor_external2}"
                     "5, monitor:${monitor_internal}"
                     "6, monitor:${monitor_internal}"
                     "7, monitor:${monitor_internal}"
