@@ -16,11 +16,11 @@ in {
             enable = true;
             settings = {
                 listener = [
-                    {
-                        timeout = 60 * 5;
-                        "on-timeout" = "${hyprctl} dispatch dpms off";
-                        "on-resume" = "${hyprctl} dispatch dpms on && brightnessctl set 100%";
-                    }
+                    # {
+                    #    timeout = 60 * 5;
+                    #    "on-timeout" = "${hyprctl} dispatch dpms off";
+                    #    "on-resume" = "${hyprctl} dispatch dpms on && brightnessctl set 100%";
+                    # }
                     # {
                     #    timeout = 300;
                     #    "on-timeout" = "${lock}";
