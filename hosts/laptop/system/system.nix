@@ -1,4 +1,4 @@
- {config, pkgs, inputs, ... }:
+{config, pkgs, inputs, ... }:
 
 {
     # Nix settings, auto cleanup and enable flakes
@@ -55,6 +55,10 @@
 
         # Prevent lid waking up from suspend
         ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x8086" ATTR{device}=="0x9d2f" ATTR{power/wakeup}="disabled"
+
+        # Fix washed out colors on HDMI with Intel graphics
+        ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card0 107 connector 103 1"
+        ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card1 107 connector 103 1"
     '';
 
     # Enable quicksync
@@ -65,6 +69,7 @@
             extraPackages = with pkgs; [
               intel-media-driver
               intel-vaapi-driver
+              libdrm.bin
             ];
         };
     };
