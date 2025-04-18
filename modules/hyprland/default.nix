@@ -3,9 +3,8 @@
 let 
     cfg = config.modules.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    monitor_internal = "eDP-1";
-    monitor_external1 = "HDMI-A-2";
-    monitor_external2 = "DP-1";
+    monitor_internal = "desc:BOE 0x06B7";
+    monitor_external = "desc:AOC 22V2WG5 0x000000BF";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ../hyprland/hypr-windowrule}'';
@@ -58,9 +57,9 @@ in {
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
+                # We define monitors with kanshi in ./display.nix
                 #monitor = [
-                #    "${monitor_external1}, 1920x1080@75, 0x0, 1"
-                #    "${monitor_external2}, 1920x1080@75, 0x0, 1"
+                #    "${monitor_external}, 1920x1080@74.97, 0x0, 1"
                 #    "${monitor_internal}, 1920x1080@60, 1920x0, 1"
                 #];
 
@@ -100,7 +99,7 @@ in {
                     disable_autoreload = true;
                     enable_swallow = true;
                     enable_anr_dialog = false;
-                    #swallow_regex = "^(kitty|tmux)$";
+                    middle_click_paste = false;
                     swallow_regex = "kitty|tmux|(S|s)tremio";
                 };
 
@@ -143,9 +142,9 @@ in {
                 };
 
                 windowrule = [
-                    # Fix telegram and slack
-                    "workspace 7, monitor ${monitor_internal},class:^(telegram-desktop)$"
-                    "workspace 8, monitor ${monitor_internal},class:^(slack)$"
+                    # Fix telegram and slack (use direct id's because here we can't desc:*)
+                    "workspace 7, monitor 0, class:^(telegram-desktop)$"
+                    "workspace 8, monitor 0, class:^(slack)$"
 
                     # PiP are floating and pinned, resizing according to aspect ratio
                     "float, title:^(Picture-in-Picture)$"
@@ -190,11 +189,11 @@ in {
                 ];
 
                 workspace = [
-                    "1, monitor:${monitor_external1}, monitor:${monitor_external2}"
-                    "2, monitor:${monitor_external1}, monitor:${monitor_external2}"
-                    "3, monitor:${monitor_external1}, monitor:${monitor_external2}"
-                    "4, monitor:${monitor_external1}, monitor:${monitor_external2}"
-                    "5, monitor:${monitor_internal}"
+                    "1, monitor:${monitor_external}, default:true"
+                    "2, monitor:${monitor_external}"
+                    "3, monitor:${monitor_external}"
+                    "4, monitor:${monitor_external}"
+                    "5, monitor:${monitor_internal}, default:true"
                     "6, monitor:${monitor_internal}"
                     "7, monitor:${monitor_internal}"
                     "8, monitor:${monitor_internal}"
