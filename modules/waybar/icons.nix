@@ -21,7 +21,6 @@ in {
                     "class<libreoffice-calc>" = "󰈛";
                     "class<Transmission>" = "";
                     "class<com\\.obsproject\\.studio>" = "";
-                    "class<pavucontrol>" = "󰕾";
                     "class<blueman>" = "";
                     "class<chromium-browser>" = "";
                     "class<Chromium-browser>" = "";
@@ -37,6 +36,9 @@ in {
                     "class<com\\.moonlight_stream\\.Moonlight>" = "󰊗";
                     "class<Spotify>" = "";
                     "title<.*discord.*>" = "󰙯";
+                    "title<Plover>" = "󰼭";
+                    "class<blender>" = "";
+                    "class<org.pulseaudio.pavucontrol>" = "󰗅";
                 };
             };
         };
