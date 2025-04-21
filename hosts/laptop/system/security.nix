@@ -23,8 +23,7 @@
                 groups = [ "wheel" ];
             }];
         };
-        # Extra security
-        protectKernelImage = true;
+        protectKernelImage = false;
         # Swaylock
         pam.services.hyprlock.text = "auth include login";
         polkit.enable = true;
