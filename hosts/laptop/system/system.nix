@@ -1,4 +1,4 @@
-{config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
     # Nix settings, auto cleanup and enable flakes
@@ -22,9 +22,25 @@
         tmp.cleanOnBoot = true;
         kernelPackages = pkgs.linuxPackages_latest;
         loader = {
-            systemd-boot.enable = true;
-            systemd-boot.editor = false;
-            efi.canTouchEfiVariables = true;
+            efi = {
+                canTouchEfiVariables = true;
+                efiSysMountPoint = "/boot";
+            };
+
+            grub = {
+                enable = true;
+                device = "nodev";
+                efiSupport = true;
+                enableCryptodisk = true;
+
+                backgroundColor = "#2E3440";
+                splashImage = null;
+            };
+
+            systemd-boot = {
+                enable = false;
+                editor = false;
+            };
             timeout = 2;
         };
         # Disable Nvidia dGPU
@@ -34,6 +50,10 @@
         '';
         blacklistedKernelModules = [ "nouveau" "nvidia" "nvidia_drm" "nvidia_modeset" ];
     };
+
+    # Disable TPM2
+    systemd.tpm2.enable = false;
+    boot.initrd.systemd.tpm2.enable = false;
 
     services.udev.extraRules = ''
         # Remove NVIDIA USB xHCI Host Controller devices, if present
@@ -87,6 +107,13 @@
     services.gvfs.enable = true;
     services.devmon.enable = true;
     services.udisks2.enable = true;
+
+    # Hibernate
+    boot.resumeDevice = "/dev/disk/by-uuid/66143cb7-0666-48fb-a677-26d9c7d2c7f5";
+    powerManagement.enable = true;
+    systemd.sleep.extraConfig = ''
+        HibernateDelaySec=1h 
+    '';
 
     # Docker support
     virtualisation.docker = {
