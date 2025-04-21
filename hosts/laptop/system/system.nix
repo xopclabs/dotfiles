@@ -32,9 +32,6 @@
                 device = "nodev";
                 efiSupport = true;
                 enableCryptodisk = true;
-
-                backgroundColor = "#2E3440";
-                splashImage = null;
             };
 
             systemd-boot = {
@@ -109,7 +106,6 @@
     services.udisks2.enable = true;
 
     # Hibernate
-    boot.resumeDevice = "/dev/disk/by-uuid/66143cb7-0666-48fb-a677-26d9c7d2c7f5";
     powerManagement.enable = true;
     systemd.sleep.extraConfig = ''
         HibernateDelaySec=1h 
