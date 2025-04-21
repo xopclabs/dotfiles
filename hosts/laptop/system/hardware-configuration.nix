@@ -29,6 +29,11 @@
   swapDevices =
     [ { device = "/dev/disk/by-uuid/66144cb7-0666-48fb-a677-26d9c7d2c7f5"; }
     ];
+  boot.resumeDevice = "/dev/disk/by-uuid/66144cb7-0666-48fb-a677-26d9c7d2c7f5";
+  powerManagement.enable = true;
+  systemd.sleep.extraConfig = ''
+    HibernateDelaySec=1h 
+  '';
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
   # (the default) this is the recommended approach. When using systemd-networkd it's
