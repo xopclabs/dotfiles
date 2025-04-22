@@ -1,0 +1,61 @@
+
+##############################################################################
+# remotempv – stream or save‑and‑play remote videos with sshfs / rsync + mpv #
+# Works in both bash and zsh (emulating POSIX sh).                           #
+##############################################################################
+
+set -euo pipefail
+
+##################### 1. simple flag parsing #################################
+SAVE=0
+for arg in "$@"; do
+    case "$arg" in --save) SAVE=1 ;; esac
+done
+
+REMOTE=
+for arg in "$@"; do
+    case "$arg" in --*) ;; *) REMOTE="$arg"; break ;; esac
+done
+[ -n "${REMOTE-}" ] || { echo "Usage: remotempv host:/abs/path [--save]"; exit 2; }
+
+##################### 2. split “host:/path” ##################################
+HOST=${REMOTE%%:*}
+RPATH=${REMOTE#*:}
+case "$RPATH" in /*) ;; *) echo "Path must be absolute"; exit 2;; esac
+
+##################### 3. per‑host mountpoint #################################
+BASE_MP="${XDG_RUNTIME_DIR:-$HOME/.cache}/remotempv"
+MP="$BASE_MP/$HOST"
+mkdir -p "$MP"
+
+if ! mountpoint -q "$MP"; then
+    echo "→ mounting sshfs $HOST at $MP"
+    sshfs "$HOST:/" "$MP" \
+          -o reconnect,delay_connect,ServerAliveInterval=15 \
+          -o cache=yes,attr_timeout=5,follow_symlinks,no_readahead
+fi
+
+##################### 4. stream vs save ######################################
+if [ "$SAVE" -eq 1 ]; then
+    DEST="$HOME/videos"
+    mkdir -p "$DEST"
+
+    if ssh "$HOST" "test -d \"$RPATH\""; then
+        # remote is a directory
+        RSYNC_SRC="$HOST:$RPATH/"
+        RSYNC_DST="$DEST/$(basename "$RPATH")/"
+        echo "→ rsyncing directory to $RSYNC_DST"
+        rsync -avP "$RSYNC_SRC" "$RSYNC_DST"
+        mpv -- "$RSYNC_DST"
+    else
+        # remote is a single file
+        RSYNC_SRC="$HOST:$RPATH"
+        echo "→ rsyncing file to $DEST"
+        rsync -avP "$RSYNC_SRC" "$DEST/"
+        LOCAL="$DEST/$(basename "$RPATH")"
+        mpv -- "$LOCAL"
+    fi
+else
+    echo "→ streaming via sshfs"
+    mpv -- "$MP$RPATH"
+fi
