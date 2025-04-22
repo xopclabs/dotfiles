@@ -1,0 +1,23 @@
+set -eu
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <path-to-experiment-json>"
+    exit 1
+fi
+
+EXP_PATH=$1
+
+# Extract training job name and checkpoint template path from JSON
+JOB_NAME=$(jq -r '.TrainingJobName' "$EXP_PATH")
+CHECKPOINT_TEMPLATE=$(jq -r '.Environment.ARG_FOR_TRAIN_FROM_VAR_REPLACE__REMOTE_CHECKPOINTS' "$EXP_PATH")
+
+# Replace placeholder with actual training job name using sed
+CHECKPOINT_PATH=$(echo "$CHECKPOINT_TEMPLATE" | sed "s/{{training_job_name}}/$JOB_NAME/g")
+# Strip trailing slash if present
+CHECKPOINT_PATH=$(echo "$CHECKPOINT_PATH" | sed 's/\/$//')
+
+# Create SageMaker training job
+aws sagemaker create-training-job --cli-input-json file://"$EXP_PATH"
+
+# Upload experiment JSON to the S3 checkpoint directory
+aws s3 cp "$EXP_PATH" "$CHECKPOINT_PATH/$(basename "$EXP_PATH")" 
