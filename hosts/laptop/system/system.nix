@@ -48,9 +48,19 @@
         blacklistedKernelModules = [ "nouveau" "nvidia" "nvidia_drm" "nvidia_modeset" ];
     };
 
-    # Disable TPM2
+    # Enable TPM2 to auto-unlock LUKS
+    # NOTE: apparently my laptop doesn't support TPM2, so I've set every enable to false
+    #       should work though for any new machine I spin up, so leaving it here
+    security.tpm2 = {
+        enable = false;
+        pkcs11.enable = true;
+        tctiEnvironment.enable = true;
+    };
     systemd.tpm2.enable = false;
-    boot.initrd.systemd.tpm2.enable = false;
+    boot.initrd.systemd = {
+        enable = false;
+        tpm2.enable = false;
+    };
 
     services.udev.extraRules = ''
         # Remove NVIDIA USB xHCI Host Controller devices, if present
