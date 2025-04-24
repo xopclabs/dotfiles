@@ -1,4 +1,3 @@
-
 ##############################################################################
 # remotempv – stream or save‑and‑play remote videos with sshfs / rsync + mpv #
 # Works in both bash and zsh (emulating POSIX sh).                           #

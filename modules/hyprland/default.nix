@@ -100,7 +100,7 @@ in {
                     enable_swallow = true;
                     enable_anr_dialog = false;
                     middle_click_paste = false;
-                    swallow_regex = "kitty|tmux|(S|s)tremio";
+                    swallow_regex = "kitty|tmux|(S|s)tremio|mpv";
                 };
 
                 general  = {

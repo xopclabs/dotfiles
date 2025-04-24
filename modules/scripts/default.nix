@@ -10,7 +10,6 @@ let
     see = pkgs.writeShellScriptBin "see" ''${builtins.readFile ../scripts/see}'';
     ssh-tmux = pkgs.writeShellScriptBin "ssh-tmux" ''${builtins.readFile ../scripts/ssh-tmux}'';
     run-training = pkgs.writeShellScriptBin "run-training" ''${builtins.readFile ../scripts/run-training}'';
-    remotempv = pkgs.writeShellScriptBin "remotempv" ''${builtins.readFile ../scripts/remotempv}'';
 in {
     options.modules.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
@@ -23,10 +22,6 @@ in {
             see
             ssh-tmux
             run-training
-            remotempv pkgs.rsync pkgs.sshfs
         ];
-        programs.zsh.initExtra = ''
-            source ${./remotempv.completion.sh}
-        '';
     };
 }

@@ -3,6 +3,7 @@
 with lib;
 let 
     cfg = config.modules.mpv;
+    remotempv = pkgs.writeShellScriptBin "remotempv" ''${builtins.readFile ./remotempv}'';
 in {
     options.modules.mpv = { enable = mkEnableOption "mpv"; };
     config = mkIf cfg.enable {
@@ -23,5 +24,11 @@ in {
                 osd-outline-size = 1;
             };
         };
+        home.packages = [
+            remotempv pkgs.rsync pkgs.sshfs
+        ];
+        programs.zsh.initExtra = ''
+            source ${./remotempv.completion.sh}
+        '';
     };
 }
