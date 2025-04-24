@@ -56,9 +56,10 @@ in {
 
             shellAliases = {
                 mkdir = "mkdir -vp";
-                rm = "rm -rifv";
+                rm = "rm -iv";
                 mv = "mv -iv";
                 cp = "cp -riv";
+                grep = "grep --color=auto";
                 cat = "bat --paging=never --style=plain";
                 visecret = "sops $NIXOS_CONFIG_DIR/hosts/laptop/secrets.yaml";
             };

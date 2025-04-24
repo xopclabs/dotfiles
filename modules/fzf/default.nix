@@ -39,7 +39,7 @@ in {
                 "--preview 'eza -1 --color=always --icons=always {}'"
             ];
             historyWidgetOptions = [
-                "--sort"
+                "--sort --exact"
             ];
         };
 
