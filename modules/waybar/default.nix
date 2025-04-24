@@ -82,8 +82,8 @@ in {
                         format = "<span line_height=\"1.25\">{icon}</span>\n<span line_height=\"1\">{windows}</span>";
                         format-window-separator = "\n";
                         format-icons = {
-                            "1" = "󰯫"; "2" = "󰰞"; "3" = "󰰡"; "4" = "󰰤";
-                            "5" = "󰰛"; "6" = "󰰭"; "7" = "󰯺"; "8" = "󰰘";
+                            "1" = "󰯫"; "2" = "󰰞"; "3" = "󰰡"; "4" = "󰰤"; "5"  = "󰯽";
+                            "6" = "󰰛"; "7" = "󰰭"; "8" = "󰯺"; "9" = "󰰘"; "10" = "󰯮";
                             "scratchpad" = "󰬚";
                         };
                         justify = "center";
