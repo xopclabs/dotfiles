@@ -71,8 +71,8 @@ in {
                     "bar-restart"
                     "hypr-windowrule"
                     "tmux new -s main"
-                    "[workspace 7 silent] proxychains4 telegram-desktop"
-                    "[workspace 8 silent] slack"
+                    "[workspace 8 silent] proxychains4 telegram-desktop"
+                    "[workspace 9 silent] slack"
                     "freshman_start"
                     "plover"
                 ];
@@ -143,8 +143,8 @@ in {
 
                 windowrule = [
                     # Fix telegram and slack (use direct id's because here we can't desc:*)
-                    "workspace 7, monitor 0, class:^(telegram-desktop)$"
-                    "workspace 8, monitor 0, class:^(slack)$"
+                    "workspace 8, monitor 0, class:^(telegram-desktop)$"
+                    "workspace 9, monitor 0, class:^(slack)$"
 
                     # PiP are floating and pinned, resizing according to aspect ratio
                     "float, title:^(Picture-in-Picture)$"
@@ -193,10 +193,12 @@ in {
                     "2, monitor:${monitor_external}"
                     "3, monitor:${monitor_external}"
                     "4, monitor:${monitor_external}"
-                    "5, monitor:${monitor_internal}, default:true"
-                    "6, monitor:${monitor_internal}"
+                    "5, monitor:${monitor_external}"
+                    "6, monitor:${monitor_internal}, default:true"
                     "7, monitor:${monitor_internal}"
                     "8, monitor:${monitor_internal}"
+                    "9, monitor:${monitor_internal}"
+                    "10, monitor:${monitor_internal}"
                 ];
 
                 # binds
@@ -212,10 +214,12 @@ in {
                         { key = "r"; n = "2"; }
                         { key = "s"; n = "3"; }
                         { key = "t"; n = "4"; }
-                        { key = "q"; n = "5"; } 
-                        { key = "w"; n = "6"; } 
-                        { key = "f"; n = "7"; } 
-                        { key = "p"; n = "8"; }
+                        { key = "g"; n = "5"; } 
+                        { key = "q"; n = "6"; } 
+                        { key = "w"; n = "7"; } 
+                        { key = "f"; n = "8"; } 
+                        { key = "p"; n = "9"; }
+                        { key = "b"; n = "10"; }
                     ];
                 in [
                     "CTRL SHIFT, Slash,  exec, pkill waybar & waybar"
