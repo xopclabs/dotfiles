@@ -7,7 +7,7 @@ in {
     options.modules.plover = { enable = mkEnableOption "plover"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
-            (inputs.plover.packages.${pkgs.system}.plover.with-plugins (
+            (inputs.plover.packages.${pkgs.system}.plover.withPlugins (
                 ps: with ps; [ 
                     plover-lapwing-aio 
                     plover-machine-hid
