@@ -4,7 +4,7 @@
     # Environment variables
     home = {
         sessionVariables = {
-            FLAKE = "$HOME/dotfiles";
+            NH_FLAKE = "$HOME/dotfiles";
         };
         packages = with pkgs; [
             uv

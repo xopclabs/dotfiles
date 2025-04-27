@@ -15,6 +15,10 @@ in {
             "${config.xdg.configHome}/Cursor/User/keybindings.json".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/keybindings.json";
         };
 
+        home.packages = with pkgs; [
+            code-cursor
+        ];
+
         programs.vscode = {
             enable = true;
             profiles.default = {

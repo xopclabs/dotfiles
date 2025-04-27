@@ -36,8 +36,6 @@ in {
             stremio
             moonlight-qt
             tigervnc
-            steam
-            code-cursor
             # hiddify-app
             libreoffice
             vlc
