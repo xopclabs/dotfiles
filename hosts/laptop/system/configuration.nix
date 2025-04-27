@@ -9,5 +9,6 @@
         ./security.nix
         ./gui.nix
         ./vpn.nix
+        ./steam.nix
     ];
 }
