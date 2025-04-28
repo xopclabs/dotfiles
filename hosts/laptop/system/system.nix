@@ -123,8 +123,8 @@
 
     # Docker support
     virtualisation.docker = {
-        enable = true;
-        enableOnBoot = true;
+        enable = false;
+        enableOnBoot = false;
         rootless.enable = true;
     };
 
