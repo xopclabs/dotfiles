@@ -16,6 +16,7 @@
         ./zen
         ./kicad
         ./plover
+        ./flameshot
 
         # cli
         ./awscli

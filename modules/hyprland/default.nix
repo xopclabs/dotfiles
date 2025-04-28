@@ -176,6 +176,12 @@ in {
                     "noshadow, title:(.*)(Sharing Indicator)" 
                     "noinitialfocus, title:(.*)(Sharing Indicator)" 
 
+                    # flameshot
+                    "suppressevent fullscreen, class:flameshot"
+                    "float, class:flameshot"
+                    "monitor 1, class:flameshot"
+                    "move 0 0, class:flameshot"
+
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
                     "noanim,class:(xwaylandvideobridge)"
@@ -183,9 +189,6 @@ in {
                     "maxsize 1 1,class:(xwaylandvideobridge)"
                     "noblur,class:(xwaylandvideobridge)"
                     "immediate,class:^(steam_app_38400)$"
-
-                    # IDK why did I needed this
-                    "size 40% 40%,class:(org.gnome.Nautilus)"
                 ];
 
                 workspace = [
@@ -225,7 +228,8 @@ in {
                     "CTRL SHIFT, Slash,  exec, pkill waybar & waybar"
                     "$mod, L, exec, launcher"
                     ", XF86PowerOff, exec, powermenu"
-                    ",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
+                    #",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
+                    ",Print, exec, flameshot gui"
                     "SHIFT,Print, exec, screenrecord"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
