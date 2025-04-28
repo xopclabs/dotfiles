@@ -20,14 +20,21 @@ let
             # Create data directory
             ${pkgs.coreutils}/bin/mkdir -p /etc/xray
             
+            # Check if geo data files exist, if not run the update service
+            if [ ! -f /etc/xray/geoip.dat ] || [ ! -f /etc/xray/geosite.dat ]; then
+                echo "Geo data files missing, running update service first"
+                ${pkgs.systemd}/bin/systemctl start --no-block xray-update-geodata.service
+                # Wait for up to 30 seconds for the files to be created
+                for i in {1..30}; do
+                    if [ -f /etc/xray/geoip.dat ] && [ -f /etc/xray/geosite.dat ]; then
+                        break
+                    fi
+                    sleep 1
+                done
+            fi
+            
             # Download config from subscription
             ${pkgs.curl}/bin/curl -fLo /tmp/xray_config_${name}_base.json $(${pkgs.coreutils}/bin/cat ${subscriptionPath})
-            
-            # Download latest geoip data
-            ${pkgs.curl}/bin/curl -fLo /etc/xray/geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
-            
-            # Download latest geosite data
-            ${pkgs.curl}/bin/curl -fLo /etc/xray/geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
             
             # Process the config to bypass Russian traffic and set port if needed
             ${pkgs.jq}/bin/jq '.routing.rules = [
@@ -54,11 +61,12 @@ let
         wantedBy = [ "timers.target" ];
         timerConfig = {
             OnCalendar = "daily";
-            Unit = "xray${if name != "beta" then "-${name}" else ""}-update-subscription.service";
+            Unit = "xray-${name}-update-subscription.service";
         };
     };
 in
 {
+    # xray
     sops.secrets."xray/subscription-alpha".restartUnits = [ "xray-alpha-update-subscription.service" ];
     sops.secrets."xray/subscription-beta".restartUnits = [ "xray-update-subscription.service" ];
     environment.systemPackages = with pkgs; [
@@ -73,7 +81,34 @@ in
     systemd.services.xray-beta = mkXrayService "beta" "/etc/xray/config-beta.json";
     systemd.services.xray-beta-update-subscription = mkXrayUpdateService "beta" config.sops.secrets."xray/subscription-beta".path 10808;
     systemd.timers.xray-beta-update-subscription = mkXrayTimer "beta";
-
+    # Geo data update service - runs weekly
+    systemd.services.xray-update-geodata = {
+        description = "Update xray geo data files";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        script = ''
+            # Create data directory
+            ${pkgs.coreutils}/bin/mkdir -p /etc/xray
+            
+            # Download latest geoip data
+            ${pkgs.curl}/bin/curl -fLo /etc/xray/geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+            
+            # Download latest geosite data
+            ${pkgs.curl}/bin/curl -fLo /etc/xray/geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+        '';
+        serviceConfig = {
+            Type = "oneshot";
+        };
+    };
+    systemd.timers.xray-update-geodata = {
+        description = "Timer for updating xray geo data weekly";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+            OnCalendar = "weekly";
+            Unit = "xray-update-geodata.service";
+        };
+    };
+    
     # System-wide proxy configuration
     networking.proxy = {
         default = "socks5://127.0.0.1:10808";
