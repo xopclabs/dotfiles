@@ -31,12 +31,39 @@
     sops.secrets."xray/subscription-beta" = {
         restartUnits = [ "xray-update-subscription.service" ];
     };
+    environment.systemPackages = with pkgs; [
+        jq
+    ];
     systemd.services.xray-update-subscription = {
         description = "Download xray config and restart xray service";
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
         script = ''
-            ${pkgs.curl}/bin/curl -fLo /etc/xray/config.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
+            # Create data directory
+            ${pkgs.coreutils}/bin/mkdir -p /etc/xray
+            
+            # Download config from subscription
+            ${pkgs.curl}/bin/curl -fLo /tmp/xray_config_base.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
+            
+            # Download latest geoip data
+            ${pkgs.curl}/bin/curl -fLo /etc/xray/geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+            
+            # Download latest geosite data
+            ${pkgs.curl}/bin/curl -fLo /etc/xray/geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+            
+            # Process the config to bypass Russian traffic
+            ${pkgs.jq}/bin/jq '.routing.rules = [
+              {
+                "type": "field",
+                "domain": ["geosite:category-ru"],
+                "outboundTag": "direct"
+              },
+              {
+                "type": "field",
+                "ip": ["geoip:ru"],
+                "outboundTag": "direct"
+              }
+            ] + (.routing.rules // [])' /tmp/xray_config_base.json > /etc/xray/config.json
         '';
         serviceConfig = {
             Type = "oneshot";
@@ -45,7 +72,7 @@
     };
     # Define the systemd timer
     systemd.timers.xray-update-subscription = {
-        description = "Timer for downloading xray config every 12 hours";
+        description = "Timer for downloading xray config every day";
         wantedBy = [ "timers.target" ];
         timerConfig = {
             OnCalendar = "daily";
