@@ -18,6 +18,7 @@ in {
                     savePath = "${config.home.homeDirectory}/screenshots";
                     uiColor = "#${config.colorScheme.palette.base0D}";
                     contrastUiColor = "#${config.colorScheme.palette.base05}";
+                    contrastOpacity = 40;
                 };
             };
         };
