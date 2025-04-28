@@ -181,6 +181,7 @@ in {
                     "float, class:flameshot"
                     "monitor 1, class:flameshot"
                     "move 0 0, class:flameshot"
+                    "noanim, class:flameshot"
 
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
