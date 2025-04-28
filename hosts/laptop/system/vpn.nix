@@ -20,6 +20,19 @@
                 autostart = false;
             };
         };
+        
+        # System-wide proxy configuration
+        proxy = {
+            default = "socks5://127.0.0.1:10808";
+            noProxy = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost,internal.domain";
+        };
+    };
+
+    # Configure proxy for nix-daemon to work with non-root users
+    systemd.services.nix-daemon.environment = {
+        http_proxy = "socks5://127.0.0.1:10808";
+        https_proxy = "socks5://127.0.0.1:10808";
+        no_proxy = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost,internal.domain";
     };
 
     # XRay
