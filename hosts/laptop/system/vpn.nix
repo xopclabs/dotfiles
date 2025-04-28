@@ -74,7 +74,7 @@ in {
                   ]
                 | .routing.rules = (
                     [
-                      { type: "field", ip: ["geoip:ru"],                 network: "tcp,udp", outboundTag: "direct" },
+                      { type: "field", ip: ["geoip:ru"], network: "tcp,udp", outboundTag: "direct" },
                       { type: "field", domain: ["geosite:category-ru"], network: "tcp,udp", outboundTag: "direct" }
                     ] + [
                       { type: "field", network: "tcp,udp", balancerTag:  "proxy" }
