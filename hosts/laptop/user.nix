@@ -29,6 +29,7 @@
         mpv.enable = true;
         kicad.enable = true;
         plover.enable = true;
+        flameshot.enable = true;
 
         # cli
         zsh.enable = true;
