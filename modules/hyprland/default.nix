@@ -71,7 +71,7 @@ in {
                     "bar-restart"
                     "hypr-windowrule"
                     "tmux new -s main"
-                    "[workspace 8 silent] proxychains4 telegram-desktop"
+                    "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"
                     "freshman_start"
                     "plover"
