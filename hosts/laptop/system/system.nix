@@ -130,9 +130,9 @@
 
     # System env variables
     environment.variables = {
-        NIXOS_CONFIG = "$HOME/dotfiles/modules/system/configuration.nix";
+        NIXOS_CONFIG = "$HOME/dotfiles/hosts/laptop/system/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
-        NH_FLAKE = "$HOME/dotfiles?submodules=1";
+        NH_FLAKE = "$HOME/dotfiles";
         GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
         GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
         MOZ_ENABLE_WAYLAND = "1";

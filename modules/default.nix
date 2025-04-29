@@ -15,6 +15,7 @@ in
         # meta-modules
         ./browsers
         ./fileManagers
+        ./editors
 
         # gui
         ./hyprland
@@ -23,7 +24,6 @@ in
         ./gtk
         ./kitty
         ./dunst
-        ./vscode
         ./mpv
         ./kicad
         ./plover
@@ -31,7 +31,6 @@ in
 
         # cli
         ./awscli
-        ./nvim
         ./udiskie
         ./tmux
         ./zsh
