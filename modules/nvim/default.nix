@@ -16,7 +16,7 @@ in {
         };
 
         programs.zsh = {
-            initExtra = ''
+            initContent = lib.mkOrder 1000 ''
                 export EDITOR="nvim"
             '';
 

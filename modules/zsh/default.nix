@@ -10,10 +10,10 @@ in {
             path = mkOption { type = types.path; default="${config.xdg.configHome}/.env"; };
         };
         envExtra = mkOption { type = types.lines; default = ""; };
-        initExtraFirst = mkOption { type = types.lines; default = ""; };
-        initExtraBeforeCompInit = mkOption { type = types.lines; default = ""; };
+        initContentFirst = mkOption { type = types.lines; default = ""; };
+        initContentBeforeCompInit = mkOption { type = types.lines; default = ""; };
         completionInit = mkOption { type = types.lines; default = ""; };
-        initExtra = mkOption { type = types.lines; default = ""; };
+        initContent = mkOption { type = types.lines; default = ""; };
     };
 
     config = mkIf cfg.enable {
@@ -31,15 +31,23 @@ in {
             dotDir = ".config/zsh";
 
             envExtra = cfg.envExtra;
-            initExtraFirst = cfg.initExtraFirst;
-            initExtraBeforeCompInit = cfg.initExtraBeforeCompInit;
             completionInit = cfg.completionInit;
-            initExtra = ''
-                # Source env file if exitsts
-                if [[ -f "${cfg.envFile.path}" ]]; then
-                    source "${cfg.envFile.path}"
-                fi
-            '' + cfg.initExtra;
+            initContent = lib.mkMerge [
+                # Before everything
+                (lib.mkOrder 500 cfg.initContentFirst)
+                # Before comp init
+                (lib.mkOrder 550 cfg.initContentBeforeCompInit)
+                # Default place
+                (lib.mkOrder 1000 cfg.initContent)
+                (lib.mkOrder 1001 ''
+                    # Source env file if exitsts
+                    if [[ -f "${cfg.envFile.path}" ]]; then
+                        source "${cfg.envFile.path}"
+                    fi
+                '')
+                # After everything
+                #(lib.mkOrder 1500 "")
+            ];
 
             history = {
                 path = "${config.home.homeDirectory}/.zsh_history";

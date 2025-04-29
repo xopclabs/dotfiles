@@ -27,7 +27,7 @@ in {
         home.packages = [
             remotempv pkgs.rsync pkgs.sshfs
         ];
-        programs.zsh.initExtra = ''
+        programs.zsh.initContent = lib.mkOrder 1000 ''
             source ${./remotempv.completion.sh}
         '';
     };
