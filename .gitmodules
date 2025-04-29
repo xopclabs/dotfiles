@@ -1,3 +1,0 @@
-[submodule "modules/nvim/nvim"]
-    path = modules/nvim/nvim
-    url = https://github.com/xopclabs/nvim
