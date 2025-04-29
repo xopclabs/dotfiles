@@ -25,6 +25,10 @@
             yazi.enable = true;
             nautilus.enable = true;
         };
+        editors = {
+            cursor.enable = true;
+            nvim.enable = true;
+        };
 
         # gui
         gtk.enable = true;
@@ -33,7 +37,6 @@
         hypridle.enable = true;
         waybar.enable = true;
         rofi.enable = true;
-        vscode.enable = true;
         mpv.enable = true;
         kicad.enable = true;
         plover.enable = true;
@@ -54,7 +57,6 @@
         # cli tools
         awscli.enable = true;
         udiskie.enable = true;
-        nvim.enable = true;
         btop.enable = true;
         nh.enable = true;
         tldr.enable = true;

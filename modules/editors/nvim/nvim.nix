@@ -1,9 +1,9 @@
 {  lib, config, pkgs, ... }:
 with lib;
 let
-    cfg = config.modules.nvim;
+    cfg = config.modules.editors.nvim;
 in {
-    options.modules.nvim = { enable = mkEnableOption "nvim"; };
+    options.modules.editors.nvim = { enable = mkEnableOption "nvim"; };
     config = mkIf cfg.enable {
         
         home.packages = with pkgs; [
@@ -15,19 +15,15 @@ in {
             enable = true;
         };
 
-        programs.zsh = {
-            initContent = lib.mkOrder 1000 ''
-                export EDITOR="nvim"
-            '';
-
+        programs.zsh = mkIf config.modules.zsh.enable {
+            initContent = mkIf (config.modules.editors.default == "nvim") (
+                mkOrder 1000 ''
+                    export EDITOR="nvim"
+                ''
+            );
             shellAliases = {
                 vim = "nvim -i NONE";
             };
-        };
-
-        home.file.".config/nvim" = {
-            source = ./nvim;
-            recursive = true;
         };
 
     };
