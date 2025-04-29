@@ -26,6 +26,7 @@
             nautilus.enable = true;
         };
         editors = {
+            vscode.enable = true;
             cursor.enable = true;
             nvim.enable = true;
         };
