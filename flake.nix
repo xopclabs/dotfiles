@@ -22,6 +22,8 @@
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
 
         plover.url = "github:dnaq/plover-flake";
+
+        stylix.url = "github:danth/stylix";
     };
 
     # All outputs for the system (configs)
@@ -38,6 +40,8 @@
                         (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
                         # sops as NixOS module
                         inputs.sops-nix.nixosModules.sops
+                        # stylix as NixOS module
+                        inputs.stylix.nixosModules.stylix
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
@@ -57,6 +61,7 @@
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
     			        inputs.sops-nix.homeManagerModules.sops
+                        inputs.stylix.homeManagerModules.stylix
                         {
                             home = {
                                 username = username;

@@ -10,5 +10,6 @@
         ./gui.nix
         ./vpn.nix
         ./steam.nix
+        ./stylix.nix
     ];
 }
