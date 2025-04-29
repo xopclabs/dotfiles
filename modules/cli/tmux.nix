@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.modules.tmux;
+    cfg = config.modules.cli.tmux;
     theme = with config.colorScheme.palette; ''
         # --> Catppuccin (Dynamic)
         thm_bg=\"#${strings.toLower base00}\"
@@ -33,7 +33,7 @@ let
         '';
     };
 in {
-    options.modules.tmux = { 
+    options.modules.cli.tmux = { 
         enable = mkEnableOption "tmux";
         statusPosition = mkOption {
             type = types.enum [ "top" "bottom" ];

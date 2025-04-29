@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.nh;
+let cfg = config.modules.tools.nh;
 
 in {
-    options.modules.nh = { 
+    options.modules.tools.nh = { 
         enable = mkEnableOption "nh"; 
     };
     config = mkIf cfg.enable {

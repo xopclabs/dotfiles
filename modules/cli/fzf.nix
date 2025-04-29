@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.fzf;
+let cfg = config.modules.cli.fzf;
 
 in {
-    options.modules.fzf = { enable = mkEnableOption "fzf"; };
+    options.modules.cli.fzf = { enable = mkEnableOption "fzf"; };
 
     config = mkIf cfg.enable {
 

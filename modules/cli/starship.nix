@@ -2,7 +2,7 @@
 
 with lib;
 let 
-    cfg = config.modules.starship;
+    cfg = config.modules.cli.starship;
     # Nord theme colors
     colors = with config.colorScheme.palette; {
 
@@ -26,7 +26,7 @@ let
         blue_dark = base0F;
     };
 in {
-    options.modules.starship = {
+    options.modules.cli.starship = {
         enable = mkEnableOption "starship";
         aws = {
             enable = mkEnableOption "aws module";

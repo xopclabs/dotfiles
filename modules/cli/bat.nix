@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.bat;
+let cfg = config.modules.cli.bat;
 
 in {
-    options.modules.bat = { enable = mkEnableOption "bat"; };
+    options.modules.cli.bat = { enable = mkEnableOption "bat"; };
     config = mkIf cfg.enable {
         programs.bat = {
             enable = true;

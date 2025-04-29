@@ -16,6 +16,8 @@ in
         ./browsers
         ./fileManagers
         ./editors
+        ./cli
+        ./tools
 
         # gui
         ./hyprland
@@ -28,23 +30,6 @@ in
         ./kicad
         ./plover
         ./flameshot
-
-        # cli
-        ./awscli
-        ./udiskie
-        ./tmux
-        ./zsh
-        ./starship
-        ./git
-        ./gpg
-        ./ssh
-        ./nh
-        ./btop
-        ./fzf
-        ./eza
-        ./bat
-        ./zoxide
-        ./tldr
 
         # system
         ./xdg

@@ -1,9 +1,9 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.zsh;
+let cfg = config.modules.cli.zsh;
 in {
-    options.modules.zsh = { 
+    options.modules.cli.zsh = { 
         enable = mkEnableOption "zsh"; 
         envFile = {
             enable = mkEnableOption "envFile";
@@ -114,3 +114,4 @@ in {
         };
     };
 }
+

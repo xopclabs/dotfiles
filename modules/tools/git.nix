@@ -2,11 +2,11 @@
 
 with lib;
 let 
-    cfg = config.modules.git;
+    cfg = config.modules.tools.git;
     name = "xopclabs";
     email = "b9fyg5ei@duck.com";
 in {
-    options.modules.git = { enable = mkEnableOption "git"; };
+    options.modules.tools.git = { enable = mkEnableOption "git"; };
     config = mkIf cfg.enable {
         programs.git = {
             enable = true;

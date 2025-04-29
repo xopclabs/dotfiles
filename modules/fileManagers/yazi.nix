@@ -8,7 +8,7 @@ in {
     config = mkIf cfg.enable {
         programs.yazi = {
             enable = true;
-            enableZshIntegration = config.modules.zsh.enable;
+            enableZshIntegration = config.modules.cli.zsh.enable;
             shellWrapperName = "y";
 
             settings = {
