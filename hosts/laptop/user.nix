@@ -18,7 +18,6 @@
         };
 
         # gui
-        stylix.enable = true;
         gtk.enable = true;
         firefox.enable = true;
         kitty.enable = true;
