@@ -2,11 +2,11 @@
 
 with lib;
 let 
-    cfg = config.modules.gtk;
+    cfg = config.modules.gui.gtk;
 
     gtk-theme = "Nordic";
 in {
-    options.modules.gtk = { enable = mkEnableOption "gtk"; };
+    options.modules.gui.gtk = { enable = mkEnableOption "gtk"; };
 
     config = mkIf cfg.enable {
         home = {
