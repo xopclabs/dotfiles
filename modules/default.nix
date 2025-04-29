@@ -14,7 +14,7 @@ in
     imports = [
         # meta-modules
         ./browsers
-        ./fileManagers
+        ./file_managers
         ./editors
         ./cli
         ./tools
