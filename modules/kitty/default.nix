@@ -56,7 +56,7 @@ in {
 		confirm_os_window_close = 0;
 		repaint_delay = 10;
 		input_delay = 3;
-		open_url_with = "firefox";
+		open_url_with = config.modules.browsers.default;
  		enable_audio_bell = "no";
 		term = "xterm-kitty";
             };

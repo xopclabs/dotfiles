@@ -19,7 +19,7 @@
 
         # gui
         gtk.enable = true;
-        firefox.enable = true;
+        browsers.firefox.enable = true;
         kitty.enable = true;
         hyprland.enable = true;
         hypridle.enable = true;

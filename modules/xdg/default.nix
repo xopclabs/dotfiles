@@ -7,7 +7,7 @@ in {
         enable = mkEnableOption "xdg"; 
         browser = mkOption {
             type = types.str;
-            default = "firefox.desktop";
+            default = "${config.modules.browsers.default}.desktop";
         };
         file-manager = mkOption {
             type = types.str;

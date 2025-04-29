@@ -234,7 +234,7 @@ in {
                     "SHIFT,Print, exec, screenrecord"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
-                    "$mod, H, exec, firefox"
+                    "$mod, H, exec, ${config.modules.browsers.default}"
                     "$mod, M, exec, kitty -e ranger"
                     "$mod, Semicolon, exec, ${lock}"
 
