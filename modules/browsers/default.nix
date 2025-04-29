@@ -1,13 +1,9 @@
-{ inputs, pkgs, config, lib, ... }:
+{ inputs, pkgs, config, lib, utils, ... }:
 
 with lib;
 let
     cfg = config.modules.browsers;
     browserPriorities = [ "firefox" "zen" ];
-    getDefaultBrowser = priorities: let
-        enabledBrowsers = filter (browser: cfg.${browser}.enable or false) priorities;
-    in
-        if enabledBrowsers == [] then null else head enabledBrowsers;
 in {
     imports = [
         ./firefox/firefox.nix
@@ -23,6 +19,9 @@ in {
     };
     
     config = {
-        modules.browsers.default = getDefaultBrowser browserPriorities;
+        modules.browsers.default = utils.selectDefault {
+            inherit cfg;
+            priorities = browserPriorities;
+        };
     };
 }
