@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.ranger;
+    cfg = config.modules.fileManagers.ranger;
 in {
-    options.modules.ranger = { enable = mkEnableOption "ranger"; };
+    options.modules.fileManagers.ranger = { enable = mkEnableOption "ranger"; };
     config = mkIf cfg.enable {
         programs.ranger = {
             enable = true;

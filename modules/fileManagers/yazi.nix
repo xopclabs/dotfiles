@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.yazi;
+let cfg = config.modules.fileManagers.yazi;
 
 in {
-    options.modules.yazi = { enable = mkEnableOption "yazi"; };
+    options.modules.fileManagers.yazi = { enable = mkEnableOption "yazi"; };
     config = mkIf cfg.enable {
         programs.yazi = {
             enable = true;

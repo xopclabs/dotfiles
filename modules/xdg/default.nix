@@ -11,7 +11,7 @@ in {
         };
         file-manager = mkOption {
             type = types.str;
-            default = "nautilus.desktop";
+            default = "${config.modules.fileManagers.gui}.desktop";
         };
         image-viewer = mkOption {
             type = types.str;
@@ -24,7 +24,6 @@ in {
     };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
-            nautilus
             loupe
         ];
         xdg.userDirs = {
