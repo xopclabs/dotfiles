@@ -18,18 +18,13 @@ in
         ./editors
         ./cli
         ./tools
+        ./gui
 
         # gui
         ./hyprland
         ./waybar
         ./rofi
-        ./gtk
-        ./kitty
-        ./dunst
         ./mpv
-        ./kicad
-        ./plover
-        ./flameshot
 
         # system
         ./xdg

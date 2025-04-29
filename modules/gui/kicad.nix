@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.modules.kicad;
+    cfg = config.modules.gui.kicad;
     kicadColorSchemes = pkgs.fetchFromGitHub {
         owner = "pointhi";
         repo = "kicad-color-schemes";
@@ -11,7 +11,7 @@ let
     };
     kicadTheme = "nord";
 in {
-    options.modules.kicad = { enable = mkEnableOption "kicad"; };
+    options.modules.gui.kicad = { enable = mkEnableOption "kicad"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             kicad-small

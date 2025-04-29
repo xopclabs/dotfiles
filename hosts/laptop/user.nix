@@ -49,18 +49,20 @@
             nh.enable = true;
             tldr.enable = true;
         };
+        gui = {
+            gtk.enable = true;
+            kitty.enable = true;
+            flameshot.enable = true;
+            kicad.enable = true;
+            plover.enable = true;
+        };
 
         # gui
-        gtk.enable = true;
-        kitty.enable = true;
         hyprland.enable = true;
         hypridle.enable = true;
         waybar.enable = true;
         rofi.enable = true;
         mpv.enable = true;
-        kicad.enable = true;
-        plover.enable = true;
-        flameshot.enable = true;
 
         # extras
         packages.enable = true;

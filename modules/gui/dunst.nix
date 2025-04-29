@@ -1,19 +1,15 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.dunst;
+let cfg = config.modules.gui.dunst;
 
 in {
-    options.modules.dunst = { enable = mkEnableOption "dunst"; };
+    options.modules.gui.dunst = { enable = mkEnableOption "dunst"; };
     config = mkIf cfg.enable {
-	home.packages = with pkgs; [
-	    dunst
-	];
-
         services.dunst = {
             enable = true;
             settings = {
-                global = {
+                global = with config.colorScheme.palette; {
                     origin = "top-right";
                     offset = "12x12";
                     separator_height = 2;
@@ -31,9 +27,9 @@ in {
                     startup_notification = "false";
                     corner_radius = 12;
 
-                    frame_color = "#44465c";
-                    background = "#303241";
-                    foreground = "#d9e0ee";
+                    frame_color = "#${base01}";
+                    background = "#${base03}";
+                    foreground = "#${base05}";
                     timeout = 2;
                 };
             };
