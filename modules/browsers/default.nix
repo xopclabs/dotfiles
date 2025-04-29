@@ -7,7 +7,7 @@ let
 in {
     imports = [
         ./firefox/firefox.nix
-        ./zen/zen.nix
+        ./zen.nix
     ];
     
     options.modules.browsers = {

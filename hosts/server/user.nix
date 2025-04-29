@@ -49,8 +49,8 @@
         fzf.enable = true;
 
         # cli tools
+        fileManagers.yazi.enable = true;
         nh.enable = true;
-        yazi.enable = true;
         btop.enable = true;
         tldr.enable = true;
 

@@ -17,9 +17,17 @@
             video-player = "vlc.desktop";
         };
 
+        # meta-modules
+        browsers = {
+            firefox.enable = true;
+        };
+        fileManagers = {
+            yazi.enable = true;
+            nautilus.enable = true;
+        };
+
         # gui
         gtk.enable = true;
-        browsers.firefox.enable = true;
         kitty.enable = true;
         hyprland.enable = true;
         hypridle.enable = true;
@@ -47,7 +55,6 @@
         awscli.enable = true;
         udiskie.enable = true;
         nvim.enable = true;
-        yazi.enable = true;
         btop.enable = true;
         nh.enable = true;
         tldr.enable = true;
