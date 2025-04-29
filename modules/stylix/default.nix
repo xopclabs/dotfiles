@@ -13,7 +13,6 @@ in {
             targets.gtk.enable = true;
             targets.qt.enable = true;
             targets.mpv.enable = true;
-            targets.discord.enable = true;
         };
     };
 }

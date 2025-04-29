@@ -43,7 +43,7 @@ in {
             ];
         };
 
-        programs.zsh.initExtra = ''
+        programs.zsh.initContent = lib.mkOrder 1000 ''
             export FZF_COMPLETION_TRIGGER=""
             bindkey '^S' fzf-completion
             bindkey '^I' $fzf_default_completion
