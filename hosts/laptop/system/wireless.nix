@@ -75,4 +75,6 @@
     services.udev.extraRules = ''
         SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0a2b", ATTR{authorized}="0"
     '';
+    # Fix controller pairing issues
+    boot.extraModprobeConfig = '' options bluetooth disable_ertm=1 '';
 }
