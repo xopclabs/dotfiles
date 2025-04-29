@@ -1,16 +1,13 @@
 { inputs, lib, config, pkgs, ... }:
 with lib;
 let
-    cfg = config.modules.firefox;
+    cfg = config.modules.browsers.firefox;
 in {
     imports = [
         ./theme.nix
     ];
-    options.modules.firefox = { enable = mkEnableOption "firefox"; };
+    options.modules.browsers.firefox = { enable = mkEnableOption "firefox"; };
     config = mkIf cfg.enable {
-        home.packages = with pkgs; [
-             #firefox
-        ];
         programs.firefox = {
             enable = true;
             # Privacy about:config settings

@@ -8,12 +8,11 @@
         ./waybar
         ./rofi
         ./gtk
-        ./firefox
+        ./browsers
         ./kitty
         ./dunst
         ./vscode
         ./mpv
-        ./zen
         ./kicad
         ./plover
         ./flameshot
