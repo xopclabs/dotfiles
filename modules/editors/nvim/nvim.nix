@@ -15,7 +15,7 @@ in {
             enable = true;
         };
 
-        programs.zsh = mkIf config.modules.zsh.enable {
+        programs.zsh = mkIf config.modules.cli.zsh.enable {
             initContent = mkIf (config.modules.editors.default == "nvim") (
                 mkOrder 1000 ''
                     export EDITOR="nvim"
