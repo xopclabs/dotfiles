@@ -3,23 +3,26 @@
 with lib;
 let 
     cfg = config.modules.editors;
+    configFiles = {
+        settings = "${config.home.homeDirectory}/dotfiles/modules/editors/vscode/settings.json";
+        keybindings = "${config.home.homeDirectory}/dotfiles/modules/editors/vscode/keybindings.json";
+    };
+    
+    mkEditorConfig = editor: {
+        "${config.xdg.configHome}/${editor}/User/settings.json".source = 
+            config.lib.file.mkOutOfStoreSymlink configFiles.settings;
+        "${config.xdg.configHome}/${editor}/User/keybindings.json".source = 
+            config.lib.file.mkOutOfStoreSymlink configFiles.keybindings;
+    };
 in {
     options.modules.editors.vscode = { enable = mkEnableOption "vscode"; };
     options.modules.editors.cursor = { enable = mkEnableOption "cursor"; };
     config = {
 
-        home.file."${config.xdg.configHome}/Code/User/settings.json".source = (
-            config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/settings.json"
-        );
-        home.file."${config.xdg.configHome}/Code/User/keybindings.json".source = (
-            config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/keybindings.json"
-        );
-        home.file."${config.xdg.configHome}/Cursor/User/settings.json".source = (
-            config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/settings.json"
-        );
-        home.file."${config.xdg.configHome}/Cursor/User/keybindings.json".source = (
-            config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/modules/vscode/keybindings.json"
-        );
+        home.file = mkMerge [
+            (mkIf cfg.vscode.enable (mkEditorConfig "Code"))
+            (mkIf cfg.cursor.enable (mkEditorConfig "Cursor"))
+        ];
 
         home.packages = mkIf cfg.cursor.enable [
             pkgs.code-cursor
