@@ -1,16 +1,16 @@
 { inputs, pkgs, lib, config, ... }:
 
 let 
-    cfg = config.modules.hyprland;
+    cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     monitor_internal = "desc:BOE 0x06B7";
     monitor_external = "desc:AOC 22V2WG5 0x000000BF";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
-    hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ../hyprland/hypr-windowrule}'';
-    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ../hyprland/bar-restart}'';
-    autodisable-builtin-keyboard = pkgs.writeShellScriptBin "autodisable-builtin-keyboard" ''${builtins.readFile ../hyprland/autodisable-builtin-keyboard}'';
-    enable-builtin-keyboard = pkgs.writeShellScriptBin "enable-builtin-keyboard" ''${builtins.readFile ../hyprland/enable-builtin-keyboard}'';
+    hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
+    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
+    autodisable-builtin-keyboard = pkgs.writeShellScriptBin "autodisable-builtin-keyboard" ''${builtins.readFile ./scripts/autodisable-builtin-keyboard}'';
+    enable-builtin-keyboard = pkgs.writeShellScriptBin "enable-builtin-keyboard" ''${builtins.readFile ./scripts/enable-builtin-keyboard}'';
     screenrecord = pkgs.writeShellScriptBin "screenrecord" ''
         # Check if wf-recorder is currently running
         if pgrep -x wf-recorder > /dev/null; then
@@ -22,11 +22,11 @@ let
         fi
     '';
 in {
-    options.modules.hyprland = { enable = lib.mkEnableOption "hyprland"; };
+    options.modules.desktop.wm.hyprland = { enable = lib.mkEnableOption "hyprland"; };
     imports = [
         #./hyprlock.nix
         ./hypridle.nix
-        ./display.nix
+        ./kanshi.nix
     ]; 
     config = lib.mkIf cfg.enable {
         home.packages = [

@@ -8,13 +8,6 @@
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
-        # essentials
-        xdg = {
-            enable = true;
-            video-player = "vlc.desktop";
-        };
-
-        # meta-modules
         browsers = {
             firefox.enable = true;
         };
@@ -50,19 +43,23 @@
             tldr.enable = true;
         };
         gui = {
-            gtk.enable = true;
             kitty.enable = true;
             flameshot.enable = true;
             kicad.enable = true;
             plover.enable = true;
         };
-
-        # gui
-        hyprland.enable = true;
-        hypridle.enable = true;
-        waybar.enable = true;
-        rofi.enable = true;
-        mpv.enable = true;
+        desktop = {
+            bars.waybar.enable = true;
+            launchers.rofi.enable = true;
+            wm.hyprland.enable = true;
+            wm.hypridle.enable = true;
+            other.xdg.enable = true;
+            other.gtk.enable = true;
+        };
+        players = {
+            video.mpv.enable = true;
+            video.vlc.enable = true;
+        };
 
         # extras
         packages.enable = true;

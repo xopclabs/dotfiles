@@ -46,13 +46,13 @@
         };
         tools = {
             git.enable = true;
-            xdg.enable = true;
             awscli.enable = true;
             btop.enable = true;
             nh.enable = true;
             tldr.enable = true;
         };
         fileManagers.yazi.enable = true;
+        desktop.other.xdg.enable = true;
 
         # extras
         scripts.enable = true;

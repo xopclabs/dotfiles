@@ -1,9 +1,9 @@
 { inputs, pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.xdg;
+let cfg = config.modules.desktop.other.xdg;
 in {
-    options.modules.xdg = { 
+    options.modules.desktop.other.xdg = { 
         enable = mkEnableOption "xdg"; 
         browser = mkOption {
             type = types.str;
