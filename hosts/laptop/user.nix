@@ -73,7 +73,10 @@
             video.vlc.enable = true;
         };
 
-        packages.enable = true;
+        packages = {
+            common.enable = true;
+            optional.enable = true;
+        };
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

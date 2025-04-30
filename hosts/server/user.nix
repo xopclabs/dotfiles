@@ -57,6 +57,8 @@
         fileManagers.yazi.enable = true;
 
         desktop.other.xdg.enable = true;
+
+        packages.common.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }
