@@ -10,7 +10,7 @@
     config.modules = {
         desktop = {
             bars.waybar.enable = true;
-            launchers.rofi.enable = true;
+            launchers.tofi.enable = true;
             wm = {
                 hyprland.enable = true;
                 hypridle.enable = true;
@@ -46,6 +46,10 @@
             scripts.enable = true;
         };
 
+        terminals = {
+            kitty.enable = true;
+        };
+
         editors = {
             vscode.enable = true;
             cursor.enable = true;
@@ -58,7 +62,6 @@
         };
 
         gui = {
-            kitty.enable = true;
             flameshot.enable = true;
             kicad.enable = true;
             plover.enable = true;

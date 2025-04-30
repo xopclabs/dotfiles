@@ -7,7 +7,6 @@ in {
     imports = [
         ./flameshot.nix
         ./kicad.nix
-        ./kitty.nix
         ./plover.nix
     ];
 }

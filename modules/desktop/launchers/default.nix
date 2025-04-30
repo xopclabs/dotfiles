@@ -3,10 +3,11 @@
 with lib;
 let
     cfg = config.modules.desktop.launchers;
-    launcherPriorities = [ "rofi" ];
+    launcherPriorities = [ "tofi" "rofi" ];
 in {
     imports = [
         ./rofi/rofi.nix
+        ./tofi.nix
     ];
     
     options.modules.desktop.launchers = {

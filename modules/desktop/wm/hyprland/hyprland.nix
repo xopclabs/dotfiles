@@ -32,7 +32,6 @@ in {
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
             pkgs.libinput
-            bar-restart
             hypr-windowrule
             screenrecord
             autodisable-builtin-keyboard
@@ -52,8 +51,8 @@ in {
             systemd.enable = true;
 
             settings = {
-                "$terminal" = "kitty -e tm";
-                "$newterminal" = "kitty -e tmux";
+                "$terminal" = "${config.modules.terminals.default} -e tm";
+                "$newterminal" = "${config.modules.terminals.default} -e tmux";
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
@@ -68,7 +67,6 @@ in {
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
                     "swww-daemon"
                     "waybar"
-                    "bar-restart"
                     "hypr-windowrule"
                     "tmux new -s main"
                     "[workspace 8 silent] telegram-desktop"
@@ -192,6 +190,12 @@ in {
                     "immediate,class:^(steam_app_38400)$"
                 ];
 
+                layerrule = [
+                    "noanim, waybar"
+                    "noanim, launcher"
+                    # Launcher under waybar
+                    "order -1, launcher"
+                ];
                 workspace = [
                     "1, monitor:${monitor_external}, default:true"
                     "2, monitor:${monitor_external}"
@@ -226,16 +230,14 @@ in {
                         { key = "b"; n = "10"; }
                     ];
                 in [
-                    "CTRL SHIFT, Slash,  exec, pkill waybar & waybar"
-                    "$mod, L, exec, launcher"
-                    ", XF86PowerOff, exec, powermenu"
-                    #",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
+                    "CTRL SHIFT, B,  exec, pkill waybar & waybar"
+                    "$mod, L, exec,  systemd-run --user $(${config.modules.desktop.launchers.default}-drun)"
                     ",Print, exec, flameshot gui"
                     "SHIFT,Print, exec, screenrecord"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, ${config.modules.browsers.default}"
-                    "$mod, M, exec, kitty -e ranger"
+                    "$mod, M, exec, ${config.modules.terminals.default} -e ${config.modules.fileManagers.default}"
                     "$mod, Semicolon, exec, ${lock}"
 
                     "$mod, D, killactive"
