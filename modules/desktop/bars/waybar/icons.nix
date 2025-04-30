@@ -2,7 +2,7 @@
 
 with lib;
 let 
-    cfg = config.modules.waybar;
+    cfg = config.modules.desktop.bars.waybar;
 in {
     config = mkIf cfg.enable {
         programs.waybar = {

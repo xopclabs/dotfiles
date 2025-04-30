@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.waybar;
+    cfg = config.modules.desktop.bars.waybar;
 in {
-    options.modules.waybar = { enable = mkEnableOption "waybar"; };
+    options.modules.desktop.bars.waybar = { enable = mkEnableOption "waybar"; };
     imports = [ ./icons.nix ];
     config = mkIf cfg.enable {
         programs.waybar = {

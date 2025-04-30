@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.gui.dunst;
+let cfg = config.modules.desktop.other.dunst;
 
 in {
-    options.modules.gui.dunst = { enable = mkEnableOption "dunst"; };
+    options.modules.desktop.other.dunst = { enable = mkEnableOption "dunst"; };
     config = mkIf cfg.enable {
         services.dunst = {
             enable = true;

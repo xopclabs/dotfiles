@@ -2,12 +2,12 @@
 
 with lib;
 let 
-    cfg = config.modules.hypridle;
+    cfg = config.modules.desktop.wm.hypridle;
     hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     systemctl = "${pkgs.systemd}/bin/systemctl";
 in {
-    options.modules.hypridle = { 
+    options.modules.desktop.wm.hypridle = { 
         enable = mkEnableOption "hypridle"; 
     };
 

@@ -2,10 +2,10 @@
 
 with lib;
 let 
-    cfg = config.modules.mpv;
+    cfg = config.modules.players.video.mpv;
     remotempv = pkgs.writeShellScriptBin "remotempv" ''${builtins.readFile ./remotempv}'';
 in {
-    options.modules.mpv = { enable = mkEnableOption "mpv"; };
+    options.modules.players.video.mpv = { enable = mkEnableOption "mpv"; };
     config = mkIf cfg.enable {
         programs.mpv = {
             enable = true;

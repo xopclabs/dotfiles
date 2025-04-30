@@ -1,7 +1,7 @@
 { inputs, lib, config, pkgs, ... }:
 with lib;
 let
-    cfg = config.modules.rofi;
+    cfg = config.modules.desktop.launchers.rofi;
 
     launcher_type = "type-1";
     launcher_style = "style-10";
@@ -15,7 +15,7 @@ let
         ${config.xdg.configHome}/rofi/powermenu/${powermenu_type}/powermenu.sh ${powermenu_style}
     '';
 in {
-    options.modules.rofi = { enable = mkEnableOption "rofi"; };
+    options.modules.desktop.launchers.rofi = { enable = mkEnableOption "rofi"; };
     config = mkIf cfg.enable {
         programs.rofi = {
             enable = true;

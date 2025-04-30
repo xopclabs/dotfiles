@@ -12,22 +12,15 @@ in
 {
     home.stateVersion = "24.05";
     imports = [
-        # meta-modules
         ./browsers
         ./file_managers
         ./editors
         ./cli
         ./tools
         ./gui
-
-        # gui
-        ./hyprland
-        ./waybar
-        ./rofi
-        ./mpv
-
+        ./desktop
+        ./players
         # system
-        ./xdg
     	./packages
     	./scripts
     ];
