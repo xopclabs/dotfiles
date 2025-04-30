@@ -44,18 +44,19 @@
             bat.enable = true;
             fzf.enable = true;
         };
+
         tools = {
             git.enable = true;
             awscli.enable = true;
             btop.enable = true;
             nh.enable = true;
             tldr.enable = true;
+            scripts.enable = true;
         };
-        fileManagers.yazi.enable = true;
-        desktop.other.xdg.enable = true;
 
-        # extras
-        scripts.enable = true;
+        fileManagers.yazi.enable = true;
+
+        desktop.other.xdg.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

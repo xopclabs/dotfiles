@@ -8,18 +8,19 @@
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
-        browsers = {
-            firefox.enable = true;
+        desktop = {
+            bars.waybar.enable = true;
+            launchers.rofi.enable = true;
+            wm = {
+                hyprland.enable = true;
+                hypridle.enable = true;
+            };
+            other = {
+                xdg.enable = true;
+                gtk.enable = true;
+            };
         };
-        fileManagers = {
-            yazi.enable = true;
-            nautilus.enable = true;
-        };
-        editors = {
-            vscode.enable = true;
-            cursor.enable = true;
-            nvim.enable = true;
-        };
+
         cli = {
             zsh.enable = true;
             tmux = {
@@ -32,6 +33,7 @@
             bat.enable = true;
             fzf.enable = true;
         };
+
         tools = {
             git.enable = true;
             gpg.enable = false;
@@ -41,29 +43,37 @@
             btop.enable = true;
             nh.enable = true;
             tldr.enable = true;
+            scripts.enable = true;
         };
+
+        editors = {
+            vscode.enable = true;
+            cursor.enable = true;
+            nvim.enable = true;
+        };
+
+        fileManagers = {
+            yazi.enable = true;
+            nautilus.enable = true;
+        };
+
         gui = {
             kitty.enable = true;
             flameshot.enable = true;
             kicad.enable = true;
             plover.enable = true;
         };
-        desktop = {
-            bars.waybar.enable = true;
-            launchers.rofi.enable = true;
-            wm.hyprland.enable = true;
-            wm.hypridle.enable = true;
-            other.xdg.enable = true;
-            other.gtk.enable = true;
+
+        browsers = {
+            firefox.enable = true;
         };
+
         players = {
             video.mpv.enable = true;
             video.vlc.enable = true;
         };
 
-        # extras
         packages.enable = true;
-        scripts.enable = true;
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }
