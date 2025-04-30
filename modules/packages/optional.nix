@@ -1,7 +1,7 @@
 { pkgs, lib, config, inputs, ... }:
 
 with lib;
-let cfg = config.modules.packages;
+let cfg = config.modules.packages.optional;
     slack = pkgs.slack.overrideAttrs (old: {
     installPhase = old.installPhase + ''
         rm $out/bin/slack
@@ -13,7 +13,7 @@ let cfg = config.modules.packages;
     '';
   });
 in {
-    options.modules.packages = { enable = mkEnableOption "packages"; };
+    options.modules.packages.optional = { enable = mkEnableOption "optional"; };
     config = mkIf cfg.enable {
     	home.packages = [
             # gui/tui
