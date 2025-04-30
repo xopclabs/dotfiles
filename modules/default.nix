@@ -17,6 +17,7 @@ in
         ./editors
         ./cli
         ./tools
+        ./terminals
         ./gui
         ./desktop
         ./players

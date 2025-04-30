@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.gui.kitty;
-
+let 
+    cfg = config.modules.terminals.kitty;
 in {
-    options.modules.gui.kitty = { enable = mkEnableOption "kitty"; };
+    options.modules.terminals.kitty = { enable = mkEnableOption "kitty"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             kitty
@@ -60,6 +60,13 @@ in {
                 enable_audio_bell = "no";
                 term = "xterm-kitty";
             };
+        };
+        programs.zsh = mkIf config.modules.cli.zsh.enable {
+            initContent = mkIf (config.modules.terminals.default == "kitty") (
+                mkOrder 1000 ''
+                    export TERMINAL="kitty"
+                ''
+            );
         };
     };
 }

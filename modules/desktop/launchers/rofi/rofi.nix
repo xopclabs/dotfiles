@@ -8,7 +8,7 @@ let
     powermenu_type = "type-1";
     powermenu_style = "style-10";
 
-    launcher = pkgs.writeShellScriptBin "launcher" ''
+    launcher = pkgs.writeShellScriptBin "rofi-drun" ''
         ${config.xdg.configHome}/rofi/launchers/${launcher_type}/launcher.sh ${launcher_style}
     '';
     powermenu = pkgs.writeShellScriptBin "powermenu" ''

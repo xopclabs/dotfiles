@@ -28,7 +28,7 @@ in {
     config = {
         modules.fileManagers.default = utils.selectDefault {
             inherit cfg;
-            priorities = fileManagerPriorities;
+            priorities = fileManagerPrioritiesTui;
         };
         modules.fileManagers.gui = utils.selectDefault {
             inherit cfg;
