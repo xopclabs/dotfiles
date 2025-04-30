@@ -20,9 +20,7 @@ in
         ./gui
         ./desktop
         ./players
-        # system
     	./packages
-    	./scripts
     ];
 
     # Export the utility functions

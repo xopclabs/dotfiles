@@ -13,5 +13,6 @@ in {
         ./ssh.nix
         ./tldr.nix
         ./udiskie.nix
+        ./scripts/scripts.nix
     ];
 }
