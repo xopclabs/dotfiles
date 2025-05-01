@@ -232,7 +232,8 @@ in {
                 in [
                     "CTRL SHIFT, B,  exec, pkill waybar & waybar"
                     "$mod, L, exec,  systemd-run --user $(${config.modules.desktop.launchers.default}-drun)"
-                    ",Print, exec, flameshot gui"
+                    #",Print, exec, flameshot gui"
+                    ",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
                     "SHIFT,Print, exec, screenrecord"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
