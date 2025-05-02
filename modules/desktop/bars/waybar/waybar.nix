@@ -19,6 +19,7 @@ in {
                 in {
                     layer = "top";
                     position = "left";
+                    width = 40;
                     modules-left = [
                         "hyprland/workspaces"
                     ];
@@ -79,7 +80,7 @@ in {
                     "hyprland/workspaces" = {
                         show-special = true;
                         all-outputs = false;
-                        format = "<span line_height=\"1.25\">{icon}</span>\n<span line_height=\"1\">{windows}</span>";
+                        format = "<span line_height=\"1\">{icon}</span>\n<span line_height=\"0.75\">{windows}</span>";
                         format-window-separator = "\n";
                         format-icons = {
                             "1" = "󰯫"; "2" = "󰰞"; "3" = "󰰡"; "4" = "󰰤"; "5"  = "󰯽";
@@ -132,9 +133,9 @@ in {
 
                     battery = {
                         format = "{icon}";
-                        format-charging = "";
+                        format-charging = "󰂄";
                         format-icons = [
-                            "" "" "" "" ""
+			                "󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹"
                         ];
                         interval = 5;
                         tooltip-format = "{capacity:0>2}%";
@@ -202,11 +203,34 @@ in {
 
             style = with config.colorScheme.palette; let
                 font-family = "Mononoki Nerd Font";
-                font-size = "14pt";
-                workspaces-inside-gap = "0.1rem";
-                workspaces-gap = "0.3rem";
-                gap = "0.3rem";  
-                inside-gap = "0.3rem";
+                font-mono = "Mononoki Nerd Font Mono";
+                
+                base-font-size = 14;
+                base-icon-size = 18;
+                
+                to-pt = size: "${toString size}pt";
+                
+                # Individual module font sizes
+                # Top
+                workspaces-font-size = to-pt base-icon-size;
+                # Bottom
+                tray-font-size = to-pt base-icon-size;
+                language-font-size = to-pt base-font-size;
+                network-font-size = to-pt (base-icon-size + 3);
+                battery-font-size = to-pt (base-icon-size - 2);
+                pulseaudio-font-size = to-pt (base-icon-size + 1);
+                backlight-font-size = to-pt (base-icon-size + 1);
+                clock-font-size = to-pt base-font-size;
+                power-font-size = to-pt base-icon-size;
+                lock-font-size = to-pt base-icon-size;
+                quit-font-size = to-pt base-icon-size;
+                reboot-font-size = to-pt base-icon-size;
+                
+                # Spacing variables
+                gap = "0.3rem";  # Gap between modules
+                inside-gap = "0.3rem";  # Padding inside modules (controls clickable area)
+                element-spacing = "-0.2rem";  # Negative margin between elements in the same group
+                element-padding-vertical = "0.1rem";  # Reduced vertical padding for elements
             in ''
             /* nix-colors */
             @define-color dynamic-blue         #${base0F};
@@ -269,9 +293,71 @@ in {
                 background: @background;
                 color: @foreground;
                 font-family: "${font-family}";
-                font-size: ${font-size};
+                font-size: ${to-pt base-font-size};
                 font-weight: bold;
                 margin: 0px;
+            }
+
+            /* Icon-specific styling */
+            #workspaces {
+                font-family: "${font-mono}";
+                font-size: ${workspaces-font-size};
+            }
+            
+            #pulseaudio {
+                font-family: "${font-mono}";
+                font-size: ${pulseaudio-font-size};
+            }
+            
+            #backlight {
+                font-family: "${font-mono}";
+                font-size: ${backlight-font-size};
+            }
+            
+            #network {
+                font-family: "${font-mono}";
+                font-size: ${network-font-size};
+            }
+            
+            #battery {
+                font-family: "${font-mono}";
+                font-size: ${battery-font-size};
+            }
+            
+            #tray {
+                font-family: "${font-mono}";
+                font-size: ${tray-font-size};
+            }
+            
+            #custom-power {
+                font-family: "${font-mono}";
+                font-size: ${power-font-size};
+            }
+            
+            #custom-lock {
+                font-family: "${font-mono}";
+                font-size: ${lock-font-size};
+            }
+            
+            #custom-quit {
+                font-family: "${font-mono}";
+                font-size: ${quit-font-size};
+            }
+            
+            #custom-reboot {
+                font-family: "${font-mono}";
+                font-size: ${reboot-font-size};
+            }
+            
+            /* Text-specific styling */
+            #language {
+                font-family: "${font-family}";
+                font-size: ${language-font-size};
+            }
+            
+            #clock {
+                font-family: "${font-family}";
+                font-size: ${clock-font-size};
             }
 
             /* Each module */
@@ -292,16 +378,19 @@ in {
             #custom-reboot {
                 margin-left: 0px;
                 margin-right: 0px;
+                margin-top: 0px;
+                margin-bottom: 0px;
+                padding-top: 0.1rem;
+                padding-bottom: 0.1rem;
             }
 
             /* Each module in order of appearance */
             /* Top */
             #workspaces button {
-                padding-top: ${workspaces-inside-gap};
-                padding-bottom: ${workspaces-inside-gap}; 
-                font-size: ${font-size};
+                padding-top: 0.1rem;
+                padding-bottom: 0.1rem;
                 color: @text;
-                margin: ${workspaces-gap};
+                margin: ${gap};
                 background-color: @workspaces-background;
             }
             #workspaces button.visible {
@@ -335,13 +424,31 @@ in {
                 background-color: @dynamic-lightblack;
                 margin: ${gap};
             }
-            #group-status *,
+            
+            /* Group styling for tighter spacing */
+            #group-status *, 
             #group-control *,
             #group-power * {
-                margin: 0px;
+                margin-top: ${element-spacing};
+                margin-bottom: ${element-spacing};
                 padding: ${inside-gap};
+                padding-top: ${element-padding-vertical};
+                padding-bottom: ${element-padding-vertical};
             }
                 
+            /* First and last items in groups need special treatment to avoid excessive negative margins */
+            #group-status > *:first-child,
+            #group-control > *:first-child,
+            #group-power > *:first-child {
+                margin-top: 0;
+            }
+            
+            #group-status > *:last-child,
+            #group-control > *:last-child,
+            #group-power > *:last-child {
+                margin-bottom: 0;
+            }
+            
             /* Status group*/
             #language {
                 color: @language-color;
@@ -365,7 +472,7 @@ in {
             #battery.warning { color: @critical; }
             #battery.good { color: @warning; }
             #battery.great { color: @battery-color; }
-            #battery.full { color: @gbattery-color; }
+            #battery.full { color: @battery-color; }
             #battery.warning.discharging {
                 color: @warning;
             }
