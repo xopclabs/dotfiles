@@ -150,7 +150,7 @@ in {
                     "custom/quit" = {
                         format = "󰗼";
                         tooltip = false;
-                        on-click = "hyprctl dispatch exit";
+                        on-click = "hyprctl dispatch exit && pkill tmux";
                     };
 
                     "custom/lock" = {
