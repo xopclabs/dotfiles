@@ -39,4 +39,19 @@
         age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
         age.keyFile = "/home/xopc/.config/sops/age/keys.txt";
     };
+
+    # Enable TPM2 to auto-unlock LUKS
+    # NOTE: apparently my laptop doesn't support TPM2, so I've set every enable to false
+    # should work though for any new machine I spin up, so leaving it here
+    security.tpm2 = {
+        enable = false;
+        pkcs11.enable = true;
+        tctiEnvironment.enable = true;
+    };
+    systemd.tpm2.enable = false;
+    boot.initrd.systemd = {
+        enable = false;
+        tpm2.enable = false;
+    };
+
 }

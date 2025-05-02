@@ -4,7 +4,8 @@
     imports = [
         ./system.nix
         ./user.nix
-        ./wireless.nix
+        ./network.nix
+        ./bluetooth.nix
         ./audio.nix
         ./security.nix
         ./gui.nix
