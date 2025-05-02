@@ -16,8 +16,8 @@ CHECKPOINT_PATH=$(echo "$CHECKPOINT_TEMPLATE" | sed "s/{{training_job_name}}/$JO
 # Strip trailing slash if present
 CHECKPOINT_PATH=$(echo "$CHECKPOINT_PATH" | sed 's/\/$//')
 
-# Create SageMaker training job
-aws sagemaker create-training-job --cli-input-json file://"$EXP_PATH"
-
 # Upload experiment JSON to the S3 checkpoint directory
 aws s3 cp "$EXP_PATH" "$CHECKPOINT_PATH/$(basename "$EXP_PATH")" 
+
+# Create SageMaker training job
+aws sagemaker create-training-job --cli-input-json file://"$EXP_PATH" --no-cli-pager
