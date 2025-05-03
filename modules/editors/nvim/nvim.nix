@@ -5,13 +5,8 @@ let
 in {
     options.modules.editors.nvim = { enable = mkEnableOption "nvim"; };
     config = mkIf cfg.enable {
-        
-        home.packages = with pkgs; [
-            nixfmt-classic # Nix
-            lua-language-server stylua # Lua
-        ];
 
-        programs.neovim = {
+        programs.nixvim = {
             enable = true;
         };
 
