@@ -216,9 +216,9 @@ in {
                 # Bottom
                 tray-font-size = to-pt base-icon-size;
                 language-font-size = to-pt base-font-size;
-                network-font-size = to-pt (base-icon-size + 3);
-                battery-font-size = to-pt (base-icon-size - 2);
-                pulseaudio-font-size = to-pt (base-icon-size + 1);
+                network-font-size = to-pt (base-icon-size + 2);
+                battery-font-size = to-pt (base-icon-size - 4);
+                pulseaudio-font-size = to-pt (base-icon-size - 1);
                 backlight-font-size = to-pt (base-icon-size + 1);
                 clock-font-size = to-pt base-font-size;
                 power-font-size = to-pt base-icon-size;
