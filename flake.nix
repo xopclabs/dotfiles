@@ -22,6 +22,9 @@
         tmux-sessionx.url = "github:omerxx/tmux-sessionx";
 
         plover.url = "github:dnaq/plover-flake";
+
+        nixvim.url = "github:nix-community/nixvim";
+        nixvim.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -57,6 +60,7 @@
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
     			        inputs.sops-nix.homeManagerModules.sops
+                        inputs.nixvim.homeManagerModules.nixvim
                         {
                             home = {
                                 username = username;
