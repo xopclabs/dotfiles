@@ -6,7 +6,7 @@ creation_rules:
     key_groups:
       - age:
         - *personal
-  - path_regex: hosts/server/secrets.yaml$
+  - path_regex: hosts/work/secrets.yaml$
     key_groups:
       - age:
         - *work
