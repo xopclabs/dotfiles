@@ -72,13 +72,15 @@
                 };
         in {
             nixosConfigurations = {
-                #                                Architecture   Hostname Username
-                laptop = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
+                #                                 Architecture   Hostname Username
+                laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
+                homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab";
             };
             homeConfigurations = {
-                #                              Architecture   Hostname Username
-                xopc   = mkHome inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
-                pleyba = mkHome inputs.nixpkgs "x86_64-linux" "server" "pleyba";
+                #                               Architecture   Hostname  Username
+                xopc    = mkHome inputs.nixpkgs "x86_64-linux" "laptop"  "xopc";
+                homelab = mkHome inputs.nixpkgs "x86_64-linux" "homelab" "homelab";
+                pleyba  = mkHome inputs.nixpkgs "x86_64-linux" "work"    "pleyba";
             };
     };
 }
