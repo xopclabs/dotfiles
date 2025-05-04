@@ -8,6 +8,9 @@
         home-manager.url = "github:nix-community/home-manager";
         home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+        disko.url = "github:nix-community/disko";
+        disko.inputs.nixpkgs.follows = "nixpkgs";
+
         nur.url = "github:nix-community/NUR";
 
         nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
@@ -39,7 +42,7 @@
                         (./. + "/hosts/${hostname}/system/configuration.nix")
                         # Hardware config (bootloader, kernel modules, filesystems, etc)
                         (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
-                        # sops as NixOS module
+                        disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];

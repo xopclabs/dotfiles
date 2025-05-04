@@ -18,30 +18,29 @@
     };
     nixpkgs.config.allowUnfree = true;
     environment.defaultPackages = [ pkgs.sudo ];
+    environment.systemPackages = map lib.lowPrio [
+        pkgs.curl
+        pkgs.gitMinimal
+    ];
 
     boot = {
         tmp.cleanOnBoot = true;
         kernelPackages = pkgs.linuxPackages_latest;
         loader = {
-            efi = {
-                canTouchEfiVariables = true;
-                efiSysMountPoint = "/boot";
-            };
-
             grub = {
                 enable = true;
-                device = "nodev";
                 efiSupport = true;
-                enableCryptodisk = true;
-            };
-
-            systemd-boot = {
-                enable = false;
-                editor = false;
+                efiInstallAsRemovable = true;
             };
             timeout = 2;
         };
     };
+    
+    # Enable SSH access for nixos-anywhere
+    services.openssh.enable = true;
+        users.users.root.openssh.authorizedKeys.keys = [
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/qy9bDzKgpuIyHMalEPhMFgJ9hamF2LhR0kfk+2Et7"
+    ];
 
     # NFS share client
     fileSystems = {
@@ -79,4 +78,4 @@
 
     # Do not touch
     system.stateVersion = "20.09";
-    }
+}
