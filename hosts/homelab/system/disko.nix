@@ -33,11 +33,19 @@
                             mountOptions = [ "compress=zstd" ]; 
                             mountpoint = "/";
                         };
+                        subvolumes."/.snapshots" = {
+                            mountOptions = [ "compress=zstd" ]; 
+                            mountpoint = "/";
+                        };
 
                         # Home subvolume
                         subvolumes."/home" = {
                             mountOptions = [ "compress=zstd" ];
                             mountpoint = "/home";
+                        };
+                        subvolumes."/home/.snapshots" = {
+                            mountOptions = [ "compress=zstd" ];
+                            mountpoint = "/home/.snapshots";
                         };
 
                         # Nix subvolume
