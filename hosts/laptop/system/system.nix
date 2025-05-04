@@ -130,5 +130,5 @@
     services.power-profiles-daemon.enable = true;
 
     # Do not touch
-    system.stateVersion = "20.09";
-    }
+    system.stateVersion = "24.11";
+}
