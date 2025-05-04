@@ -15,7 +15,7 @@
             options = "--delete-older-than 7d";
         };
         extraOptions = ''
-            experimental-features = nix-command flakes
+            experimental-features = nix-command flakes pipe-operators
             keep-outputs = true
             trusted-users = root homelab
         '';
