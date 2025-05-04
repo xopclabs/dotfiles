@@ -2,10 +2,12 @@
 
 {
     # Set up user and enable sudo
+    sops.secrets.userpass.neededForUsers = true;
     users.users.homelab = {
         extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" "tss" ];
         shell = pkgs.zsh;
         isNormalUser = true;
+        hashedPasswordFile = config.sops.secrets.userpass.path;
     };
     programs.zsh.enable = true;
 

@@ -1,21 +1,17 @@
 keys:
   - &personal age17k8jp2whraxnl94c52tqxnnslyvazcx2gtjdr5fxlxgky3n86shq4lsu2c
-  - &homelab age14jg6hdjytma8uq5eyapjltm7szgmat2axrrwx6h9lwhaxhm4cpnqc4dp30
   - &work age1fsg3cfw5tz5vt5hkpvsfz8a8fsz65mfqsaj3uk6vxpt3l2pe6d5s86pgpd
 creation_rules:
   - path_regex: hosts/laptop/secrets.yaml$
     key_groups:
       - age:
         - *personal
-        - *homelab
   - path_regex: hosts/homelab/secrets.yaml$
     key_groups:
       - age:
         - *personal
-        - *homelab
   - path_regex: hosts/work/secrets.yaml$
     key_groups:
       - age:
         - *work
         - *personal
-        - *homelab

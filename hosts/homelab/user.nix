@@ -6,7 +6,7 @@
         ./sops.nix
         ./home.nix
         inputs.nix-colors.homeManagerModules.default
-	inputs.nixvim.homeManagerModules.nixvim
+	    inputs.nixvim.homeManagerModules.nixvim
     ];
     config.modules = {
         cli = {
@@ -23,10 +23,7 @@
         };
 
         tools = {
-            git = {
-                enable = true;
-                signingKey = "${config.home.homeDirectory}/.ssh/id_ed25519_laptop";
-            };
+            git.enable = true;
             gpg.enable = false;
             ssh.enable = true;
             udiskie.enable = true;

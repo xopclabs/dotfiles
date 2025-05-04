@@ -33,7 +33,7 @@
         loader = {
             grub = {
                 enable = true;
-		device = "nodev";
+		        device = "nodev";
                 efiSupport = true;
                 efiInstallAsRemovable = true;
             };
