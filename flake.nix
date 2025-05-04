@@ -27,6 +27,8 @@
 
         nixvim.url = "github:nix-community/nixvim";
         nixvim.inputs.nixpkgs.follows = "nixpkgs";
+
+        stylix.url = "github:danth/stylix";
     };
 
     # All outputs for the system (configs)
@@ -43,6 +45,7 @@
                         (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
                         inputs.disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
+                        inputs.stylix.nixosModules.stylix
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
