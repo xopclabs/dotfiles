@@ -86,13 +86,12 @@
         in {
             nixosConfigurations = {
                 #                                 Architecture   Hostname  Username  UseHomeManager
-                laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop"  "xopc"    false;
+                laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop"  "xopc"    true;
                 homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab" true;
             };
             homeConfigurations = {
-                #                              Architecture   Hostname  Username
-                xopc   = mkHome inputs.nixpkgs "x86_64-linux" "laptop"  "xopc";
-                pleyba = mkHome inputs.nixpkgs "x86_64-linux" "work"    "pleyba";
+                #                              Architecture   Hostname Username
+                pleyba = mkHome inputs.nixpkgs "x86_64-linux" "work"   "pleyba";
             };
     };
 }
