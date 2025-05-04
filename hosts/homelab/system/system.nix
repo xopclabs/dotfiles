@@ -77,5 +77,5 @@
     };
 
     # Do not touch
-    system.stateVersion = "20.09";
+    system.stateVersion = "24.05";
 }
