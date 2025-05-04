@@ -1,6 +1,10 @@
-{ config, pkgs, inputs, lib, ... }:
+{ config, pkgs, inputs, lib, modulesPath, ... }:
 
 {
+    imports = [
+        (modulesPath + "/installer/scan/not-detected.nix")
+    ];
+
     # Nix settings, auto cleanup and enable flakes
     nix = {
         settings.auto-optimise-store = true;
@@ -77,5 +81,5 @@
     };
 
     # Do not touch
-    system.stateVersion = "24.05";
+    system.stateVersion = "24.11";
 }
