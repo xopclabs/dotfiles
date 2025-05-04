@@ -8,6 +8,7 @@ in {
 
         programs.nixvim = {
             enable = true;
+	    plugins.lualine.enable = true;
         };
 
         programs.zsh = mkIf config.modules.cli.zsh.enable {
