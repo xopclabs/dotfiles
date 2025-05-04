@@ -5,7 +5,7 @@
         autoScrub = {
             enable = true;
             interval = "weekly";
-            fileSystem = [ "/" ];
+            fileSystems = [ "/" ];
         };
     };
 
@@ -22,23 +22,14 @@
                 TIMELINE_LIMIT_WEEKLY = "0";
                 TIMELINE_LIMIT_MONTHLY = "0";
                 TIMELINE_LIMIT_YEARLY = "0";
-                BACKGROUND_COMPARISON = "yes";
-                NUMBER_CLEANUP = "no";
-                NUMBER_MIN_AGE = "1800";
-                NUMBER_LIMIT = "50";
-                NUMBER_LIMIT_IMPORTANT = "10";
-                EMPTY_PRE_POST_CLEANUP = "yes";
-                EMPTY_PRE_POST_MIN_AGE = "1800";
             };
         in {
             root = {
                 SUBVOLUME = "/";
-                inherit params;
-            };
+            } // params;
             home = {
                 SUBVOLUME = "/home";
-                inherit params;
-            };
+            } // params;
         };
     };
 }

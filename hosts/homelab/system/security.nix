@@ -27,6 +27,11 @@
     };
     services.gnome.gnome-keyring.enable = true;
 
+    sops = {
+        defaultSopsFile = ../secrets.yaml;
+        age.sshKeyPaths = [ "/home/homelab/.ssh/id_ed25519" ];
+        age.keyFile = "/home/homelab/.config/sops/age/keys.txt";
+    };
     sops.secrets."ssh-laptop/id_ed25519" = {
         path = "/home/homelab/.ssh/id_ed25519_laptop";
 	owner = config.users.users.homelab.name;
@@ -34,10 +39,5 @@
     sops.secrets."ssh-laptop/id_ed25519.pub" = {
         path = "/home/homelab/.ssh/id_ed25519_laptop.pub";
 	owner = config.users.users.homelab.name;
-    };
-    sops = {
-        defaultSopsFile = ../secrets.yaml;
-        age.sshKeyPaths = [ "/home/homelab/.ssh/id_ed25519" config.sops.secrets."ssh-laptop/id_ed25519".path ];
-        age.keyFile = "/home/homelab/.config/sops/age/keys.txt";
     };
 }
