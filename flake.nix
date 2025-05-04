@@ -72,8 +72,7 @@
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
-    			        inputs.sops-nix.homeManagerModules.sops
-                        inputs.nixvim.homeManagerModules.nixvim
+    			inputs.sops-nix.homeManagerModules.sops
                         {
                             home = {
                                 username = username;
@@ -88,13 +87,12 @@
             nixosConfigurations = {
                 #                                 Architecture   Hostname  Username  UseHomeManager
                 laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop"  "xopc"    false;
-                homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab" false;
+                homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab" true;
             };
             homeConfigurations = {
-                #                               Architecture   Hostname  Username
-                xopc    = mkHome inputs.nixpkgs "x86_64-linux" "laptop"  "xopc";
-                homelab = mkHome inputs.nixpkgs "x86_64-linux" "homelab" "homelab";
-                pleyba  = mkHome inputs.nixpkgs "x86_64-linux" "work"    "pleyba";
+                #                              Architecture   Hostname  Username
+                xopc   = mkHome inputs.nixpkgs "x86_64-linux" "laptop"  "xopc";
+                pleyba = mkHome inputs.nixpkgs "x86_64-linux" "work"    "pleyba";
             };
     };
 }

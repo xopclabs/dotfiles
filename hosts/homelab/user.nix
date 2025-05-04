@@ -6,6 +6,7 @@
         ./sops.nix
         ./home.nix
         inputs.nix-colors.homeManagerModules.default
+	inputs.nixvim.homeManagerModules.nixvim
     ];
     config.modules = {
         cli = {
