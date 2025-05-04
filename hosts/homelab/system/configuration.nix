@@ -3,6 +3,7 @@
 {
     imports = [
         ./disko.nix
+        ./btrfs.nix
         ./system.nix
         ./user.nix
         ./network.nix
