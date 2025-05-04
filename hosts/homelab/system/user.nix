@@ -7,6 +7,7 @@
         shell = pkgs.zsh;
         isNormalUser = true;
     };
+    programs.zsh.enable = true;
 
     # Set up locales (timezone and keyboard layout)
     i18n.defaultLocale = "en_US.UTF-8";
