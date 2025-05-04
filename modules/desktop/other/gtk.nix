@@ -66,16 +66,6 @@ in {
 
         qt = {
             enable = true;
-            platformTheme.name = "qtct";
-            style = {
-                name = "kvantum";
-                package = pkgs.nordic;
-            };
         };
-        xdg.configFile."Kvantum/kvantum.kvconfig".text = ''
-            [General]
-            theme=${gtk-theme}
-        '';
-         xdg.configFile."Kvantum/${gtk-theme}".source = "${pkgs.nordic}/share/Kvantum/${gtk-theme}";
     };
 }

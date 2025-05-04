@@ -22,6 +22,10 @@
             };
         };
 
+        theming = {
+            stylix.enable = true;
+        };
+
         cli = {
             zsh.enable = true;
             tmux = {
