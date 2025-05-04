@@ -75,7 +75,8 @@
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
-    			inputs.sops-nix.homeManagerModules.sops
+                        inputs.sops-nix.homeManagerModules.sops
+                        inputs.stylix.homeManagerModules.stylix
                         {
                             home = {
                                 username = username;
