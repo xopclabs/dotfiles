@@ -1,4 +1,3 @@
-
 {
     description = "NixOS configuration";
 
@@ -33,7 +32,7 @@
     # All outputs for the system (configs)
     outputs = { home-manager, nixpkgs, ... }@inputs:
         let
-            mkSystem = pkgs: system: hostname: username:
+            mkSystem = pkgs: system: hostname: username: useHomeManager:
                 pkgs.lib.nixosSystem {
                     system = system;
                     modules = [
@@ -48,9 +47,20 @@
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
-                    ];
+                    ] ++ (if useHomeManager then [
+                        inputs.home-manager.nixosModules.home-manager
+                        {
+                            home-manager = {
+                                useUserPackages = true;
+                                useGlobalPkgs = true;
+                                extraSpecialArgs = { inherit inputs; };
+                                users."${username}" = (./. + "/hosts/${hostname}/user.nix");
+                            };
+                        }
+                    ] else []);
                     specialArgs = { inherit inputs; };
                 };
+
             mkHome = pkgs: system: hostname: username:
                 home-manager.lib.homeManagerConfiguration {
                     pkgs = import nixpkgs {
@@ -73,11 +83,12 @@
                     ];
                     extraSpecialArgs = { inherit inputs; };
                 };
+
         in {
             nixosConfigurations = {
-                #                                 Architecture   Hostname Username
-                laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop" "xopc";
-                homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab";
+                #                                 Architecture   Hostname  Username  UseHomeManager
+                laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop"  "xopc"    false;
+                homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab" false;
             };
             homeConfigurations = {
                 #                               Architecture   Hostname  Username
