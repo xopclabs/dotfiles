@@ -42,7 +42,7 @@
                         (./. + "/hosts/${hostname}/system/configuration.nix")
                         # Hardware config (bootloader, kernel modules, filesystems, etc)
                         (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
-                        disko.nixosModules.disko
+                        inputs.disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
