@@ -6,7 +6,15 @@ let
     name = "xopclabs";
     email = "b9fyg5ei@duck.com";
 in {
-    options.modules.tools.git = { enable = mkEnableOption "git"; };
+    options.modules.tools.git = { 
+        enable = mkEnableOption "git"; 
+        # Signing key with, defaults to ~/.ssh/id_ed25519
+        signingKey = mkOption {
+            type = types.str;
+            default = "${config.home.homeDirectory}/.ssh/id_ed25519";
+            description = "The SSH key to use for signing commits";
+        };
+    };
     config = mkIf cfg.enable {
         programs.git = {
             enable = true;
@@ -15,7 +23,7 @@ in {
             signing = {
                 format = "ssh";
                 signByDefault = true;
-                key = "${config.home.homeDirectory}/.ssh/id_ed25519";
+                key = cfg.signingKey;
             };
             extraConfig = {
                 push.autoSetupRemote = true; 

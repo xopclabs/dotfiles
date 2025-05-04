@@ -22,7 +22,10 @@
         };
 
         tools = {
-            git.enable = true;
+            git = {
+                enable = true;
+                signingKey = "${config.home.homeDirectory}/.ssh/id_ed25519_laptop";
+            };
             gpg.enable = false;
             ssh.enable = true;
             udiskie.enable = true;
