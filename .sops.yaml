@@ -18,3 +18,4 @@ creation_rules:
       - age:
         - *work
         - *personal
+        - *homelab
