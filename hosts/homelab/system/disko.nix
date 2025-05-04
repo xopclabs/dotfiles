@@ -1,4 +1,6 @@
-{
+let
+    defaultMountOptions = [ "compress=zstd:1" ];
+in {
     disko.devices.disk.primary = {
         device = "/dev/sda";
         type = "disk";
@@ -29,37 +31,39 @@
                         type = "btrfs";
 
                         # Root subvolume
-                        subvolumes."/root" = {
-                            mountOptions = [ "compress=zstd" ]; 
+                        subvolumes."@" = {
+                            mountOptions = defaultMountOptions; 
                             mountpoint = "/";
                         };
-                        subvolumes."/.snapshots" = {
-                            mountOptions = [ "compress=zstd" ]; 
-                            mountpoint = "/";
+                        
+                        # State subvolume
+                        subvolumes."@var" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/var";
+                        };
+                        subvolumes."@var-snapshots" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/var/.snapshots";
                         };
 
                         # Home subvolume
-                        subvolumes."/home" = {
-                            mountOptions = [ "compress=zstd" ];
+                        subvolumes."@home" = {
+                            mountOptions = defaultMountOptions;
                             mountpoint = "/home";
                         };
-                        subvolumes."/home/.snapshots" = {
-                            mountOptions = [ "compress=zstd" ];
+                        subvolumes."@home-snapshots" = {
+                            mountOptions = defaultMountOptions;
                             mountpoint = "/home/.snapshots";
                         };
 
                         # Nix subvolume
-                        subvolumes."/nix" = {
-                            mountOptions = [
-                                "compress=zstd"
-                                "noatime"
-                                "noacl"
-                            ]; # Optimize for Nix store
+                        subvolumes."@nix" = {
+                            mountOptions = defaultMountOptions ++ [ "noatime" "noacl" ]; 
                             mountpoint = "/nix";
                         };
 
                         # Swap subvolume
-                        subvolumes."/swap" = {
+                        subvolumes."@swap" = {
                             mountpoint = "/.swap";
                             swap = {
                                 swapfile.size = "8G";

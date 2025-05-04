@@ -25,7 +25,7 @@
             };
         in {
             root = {
-                SUBVOLUME = "/";
+                SUBVOLUME = "/var";
             } // params;
             home = {
                 SUBVOLUME = "/home";
