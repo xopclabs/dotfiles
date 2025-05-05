@@ -44,6 +44,8 @@ in {
             pfetch
             sops
             devenv
+	    dust
+	    ncdu
         ];
     };
 }

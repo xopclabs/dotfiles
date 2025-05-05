@@ -36,6 +36,8 @@ in {
                 gtk.enable = false;
                 waybar.enable = false;
                 tofi.enable = false;
+                kitty.enable = false;
+                btop.enable = false;
             };
         };
     };
