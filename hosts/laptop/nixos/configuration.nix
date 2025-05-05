@@ -2,12 +2,15 @@
 
 {
     imports = [
-        ./disko.nix
-        ./btrfs.nix
         ./system.nix
         ./user.nix
         ./network.nix
+        ./bluetooth.nix
+        ./audio.nix
         ./security.nix
-        ./vpn.nix
+        ./gui.nix
+        ./proxy.nix
+
+        ./programs
     ];
 }
