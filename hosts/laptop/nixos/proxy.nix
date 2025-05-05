@@ -153,7 +153,7 @@ in {
         };
         home_fallback = {
             configFile = config.sops.secrets."vpn/home_fallback".path;
-            autostart = false;
+            autostart = true;
         };
         beta = {
             configFile = config.sops.secrets."vpn/beta".path;
