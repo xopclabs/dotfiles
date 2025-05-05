@@ -108,8 +108,8 @@ in {
                     gaps_in = 9;
                     gaps_out = "0,0,0,18";
                     border_size = 4;
-                    "col.active_border" = "0xff${base0D}";
-                    "col.inactive_border" = "0xff${base01}";
+                    # "col.active_border" = lib.mkForce "0xff${base0D}";
+                    # "col.inactive_border" = lib.mkForce "0xff${base01}";
                 };
 
                 env = [
@@ -123,7 +123,7 @@ in {
                     shadow = {
                         enabled = true;
                         range = 30;
-                        color = "0x8800000";
+                        color = lib.mkForce "0x8800000";
                     };
                 };
 

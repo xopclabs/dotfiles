@@ -8,6 +8,8 @@
         inputs.nix-colors.homeManagerModules.default
     ];
     config.modules = {
+        theming.stylix.enable = true;
+
         cli = {
             zsh = {
                 enable = true;

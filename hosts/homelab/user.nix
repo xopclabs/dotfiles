@@ -9,6 +9,8 @@
 	    inputs.nixvim.homeManagerModules.nixvim
     ];
     config.modules = {
+        theming.stylix.enable = true;
+
         cli = {
             zsh.enable = true;
             tmux = {
