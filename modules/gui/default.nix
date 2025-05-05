@@ -8,5 +8,6 @@ in {
         ./flameshot.nix
         ./kicad.nix
         ./plover.nix
+        ./wl-kbptr.nix
     ];
 }

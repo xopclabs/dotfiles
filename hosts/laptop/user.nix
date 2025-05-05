@@ -66,6 +66,7 @@
             flameshot.enable = true;
             kicad.enable = true;
             plover.enable = true;
+            wl-kbptr.enable = true;
         };
 
         browsers = {
