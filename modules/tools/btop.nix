@@ -9,7 +9,7 @@ in {
         programs.btop = {
             enable = true;
             settings = {
-                color_theme = "TTY";
+                color_theme = lib.mkForce "TTY";
                 vim_keys = true;
                 rounded_corners = false;
                 shown_boxes = "proc cpu mem";

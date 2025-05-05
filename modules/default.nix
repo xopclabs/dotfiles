@@ -33,7 +33,8 @@ in
         ./gui
         ./desktop
         ./players
-    	./packages
+        ./packages
+        ./theming
     ];
 
     # Export the utility functions
