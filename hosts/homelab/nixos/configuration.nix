@@ -9,5 +9,7 @@
         ./network.nix
         ./security.nix
         ./proxy.nix
+
+        ./services
     ];
 }
