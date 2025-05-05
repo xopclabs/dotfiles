@@ -38,9 +38,9 @@
                     modules = [
                         { networking.hostName = hostname; }
                         # General configuration (users, networking, sound, etc)
-                        (./. + "/hosts/${hostname}/system/configuration.nix")
+                        (./. + "/hosts/${hostname}/nixos/configuration.nix")
                         # Hardware config (bootloader, kernel modules, filesystems, etc)
-                        (./. + "/hosts/${hostname}/system/hardware-configuration.nix")
+                        (./. + "/hosts/${hostname}/nixos/hardware-configuration.nix")
                         inputs.disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
                         {
