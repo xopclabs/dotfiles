@@ -24,18 +24,12 @@
     # Fix controller pairing issues
     boot.extraModprobeConfig = '' options bluetooth disable_ertm=1 '';
 
-    # For wake-up with bluetooth (doesn't work)
-    services.udev.packages = [
-        (pkgs.writeTextFile {
-        name = "bluetooth_udev";
-        text = ''
-            SUBSYSTEM=="usb", ATTRS{idVendor}=="2b89", ATTRS{idProduct}=="8761" RUN+="${pkgs.coreutils}/bin/echo enabled > /sys$env{DEVPATH}/../power/wakeup"
-        '';
-        destination = "/etc/udev/rules.d/91-keyboard-mouse-wakeup.rules";
-        })
-    ];
-
     services.udev.extraRules = ''
+        # Enable wake-up with USB
+        ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usb", ATTR{power/wakeup}="enabled" 
+        # Enable wake-up with bluetooth
+        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="2b89", ATTRS{idProduct}=="8761"  ATTR{power/wakeup}="enabled"
+
         # Disable internal bluetooth
         SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0a2b", ATTR{authorized}="0"
     '';

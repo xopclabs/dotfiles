@@ -5,4 +5,5 @@
         enable = true;
         protontricks.enable = true;
     };
+    hardware.xone.enable = true;
 }
