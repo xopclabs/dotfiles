@@ -3,10 +3,11 @@
 with lib;
 let
     cfg = config.modules.browsers;
-    browserPriorities = [ "firefox" "zen" ];
+    browserPriorities = [ "firefox" "zen" "chromium" ];
 in {
     imports = [
         ./firefox/firefox.nix
+        ./chromium.nix
         ./zen.nix
     ];
     
