@@ -28,15 +28,12 @@ in {
             pkgs.telegram-desktop
             pkgs.libsForQt5.qt5.qtwayland
             pkgs.pavucontrol
-            pkgs.rnote
-            pkgs.chromium
             pkgs.stremio
             pkgs.moonlight-qt
             pkgs.tigervnc
             pkgs.libreoffice
-            pkgs.vlc
             pkgs.python3
-            pkgs.blender
+            pkgs.zoom-us
         ];
     };
 }
