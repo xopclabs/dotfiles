@@ -7,6 +7,14 @@ let
             publicKey = "HK4EezS2UTm64clhYLBa4QHAN/0ad/eyfv14N2ffnyA=";
             allowedIPs = [ "10.250.250.2/32" ];
         };
+        pavel = {
+            publicKey = "h/zTkj0tEVTYjJYZ3mvNLBblkKD9XMq7UpR03dlWSxo=";
+            allowedIPs = [ "10.250.250.3/32" ];
+        };
+        pavel-pc = {
+            publicKey = "dgkPzUZ+R3ODZWzY46DROU7VOOvuvndJucQlWEu0UV0=";
+            allowedIPs = [ "10.250.250.4/32" ];
+        };
     };
 
     # Function to generate peer configuration
@@ -25,12 +33,15 @@ let
             mode = "0400";
         };
     };
+
+    generate-wg-client = pkgs.writeShellScriptBin "generate-wg-client" ''${builtins.readFile ./generate-wg-client}'';
 in
 {
     environment.systemPackages = with pkgs; [
         wireguard-tools
         sops
-        yq
+        qrrs
+        generate-wg-client
     ];
 
     sops.secrets = lib.mkMerge [

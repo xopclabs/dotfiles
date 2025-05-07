@@ -75,7 +75,7 @@
 
     # System env variables
     environment.variables = {
-        NIXOS_CONFIG = "$HOME/dotfiles/hosts/homelab/system/configuration.nix";
+        NIXOS_CONFIG = "$HOME/dotfiles/hosts/homelab/nixos/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
         NH_FLAKE = "$HOME/dotfiles";
         EDITOR = "nvim";
