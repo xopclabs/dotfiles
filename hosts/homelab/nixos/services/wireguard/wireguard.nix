@@ -29,6 +29,8 @@ in
 {
     environment.systemPackages = with pkgs; [
         wireguard-tools
+        sops
+        yq
     ];
 
     sops.secrets = lib.mkMerge [
