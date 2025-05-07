@@ -266,11 +266,6 @@
         "command": "-composer.startComposerPrompt"
     },
     {
-        "key": "ctrl+backspace",
-        "command": "composer.cancelComposerStep",
-        "when": "composerFocused || focusedView =~ /^workbench.panel.aichat.view/"
-    },
-    {
         "key": "ctrl+shift+backspace",
         "command": "-composer.cancelComposerStep",
         "when": "composerFocused || focusedView =~ /^workbench.panel.aichat.view/"
