@@ -10,6 +10,7 @@
     ];
     config.modules = {
         theming.stylix.enable = true;
+        desktop.other.gtk.enable = true;
 
         cli = {
             zsh.enable = true;
@@ -45,7 +46,6 @@
 
         packages = {
             common.enable = true;
-            optional.enable = true;
         };
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
