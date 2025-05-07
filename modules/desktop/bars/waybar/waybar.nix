@@ -140,10 +140,12 @@ in {
                         interval = 5;
                         tooltip-format = "{capacity:0>2}%";
                         states = {
-                            warning = 20;
-                            good = 70;
-                            great = 98;
                             full = 100;
+                            great = 98;
+                            good = 70;
+                            medium = 50;
+                            low = 35;
+                            warning = 20;
                         };
                     };
 
@@ -470,12 +472,10 @@ in {
                 animation-duration: 1s;
             }
             #battery.warning { color: @critical; }
-            #battery.good { color: @warning; }
+            #battery.medium { color: @dynamic-yellow; }
+            #battery.good { color: @battery-color; }
             #battery.great { color: @battery-color; }
             #battery.full { color: @battery-color; }
-            #battery.warning.discharging {
-                color: @warning;
-            }
 
 
             /* Control group */
