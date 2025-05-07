@@ -149,11 +149,11 @@ in {
     networking.wg-quick.interfaces = {
         home = {
             configFile = config.sops.secrets."vpn/home".path;
-            autostart = false;
+            autostart = true;
         };
         home_fallback = {
             configFile = config.sops.secrets."vpn/home_fallback".path;
-            autostart = true;
+            autostart = false;
         };
         beta = {
             configFile = config.sops.secrets."vpn/beta".path;
