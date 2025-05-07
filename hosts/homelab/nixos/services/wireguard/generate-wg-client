@@ -2,25 +2,20 @@ set -e
 
 # Help message
 show_help() {
-    echo "Usage: $0 -n CONFIG_NAME -b BASE_DIR -i IP -a ALLOWED_IPS -e ENDPOINT"
+    echo "Usage: $0 -n CONFIG_NAME -b BASE_DIR -i IP -a ALLOWED_IPS -e ENDPOINT -s SECRETS_FILE"
     echo ""
     echo "Generate Wireguard keys and configuration file"
     echo ""
     echo "Arguments:"
-    echo "  -n CONFIG_NAME   Name of the configuration"
+    echo "  -n CONFIG_NAME   Name of the configuration/peer"
     echo "  -b BASE_DIR      Base directory where to save the configuration"
     echo "  -i IP            IP address for the client (without /32)"
     echo "  -a ALLOWED_IPS   Comma-separated list of allowed IPs"
     echo "  -e ENDPOINT      Endpoint address with port (e.g., server.example.com:51820)"
+    echo "  -s SECRETS_FILE  Path to the sops-encrypted secrets.yaml file"
     echo "  -h               Show this help message"
     exit 1
 }
-
-# Check if wireguard tools are installed
-if ! command -v wg &> /dev/null; then
-    echo "Error: Wireguard tools not found. Please install wireguard-tools package."
-    exit 1
-fi
 
 # Get script directory
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -33,22 +28,29 @@ if [ ! -f "$TEMPLATE_FILE" ]; then
 fi
 
 # Parse arguments
-while getopts "n:b:i:a:e:h" opt; do
+while getopts "n:b:i:a:e:s:h" opt; do
     case $opt in
         n) CONFIG_NAME="$OPTARG" ;;
         b) BASE_DIR="$OPTARG" ;;
         i) IP="$OPTARG" ;;
         a) ALLOWED_IPS="$OPTARG" ;;
         e) ENDPOINT="$OPTARG" ;;
+        s) SECRETS_FILE="$OPTARG" ;;
         h) show_help ;;
         *) show_help ;;
     esac
 done
 
 # Check required arguments
-if [ -z "$CONFIG_NAME" ] || [ -z "$BASE_DIR" ] || [ -z "$IP" ] || [ -z "$ALLOWED_IPS" ] || [ -z "$ENDPOINT" ]; then
+if [ -z "$CONFIG_NAME" ] || [ -z "$BASE_DIR" ] || [ -z "$IP" ] || [ -z "$ALLOWED_IPS" ] || [ -z "$ENDPOINT" ] || [ -z "$SECRETS_FILE" ]; then
     echo "Error: Missing required arguments"
     show_help
+fi
+
+# Check if secrets file exists
+if [ ! -f "$SECRETS_FILE" ]; then
+    echo "Error: Secrets file not found at $SECRETS_FILE"
+    exit 1
 fi
 
 # Create directory
@@ -64,17 +66,13 @@ PRIVATE_KEY=$(wg genkey)
 PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
 PRESHARED_KEY=$(wg genpsk)
 
-# Save keys to files
-echo "$PRIVATE_KEY" > "$CONFIG_DIR/private.key"
-echo "$PUBLIC_KEY" > "$CONFIG_DIR/public.key"
-echo "$PRESHARED_KEY" > "$CONFIG_DIR/preshared.key"
+# Get server public key from sops-encrypted file
+SERVER_PUBLIC_KEY=$(sops --decrypt "$SECRETS_FILE" | yq eval '.wg.privatekey' -)
 
-# Set proper permissions
-chmod 600 "$CONFIG_DIR/private.key" "$CONFIG_DIR/preshared.key"
-
-# Get server public key
-echo "Enter server public key:"
-read SERVER_PUBLIC_KEY
+if [ -z "$SERVER_PUBLIC_KEY" ]; then
+    echo "Error: Could not find server public key in secrets file at path 'wg.privatekey'"
+    exit 1
+fi
 
 # Create configuration file from template
 CONFIG_FILE="$CONFIG_DIR/$CONFIG_NAME.conf"
@@ -90,6 +88,29 @@ sed -i "s|<endpoint>|$ENDPOINT|g" "$CONFIG_FILE"
 
 # Set proper permissions for the config file
 chmod 600 "$CONFIG_FILE"
+
+# Save keys to files
+echo "$PRIVATE_KEY" > "$CONFIG_DIR/private.key"
+echo "$PUBLIC_KEY" > "$CONFIG_DIR/public.key"
+echo "$PRESHARED_KEY" > "$CONFIG_DIR/preshared.key"
+
+# Set proper permissions
+chmod 600 "$CONFIG_DIR/private.key" "$CONFIG_DIR/preshared.key"
+
+# Update the sops-encrypted secrets file with the new keys
+TMP_FILE=$(mktemp)
+
+# Decrypt the secrets file
+sops --decrypt "$SECRETS_FILE" > "$TMP_FILE"
+
+# Update the YAML file with new keys
+yq eval ".wg.peers.$CONFIG_NAME.privatekey = \"$PRIVATE_KEY\"" -i "$TMP_FILE"
+yq eval ".wg.peers.$CONFIG_NAME.publickey = \"$PUBLIC_KEY\"" -i "$TMP_FILE"
+yq eval ".wg.peers.$CONFIG_NAME.presharedkey = \"$PRESHARED_KEY\"" -i "$TMP_FILE"
+
+# Re-encrypt the file
+sops --encrypt --in-place "$TMP_FILE"
+mv "$TMP_FILE" "$SECRETS_FILE"
 
 echo "Wireguard configuration has been generated successfully."
 echo "Public key: $PUBLIC_KEY"
