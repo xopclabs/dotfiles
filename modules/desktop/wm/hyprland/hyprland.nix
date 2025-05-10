@@ -181,6 +181,9 @@ in {
                     "move 0 0, class:flameshot"
                     "noanim, class:flameshot"
 
+                    # Malware aka zoom-us
+                    "tile, class:zoom"
+
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
                     "noanim,class:(xwaylandvideobridge)"
