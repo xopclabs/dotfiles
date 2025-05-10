@@ -472,6 +472,7 @@ in {
                 animation-duration: 1s;
             }
             #battery.warning { color: @critical; }
+            #battery.low { color: @critical; }
             #battery.medium { color: @dynamic-yellow; }
             #battery.good { color: @battery-color; }
             #battery.great { color: @battery-color; }
