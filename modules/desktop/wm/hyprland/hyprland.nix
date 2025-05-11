@@ -233,7 +233,7 @@ in {
                         { key = "b"; n = "10"; }
                     ];
                 in [
-                    "CTRL SHIFT, B,  exec, pkill waybar & waybar"
+                    "CTRL SHIFT, B,  exec, pkill waybar; waybar"
                     "$mod, L, exec,  systemd-run --user $(${config.modules.desktop.launchers.default}-drun)"
                     #",Print, exec, flameshot gui"
                     ",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
