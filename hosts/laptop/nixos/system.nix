@@ -72,6 +72,9 @@
         # Fix washed out colors on HDMI with Intel graphics
         ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card0 107 connector 103 1"
         ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card1 107 connector 103 1"
+
+        # Limit battery charge to 80%
+        SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"
     '';
 
     # Enable quicksync
