@@ -186,6 +186,7 @@ in {
                     "pin, title:as_toolbar"
                     "float, title:zoom_linux_float_video_window"
                     "pin, title:zoom_linux_float_video_window"
+                    "stayfocused, class:zoom, title:menu window"
 
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
