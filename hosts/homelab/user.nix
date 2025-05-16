@@ -16,7 +16,7 @@
             zsh.enable = true;
             tmux = {
                 enable = true;
-                mouse.enable = true;
+                statusPosition = "bottom";
             };
             starship.enable = true;
             eza.enable = true;
