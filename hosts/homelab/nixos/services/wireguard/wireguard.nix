@@ -15,6 +15,10 @@ let
             publicKey = "dgkPzUZ+R3ODZWzY46DROU7VOOvuvndJucQlWEu0UV0=";
             allowedIPs = [ "10.250.250.4/32" ];
         };
+        wife-pc = {
+            publicKey = "cujVQ6lmprG+mszcD5GmzZK/Cgn5rwXMGh+rp1Qasmo=";
+            allowedIPs = [ "10.250.250.5/32" ];
+        };
     };
 
     # Function to generate peer configuration
