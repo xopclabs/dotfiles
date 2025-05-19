@@ -34,6 +34,7 @@ in {
             pkgs.libreoffice
             pkgs.python3
             pkgs.zoom-us
+            pkgs.zotero
         ];
     };
 }

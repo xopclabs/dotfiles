@@ -22,6 +22,7 @@ in {
                         bitwarden
                         vimium
                         tree-style-tab
+                        zotero-connector
                     ];
                 settings = {
                     "browser.send_pings" = false;
