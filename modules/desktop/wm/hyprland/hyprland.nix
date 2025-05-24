@@ -9,8 +9,7 @@ let
     cursorSize = 24;
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
     bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
-    autodisable-builtin-keyboard = pkgs.writeShellScriptBin "autodisable-builtin-keyboard" ''${builtins.readFile ./scripts/autodisable-builtin-keyboard}'';
-    enable-builtin-keyboard = pkgs.writeShellScriptBin "enable-builtin-keyboard" ''${builtins.readFile ./scripts/enable-builtin-keyboard}'';
+    toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./scripts/toggle-keyboard}'';
     screenrecord = pkgs.writeShellScriptBin "screenrecord" ''
         # Check if wf-recorder is currently running
         if pgrep -x wf-recorder > /dev/null; then
@@ -34,8 +33,7 @@ in {
             pkgs.libinput
             hypr-windowrule
             screenrecord
-            autodisable-builtin-keyboard
-            enable-builtin-keyboard
+            toggle-keyboard
         ];
 
         home.pointerCursor = {
@@ -279,11 +277,9 @@ in {
                 ];
 
                 bindl = [
-                    ",switch:on:[Lid switch], exec, enable-builtin-keyboard"
                     ",switch:on:[Lid switch], exec, ${lock}"
                     ",switch:on:[Lid switch], exec, systemctl suspend"
                     ",switch:off:[Lid switch], exec, freshman_start"
-                    ",switch:off:[Lid switch], exec, enable-builtin-keyboard"
                 
                     # F13, F14 binds for keyboard layouts
                     ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"

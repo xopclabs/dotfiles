@@ -1,0 +1,10 @@
+CACHE_FILE="$HOME/.config/hypr/laptop-keyboard-disabled"
+BUILTIN_KB="at-translated-set-2-keyboard"
+
+if [ -f "$CACHE_FILE" ] ;then
+    rm "$CACHE_FILE"
+    sh -c "hyprctl keyword 'device[$BUILTIN_KB]:enabled' true"
+else
+    touch "$CACHE_FILE"
+    sh -c "hyprctl keyword 'device[$BUILTIN_KB]:enabled' false"
+fi
