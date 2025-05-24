@@ -53,6 +53,7 @@ in {
                         drawer = drawer-config;
                         modules = [
                             "custom/power"
+                            "custom/keyboard"
                             "custom/quit"
                             "custom/lock"
                             "custom/reboot"
@@ -167,6 +168,12 @@ in {
                         on-click = "systemctl reboot";
                     };
 
+                    "custom/keyboard" = {
+                        format = "󰌌";
+                        tooltip = false;
+                        on-click = "toggle-keyboard";
+                    };
+
                     "custom/power" = {
                         format = "";
                         tooltip = false;
@@ -227,6 +234,7 @@ in {
                 lock-font-size = to-pt base-icon-size;
                 quit-font-size = to-pt base-icon-size;
                 reboot-font-size = to-pt base-icon-size;
+                keyboard-font-size = to-pt base-icon-size;
                 
                 # Spacing variables
                 gap = "0.3rem";  # Gap between modules
@@ -277,6 +285,7 @@ in {
             @define-color reboot-color @dynamic-green;
             @define-color lock-color @dynamic-yellow;
             @define-color quit-color @dynamic-purple;
+            @define-color keyboard-color @dynamic-lightblue;
 
             /* Reset all styles */
             * {
@@ -351,6 +360,11 @@ in {
                 font-size: ${reboot-font-size};
             }
             
+            #custom-keyboard {
+                font-family: "${font-mono}";
+                font-size: ${keyboard-font-size};
+            }
+            
             /* Text-specific styling */
             #language {
                 font-family: "${font-family}";
@@ -377,7 +391,8 @@ in {
             #custom-power,
             #custom-lock,
             #custom-quit,
-            #custom-reboot {
+            #custom-reboot,
+            #custom-keyboard {
                 margin-left: 0px;
                 margin-right: 0px;
                 margin-top: 0px;
@@ -497,6 +512,7 @@ in {
             #custom-reboot { color: @reboot-color; }
             #custom-lock { color: @lock-color; }
             #custom-quit { color: @quit-color; }
+            #custom-keyboard { color: @keyboard-color; }
 
             /* Slider-related CSS */
             slider {
