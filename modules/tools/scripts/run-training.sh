@@ -27,14 +27,14 @@ EXP_DIR=$(dirname "$(realpath "$EXP_PATH")")
 cd "$EXP_DIR"
 # Check if commit exists locally
 if ! git cat-file -e "$COMMIT_HASH" 2>/dev/null; then
-    echo "${RED}ERROR: Commit ${COMMIT_HASH} does not exist locally${NC}"
-    echo "${RED}Please ensure the commit hash is correct.${NC}"
+    echo -e "${RED}ERROR: Commit ${COMMIT_HASH} does not exist locally${NC}"
+    echo -e"${RED}Please ensure the commit hash is correct.${NC}"
     exit 1
 fi
 # Check if commit has been pushed to remote (exists in any remote branch)
 if ! git branch --remote --contains "$COMMIT_HASH" 2>/dev/null | grep -q .; then
-    echo "${RED}ERROR: Commit ${COMMIT_HASH} has not been pushed to the remote repository${NC}"
-    echo "${RED}Please push the commit before running training.${NC}"
+    echo -e "${RED}ERROR: Commit ${COMMIT_HASH} has not been pushed to the remote repository${NC}"
+    echo -e "${RED}Please push the commit before running training.${NC}"
     exit 1
 fi
 
@@ -45,16 +45,16 @@ CHECKPOINT_PATH=$(echo "$CHECKPOINT_PATH" | sed 's/\/$//')
 
 # Create SageMaker training job
 if ! ERROR_OUTPUT=$(aws sagemaker create-training-job --cli-input-json file://"$EXP_PATH" --no-cli-pager 2>&1); then
-    echo "${RED}ERROR: Failed to create training job${NC}"
-    echo "${RED}$ERROR_OUTPUT${NC}"
+    echo -e "${RED}ERROR: Failed to create training job${NC}"
+    echo -e "${RED}$ERROR_OUTPUT${NC}"
     exit 1
 fi
 
 # Upload experiment JSON to the S3 checkpoint directory
 if ! ERROR_OUTPUT=$(aws s3 cp "$EXP_PATH" "$CHECKPOINT_PATH/$(basename "$EXP_PATH")" 2>&1); then
-    echo "${RED}ERROR: Failed to upload experiment configuration to S3${NC}"
-    echo "${RED}$ERROR_OUTPUT${NC}"
+    echo -e "${RED}ERROR: Failed to upload experiment configuration to S3${NC}"
+    echo -e "${RED}$ERROR_OUTPUT${NC}"
     exit 1
 fi
 
-echo "${GREEN}✓ Training job created successfully${NC}"
+echo -e "${GREEN}✓ Training job created successfully${NC}"
