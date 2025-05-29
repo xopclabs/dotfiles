@@ -69,7 +69,6 @@ in {
                     "tmux new -s main"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"
-                    "freshman_start"
                     "plover"
                 ];
 
