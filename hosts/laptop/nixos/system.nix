@@ -112,8 +112,8 @@
 
     # Docker support
     virtualisation.docker = {
-        enable = false;
-        enableOnBoot = false;
+        enable = true;
+        enableOnBoot = true;
         rootless.enable = true;
     };
 
