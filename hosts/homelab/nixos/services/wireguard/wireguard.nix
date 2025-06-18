@@ -19,6 +19,10 @@ let
             publicKey = "cujVQ6lmprG+mszcD5GmzZK/Cgn5rwXMGh+rp1Qasmo=";
             allowedIPs = [ "10.250.250.5/32" ];
         };
+        extra = {
+            publicKey = "89c8JEfe/ezs8OwC8aeTeJcJqj6Ew569xw87Wvs1jSs=";
+            allowedIPs = [ "10.250.250.101/32" ];
+        };
     };
 
     # Function to generate peer configuration
