@@ -7,6 +7,9 @@
         home-manager.url = "github:nix-community/home-manager";
         home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+        stylix.url = "github:danth/stylix";
+        stylix.inputs.nixpkgs.follows = "nixpkgs";
+
         disko.url = "github:nix-community/disko";
         disko.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -27,8 +30,6 @@
 
         nixvim.url = "github:nix-community/nixvim";
         nixvim.inputs.nixpkgs.follows = "nixpkgs";
-
-        stylix.url = "github:danth/stylix";
     };
 
     # All outputs for the system (configs)
@@ -45,7 +46,6 @@
                         (./. + "/hosts/${hostname}/nixos/hardware-configuration.nix")
                         inputs.disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
-                        inputs.stylix.nixosModules.stylix
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
