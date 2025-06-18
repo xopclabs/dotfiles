@@ -95,5 +95,23 @@
     "update.showReleaseNotes": false,
     "update.mode": "none",
     "terminal.integrated.fontLigatures": true,
-    "editor.wordWrap": "on"
+    "editor.wordWrap": "on",
+    "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "u"
+            ],
+            "commands": [
+                "undo"
+            ]
+        },
+        {
+            "before": [
+                "U"
+            ],
+            "commands": [
+                "redo"
+            ]
+        }
+    ]
 }

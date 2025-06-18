@@ -117,16 +117,16 @@ in {
         };
     };
 
-    # # System-wide proxy settings
-    networking.proxy = {
-        default = "socks5://127.0.0.1:10808";
-        noProxy = noProxy;
-    };
-    systemd.services.nix-daemon.environment = {
-        http_proxy = "socks5://127.0.0.1:10808";
-        https_proxy = "socks5://127.0.0.1:10808";
-        no_proxy = noProxy;
-    };
+    # System-wide proxy settings
+    #networking.proxy = {
+    #    default = "socks5://127.0.0.1:10808";
+    #    noProxy = noProxy;
+    #};
+    #systemd.services.nix-daemon.environment = {
+    #    http_proxy = "socks5://127.0.0.1:10808";
+    #    https_proxy = "socks5://127.0.0.1:10808";
+    #    no_proxy = noProxy;
+    #};
 
     # proxychains for backwards compatibility (I'm too lazy to fix all the scripts)
     programs.proxychains = {
