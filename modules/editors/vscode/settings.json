@@ -113,5 +113,6 @@
                 "redo"
             ]
         }
-    ]
+    ],
+    "python.languageServer": "None"
 }
