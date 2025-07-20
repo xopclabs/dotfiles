@@ -38,6 +38,7 @@ in {
                 tofi.enable = false;
                 kitty.enable = false;
                 btop.enable = false;
+		firefox.profileNames = [ "${config.home.username}" ];
             };
         };
     };
