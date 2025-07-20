@@ -26,7 +26,7 @@ in {
                     #    "on-timeout" = "${lock}";
                     # }
                     {
-                        timeout = 60 * 30;
+                        timeout = 60 * 60; # 1 hour
                         "on-timeout" = "${systemctl} suspend-then-hibernate";
                     }
                 ];

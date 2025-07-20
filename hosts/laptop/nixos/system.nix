@@ -107,8 +107,14 @@
     # Hibernate
     powerManagement.enable = true;
     systemd.sleep.extraConfig = ''
-        HibernateDelaySec=1h 
+        HibernateDelaySec=3h 
     '';
+    
+    # Ignore power button presses
+    services.logind = {
+        powerKey = "ignore";
+	powerKeyLongPress = "poweroff";
+    };
 
     # Docker support
     virtualisation.docker = {
