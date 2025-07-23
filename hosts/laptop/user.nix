@@ -68,10 +68,9 @@
         };
 
         gui = {
-            flameshot.enable = true;
-            kicad.enable = true;
+            flameshot.enable = false;
+            kicad.enable = false;
             plover.enable = true;
-            wl-kbptr.enable = true;
         };
 
         browsers = {

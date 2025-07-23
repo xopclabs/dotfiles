@@ -56,6 +56,7 @@
                             home-manager = {
                                 useUserPackages = true;
                                 useGlobalPkgs = true;
+                                backupFileExtension = "hm-backup";
                                 extraSpecialArgs = { inherit inputs; };
                                 users."${username}" = (./. + "/hosts/${hostname}/user.nix");
                             };
