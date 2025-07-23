@@ -10,6 +10,12 @@ let
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
     bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
     toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./scripts/toggle-keyboard}'';
+    screenshot = pkgs.writeShellScriptBin "screenshot" ''
+    	grim -g "$(slurp -d)" - | wl-copy
+    '';
+    annotate = pkgs.writeShellScriptBin "annotate" ''
+        wl-paste | swappy -f - -o - | wl-copy
+    '';
     screenrecord = pkgs.writeShellScriptBin "screenrecord" ''
         # Check if wf-recorder is currently running
         if pgrep -x wf-recorder > /dev/null; then
@@ -32,6 +38,8 @@ in {
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
             pkgs.libinput
             hypr-windowrule
+            screenshot
+            annotate pkgs.swappy
             screenrecord
             toggle-keyboard
         ];
@@ -237,13 +245,12 @@ in {
                 in [
                     "CTRL SHIFT, B,  exec, pkill waybar; waybar"
                     "$mod, L, exec,  systemd-run --user $(${config.modules.desktop.launchers.default}-drun)"
-                    ",Print, exec, grim -g \"$(slurp -d)\" - | wl-copy"
-                    "SHIFT,Print, exec, screenrecord"
+                    ", Print, exec, screenshot"
+                    "CTRL, Print, exec, annotate"
+                    "CTRL SHIFT, Print, exec, screenrecord"
                     "$mod, Space, exec, $terminal"
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, ${config.modules.browsers.default}"
-                    "$mod, M, exec, ${config.modules.terminals.default} -e ${config.modules.fileManagers.default}"
-                    "$mod, Semicolon, exec, ${lock}"
 
                     "$mod, D, killactive"
                     "$mod, U, togglefloating"
