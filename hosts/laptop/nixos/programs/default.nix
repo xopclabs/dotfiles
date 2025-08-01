@@ -4,5 +4,6 @@
     imports = [
         ./steam.nix
         ./lutris.nix
+        ./flatpak.nix
     ];
 }
