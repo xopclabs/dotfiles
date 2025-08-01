@@ -9,6 +9,7 @@ in {
     config = mkIf cfg.enable {
         programs.waybar = {
             enable = true;
+	    # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
             settings = {
                 mainBar = let
                     drawer-config = {
@@ -93,6 +94,7 @@ in {
 
                     "hyprland/language" = {
                         format = "{short}";
+			keyboard-name = "at-translated-set-2-keyboard";
                         tooltip = false;
                     };
 
