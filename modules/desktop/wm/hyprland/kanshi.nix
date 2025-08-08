@@ -32,7 +32,7 @@ in {
                             status = "enable";
                             mode = "1920x1080@60";
                             scale = 1.0;
-                            position = "1920,0";
+                            position = "0,1080";
                         }
                     ];
                     exec = builtins.concatStringsSep ", " [
@@ -60,7 +60,7 @@ in {
                             status = "enable";
                             mode = "1920x1080@60";
                             scale = 1.0;
-                            position = "1920,0";
+                            position = "0,1080";
                         }
                     ];
                     exec = builtins.concatStringsSep ", " [

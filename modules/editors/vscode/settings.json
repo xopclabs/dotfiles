@@ -114,5 +114,6 @@
             ]
         }
     ],
-    "python.languageServer": "None"
+    "python.languageServer": "None",
+    "cursor.composer.shouldAllowCustomModes": true
 }
