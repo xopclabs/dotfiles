@@ -46,6 +46,8 @@ in {
             devenv
 	    dust
 	    ncdu
+	    # programming
+	    d2
         ];
     };
 }
