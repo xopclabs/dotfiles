@@ -157,7 +157,7 @@ if [ "$RESTART_MODE" = "true" ]; then
 
     # Update job name and commit hash in a new temp JSON
     TMP_EXP_UPDATED=$(mktemp)
-    if ! jq --arg name "$NEW_JOB_NAME" --arg commit "$COMMIT_TO_USE" \
+    if ! jq --indent 4 --arg name "$NEW_JOB_NAME" --arg commit "$COMMIT_TO_USE" \
         '.TrainingJobName=$name | .Environment.COMMIT_HASH_ID=$commit' \
         "$TMP_EXP" > "$TMP_EXP_UPDATED"; then
         echo -e "${RED}ERROR: Failed to update experiment JSON with new job name and commit hash${NC}"
@@ -192,7 +192,7 @@ if [ "$NO_UPDATE_COMMIT" = true ]; then
 else
     if [ "$COMMIT_HASH" != "$CURRENT_COMMIT_HASH" ]; then
         TMP_UPDATED=$(mktemp)
-        if jq --arg commit "$CURRENT_COMMIT_HASH" '.Environment.COMMIT_HASH_ID=$commit' "$EXP_PATH" > "$TMP_UPDATED"; then
+        if jq --indent 4 --arg commit "$CURRENT_COMMIT_HASH" '.Environment.COMMIT_HASH_ID=$commit' "$EXP_PATH" > "$TMP_UPDATED"; then
             mv "$TMP_UPDATED" "$EXP_PATH"
             COMMIT_HASH="$CURRENT_COMMIT_HASH"
             echo -e "${GREEN}Updated commit hash in input JSON: ${ORIGINAL_COMMIT_HASH} -> ${COMMIT_HASH}${NC}"
