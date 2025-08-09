@@ -7,9 +7,20 @@ NO_UPDATE_COMMIT=false
 EXP_PATH=""
 
 print_usage() {
+    echo ""
     echo "Usage:"
-    echo "  $0 [--no-update-commit|-k] <path-to-experiment-json>"
-    echo "  $0 [--no-update-commit|-k] --restart <failed-training-job-name> <path-to-experiment-json>"
+    echo "  $0 [options] <path-to-experiment-json>"
+    echo ""
+    echo "Options:"
+    echo "  -r, --restart NAME      Restart a failed training named NAME (increments -NN suffix)"
+    echo "  -k, --no-update-commit  Do not auto-update .Environment.COMMIT_HASH_ID to the current commit"
+    echo "  -h, --help              Show this help and exit"
+    echo ""
+    echo "Examples:"
+    echo "  $0 configs/my-exp.json"
+    echo "  $0 --restart my-job-01 configs/my-exp.json"
+    echo "  $0 configs/my-exp.json -r my-job-01 -k"
+    echo ""
 }
 
 if [ $# -eq 0 ]; then
@@ -21,7 +32,8 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -r|--restart)
             RESTART_MODE=true
-            if [ $# -lt 3 ]; then
+            if [ $# -lt 2 ]; then
+                echo "ERROR: --restart requires <failed-training-job-name>"
                 print_usage
                 exit 1
             fi
