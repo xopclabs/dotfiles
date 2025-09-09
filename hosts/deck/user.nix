@@ -6,7 +6,7 @@
         ./sops.nix
         ./home.nix
         inputs.nix-colors.homeManagerModules.default
-        inputs.nixvim.homeManagerModules.nixvim
+        inputs.nixvim.homeModules.nixvim
         inputs.stylix.homeModules.stylix
     ];
     config.modules = {
