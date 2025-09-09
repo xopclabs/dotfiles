@@ -1,7 +1,8 @@
 { config, pkgs, ... }:
 
 let
-    monitor_internal = "eDP-1";
+    laptop_internal = "BOE 0x06B7";
+    deck_internal = "Valve Corporation ANX7530 U 0x00000001";
     monitor_external1 = "HDMI-A-2";
     monitor_external2 = "DP-1";
 in {
@@ -18,7 +19,7 @@ in {
         settings = [
             {
                 profile = {
-                    name = "desktop-hdmi";
+                    name = "laptop-hdmi";
                     outputs = [
                         {
                             criteria = monitor_external1;
@@ -28,7 +29,7 @@ in {
                             scale = 1.0;
                         }
                         {
-                            criteria = monitor_internal;
+                            criteria = laptop_internal;
                             status = "enable";
                             mode = "1920x1080@60";
                             scale = 1.0;
@@ -46,7 +47,7 @@ in {
             }
             {
                 profile = {
-                    name = "desktop-type-c";
+                    name = "laptop-type-c";
                     outputs = [
                         {
                             criteria = monitor_external2;
@@ -56,7 +57,7 @@ in {
                             scale = 1.0;
                         }
                         {
-                            criteria = monitor_internal;
+                            criteria = laptop_internal;
                             status = "enable";
                             mode = "1920x1080@60";
                             scale = 1.0;
@@ -74,13 +75,61 @@ in {
             }
             {
                 profile = {
-                    name = "on-the-go";
+                    name = "deck-type-c";
                     outputs = [
                         {
-                            criteria = monitor_internal;
+                            criteria = monitor_external2;
+                            status = "enable";
+                            mode = "1920x1080@74.97";
+                            position = "0,0";
+                            scale = 1.0;
+                        }
+                        {
+                            criteria = deck_internal;
+                            status = "enable";
+                            mode = "800x1280@90";
+                            scale = 1.0;
+                            position = "0,1080";
+			    transform = "270";
+                        }
+                    ];
+                    exec = builtins.concatStringsSep ", " [
+                        "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 1 ${monitor_external2}"
+                        "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 2 ${monitor_external2}"
+                        "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 3 ${monitor_external2}"
+                        "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 4 ${monitor_external2}"
+                        "${pkgs.swww}/bin/swww img ~/.config/hypr/wallpaper/nord.png"
+                    ];
+                };
+            }
+            {
+                profile = {
+                    name = "on-the-go-laptop";
+                    outputs = [
+                        {
+                            criteria = laptop_internal;
                             status = "enable";
                             mode = "1920x1080@60";
                             scale = 1.0;
+                        }
+                    ];
+                    exec = builtins.concatStringsSep ", " [
+                        "${pkgs.hyprland}/bin/hyprctl keyword monitor \"${monitor_external1}, disable\""
+                        "${pkgs.hyprland}/bin/hyprctl keyword monitor \"${monitor_external2}, disable\""
+                        "${pkgs.swww}/bin/swww img ~/.config/hypr/wallpaper/nord.png"
+                    ];
+                };
+            }
+            {
+                profile = {
+                    name = "on-the-go-deck";
+                    outputs = [
+                        {
+                            criteria = deck_internal;
+                            status = "enable";
+                            mode = "800x1280@90";
+                            scale = 1.0;
+                            transform = "270";
                         }
                     ];
                     exec = builtins.concatStringsSep ", " [
