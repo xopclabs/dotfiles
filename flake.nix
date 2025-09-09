@@ -58,7 +58,12 @@
                                 useGlobalPkgs = true;
                                 backupFileExtension = "hm-backup";
                                 extraSpecialArgs = { inherit inputs; };
-                                users."${username}" = (./. + "/hosts/${hostname}/user.nix");
+                                users."${username}" = {
+                                    imports = [
+                                        (./. + "/hosts/${hostname}/user.nix")
+                                        (./. + "/hosts/options.nix")
+                                    ];
+                                };
                             };
                         }
                     ] else []);
@@ -76,6 +81,7 @@
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
+                        (./. + "/hosts/options.nix")
                         inputs.sops-nix.homeManagerModules.sops
                         inputs.stylix.homeManagerModules.stylix
                         {
