@@ -1,10 +1,11 @@
 { inputs, pkgs, lib, config, ... }:
 
-let 
+let
     cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    monitor_internal = "desc:BOE 0x06B7";
-    monitor_external = "desc:AOC 22V2WG5 0x000000BF";
+    hardwareCfg = config.hardware;
+    monitor_internal = "desc:${hardwareCfg.monitors.internal.name}";
+    monitor_external = "desc:${hardwareCfg.monitors.external.name}";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
