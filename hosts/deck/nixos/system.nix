@@ -100,7 +100,7 @@
 
     # System env variables
     environment.variables = {
-        NIXOS_CONFIG = "$HOME/dotfiles/hosts/laptop/system/configuration.nix";
+        NIXOS_CONFIG = "$HOME/dotfiles/hosts/deck/system/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
         NH_FLAKE = "$HOME/dotfiles";
         GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
