@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, lib, ... }:
 
 {
     programs.zsh.enable = true;
@@ -6,7 +6,10 @@
     programs.adb.enable = true;
 
     # Set up user and enable sudo
-    sops.secrets.userpass.neededForUsers = true;
+    sops.secrets.userpass = {
+        sopsFile = ../../../secrets/hosts/${config.networking.hostName}.yaml;
+        neededForUsers = true;
+    };
     users.users.xopc = {
         extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" "tss" ];
         shell = pkgs.zsh;
