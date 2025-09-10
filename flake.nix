@@ -30,10 +30,13 @@
 
         nixvim.url = "github:nix-community/nixvim";
         nixvim.inputs.nixpkgs.follows = "nixpkgs";
+
+        jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
+        jovian.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, ... }@inputs:
+    outputs = { home-manager, nixpkgs, jovian, ... }@inputs:
         let
             mkSystem = pkgs: system: hostname: username: useHomeManager:
                 pkgs.lib.nixosSystem {
@@ -50,7 +53,7 @@
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                             sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
-                    ] ++ (if useHomeManager then [
+                    ] ++ (if hostname == "deck" then [ inputs.jovian.nixosModules.default ] else []) ++ (if useHomeManager then [
                         inputs.home-manager.nixosModules.home-manager
                         {
                             home-manager = {

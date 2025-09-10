@@ -104,5 +104,6 @@
             optional.enable = true;
         };
     };
+
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

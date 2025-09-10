@@ -99,6 +99,12 @@ in
         trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
     };
 
+    # Enable Hyprland with UWSM for proper session management
+    programs.hyprland = {
+        enable = true;
+        withUWSM = true;
+    };
+
 /*
     qt5 = { 
        enable = true; 

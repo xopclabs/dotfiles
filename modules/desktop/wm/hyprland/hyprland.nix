@@ -54,8 +54,13 @@ in {
 
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
             enable = true;
+            package = null;
+            portalPackage = null;
             xwayland.enable = true;
-            systemd.enable = true;
+            systemd = {
+                enable = true;
+                variables = ["--all"];  # Export all variables to systemd
+            };
 
             settings = {
                 "$terminal" = "${config.modules.terminals.default} -e tm";
@@ -315,7 +320,10 @@ in {
                 }
               '';
         };
+        # UWSM environment configuration for Hyprland
+        xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh";
 
         programs.zsh.shellAliases = { startx = "Hyprland"; };
+
     };
 }
