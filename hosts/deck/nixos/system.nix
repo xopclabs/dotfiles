@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, lib, ... }:
 
 {
     # Nix settings, auto cleanup and enable flakes
@@ -99,13 +99,13 @@
     # Hibernate
     powerManagement.enable = true;
     systemd.sleep.extraConfig = ''
-        HibernateDelaySec=3h 
+        HibernateDelaySec=1h 
     '';
     
     # Ignore power button presses
-    services.logind = {
-        powerKey = "ignore";
-	powerKeyLongPress = "poweroff";
+    services.logind.settings.Login = {
+        HandlePowerKey = lib.mkForce "suspend";
+	    HandlePowerKeyLongPress = lib.mkForce "poweroff";
     };
 
     # Docker support
