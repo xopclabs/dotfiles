@@ -51,7 +51,6 @@
                         inputs.sops-nix.nixosModules.sops
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
-                            sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
                     ] ++ (if hostname == "deck" then [ inputs.jovian.nixosModules.default ] else []) ++ (if useHomeManager then [
                         inputs.home-manager.nixosModules.home-manager
