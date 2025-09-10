@@ -74,34 +74,6 @@
         };
     };
 
-    # NFS share client - only mount when WireGuard 'home' interface is up
-    systemd.mounts = [{
-        what = "192.168.254.11:/mnt/raid_pool/shared";
-        where = "/mnt/nas";
-        type = "nfs";
-        options = "defaults";
-        wantedBy = [ ];  # Don't auto-mount, only when WG is up
-        after = [ "wg-quick-home.service" ];
-        requisite = [ "wg-quick-home.service" ];
-        unitConfig = {
-            Description = "NFS mount (only when WireGuard home is active)";
-        };
-    }];
-
-    systemd.automounts = [{
-        where = "/mnt/nas";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "wg-quick-home.service" ];
-        requisite = [ "wg-quick-home.service" ];
-        automountConfig = {
-            TimeoutIdleSec = "600";
-            DirectoryMode = "0755";
-        };
-        unitConfig = {
-            Description = "Auto-mount NFS (only when WireGuard home is active)";
-        };
-    }];
-
     # Battery?
     services.upower.enable = true;
     # Automounting
