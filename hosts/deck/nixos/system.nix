@@ -48,11 +48,24 @@
         KERNEL=="ttyACM0", MODE="0666"
         # Allow uinput as non-root user (in input group)
         KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
-        # Sweep keyboard plover-HID non-root access. 
+        # Sweep keyboard plover-HID non-root access.
         SUBSYSTEM=="hidraw", ATTRS{driver}=="hid-generic", MODE="0660", GROUP="input"
 
         # Limit battery charge to 80%
         SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"
+
+        # Disable wakeup sources that cause immediate suspend resume on Steam Deck
+        # WARNING: This was AI-generated, so I'm not sure if it's correct and if everything is needed
+        ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="pci", KERNEL=="0000:00:01.2", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="pci", KERNEL=="0000:00:08.3", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="pci", KERNEL=="0000:00:08.1", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="pci", KERNEL=="0000:04:00.3", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="pci", KERNEL=="0000:04:00.4", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="acpi", KERNEL=="LNXPWRBN:00", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="acpi", KERNEL=="PNP0C0D:00", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="acpi", KERNEL=="PNP0C0A:00", ATTR{power/wakeup}="disabled"
+        ACTION=="add", SUBSYSTEM=="acpi", KERNEL=="PNP0C0C:00", ATTR{power/wakeup}="disabled"
     '';
 
     hardware = {
@@ -104,7 +117,7 @@
     
     # Ignore power button presses
     services.logind.settings.Login = {
-        HandlePowerKey = lib.mkForce "suspend";
+        HandlePowerKey = lib.mkForce "suspend-then-hibernate";
 	    HandlePowerKeyLongPress = lib.mkForce "poweroff";
     };
 
