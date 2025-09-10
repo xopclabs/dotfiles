@@ -51,10 +51,6 @@
         # Sweep keyboard plover-HID non-root access. 
         SUBSYSTEM=="hidraw", ATTRS{driver}=="hid-generic", MODE="0660", GROUP="input"
 
-        # Fix washed out colors on HDMI with Intel graphics
-        ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card0 107 connector 103 1"
-        ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card1 107 connector 103 1"
-
         # Limit battery charge to 80%
         SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"
     '';
@@ -65,12 +61,33 @@
         };
     };
 
-    # NFS share client
-    fileSystems."/mnt/nas" = {
-        device = "192.168.254.11:/mnt/raid_pool/shared";
-        fsType = "nfs";
-        options = [ "x-systemd.automount" "noauto" ];
-    };
+    # NFS share client - only mount when WireGuard 'home' interface is up
+    systemd.mounts = [{
+        what = "192.168.254.11:/mnt/raid_pool/shared";
+        where = "/mnt/nas";
+        type = "nfs";
+        options = "defaults";
+        wantedBy = [ ];  # Don't auto-mount, only when WG is up
+        after = [ "wg-quick-home.service" ];
+        requisite = [ "wg-quick-home.service" ];
+        unitConfig = {
+            Description = "NFS mount (only when WireGuard home is active)";
+        };
+    }];
+
+    systemd.automounts = [{
+        where = "/mnt/nas";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "wg-quick-home.service" ];
+        requisite = [ "wg-quick-home.service" ];
+        automountConfig = {
+            TimeoutIdleSec = "600";
+            DirectoryMode = "0755";
+        };
+        unitConfig = {
+            Description = "Auto-mount NFS (only when WireGuard home is active)";
+        };
+    }];
 
     # Battery?
     services.upower.enable = true;
