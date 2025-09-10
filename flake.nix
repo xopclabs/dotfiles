@@ -63,7 +63,7 @@
                                 users."${username}" = {
                                     imports = [
                                         (./. + "/hosts/${hostname}/user.nix")
-                                        (./. + "/hosts/options.nix")
+                                        (./. + "/hosts/metadata.nix")
                                     ];
                                 };
                             };
@@ -83,7 +83,7 @@
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
-                        (./. + "/hosts/options.nix")
+                        (./. + "/hosts/metadata.nix")
                         inputs.sops-nix.homeManagerModules.sops
                         inputs.stylix.homeManagerModules.stylix
                         {

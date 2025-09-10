@@ -28,7 +28,14 @@ let
         fi
     '';
 in {
-    options.modules.desktop.wm.hyprland = { enable = lib.mkEnableOption "hyprland"; };
+    options.modules.desktop.wm.hyprland = {
+        enable = lib.mkEnableOption "hyprland";
+        disableGapsOutOn = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Disable gaps_out (keep out zone) on specific monitor. If set, gaps_out will be 0 on this monitor.";
+        };
+    };
     imports = [
         #./hyprlock.nix
         ./hypridle.nix
@@ -226,7 +233,20 @@ in {
                     "8, monitor:${monitor_internal}"
                     "9, monitor:${monitor_internal}"
                     "10, monitor:${monitor_internal}"
-                ];
+                ]
+                ++ (if cfg.disableGapsOutOn != null && cfg.disableGapsOutOn == hardwareCfg.monitors.internal.name then [
+                    "6, gapsout:0"
+                    "7, gapsout:0"
+                    "8, gapsout:0"
+                    "9, gapsout:0"
+                    "10, gapsout:0"
+                ] else if cfg.disableGapsOutOn != null && cfg.disableGapsOutOn == hardwareCfg.monitors.external.name then [
+                    "1, gapsout:0"
+                    "2, gapsout:0"
+                    "3, gapsout:0"
+                    "4, gapsout:0"
+                    "5, gapsout:0"
+                ] else []);
 
                 # binds
                 bind = let
