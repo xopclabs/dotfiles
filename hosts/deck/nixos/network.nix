@@ -17,10 +17,6 @@
     services.resolved.enable = true;
     # Disable ipv6
     # boot.kernelParams = ["ipv6.disable=1"];
-    sops.secrets."networkmanager/networkmanager.conf" = {
-        path = "/etc/NetworkManager/conf.d/NetworkManager.conf";
-        restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
-    };
     sops.secrets."networkmanager/home" = {
         path = "/etc/NetworkManager/system-connections/home.nmconnection";
         restartUnits = [ "NetworkManager.service" "NetworkManager-dispatcher.service" ];
