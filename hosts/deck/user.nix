@@ -30,14 +30,12 @@
             bars = {
                 waybar = {
                     enable = true;
-                    showOnlyOn = config.hardware.monitors.external.name;
                 };
             };
             launchers.tofi.enable = true;
             wm = {
                 hyprland = {
                     enable = true;
-                    disableGapsOutOn = config.hardware.monitors.internal.name;
                 };
                 hypridle = {
                     enable = true;
@@ -120,4 +118,3 @@
 
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }
-

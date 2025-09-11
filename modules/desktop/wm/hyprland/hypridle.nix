@@ -55,7 +55,7 @@ in {
                     (if cfg.dpms.enable then [{
                         timeout = cfg.dpms.timeout;
                         "on-timeout" = "hyprctl dispatch dpms off";
-                        "on-resume" = "hyprctl dispatch dpms on && brightnessctl set 100%";
+                        "on-resume" = "hyprctl dispatch dpms on";
                     }] else [])
                     (if cfg.lock.enable then [{
                         timeout = cfg.lock.timeout;
