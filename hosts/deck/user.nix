@@ -39,7 +39,8 @@
                 };
                 hypridle = {
                     enable = true;
-                    dpms.timeout = 5 * 60;
+                    dpmsInternal.timeout = 15 * 60;
+                    dpmsExternal.timeout = 3 * 60;
                     lock.enable = false;
                     suspend.timeout = 30 * 60;
                 };

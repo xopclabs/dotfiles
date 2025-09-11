@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+# Monitor DPMS control script
+# Maps config monitor names to actual hyprctl monitor names
+# Usage: monitor-dpms [internal|external] [on|off|toggle]
+
+set -euo pipefail
+
+# Configuration mapping: config_name -> description
+declare -A MONITOR_CONFIG=(
+    ["internal"]="@INTERNAL_MONITOR@"
+    ["external"]="@EXTERNAL_MONITOR@"
+)
+
+# Function to get hyprctl monitor name from description
+get_monitor_name() {
+    local target_description="$1"
+    local monitor_name
+    
+    # Get monitors JSON and find monitor with matching description
+    monitor_name=$(hyprctl monitors -j | jq -r --arg desc "$target_description" '.[] | select(.description == $desc) | .name')
+    
+    if [[ -z "$monitor_name" || "$monitor_name" == "null" ]]; then
+        echo "Error: Monitor with description '$target_description' not found" >&2
+        return 1
+    fi
+    
+    echo "$monitor_name"
+}
+
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [internal|external] [on|off|toggle]"
+    echo ""
+    echo "Monitor mappings:"
+    for config_name in "${!MONITOR_CONFIG[@]}"; do
+        echo "  $config_name -> ${MONITOR_CONFIG[$config_name]}"
+    done
+}
+
+# Function to list available monitors
+list_monitors() {
+    echo "Available monitors:"
+    hyprctl monitors -j | jq -r '.[] | "  \(.name) -> \(.description)"'
+}
+
+# Main script
+main() {
+    if [[ $# -ne 2 ]]; then
+        show_usage
+        echo ""
+        list_monitors
+        exit 1
+    fi
+    
+    local config_monitor="$1"
+    local action="$2"
+    
+    # Validate action
+    if [[ ! "$action" =~ ^(on|off|toggle)$ ]]; then
+        echo "Error: Action must be 'on', 'off', or 'toggle'" >&2
+        exit 1
+    fi
+    
+    # Check if config monitor exists
+    if [[ ! -v "MONITOR_CONFIG[$config_monitor]" ]]; then
+        echo "Error: Unknown monitor '$config_monitor'" >&2
+        echo "Available monitors: ${!MONITOR_CONFIG[*]}" >&2
+        exit 1
+    fi
+    
+    local target_description="${MONITOR_CONFIG[$config_monitor]}"
+    echo "Looking for monitor: $config_monitor ($target_description)"
+    
+    # Get the actual hyprctl monitor name
+    local actual_monitor_name
+    actual_monitor_name=$(get_monitor_name "$target_description")
+    
+    if [[ -z "$actual_monitor_name" ]]; then
+        echo "Error: Could not find monitor name for '$config_monitor'" >&2
+        exit 1
+    fi
+    
+    echo "Found monitor: $actual_monitor_name"
+    echo "Executing: hyprctl dispatch dpms $action $actual_monitor_name"
+    
+    # Execute the DPMS command
+    hyprctl dispatch dpms "$action" "$actual_monitor_name"
+}
+
+# Handle help flags
+if [[ $# -eq 1 && ( "$1" == "-h" || "$1" == "--help" ) ]]; then
+    show_usage
+    echo ""
+    list_monitors
+    exit 0
+fi
+
+main "$@"
