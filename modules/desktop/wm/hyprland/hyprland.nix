@@ -11,6 +11,13 @@ let
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
     bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
     toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./scripts/toggle-keyboard}'';
+    monitor-dpms = pkgs.writeShellScriptBin "monitor-dpms" ''
+        ${builtins.replaceStrings 
+            ["@INTERNAL_MONITOR@" "@EXTERNAL_MONITOR@"] 
+            [hardwareCfg.monitors.internal.name hardwareCfg.monitors.external.name] 
+            (builtins.readFile ./scripts/monitor-dpms)
+        }
+    '';
     screenshot = pkgs.writeShellScriptBin "screenshot" ''
     	grim -g "$(slurp -d)" - | wl-copy
     '';
@@ -44,12 +51,13 @@ in {
     config = lib.mkIf cfg.enable {
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
-            pkgs.libinput
+            pkgs.libinput pkgs.jq
             hypr-windowrule
             screenshot
             annotate pkgs.swappy
             screenrecord
             toggle-keyboard
+            monitor-dpms
         ];
 
         home.pointerCursor = {
