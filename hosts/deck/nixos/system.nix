@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, lib, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
     # Nix settings, auto cleanup and enable flakes
@@ -84,7 +84,7 @@
     # Hibernate
     powerManagement.enable = true;
     systemd.sleep.extraConfig = ''
-        HibernateDelaySec=1h 
+        HibernateDelaySec=3h 
     '';
     
     # Ignore power button presses
