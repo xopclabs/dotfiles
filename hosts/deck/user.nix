@@ -39,7 +39,12 @@
                     enable = true;
                     disableGapsOutOn = config.hardware.monitors.internal.name;
                 };
-                hypridle.enable = true;
+                hypridle = {
+                    enable = true;
+                    dpms.timeout = 5 * 60;
+                    lock.enable = false;
+                    suspend.timeout = 30 * 60;
+                };
             };
             other = {
                 xdg.enable = true;
@@ -115,3 +120,4 @@
 
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }
+
