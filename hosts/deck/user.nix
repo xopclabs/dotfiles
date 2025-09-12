@@ -36,6 +36,9 @@
             wm = {
                 hyprland = {
                     enable = true;
+                    extraAutostart = [
+                        "[workspace 7 silent] steam"
+                    ];
                 };
                 hypridle = {
                     enable = true;
@@ -98,7 +101,7 @@
         gui = {
             flameshot.enable = false;
             kicad.enable = false;
-            plover.enable = true;
+            plover.enable = false;
         };
 
         browsers = {
