@@ -42,6 +42,11 @@ in {
             default = null;
             description = "Disable gaps_out (keep out zone) on specific monitor. If set, gaps_out will be 0 on this monitor.";
         };
+        extraAutostart = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            description = "Extra commands to run on startup in exec-once.";
+        };
     };
     imports = [
         #./hyprlock.nix
@@ -93,13 +98,14 @@ in {
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
                     "swww-daemon"
-                    "waybar"
                     "hypr-windowrule"
-                    "tmux new -s main"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"
-                    "plover"
-                ];
+                ] ++ lib.optional config.modules.desktop.bars.waybar.enable "waybar"
+                  ++ lib.optional config.modules.cli.tmux.enable "tmux new -s main"
+                  ++ lib.optional config.modules.gui.plover.enable "plover"
+                  ++ [
+                  ] ++ cfg.extraAutostart;
 
                 input  = {
                     follow_mouse = true;
@@ -120,7 +126,7 @@ in {
 
                 misc = {
                     disable_hyprland_logo = true;
-                    disable_autoreload = true;
+                    disable_autoreload = false;
                     enable_swallow = true;
                     enable_anr_dialog = false;
                     middle_click_paste = false;
@@ -312,8 +318,8 @@ in {
                     ",XF86MonBrightnessDown, ${e} 'brightness.screen -= 0.05; indicator.display()'"
                     ",XF86KbdBrightnessUp,   ${e} 'brightness.kbd++; indicator.kbd()'"
                     ",XF86KbdBrightnessDown, ${e} 'brightness.kbd--; indicator.kbd()'"
-                    ",XF86AudioRaiseVolume,  ${e} 'audio.speaker.volume += 0.05; indicator.speaker()'"
-                    ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.05; indicator.speaker()'"
+                    ",XF86AudioRaiseVolume,  ${e} 'audio.speaker.volume += 0.1; indicator.speaker()'"
+                    ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.1; indicator.speaker()'"
                 ];
 
                 bindl = [
