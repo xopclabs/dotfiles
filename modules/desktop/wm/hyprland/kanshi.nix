@@ -33,7 +33,7 @@ let
                         criteria = "HDMI-A-2";
                         status = "enable";
                         mode = externalMonitor.mode;
-                        position = "0,0";
+                        position = externalMonitor.position;
                         scale = externalMonitor.scale;
                     }
                     {
@@ -41,7 +41,7 @@ let
                         status = "enable";
                         mode = internalMonitor.mode;
                         scale = internalMonitor.scale;
-                        position = "0,1080";
+                        position = internalMonitor.position;
                         transform = internalMonitor.transform;
                     }
                 ];
@@ -58,7 +58,7 @@ let
                         criteria = "DP-1";
                         status = "enable";
                         mode = externalMonitor.mode;
-                        position = "0,0";
+                        position = externalMonitor.position;
                         scale = externalMonitor.scale;
                     }
                     {
@@ -66,7 +66,7 @@ let
                         status = "enable";
                         mode = internalMonitor.mode;
                         scale = internalMonitor.scale;
-                        position = "0,1080";
+                        position = internalMonitor.position;
                         transform = internalMonitor.transform;
                     }
                 ];
