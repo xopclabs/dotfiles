@@ -117,6 +117,7 @@
     "python.languageServer": "None",
     "cursor.composer.shouldAllowCustomModes": true,
     "remote.SSH.remotePlatform": {
-        "ml-workspace-1": "linux"
+        "ml-workspace-1": "linux",
+        "freshman": "linux"
     }
 }

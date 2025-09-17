@@ -24,6 +24,10 @@ with lib;
                         default = "normal";
                         description = "Monitor transformation (rotation/flipping)";
                     };
+                    position = mkOption {
+                        type = types.str;
+                        description = "Monitor position (e.g., '0,0')";
+                    };
                 };
             });
             default = {};

@@ -17,6 +17,7 @@
         # Decky Loader for plugins
         decky-loader = {
             enable = true;
+            user = "decky";
         };
     };
 
