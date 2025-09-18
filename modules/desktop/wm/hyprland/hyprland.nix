@@ -120,10 +120,6 @@ in {
                     kb_options = "grp:lalt_lshift_toggle,compose:ralt";
                 };
 
-                gestures = {
-                    workspace_swipe = false;
-                };
-
                 misc = {
                     disable_hyprland_logo = true;
                     disable_autoreload = false;

@@ -11,7 +11,10 @@
             user = "xopc";
         };
 
-        devices.steamdeck.enable = true;
+        devices.steamdeck = {
+            enable = true;
+            enableOsFanControl = false;
+        };
         steamos.useSteamOSConfig = true;
 
         # Decky Loader for plugins
