@@ -1,15 +1,23 @@
 { inputs, pkgs, lib, config, ... }:
 
-let 
+let
     cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    monitor_internal = "desc:BOE 0x06B7";
-    monitor_external = "desc:AOC 22V2WG5 0x000000BF";
+    hardwareCfg = config.hardware;
+    monitor_internal = "desc:${hardwareCfg.monitors.internal.name}";
+    monitor_external = "desc:${hardwareCfg.monitors.external.name}";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
     bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
     toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./scripts/toggle-keyboard}'';
+    monitor-dpms = pkgs.writeShellScriptBin "monitor-dpms" ''
+        ${builtins.replaceStrings 
+            ["@INTERNAL_MONITOR@" "@EXTERNAL_MONITOR@"] 
+            [hardwareCfg.monitors.internal.name hardwareCfg.monitors.external.name] 
+            (builtins.readFile ./scripts/monitor-dpms)
+        }
+    '';
     screenshot = pkgs.writeShellScriptBin "screenshot" ''
     	grim -g "$(slurp -d)" - | wl-copy
     '';
@@ -27,7 +35,19 @@ let
         fi
     '';
 in {
-    options.modules.desktop.wm.hyprland = { enable = lib.mkEnableOption "hyprland"; };
+    options.modules.desktop.wm.hyprland = {
+        enable = lib.mkEnableOption "hyprland";
+        disableGapsOutOn = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Disable gaps_out (keep out zone) on specific monitor. If set, gaps_out will be 0 on this monitor.";
+        };
+        extraAutostart = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            description = "Extra commands to run on startup in exec-once.";
+        };
+    };
     imports = [
         #./hyprlock.nix
         ./hypridle.nix
@@ -36,12 +56,13 @@ in {
     config = lib.mkIf cfg.enable {
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
-            pkgs.libinput
+            pkgs.libinput pkgs.jq
             hypr-windowrule
             screenshot
             annotate pkgs.swappy
             screenrecord
             toggle-keyboard
+            monitor-dpms
         ];
 
         home.pointerCursor = {
@@ -53,8 +74,13 @@ in {
 
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
             enable = true;
+            package = null;
+            portalPackage = null;
             xwayland.enable = true;
-            systemd.enable = true;
+            systemd = {
+                enable = true;
+                variables = ["--all"];  # Export all variables to systemd
+            };
 
             settings = {
                 "$terminal" = "${config.modules.terminals.default} -e tm";
@@ -72,13 +98,14 @@ in {
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
                     "swww-daemon"
-                    "waybar"
                     "hypr-windowrule"
-                    "tmux new -s main"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"
-                    "plover"
-                ];
+                ] ++ lib.optional config.modules.desktop.bars.waybar.enable "waybar"
+                  ++ lib.optional config.modules.cli.tmux.enable "tmux new -s main"
+                  ++ lib.optional config.modules.gui.plover.enable "plover"
+                  ++ [
+                  ] ++ cfg.extraAutostart;
 
                 input  = {
                     follow_mouse = true;
@@ -93,13 +120,9 @@ in {
                     kb_options = "grp:lalt_lshift_toggle,compose:ralt";
                 };
 
-                gestures = {
-                    workspace_swipe = false;
-                };
-
                 misc = {
                     disable_hyprland_logo = true;
-                    disable_autoreload = true;
+                    disable_autoreload = false;
                     enable_swallow = true;
                     enable_anr_dialog = false;
                     middle_click_paste = false;
@@ -220,7 +243,20 @@ in {
                     "8, monitor:${monitor_internal}"
                     "9, monitor:${monitor_internal}"
                     "10, monitor:${monitor_internal}"
-                ];
+                ]
+                ++ (if cfg.disableGapsOutOn != null && cfg.disableGapsOutOn == hardwareCfg.monitors.internal.name then [
+                    "6, gapsout:0"
+                    "7, gapsout:0"
+                    "8, gapsout:0"
+                    "9, gapsout:0"
+                    "10, gapsout:0"
+                ] else if cfg.disableGapsOutOn != null && cfg.disableGapsOutOn == hardwareCfg.monitors.external.name then [
+                    "1, gapsout:0"
+                    "2, gapsout:0"
+                    "3, gapsout:0"
+                    "4, gapsout:0"
+                    "5, gapsout:0"
+                ] else []);
 
                 # binds
                 bind = let
@@ -278,8 +314,8 @@ in {
                     ",XF86MonBrightnessDown, ${e} 'brightness.screen -= 0.05; indicator.display()'"
                     ",XF86KbdBrightnessUp,   ${e} 'brightness.kbd++; indicator.kbd()'"
                     ",XF86KbdBrightnessDown, ${e} 'brightness.kbd--; indicator.kbd()'"
-                    ",XF86AudioRaiseVolume,  ${e} 'audio.speaker.volume += 0.05; indicator.speaker()'"
-                    ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.05; indicator.speaker()'"
+                    ",XF86AudioRaiseVolume,  ${e} 'audio.speaker.volume += 0.1; indicator.speaker()'"
+                    ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.1; indicator.speaker()'"
                 ];
 
                 bindl = [
@@ -314,7 +350,10 @@ in {
                 }
               '';
         };
+        # UWSM environment configuration for Hyprland
+        xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh";
 
         programs.zsh.shellAliases = { startx = "Hyprland"; };
+
     };
 }

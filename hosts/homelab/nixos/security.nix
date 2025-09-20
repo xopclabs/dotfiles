@@ -28,8 +28,7 @@
     services.gnome.gnome-keyring.enable = true;
 
     sops = {
-        defaultSopsFile = ../secrets.yaml;
-        age.sshKeyPaths = [ "/home/homelab/.ssh/id_ed25519" ];
-        age.keyFile = "/home/homelab/.config/sops/age/keys.txt";
+        defaultSopsFile = ../../../secrets/shared/personal.yaml;
+        age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
     };
 }
