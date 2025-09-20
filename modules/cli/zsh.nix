@@ -28,7 +28,7 @@ in {
 
         programs.zsh = {
             enable = true;
-            dotDir = ".config/zsh";
+            dotDir = "${config.xdg.configHome}/zsh";
 
             envExtra = cfg.envExtra;
             completionInit = cfg.completionInit;

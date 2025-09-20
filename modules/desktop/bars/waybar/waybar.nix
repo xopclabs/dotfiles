@@ -1,10 +1,17 @@
 { pkgs, lib, config, inputs, ... }:
 
 with lib;
-let 
+let
     cfg = config.modules.desktop.bars.waybar;
 in {
-    options.modules.desktop.bars.waybar = { enable = mkEnableOption "waybar"; };
+    options.modules.desktop.bars.waybar = {
+        enable = mkEnableOption "waybar";
+        showOnlyOn = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Restrict waybar to specific output/monitor. If null, waybar appears on all outputs.";
+        };
+    };
     imports = [ ./icons.nix ];
     config = mkIf cfg.enable {
         programs.waybar = {
@@ -17,7 +24,7 @@ in {
                         children-class = "";
                         transition-left-to-right = false;
                     };
-                in {
+                in (lib.optionalAttrs (cfg.showOnlyOn != null) { output = cfg.showOnlyOn; }) // {
                     layer = "top";
                     position = "left";
                     width = 40;
@@ -81,7 +88,7 @@ in {
 
                     "hyprland/workspaces" = {
                         show-special = true;
-                        all-outputs = false;
+                        all-outputs = cfg.showOnlyOn != null;
                         format = "<span line_height=\"1\">{icon}</span>\n<span line_height=\"0.75\">{windows}</span>";
                         format-window-separator = "\n";
                         format-icons = {

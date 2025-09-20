@@ -34,6 +34,7 @@ in {
             pkgs.python3
             pkgs.zoom-us
             pkgs.zotero
+	        pkgs.transmission_4-gtk
         ];
     };
 }

@@ -12,10 +12,11 @@
     config.hardware = {
         monitors = {
             internal = {
-                name = "BOE 0x06B7";
-                mode = "1920x1080@60";
+                name = "Valve Corporation ANX7530 U 0x00000001";
+                mode = "800x1280@90";
                 scale = 1.0;
-                position = "0,1080";
+                transform = "270";
+                position = "320,1080";
             };
             external = {
                 name = "AOC 22V2WG5 0x000000BF";
@@ -28,11 +29,26 @@
     };
     config.modules = {
         desktop = {
-            bars.waybar.enable = true;
+            bars = {
+                waybar = {
+                    enable = true;
+                };
+            };
             launchers.tofi.enable = true;
             wm = {
-                hyprland.enable = true;
-                hypridle.enable = true;
+                hyprland = {
+                    enable = true;
+                    extraAutostart = [
+                        "[workspace 7 silent] steam"
+                    ];
+                };
+                hypridle = {
+                    enable = true;
+                    dpmsInternal.timeout = 3 * 60;
+                    dpmsExternal.timeout = 15 * 60;
+                    lock.enable = false;
+                    suspend.timeout = 30 * 60;
+                };
             };
             other = {
                 xdg.enable = true;
@@ -87,7 +103,7 @@
         gui = {
             flameshot.enable = false;
             kicad.enable = false;
-            plover.enable = true;
+            plover.enable = false;
         };
 
         browsers = {
@@ -105,5 +121,6 @@
             optional.enable = true;
         };
     };
+
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

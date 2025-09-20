@@ -15,7 +15,7 @@ in {
                 padding = 8; 
                 waybar-width = 42;
             in {
-                drun-launch = false;
+                drun-launch = true;
                 history = true;
                 terminal = config.modules.terminals.default;
                 late-keyboard-init = false;

@@ -30,10 +30,13 @@
 
         nixvim.url = "github:nix-community/nixvim";
         nixvim.inputs.nixpkgs.follows = "nixpkgs";
+
+        jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
+        jovian.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
-    outputs = { home-manager, nixpkgs, ... }@inputs:
+    outputs = { home-manager, nixpkgs, jovian, ... }@inputs:
         let
             mkSystem = pkgs: system: hostname: username: useHomeManager:
                 pkgs.lib.nixosSystem {
@@ -48,9 +51,8 @@
                         inputs.sops-nix.nixosModules.sops
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
-                            sops.defaultSopsFile = (./. + "/hosts/${hostname}/secrets.yaml");
                         }
-                    ] ++ (if useHomeManager then [
+                    ] ++ (if hostname == "deck" then [ inputs.jovian.nixosModules.default ] else []) ++ (if useHomeManager then [
                         inputs.home-manager.nixosModules.home-manager
                         {
                             home-manager = {
@@ -58,7 +60,12 @@
                                 useGlobalPkgs = true;
                                 backupFileExtension = "hm-backup";
                                 extraSpecialArgs = { inherit inputs; };
-                                users."${username}" = (./. + "/hosts/${hostname}/user.nix");
+                                users."${username}" = {
+                                    imports = [
+                                        (./. + "/hosts/${hostname}/user.nix")
+                                        (./. + "/hosts/metadata.nix")
+                                    ];
+                                };
                             };
                         }
                     ] else []);
@@ -76,6 +83,7 @@
                     };
                     modules = [
                         (./. + "/hosts/${hostname}/user.nix")
+                        (./. + "/hosts/metadata.nix")
                         inputs.sops-nix.homeManagerModules.sops
                         inputs.stylix.homeManagerModules.stylix
                         {
@@ -92,6 +100,7 @@
             nixosConfigurations = {
                 #                                 Architecture   Hostname  Username  UseHomeManager
                 laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop"  "xopc"    true;
+                deck    = mkSystem inputs.nixpkgs "x86_64-linux" "deck"    "xopc"    true;
                 homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab" true;
             };
             homeConfigurations = {
