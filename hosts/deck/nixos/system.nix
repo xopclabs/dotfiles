@@ -20,7 +20,6 @@
 
     boot = {
         tmp.cleanOnBoot = true;
-        kernelPackages = pkgs.linuxPackages_latest;
         loader = {
             efi = {
                 canTouchEfiVariables = true;

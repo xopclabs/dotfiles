@@ -13,7 +13,6 @@
 
         devices.steamdeck = {
             enable = true;
-            enableOsFanControl = false;
         };
         steamos.useSteamOSConfig = true;
 
@@ -24,9 +23,9 @@
         };
     };
 
-    # But keep protontricks available
     environment.systemPackages = with pkgs; [
         protontricks
+        protonup-ng
     ];
 
     hardware.xone.enable = true;
