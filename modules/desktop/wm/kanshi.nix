@@ -1,11 +1,11 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 let
-    cfg = config.hardware;
+    cfg = config.modules.desktop.wm.kanshi;
 
     # Get monitor names from configuration
-    internalMonitor = cfg.monitors.internal or null;
-    externalMonitor = cfg.monitors.external or null;
+    internalMonitor = config.hardware.monitors.internal or null;
+    externalMonitor = config.hardware.monitors.external or null;
 
     # Helper function to generate workspace move commands
     generateWorkspaceMoves = monitorName: [
@@ -21,7 +21,7 @@ let
     ) monitorNames;
 
     # Wallpaper command
-    wallpaperCmd = "${pkgs.swww}/bin/swww img ~/.config/hypr/wallpaper/nord.png";
+    wallpaperCmd = "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png";
 
     # Define kanshi profiles using monitor names from configuration
     kanshiProfiles = [
@@ -46,7 +46,7 @@ let
                     }
                 ];
                 exec = builtins.concatStringsSep ", " ([
-                    "${pkgs.swww}/bin/swww img ~/.config/hypr/wallpaper/nord.png"
+                    "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
                 ] ++ generateWorkspaceMoves "HDMI-A-2");
             };
         }
@@ -71,7 +71,7 @@ let
                     }
                 ];
                 exec = builtins.concatStringsSep ", " ([
-                    "${pkgs.swww}/bin/swww img ~/.config/hypr/wallpaper/nord.png"
+                    "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
                 ] ++ generateWorkspaceMoves "DP-1");
             };
         }
@@ -89,22 +89,28 @@ let
                     }
                 ];
                 exec = builtins.concatStringsSep ", " ([
-                    "${pkgs.swww}/bin/swww img ~/.config/hypr/wallpaper/nord.png"
+                    "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
                 ] ++ generateMonitorDisables ["HDMI-A-2" "DP-1"]);
             };
         }
     ];
 in {
-    home.packages = [ pkgs.swww ];
-
-    # Symlink your wallpaper directory into ~/.config/hypr/wallpaper
-    home.file.".config/hypr/wallpaper" = {
-        recursive = true;
-        source = ./wallpaper;
+    options.modules.desktop.wm.kanshi = {
+        enable = lib.mkEnableOption "kanshi";
     };
 
-    services.kanshi = {
-        enable = true;
-        settings = kanshiProfiles;
+    config = lib.mkIf cfg.enable {
+        home.packages = [ pkgs.swww ];
+
+        # Symlink your wallpaper directory into ~/.config/hypr/wallpaper
+        home.file.".config/wallpaper" = {
+            recursive = true;
+            source = ./wallpaper;
+        };
+
+        services.kanshi = {
+            enable = true;
+            settings = kanshiProfiles;
+        };
     };
 }

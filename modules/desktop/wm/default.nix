@@ -7,6 +7,8 @@ let
 in {
     imports = [
         ./hyprland/hyprland.nix
+        ./kanshi.nix
+        ./hypridle.nix
     ];
     
     options.modules.desktop.wm = {

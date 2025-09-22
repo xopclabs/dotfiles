@@ -31,6 +31,7 @@
             bars.waybar.enable = true;
             launchers.tofi.enable = true;
             wm = {
+                kanshi.enable = true;
                 hyprland.enable = true;
                 hypridle.enable = true;
             };

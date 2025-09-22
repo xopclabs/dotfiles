@@ -48,14 +48,9 @@ in {
             description = "Extra commands to run on startup in exec-once.";
         };
     };
-    imports = [
-        #./hyprlock.nix
-        ./hypridle.nix
-        ./kanshi.nix
-    ]; 
     config = lib.mkIf cfg.enable {
         home.packages = [
-            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
+            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.socat
             pkgs.libinput pkgs.jq
             hypr-windowrule
             screenshot
@@ -88,7 +83,7 @@ in {
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
-                # We define monitors with kanshi in ./display.nix
+                # We define monitors with kanshi
                 #monitor = [
                 #    "${monitor_external}, 1920x1080@74.97, 0x0, 1"
                 #    "${monitor_internal}, 1920x1080@60, 1920x0, 1"
