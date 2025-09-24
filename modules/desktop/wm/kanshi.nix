@@ -7,6 +7,9 @@ let
     internalMonitor = config.hardware.monitors.internal or null;
     externalMonitor = config.hardware.monitors.external or null;
 
+    # Check if monitors are configured
+    monitorsConfigured = internalMonitor != null && externalMonitor != null;
+
     # Helper function to generate workspace move commands
     generateWorkspaceMoves = monitorName: [
         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 1 ${monitorName}"
@@ -24,7 +27,7 @@ let
     wallpaperCmd = "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png";
 
     # Define kanshi profiles using monitor names from configuration
-    kanshiProfiles = [
+    kanshiProfiles = if monitorsConfigured then [
         {
             profile = {
                 name = "hdmi";
@@ -93,13 +96,13 @@ let
                 ] ++ generateMonitorDisables ["HDMI-A-2" "DP-1"]);
             };
         }
-    ];
+    ] else [];
 in {
     options.modules.desktop.wm.kanshi = {
         enable = lib.mkEnableOption "kanshi";
     };
 
-    config = lib.mkIf cfg.enable {
+    config = lib.mkIf (cfg.enable && monitorsConfigured) {
         home.packages = [ pkgs.swww ];
 
         # Symlink your wallpaper directory into ~/.config/hypr/wallpaper

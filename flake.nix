@@ -64,6 +64,8 @@
                                     imports = [
                                         (./. + "/hosts/${hostname}/user.nix")
                                         (./. + "/hosts/metadata.nix")
+                                        inputs.sops-nix.homeManagerModules.sops
+                                        inputs.stylix.homeModules.stylix
                                     ];
                                 };
                             };
@@ -85,7 +87,7 @@
                         (./. + "/hosts/${hostname}/user.nix")
                         (./. + "/hosts/metadata.nix")
                         inputs.sops-nix.homeManagerModules.sops
-                        inputs.stylix.homeManagerModules.stylix
+                        inputs.stylix.homeModules.stylix
                         {
                             home = {
                                 username = username;
