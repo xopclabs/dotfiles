@@ -38,13 +38,13 @@ in {
                 # Before comp init
                 (lib.mkOrder 550 cfg.initContentBeforeCompInit)
                 # Default place
-                (lib.mkOrder 1000 cfg.initContent)
-                (lib.mkOrder 1001 ''
-                    # Source env file if exitsts
+                (lib.mkOrder 1000 ''
+                    # Source env file if exists
                     if [[ -f "${cfg.envFile.path}" ]]; then
                         source "${cfg.envFile.path}"
                     fi
                 '')
+                (lib.mkOrder 1001 cfg.initContent)
                 # After everything
                 #(lib.mkOrder 1500 "")
             ];
