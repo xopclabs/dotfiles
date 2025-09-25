@@ -304,26 +304,28 @@ in {
                 bindm = [
                     "$mod,mouse:272,movewindow"
                 ];
-                bindle = let e = "exec, ags -b hypr -r"; in [
-                    ",XF86MonBrightnessUp,   ${e} 'brightness.screen += 0.05; indicator.display()'"
-                    ",XF86MonBrightnessDown, ${e} 'brightness.screen -= 0.05; indicator.display()'"
-                    ",XF86KbdBrightnessUp,   ${e} 'brightness.kbd++; indicator.kbd()'"
-                    ",XF86KbdBrightnessDown, ${e} 'brightness.kbd--; indicator.kbd()'"
-                    ",XF86AudioRaiseVolume,  ${e} 'audio.speaker.volume += 0.1; indicator.speaker()'"
-                    ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.1; indicator.speaker()'"
+                bindle = [
+                    ",XF86MonBrightnessUp,   exec, brightnessctl s +5%"
+                    ",XF86MonBrightnessDown, exec, brightnessctl s 5%-"
+                    ",XF86KbdBrightnessUp,   exec, brightnessctl -d '*kbd*' s +1"
+                    ",XF86KbdBrightnessDown, exec, brightnessctl -d '*kbd*' s 1-"
+                    ",XF86AudioRaiseVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
+                    ",XF86AudioLowerVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
                 ];
 
                 bindl = [
                     ",switch:on:[Lid switch], exec, ${lock}"
                     ",switch:on:[Lid switch], exec, systemctl suspend"
-                    ",switch:off:[Lid switch], exec, freshman_start"
                 
                     # F13, F14 binds for keyboard layouts
                     ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
                     ", XF86Tools, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 0"
                     ", XF86Launch5, exec, hyprctl switchxkblayout sweep-keyboard 1"
                     ", XF86Launch5, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 1"
+
+                    ", XF86PowerOff, exec, systemctl suspend"
                 ];
+
             };
             extraConfig = ''
                 device {
