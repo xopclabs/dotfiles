@@ -87,10 +87,10 @@
     '';
     
     # Ignore power button presses
-    # services.logind.settings.Login = {
-        # HandlePowerKey = lib.mkForce "suspend-then-hibernate";
-	    # HandlePowerKeyLongPress = lib.mkForce "poweroff";
-    # };
+    services.logind.settings.Login = {
+        HandlePowerKey = lib.mkForce "suspend";
+	    HandlePowerKeyLongPress = lib.mkForce "poweroff";
+    };
 
     # Docker support
     virtualisation.docker = {
