@@ -12,5 +12,33 @@ in {
         programs.awscli = {
             enable = true;
         };
+
+        # Auto-renewal of AWS CodeArtifact PyPI credentials
+        systemd.user.services.codeartifact-renewal = {
+            Unit = {
+                Description = "Renew AWS CodeArtifact PyPI credentials";
+            };
+            Service = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.writeShellScript "renew-codeartifact" ''
+                    ${config.programs.awscli.package}/bin/aws codeartifact login --tool pip --repository pypi-store --domain $CODEARTIFACT_DOMAIN --domain-owner $ACCOUNT_ID --region $REGION
+                ''}";
+                EnvironmentFile = "/home/${config.home.username}/.zshenv";
+            };
+        };
+
+        systemd.user.timers.codeartifact-renewal = {
+            Unit = {
+                Description = "Timer for AWS CodeArtifact credential renewal";
+            };
+            Timer = {
+                OnBootSec = "1min";
+                OnUnitActiveSec = "11h";
+                Persistent = true;
+            };
+            Install = {
+                WantedBy = [ "timers.target" ];
+            };
+        };
     };
 }

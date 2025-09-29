@@ -32,11 +32,6 @@
                 # <<< conda initialize <<<
                 export CONDA_CHANGEPS1=false
                 '';
-                initContent = ''
-                # Auto-login to CodeArtifact
-                aws codeartifact login --tool pip --repository pypi-store --domain $CODEARTIFACT_DOMAIN --domain-owner $ACCOUNT_ID --region $REGION
-                aws codeartifact login --tool twine --repository pypi-store --domain $CODEARTIFACT_DOMAIN --domain-owner $ACCOUNT_ID --region $REGION
-                '';
             };
             tmux = {
                 enable = true;
