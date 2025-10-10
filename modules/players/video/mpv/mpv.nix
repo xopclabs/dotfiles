@@ -19,8 +19,8 @@ in {
                 cache = "yes";
                 cache-secs = 300;
                 cache-on-disk = "yes";
+                hwdec = "auto";
                 demuxer-cache-dir = "${config.xdg.configHome}/.cache/mpv";
-
                 osd-font-size = 8; 
                 osd-outline-size = 1;
             };
