@@ -30,7 +30,15 @@ in {
             enable = true;
             dotDir = "${config.xdg.configHome}/zsh";
 
-            envExtra = cfg.envExtra;
+            envExtra = lib.mkMerge [
+                cfg.envExtra
+                (lib.mkIf cfg.envFile.enable ''
+                    # Source env file if exists
+                    if [[ -f "${cfg.envFile.path}" ]]; then
+                        source "${cfg.envFile.path}"
+                    fi
+                '')
+            ];
             completionInit = cfg.completionInit;
             initContent = lib.mkMerge [
                 # Before everything
@@ -38,13 +46,7 @@ in {
                 # Before comp init
                 (lib.mkOrder 550 cfg.initContentBeforeCompInit)
                 # Default place
-                (lib.mkOrder 1000 ''
-                    # Source env file if exists
-                    if [[ -f "${cfg.envFile.path}" ]]; then
-                        source "${cfg.envFile.path}"
-                    fi
-                '')
-                (lib.mkOrder 1001 cfg.initContent)
+                (lib.mkOrder 1000 cfg.initContent)
                 # After everything
                 #(lib.mkOrder 1500 "")
             ];

@@ -21,9 +21,13 @@ in {
             Service = {
                 Type = "oneshot";
                 ExecStart = "${pkgs.writeShellScript "renew-codeartifact" ''
+                    # Source zsh env file and activate conda base
+                    source "${config.xdg.configHome}/zsh/.zshenv";
+                    conda activate base
+                    # Run aws codeartifact login
                     ${config.programs.awscli.package}/bin/aws codeartifact login --tool pip --repository pypi-store --domain $CODEARTIFACT_DOMAIN --domain-owner $ACCOUNT_ID --region $REGION
                 ''}";
-                EnvironmentFile = "/home/${config.home.username}/.zshenv";
+                EnvironmentFile = "${config.xdg.configHome}/.env";
             };
         };
 
