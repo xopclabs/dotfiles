@@ -55,6 +55,7 @@ in
     sops.secrets = lib.mkMerge [
         {
             "wg/privatekey" = {
+                sopsFile = ../../../../../secrets/hosts/${config.networking.hostName}.yaml;
                 owner = "root";
                 group = "root";
                 mode = "0400";
@@ -63,6 +64,7 @@ in
         (lib.mapAttrs' (name: _: {
             name = "wg/peers/${name}/presharedkey"; 
             value = { 
+                sopsFile = ../../../../../secrets/hosts/${config.networking.hostName}.yaml;
                 owner = "root"; 
                 group = "root"; 
                 mode = "0400"; 
