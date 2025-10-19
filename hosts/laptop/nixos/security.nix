@@ -37,6 +37,7 @@
     sops = {
         defaultSopsFile = ../../../secrets/shared/personal.yaml;
         age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
+        age.keyFile = "/home/xopc/.config/sops/age/keys.txt";
     };
 
     # Enable TPM2 to auto-unlock LUKS

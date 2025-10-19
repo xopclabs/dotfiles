@@ -19,7 +19,7 @@ in {
             iputils
             usbutils
             pciutils
-            busybox
+	    coreutils-full
             ps
             brightnessctl
             ripgrep
