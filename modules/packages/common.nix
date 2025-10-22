@@ -20,6 +20,7 @@ in {
             usbutils
             pciutils
 	    coreutils-full
+	    dig
             ps
             brightnessctl
             ripgrep
