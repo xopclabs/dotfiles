@@ -11,7 +11,7 @@
             supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
         }];
         distributedBuilds = true;
-        settings.builders-use-substitutes = false;
+        settings.builders-use-substitutes = true;
     };
     
     sops.secrets."ssh-builder/id_ed25519".path = "/root/.ssh/nix-builder";
