@@ -14,8 +14,8 @@
         settings.builders-use-substitutes = true;
     };
     
-    sops.secrets."ssh-builder/id_ed25519".path = "/root/.ssh/nix-builder";
-    sops.secrets."ssh-builder/id_ed25519.pub".path = "/root/.ssh/nix-builder.pub";
+    sops.secrets."ssh-builder/id_ed25519".path = "/root/.ssh/homelab-builder";
+    sops.secrets."ssh-builder/id_ed25519.pub".path = "/root/.ssh/homelab-builder.pub";
     sops.secrets."ssh-builder/config".path = "/root/.ssh/hosts_config";
     programs.ssh = {
         extraConfig = ''
