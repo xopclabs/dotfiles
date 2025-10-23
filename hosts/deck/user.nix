@@ -121,7 +121,7 @@
         other = {
             kicad.enable = false;
             plover.enable = false;
-            minecraft.enable = false;
+            minecraft.enable = true;
         };
     };
 
