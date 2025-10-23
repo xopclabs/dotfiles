@@ -17,6 +17,9 @@
     # Set up user builder user
     users.users.nix-builder = {
         isNormalUser = true;
+	openssh.authorizedKeys.keys = [
+	    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAFmiLCnm7UOpY9Ak+gxJcsHXBZOfyWiFtl35c49CjjE"
+        ];
     };
     nix.settings.trusted-users = [ "nix-builder" ];
 

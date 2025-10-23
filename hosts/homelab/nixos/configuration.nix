@@ -9,6 +9,7 @@
         ./network.nix
         ./security.nix
         ./proxy.nix
+	./ssh.nix
 
         ./services
     ];
