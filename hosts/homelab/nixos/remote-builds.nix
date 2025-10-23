@@ -1,19 +1,12 @@
 { config, pkgs, inputs, ... }:
 
 {
-    nix = {
-        buildMachines = [{
-            hostName = "localhost";
-            system = "x86_64-linux";
-            maxJobs = 12;
-            speedFactor = 4;
-            supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
-        }];
-        distributedBuilds = true;
-    };
+    # Homelab acts as a build server, not a client
+    # No buildMachines configuration needed - just build locally
     nix.settings = {
         trusted-users = [ "nix-builder" ];
         allowed-users = [ "nix-builder" ];
+        max-jobs = 12;  # Allow multiple parallel builds
     };
     
     # Set up user builder user

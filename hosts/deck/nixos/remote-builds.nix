@@ -6,8 +6,8 @@
             hostName = "homelab-builder";
             system = "x86_64-linux";
             protocol = "ssh-ng";
-            maxJobs = 1;
-            speedFactor = 1;
+            maxJobs = 12;
+            speedFactor = 4;
             supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
         }];
         distributedBuilds = true;
