@@ -768,7 +768,8 @@
         "plover": "plover",
         "sops-nix": "sops-nix",
         "stylix": "stylix",
-        "tmux-sessionx": "tmux-sessionx"
+        "tmux-sessionx": "tmux-sessionx",
+        "yeetmouse": "yeetmouse"
       }
     },
     "rtf-tokenize": {
@@ -996,6 +997,28 @@
       "original": {
         "owner": "omerxx",
         "repo": "tmux-sessionx",
+        "type": "github"
+      }
+    },
+    "yeetmouse": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "dir": "nix",
+        "lastModified": 1760867478,
+        "narHash": "sha256-BuYWZix8kA0UeFYkgg9dyB4TrMg9dm4mmmtgkUkaf74=",
+        "owner": "AndyFilter",
+        "repo": "YeetMouse",
+        "rev": "0d11d02199b6ff11d603742892eb0b1d8927b51b",
+        "type": "github"
+      },
+      "original": {
+        "dir": "nix",
+        "owner": "AndyFilter",
+        "repo": "YeetMouse",
         "type": "github"
       }
     }

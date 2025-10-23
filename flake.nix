@@ -33,6 +33,9 @@
 
         jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
         jovian.inputs.nixpkgs.follows = "nixpkgs";
+
+        yeetmouse.url = "github:AndyFilter/YeetMouse?dir=nix";
+        yeetmouse.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -52,7 +55,10 @@
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                         }
-                    ] ++ (if hostname == "deck" then [ inputs.jovian.nixosModules.default ] else []) ++ (if useHomeManager then [
+                    ] ++ (if hostname == "deck" then [ 
+                        inputs.jovian.nixosModules.default 
+                        inputs.yeetmouse.nixosModules.default
+                    ] else []) ++ (if useHomeManager then [
                         inputs.home-manager.nixosModules.home-manager
                         {
                             home-manager = {
