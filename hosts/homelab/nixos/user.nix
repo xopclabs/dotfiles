@@ -14,6 +14,13 @@
     };
     programs.zsh.enable = true;
 
+    # Set up user builder user
+    users.users.nix-builder = {
+        isNormalUser = true;
+    };
+    nix.settings.trusted-users = [ "nix-builder" ];
+
+
     # Set up locales (timezone and keyboard layout)
     i18n.defaultLocale = "en_US.UTF-8";
     console = {
