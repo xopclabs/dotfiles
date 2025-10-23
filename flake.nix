@@ -36,6 +36,9 @@
 
         yeetmouse.url = "github:AndyFilter/YeetMouse?dir=nix";
         yeetmouse.inputs.nixpkgs.follows = "nixpkgs";
+
+        prismlauncher.url = "github:Diegiwg/PrismLauncher-Cracked";
+        prismlauncher.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)

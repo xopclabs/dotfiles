@@ -101,8 +101,6 @@
 
         gui = {
             flameshot.enable = false;
-            kicad.enable = false;
-            plover.enable = false;
         };
 
         browsers = {
@@ -118,6 +116,12 @@
         packages = {
             common.enable = true;
             optional.enable = true;
+        };
+
+        other = {
+            kicad.enable = false;
+            plover.enable = false;
+            minecraft.enable = true;
         };
     };
 

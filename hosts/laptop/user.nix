@@ -85,8 +85,6 @@
 
         gui = {
             flameshot.enable = false;
-            kicad.enable = false;
-            plover.enable = true;
         };
 
         browsers = {
@@ -103,6 +101,12 @@
             common.enable = true;
             optional.enable = true;
         };
+
+        other = {
+            kicad.enable = false;
+            plover.enable = true;
+        };
+
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

@@ -98,7 +98,7 @@ in {
                     "[workspace 9 silent] slack"
                 ] ++ lib.optional config.modules.desktop.bars.waybar.enable "waybar"
                   ++ lib.optional config.modules.cli.tmux.enable "tmux new -s main"
-                  ++ lib.optional config.modules.gui.plover.enable "plover"
+                  ++ lib.optional config.modules.other.plover.enable "plover"
                   ++ [
                   ] ++ cfg.extraAutostart;
 

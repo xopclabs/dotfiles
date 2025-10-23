@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.gui.plover;
+    cfg = config.modules.other.plover;
 in {
-    options.modules.gui.plover = { enable = mkEnableOption "plover"; };
+    options.modules.other.plover = { enable = mkEnableOption "plover"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             (inputs.plover.packages.${pkgs.system}.plover.withPlugins (

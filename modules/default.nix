@@ -35,6 +35,7 @@ in
         ./players
         ./packages
         ./theming
+        ./other
     ];
 
     # Export the utility functions
