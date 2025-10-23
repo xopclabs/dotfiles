@@ -12,6 +12,7 @@
         ./security.nix
         ./gui.nix
         ./proxy.nix
+        ./remote-builds.nix
 
         ./programs
     ];
