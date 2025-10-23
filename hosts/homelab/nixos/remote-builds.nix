@@ -11,7 +11,10 @@
         }];
         distributedBuilds = true;
     };
-    nix.settings.trusted-users = [ "nix-builder" ];
+    nix.settings = {
+        trusted-users = [ "nix-builder" ];
+        allowed-users = [ "nix-builder" ];
+    };
     
     # Set up user builder user
     users.users.nix-builder = {
