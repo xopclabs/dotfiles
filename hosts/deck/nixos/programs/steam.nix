@@ -28,5 +28,11 @@
         protonup-ng
     ];
 
+    # Gamepad support
     hardware.xone.enable = true;
+    # Joycon support
+    services.joycond.enable = true;
+    # Trackpad in desktop mode
+    programs.steam.extest.enable = true;
+    users.users.xopc.extraGroups = [ "input" ];
 }
