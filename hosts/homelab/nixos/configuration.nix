@@ -9,7 +9,8 @@
         ./network.nix
         ./security.nix
         ./proxy.nix
-	./ssh.nix
+	    ./ssh.nix
+        ./remote-builds.nix
 
         ./services
     ];
