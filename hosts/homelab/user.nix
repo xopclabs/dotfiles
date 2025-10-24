@@ -5,7 +5,7 @@
         ../../modules/default.nix 
         ./home.nix
         inputs.nix-colors.homeManagerModules.default
-	inputs.nixvim.homeModules.nixvim
+	    inputs.nixvim.homeModules.nixvim
     ];
     config.modules = {
         theming.stylix.enable = true;
@@ -20,7 +20,7 @@
             starship.enable = true;
             eza.enable = true;
             zoxide.enable = true;
-            bat.enable = true;
+            bat.enable = true; # Disabled bat since it gives problems af of 2025-10-24
             fzf.enable = true;
         };
 

@@ -11,8 +11,8 @@
         sopsFile = ../../../../secrets/hosts/${config.networking.hostName}.yaml;
     };
     services.minecraft-server = {
-        enable = false;
-        package = pkgs.papermc;
+        enable = true;
+        package = pkgs.papermcServers.papermc-1_21_9;
         eula = true;
         openFirewall = true;
 
