@@ -20,7 +20,7 @@
             starship.enable = true;
             eza.enable = true;
             zoxide.enable = true;
-            bat.enable = true; # Disabled bat since it gives problems af of 2025-10-24
+            bat.enable = false; # Disabled bat since it gives problems af of 2025-10-24
             fzf.enable = true;
         };
 

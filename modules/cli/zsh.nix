@@ -70,7 +70,6 @@ in {
                 mv = "mv -i";
                 cp = "cp -ri";
                 grep = "grep --color=auto";
-                cat = "bat --paging=never --style=plain";
                 visecret = "sops $NIXOS_CONFIG_DIR/hosts/laptop/secrets.yaml";
             };
 

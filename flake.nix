@@ -39,6 +39,9 @@
 
         prismlauncher.url = "github:Diegiwg/PrismLauncher-Cracked";
         prismlauncher.inputs.nixpkgs.follows = "nixpkgs";
+
+        nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+        nix-minecraft.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
