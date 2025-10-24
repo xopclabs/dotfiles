@@ -14,9 +14,9 @@
         servers.distant-horizons = {
             enable = true;
             autoStart = false;
-            package = pkgs.fabricServers.fabric-1_21_10;
+            package = pkgs.fabricServers.fabric-1_21_8;
 
-            jvmOpts = "-Xms4G -Xmx8G";
+            jvmOpts = "-Xms4G -Xmx8G -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysActAsServerClassMachine -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+UseNUMA -XX:NmethodSweepActivity=1 -XX:ReservedCodeCacheSize=400M -XX:NonNMethodCodeHeapSize=12M -XX:ProfiledCodeHeapSize=194M -XX:NonProfiledCodeHeapSize=194M -XX:-DontCompileHugeMethods -XX:MaxNodeLimit=240000 -XX:NodeLimitFudgeFactor=8000 -XX:+UseVectorCmov -XX:+PerfDisableSharedMem -XX:+UseFastUnorderedTimeStamps -XX:+UseCriticalJavaThreadPriority -XX:ThreadPriorityPolicy=1 -XX:+UseG1GC -XX:MaxGCPauseMillis=130 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=28 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=20 -XX:G1MixedGCCountTarget=3 -XX:InitiatingHeapOccupancyPercent=10 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=0 -XX:SurvivorRatio=32 -XX:MaxTenuringThreshold=1 -XX:G1SATBBufferEnqueueingThresholdPercent=30 -XX:G1ConcMarkStepDurationMillis=5 -XX:G1ConcRSHotCardLimit=16 -XX:G1ConcRefinementServiceIntervalMillis=150";
 
             serverProperties = {
                 difficulty = "hard";
@@ -34,19 +34,34 @@
                 white-list = false;
             };
 
+            operators = {
+                otter = {
+                    uuid = "ae76cd23-ef71-38d5-8748-cd6b0df947ef";
+                    level = 4;
+                    bypassesPlayerLimit = true;
+                };
+            };
+
             symlinks = {
                 mods = pkgs.linkFarmFromDrvs "mods" (
                     builtins.attrValues {
                         distant-horizons = pkgs.fetchurl {
-                            url = "https://cdn.modrinth.com/data/uCdwusMi/versions/9Y10ZuWP/DistantHorizons-2.3.6-b-1.21.10-fabric-neoforge.jar";
-                            sha512 = "1b1b70b7ec6290d152a5f9fa3f2e68ea7895f407c561b56e91aba3fdadef277cd259879676198d6481dcc76a226ff1aa857c01ae9c41be3e963b59546074a1fc";
+                            url = "https://cdn.modrinth.com/data/uCdwusMi/versions/iej5xqn2/DistantHorizons-2.3.6-b-1.21.8-fabric-neoforge.jar";
+                            sha512 = "VsfMKbxXB1JSVzIgzqsB/BpGl8xjYexC+Wy/tBjIexm8znPiUqR9fd4I4SbFbQ35l4iWSENZPD+I/YyJOOfyjw==";
                         };
                         fabric-api = pkgs.fetchurl {
-                            url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/lxeiLRwe/fabric-api-0.136.0%2B1.21.10.jar";
-                            sha512 = "d6ad5afeb57dc6dbe17a948990fc8441fbbc13a748814a71566404d919384df8bd7abebda52a58a41eb66370a86b8c4f910b64733b135946ecd47e53271310b5";
+                            url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/RMahJx2I/fabric-api-0.136.0+1.21.8.jar";
+                            sha512 = "qGgBysjioUxSoTcFpkdVJcmt4/O+8FORTczl9czeOFQSPFRK7KbPVrdaGR9uNZobm9M7MU8HYveDo6oblLpX6A==";
                         };
                     }
                 );
+
+                plugins = pkgs.linkFarmFromDrvs "plugins" [
+                    (pkgs.fetchurl {
+                        url = "https://cdn.modrinth.com/data/IjY7seTG/versions/NudYHdRi/DistantHorizonsSupport-0.11.0-SNAPSHOT.jar";
+                        sha512 = "hD1jT9fa17Vryoq8rhUl/5KG4QW7g2rlHoaWK1geVTh23Oly0ekVSZuq/oGJR9a+AWmLARma9aJQdsdAyjkvSw==";
+                    })
+                ];
             };
         };
     };
