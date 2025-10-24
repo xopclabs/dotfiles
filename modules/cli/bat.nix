@@ -14,9 +14,11 @@ in {
             extraPackages = with pkgs.bat-extras; [
                 batdiff
                 batman
-                batgrep
+                # batgrep isn't working as of 2025-10-24
+                # batgrep
                 batwatch
             ];
         };
+        programs.zsh.shellAliases.cat = "bat --paging=never --style=plain";
     };
 } 
