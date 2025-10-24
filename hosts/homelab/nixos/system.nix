@@ -21,7 +21,7 @@
         '';
     };
     nixpkgs.config.allowUnfree = true;
-    environment.defaultPackages = [ pkgs.sudo ];
+    environment.defaultPackages = [ pkgs.sudo pkgs.vim ];
     environment.systemPackages = map lib.lowPrio [
         pkgs.curl
         pkgs.gitMinimal

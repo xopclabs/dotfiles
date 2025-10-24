@@ -1,28 +1,20 @@
 { config, pkgs, ... }:
 
 {
+    # Not using declarative since I want to keep whitelist declarative
+    # but still store server.properties in git somehow
+    sops.secrets."minecraft/server-properties" = {
+        path = "${config.services.minecraft-server.dataDir}/server.properties";
+        owner = "minecraft";
+        group = "minecraft";
+        mode = "0600";
+        sopsFile = ../../../../secrets/hosts/${config.networking.hostName}.yaml;
+    };
     services.minecraft-server = {
-        enable = true;
+        enable = false;
         package = pkgs.papermc;
         eula = true;
         openFirewall = true;
-        declarative = true;
-
-        serverProperties = {
-            server-port = 25565;
-            difficulty = 3;
-            hardcore = true;
-            gamemode = 0;
-            max-players = 2;
-            motd = "Test!";
-            white-list = false;
-            enable-command-block = true;
-            pvp = true;
-            view-distance = 16;
-            simulation-distance = 24;
-            online-mode = false;
-            enable-rcon = false;
-        };
 
         # JVM options for performance
         jvmOpts = "-Xms2048M -Xmx4096M";
