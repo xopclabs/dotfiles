@@ -1,6 +1,21 @@
 { config, pkgs, lib, inputs, ... }:
 
-{
+let
+    betaSrc = pkgs.fetchurl {
+        url = "https://files.betacraft.uk/server-archive/beta/b1.7.3.jar";
+        sha512 = "sha512-Zyio9gwtK0CHjRHIzJhvJZgWMUytO2hRgEIPq6aSitBk77NVeJxPUGJffqorV3uTdiUvDiDKsMuGXLGkexTpMA==";
+    };
+    baseVanilla = pkgs.vanillaServers.vanilla;
+    beta173Pkg = (
+        baseVanilla.overrideAttrs (_: {
+            pname = "vanilla-beta-1_7_3";
+            version = "b1.7.3";
+            src = betaSrc;
+        })
+    ).override {
+        jre_headless = pkgs.temurin-jre-bin-8;
+    };
+in {
     imports = [ inputs.nix-minecraft.nixosModules.minecraft-servers ];
     nixpkgs.overlays = [ inputs.nix-minecraft.overlay ];
 
@@ -88,6 +103,27 @@
                         };
                     }
                 );
+            };
+        };
+
+        servers.beta = {
+            enable = true;
+            autoStart = false;
+            package = beta173Pkg;
+
+            jvmOpts = "-Xms512M -Xmx1G -XX:+UseG1GC";
+
+            serverProperties = {
+                level-name = "world";
+                allow-nether = true;
+                view-distance = 10;
+                spawn-monsters = true;
+                spawn-animals = true;
+                pvp = true;
+                white-list = false;
+                online-mode = false;
+                max-players = 2;
+                server-port = 25575;
             };
         };
     };
