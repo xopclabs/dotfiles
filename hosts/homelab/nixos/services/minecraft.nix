@@ -2,8 +2,8 @@
 
 let
     betaSrc = pkgs.fetchurl {
-        url = "https://files.betacraft.uk/server-archive/beta/b1.7.3.jar";
-        sha512 = "sha512-Zyio9gwtK0CHjRHIzJhvJZgWMUytO2hRgEIPq6aSitBk77NVeJxPUGJffqorV3uTdiUvDiDKsMuGXLGkexTpMA==";
+        url = "https://meta.babric.glass-launcher.net/v2/versions/loader/b1.7.3/0.17.3/1.0.0-babric.2/server/jar";
+        sha512 = "sha512-ePXHsEkF3qjfb0Y1gY7MxOvuJ8rupT8mIgnw8LIXwayiuiqTENHTwWUCMvajjXo0NhdFpdqgJKbbAcYbNGSH5A==";
     };
     baseVanilla = pkgs.vanillaServers.vanilla;
     beta173Pkg = (
@@ -12,9 +12,7 @@ let
             version = "b1.7.3";
             src = betaSrc;
         })
-    ).override {
-        jre_headless = pkgs.temurin-jre-bin-8;
-    };
+    );
 in {
     imports = [ inputs.nix-minecraft.nixosModules.minecraft-servers ];
     nixpkgs.overlays = [ inputs.nix-minecraft.overlay ];
