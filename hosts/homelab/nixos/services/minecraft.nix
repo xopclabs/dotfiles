@@ -6,6 +6,13 @@
 
     users.groups.minecraft.members = [ "homelab" ];
 
+    sops.secrets."minecraft/ops" = {
+        sopsFile = ../../../../secrets/hosts/${config.networking.hostName}.yaml;
+        owner = "minecraft";
+        group = "minecraft";
+        mode = "0660";
+    };
+
     services.minecraft-servers = {
         enable = true;
         eula = true;
@@ -13,7 +20,7 @@
 
         servers.distant-horizons = {
             enable = true;
-            autoStart = true;
+            autoStart = false;
             package = pkgs.fabricServers.fabric-1_21_10;
 
             jvmOpts = "-Xms4G -Xmx8G -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysActAsServerClassMachine -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+UseNUMA -XX:NmethodSweepActivity=1 -XX:ReservedCodeCacheSize=400M -XX:NonNMethodCodeHeapSize=12M -XX:ProfiledCodeHeapSize=194M -XX:NonProfiledCodeHeapSize=194M -XX:-DontCompileHugeMethods -XX:MaxNodeLimit=240000 -XX:NodeLimitFudgeFactor=8000 -XX:+UseVectorCmov -XX:+PerfDisableSharedMem -XX:+UseFastUnorderedTimeStamps -XX:+UseCriticalJavaThreadPriority -XX:ThreadPriorityPolicy=1 -XX:+UseG1GC -XX:MaxGCPauseMillis=130 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=28 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=20 -XX:G1MixedGCCountTarget=3 -XX:InitiatingHeapOccupancyPercent=10 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=0 -XX:SurvivorRatio=32 -XX:MaxTenuringThreshold=1 -XX:G1SATBBufferEnqueueingThresholdPercent=30 -XX:G1ConcMarkStepDurationMillis=5 -XX:G1ConcRSHotCardLimit=16 -XX:G1ConcRefinementServiceIntervalMillis=150";
@@ -34,15 +41,8 @@
                 white-list = false;
             };
 
-            operators = {
-                otter = {
-                    uuid = "ae76cd23-ef71-38d5-8748-cd6b0df947ef";
-                    level = 4;
-                    bypassesPlayerLimit = true;
-                };
-            };
-
             symlinks = {
+                "ops.json" = config.sops.secrets."minecraft/ops".path;
                 mods = pkgs.linkFarmFromDrvs "mods" (
                     builtins.attrValues {
                         fabric-api = pkgs.fetchurl {
@@ -72,6 +72,10 @@
                         ping-wheel = pkgs.fetchurl {
                             url = "https://cdn.modrinth.com/data/QQXAdCzh/versions/2qmGuLd3/Ping-Wheel-1.12.0-fabric-1.21.10.jar";
                             sha512 = "sha512-0DJVA3Tgz1dxFYXHfoCW0Nd3vvTcwMyZw4QZApeICXRZmDb5YlC6GCrKsk+TsJ7/HTtMIj8+pOzdaOGT/AUrnQ==";
+                        };
+                        skin-restorer = pkgs.fetchurl {
+                            url = "https://cdn.modrinth.com/data/ghrZDhGW/versions/MKWfnXfO/skinrestorer-2.4.3+1.21.9-fabric.jar";
+                            sha512 = "sha512-o3cTNGdwe4iDRkJmCjpCE3rLir+/gNvKh1CLcBqkrKPp0XOO8/wJhifHYOav3qMvzfilg1lC0pHvBkDz7zZnxQ==";
                         };
                     }
                 );
