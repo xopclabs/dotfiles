@@ -12,6 +12,12 @@
         group = "minecraft";
         mode = "0660";
     };
+    sops.secrets."minecraft/whitelist" = {
+        sopsFile = ../../../../secrets/hosts/${config.networking.hostName}.yaml;
+        owner = "minecraft";
+        group = "minecraft";
+        mode = "0660";
+    };
 
     services.minecraft-servers = {
         enable = true;
@@ -38,11 +44,14 @@
                 view-distance = 10;
                 simulation-distance = 12;
                 spawn-protection = 16;
-                white-list = false;
+                white-list = true;
             };
 
-            symlinks = {
+            files = {
                 "ops.json" = config.sops.secrets."minecraft/ops".path;
+                "whitelist.json" = config.sops.secrets."minecraft/whitelist".path;
+            };
+            symlinks = {
                 mods = pkgs.linkFarmFromDrvs "mods" (
                     builtins.attrValues {
                         fabric-api = pkgs.fetchurl {
