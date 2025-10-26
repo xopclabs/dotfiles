@@ -6,13 +6,13 @@
 
     users.groups.minecraft.members = [ "homelab" ];
 
-    sops.secrets."minecraft/ops" = {
+    sops.secrets."minecraft/ops.json" = {
         sopsFile = ../../../../secrets/hosts/${config.networking.hostName}.yaml;
         owner = "minecraft";
         group = "minecraft";
         mode = "0660";
     };
-    sops.secrets."minecraft/whitelist" = {
+    sops.secrets."minecraft/whitelist.json" = {
         sopsFile = ../../../../secrets/hosts/${config.networking.hostName}.yaml;
         owner = "minecraft";
         group = "minecraft";
@@ -41,15 +41,15 @@
                 motd = "socorro...";
                 online-mode = false;
                 pvp = true;
-                view-distance = 10;
-                simulation-distance = 12;
+                view-distance = 16;
+                simulation-distance = 16;
                 spawn-protection = 16;
                 white-list = true;
             };
 
             files = {
-                "ops.json" = config.sops.secrets."minecraft/ops".path;
-                "whitelist.json" = config.sops.secrets."minecraft/whitelist".path;
+                "ops.json" = config.sops.secrets."minecraft/ops.json".path;
+                "whitelist.json" = config.sops.secrets."minecraft/whitelist.json".path;
             };
             symlinks = {
                 mods = pkgs.linkFarmFromDrvs "mods" (
