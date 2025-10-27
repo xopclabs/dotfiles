@@ -19,8 +19,8 @@ in {
             iputils
             usbutils
             pciutils
-	    coreutils-full
-	    dig
+            coreutils-full
+            dig
             ps
             brightnessctl
             ripgrep
@@ -45,10 +45,8 @@ in {
             pfetch
             sops
             devenv
-	    dust
-	    ncdu
-	    # programming
-	    d2
+            dust duf
+            ncdu
         ];
     };
 }
