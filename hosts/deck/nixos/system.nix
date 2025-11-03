@@ -71,6 +71,10 @@
         graphics = {
             enable = true;
         };
+        sane = {
+            enable = true;
+            extraBackends = [ pkgs.epsonscan2 ];
+        };
     };
 
     # Battery?

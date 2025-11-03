@@ -8,7 +8,7 @@ in {
     config = mkIf cfg.enable {
         programs.chromium = {
             enable = true;
-            package = pkgs.ungoogled-chromium;
+            package = pkgs.chromium;
         };
     };
 } 

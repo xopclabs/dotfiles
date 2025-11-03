@@ -119,6 +119,7 @@
     "remote.SSH.remotePlatform": {
         "ml-workspace-1": "linux",
         "freshman": "linux",
-        "homelab": "linux"
+        "homelab": "linux",
+        "vps": "linux"
     }
 }
