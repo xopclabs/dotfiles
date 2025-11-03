@@ -18,15 +18,17 @@ in {
     config = mkIf cfg.enable {
         programs.git = {
             enable = true;
-            userName = name;
-            userEmail = email;
+            settings = {
+                push.autoSetupRemote = true; 
+                user = {
+                    name = name;
+                    email = email;
+                };
+            };
             signing = {
                 format = "ssh";
                 signByDefault = true;
                 key = cfg.signingKey;
-            };
-            extraConfig = {
-                push.autoSetupRemote = true; 
             };
         };
     };
