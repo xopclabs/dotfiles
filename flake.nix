@@ -42,6 +42,9 @@
 
         nix-minecraft.url = "github:Infinidoge/nix-minecraft";
         nix-minecraft.inputs.nixpkgs.follows = "nixpkgs";
+
+        niri.url = "github:sodiboo/niri-flake";
+        niri.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)

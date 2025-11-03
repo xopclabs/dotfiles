@@ -92,10 +92,16 @@ in
         kdePackages.qt6ct
     ];
 
-    # Hyprland cachix
+    # Binary caches
     nix.settings = {
-        substituters = ["https://hyprland.cachix.org"];
-        trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
+        substituters = [
+            "https://hyprland.cachix.org"
+            "https://niri.cachix.org"
+        ];
+        trusted-public-keys = [
+            "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+            "niri.cachix.org-1:WQkK2e/7zfNzYjlxY9++Tw6KhxSxqc3k3+l0SBhsAbE="
+        ];
     };
 
 /*

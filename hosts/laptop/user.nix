@@ -32,6 +32,7 @@
                 kanshi.enable = true;
                 hyprland.enable = true;
                 hypridle.enable = true;
+                scripts.enable = true;
             };
             other = {
                 xdg.enable = true;

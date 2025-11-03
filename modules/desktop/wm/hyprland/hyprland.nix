@@ -8,32 +8,6 @@ let
     monitor_external = "desc:${hardwareCfg.monitors.external.name}";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
-    hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
-    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
-    toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./scripts/toggle-keyboard}'';
-    monitor-dpms = pkgs.writeShellScriptBin "monitor-dpms" ''
-        ${builtins.replaceStrings 
-            ["@INTERNAL_MONITOR@" "@EXTERNAL_MONITOR@"] 
-            [hardwareCfg.monitors.internal.name hardwareCfg.monitors.external.name] 
-            (builtins.readFile ./scripts/monitor-dpms)
-        }
-    '';
-    screenshot = pkgs.writeShellScriptBin "screenshot" ''
-    	grim -g "$(slurp -d)" - | wl-copy
-    '';
-    annotate = pkgs.writeShellScriptBin "annotate" ''
-        wl-paste | swappy -f - -o - | wl-copy
-    '';
-    screenrecord = pkgs.writeShellScriptBin "screenrecord" ''
-        # Check if wf-recorder is currently running
-        if pgrep -x wf-recorder > /dev/null; then
-            echo "Stopping wf-recorder..."
-            pkill -SIGINT wf-recorder
-        else
-            echo "Starting wf-recorder..."
-            wf-recorder -g "$(slurp)" -f ~/screenshots/$(date +'%Y-%m-%d_%H-%M-%S').mkv &
-        fi
-    '';
 in {
     options.modules.desktop.wm.hyprland = {
         enable = lib.mkEnableOption "hyprland";
@@ -48,16 +22,12 @@ in {
             description = "Extra commands to run on startup in exec-once.";
         };
     };
+    imports = [ ./scripts ];
     config = lib.mkIf cfg.enable {
+        
         home.packages = [
-            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.socat
+            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard 
             pkgs.libinput pkgs.jq
-            hypr-windowrule
-            screenshot
-            annotate pkgs.swappy
-            screenrecord
-            toggle-keyboard
-            monitor-dpms
         ];
 
         home.pointerCursor = {

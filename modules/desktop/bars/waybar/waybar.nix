@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.modules.desktop.bars.waybar;
+    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./bar-restart}'';
 in {
     options.modules.desktop.bars.waybar = {
         enable = mkEnableOption "waybar";
@@ -14,9 +15,10 @@ in {
     };
     imports = [ ./icons.nix ];
     config = mkIf cfg.enable {
+        home.packages = [ bar-restart ];
         programs.waybar = {
             enable = true;
-	    # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
+	        # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
             settings = {
                 mainBar = let
                     drawer-config = {

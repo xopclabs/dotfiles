@@ -48,6 +48,7 @@
                     lock.enable = false;
                     suspend.timeout = 30 * 60;
                 };
+                scripts.enable = true;
             };
             other = {
                 xdg.enable = true;
