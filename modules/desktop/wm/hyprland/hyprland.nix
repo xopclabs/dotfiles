@@ -23,6 +23,7 @@ in {
         };
     };
     imports = [ ./scripts ];
+
     config = lib.mkIf cfg.enable {
         
         home.packages = [
@@ -319,8 +320,6 @@ in {
         };
         # UWSM environment configuration for Hyprland
         xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh";
-
-        programs.zsh.shellAliases = { startx = "Hyprland"; };
 
     };
 }
