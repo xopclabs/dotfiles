@@ -29,7 +29,6 @@
 
     sops = {
         defaultSopsFile = ../../../secrets/shared/personal.yaml;
-        age.sshKeyPaths = [ "/home/homelab/.ssh/id_ed25519" ];
-        age.keyFile = "/home/homelab/.config/sops/age/keys.txt";
+        age.sshKeyPaths = [ "/etc/ssh/id_ed25519" ];
     };
 }
