@@ -26,6 +26,8 @@ in {
             inherit cfg;
             priorities = wmPriorities;
         };
-        programs.zsh.shellAliases = { startx = config.modules.desktop.wm.default; };
+        programs.zsh.shellAliases = mkIf (config.modules.desktop.wm.default != null) {
+          startx = config.modules.desktop.wm.default;
+        };
     };
 }
