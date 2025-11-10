@@ -46,7 +46,7 @@ in {
 
             serverProperties = {
                 difficulty = "hard";
-                hardcore = true;
+                hardcore = false;
                 gamemode = 0;
                 spawn-monsters = true;
                 level-seed = "";
@@ -105,8 +105,8 @@ in {
         };
 
         servers.beta = {
-            enable = true;
-            autoStart = false;
+            enable = false;
+            autoStart = true;
             package = beta173Pkg;
 
             jvmOpts = "-Xms512M -Xmx1G -XX:+UseG1GC";
