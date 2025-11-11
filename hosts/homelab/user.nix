@@ -17,7 +17,10 @@
                 enable = true;
                 statusPosition = "bottom";
             };
-            starship.enable = true;
+            starship = {
+                enable = true;
+                userBlockColor = "yellow";
+            };
             eza.enable = true;
             zoxide.enable = true;
             bat.enable = true; 

@@ -41,6 +41,7 @@
             starship = {
                 enable = true;
                 aws.enable = true;
+                userBlockColor = "purple";
             };
             eza.enable = true;
             zoxide.enable = true;
