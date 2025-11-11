@@ -55,9 +55,7 @@
             zoxide.enable = true;
             bat.enable = true;
             fzf.enable = true;
-        };
 
-        tools = {
             git.enable = true;
             gpg.enable = false;
             ssh.enable = true;

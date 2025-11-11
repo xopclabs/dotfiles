@@ -28,7 +28,6 @@ in
         ./file_managers
         ./editors
         ./cli
-        ./tools
         ./terminals
         ./gui
         ./desktop

@@ -2,11 +2,11 @@
 
 with lib;
 let 
-    cfg = config.modules.tools.git;
+    cfg = config.modules.cli.git;
     name = "xopclabs";
     email = "b9fyg5ei@duck.com";
 in {
-    options.modules.tools.git = { 
+    options.modules.cli.git = { 
         enable = mkEnableOption "git"; 
         # Signing key with, defaults to ~/.ssh/id_ed25519
         signingKey = mkOption {

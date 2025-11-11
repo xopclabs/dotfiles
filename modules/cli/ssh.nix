@@ -1,9 +1,9 @@
 { pkgs, lib, config, ... }:
 with lib;
 let 
-    cfg = config.modules.tools.ssh;
+    cfg = config.modules.cli.ssh;
 in {
-    options.modules.tools.ssh = { enable = mkEnableOption "ssh"; };
+    options.modules.cli.ssh = { enable = mkEnableOption "ssh"; };
     config = mkIf cfg.enable {
         sops.secrets."ssh/config".path = "/home/${config.home.username}/.ssh/hosts_config";
         sops.secrets."ssh/id_ed25519".path = "/home/${config.home.username}/.ssh/id_ed25519";

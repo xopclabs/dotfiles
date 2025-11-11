@@ -47,9 +47,7 @@
             zoxide.enable = true;
             bat.enable = true;
             fzf.enable = true;
-        };
 
-        tools = {
             git.enable = true;
             awscli.enable = true;
             btop.enable = true;

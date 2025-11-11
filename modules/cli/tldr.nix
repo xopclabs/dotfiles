@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.tools.tldr;
+let cfg = config.modules.cli.tldr;
 
 in {
-    options.modules.tools.tldr = { enable = mkEnableOption "tldr"; };
+    options.modules.cli.tldr = { enable = mkEnableOption "tldr"; };
     config = mkIf cfg.enable {
         services.tldr-update = {
             enable = true;

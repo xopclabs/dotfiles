@@ -1,10 +1,10 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-let cfg = config.modules.tools.gpg;
+let cfg = config.modules.cli.gpg;
 
 in {
-    options.modules.tools.gpg = { enable = mkEnableOption "gpg"; };
+    options.modules.cli.gpg = { enable = mkEnableOption "gpg"; };
     config = mkIf cfg.enable {
         programs.gpg = {
             enable = true;

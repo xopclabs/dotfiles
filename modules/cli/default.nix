@@ -13,6 +13,16 @@ in {
         ./tmux.nix
         ./zoxide.nix
         ./zsh.nix
+
+        ./awscli.nix
+        ./btop.nix
+        ./git.nix
+        ./gpg.nix
+        ./nh.nix
+        ./ssh.nix
+        ./tldr.nix
+        ./udiskie.nix
+        ./scripts/scripts.nix
     ];
     
     options.modules.cli = {

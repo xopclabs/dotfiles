@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.tools.awscli;
+    cfg = config.modules.cli.awscli;
 in {
-    options.modules.tools.awscli = { enable = mkEnableOption "awscli"; };
+    options.modules.cli.awscli = { enable = mkEnableOption "awscli"; };
     config = mkIf cfg.enable {
         sops.secrets."aws/credentials".path = "/home/${config.home.username}/.aws/credentials";
         sops.secrets."aws/config".path = "/home/${config.home.username}/.aws/config";

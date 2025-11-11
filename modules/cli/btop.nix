@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.tools.btop;
+    cfg = config.modules.cli.btop;
 in {
-    options.modules.tools.btop = { enable = mkEnableOption "btop"; };
+    options.modules.cli.btop = { enable = mkEnableOption "btop"; };
     config = mkIf cfg.enable {
         programs.btop = {
             enable = true;

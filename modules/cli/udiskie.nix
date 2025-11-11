@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.tools.udiskie;
+    cfg = config.modules.cli.udiskie;
 in {
-    options.modules.tools.udiskie = { enable = mkEnableOption "udiskie"; };
+    options.modules.cli.udiskie = { enable = mkEnableOption "udiskie"; };
     config = mkIf cfg.enable {
         services.udiskie = {
             enable = true;
