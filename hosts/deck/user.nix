@@ -4,6 +4,7 @@
     imports = [
         ../../modules/default.nix
         ./home.nix
+        ./metadata.nix
         inputs.nix-colors.homeManagerModules.default
         inputs.nixvim.homeModules.nixvim
     ];
