@@ -6,6 +6,8 @@
     ];
     
     config.homelab = {
+        traefik.enable = true;
+
         ddns.enable = true;
 
         pihole_unbound.enable = true;
