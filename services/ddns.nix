@@ -2,10 +2,10 @@
 
 with lib;
 let
-    cfg = config.services.homelab.ddns;
+    cfg = config.services.ddns;
 in
 {
-    options.services.homelab.ddns = {
+    options.services.ddns = {
         enable = mkEnableOption "Dynamic DNS update service";
         
         updateInterval = mkOption {

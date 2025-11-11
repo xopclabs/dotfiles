@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.services.homelab.minecraft;
+    cfg = config.services.minecraft;
     
     betaSrc = pkgs.fetchurl {
         url = "https://meta.babric.glass-launcher.net/v2/versions/loader/b1.7.3/0.17.3/1.0.0-babric.2/server/jar";
@@ -18,7 +18,7 @@ let
     );
 in
 {
-    options.services.homelab.minecraft = {
+    options.services.minecraft = {
         enable = mkEnableOption "Minecraft servers";
             
         distantHorizons = {

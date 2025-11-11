@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.services.homelab.wireguard;
+    cfg = config.services.wireguard;
     
     # Function to generate peer configuration
     mkPeer = name: peerCfg: {
@@ -15,7 +15,7 @@ let
     generate-wg-client = pkgs.writeShellScriptBin "generate-wg-client" ''${builtins.readFile ./generate-wg-client}'';
 in
 {
-    options.services.homelab.wireguard = {
+    options.services.wireguard = {
         enable = mkEnableOption "WireGuard VPN server";
             
         listenPort = mkOption {

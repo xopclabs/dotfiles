@@ -2,10 +2,10 @@
 
 with lib;
 let
-    cfg = config.services.homelab.pihole_unbound;
+    cfg = config.services.pihole_unbound;
 in
 {
-    options.services.homelab.pihole_unbound = {
+    options.services.pihole_unbound = {
         enable = mkEnableOption "Pi-hole and Unbound DNS services";
         
         pihole = {
