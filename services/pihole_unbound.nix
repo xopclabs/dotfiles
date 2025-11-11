@@ -56,6 +56,20 @@ in
             mode = "0400";
         };
 
+        # Sops secret for custom hosts
+        sops.secrets.hosts = {
+            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            path = "/etc/dnsmasq.d/custom-hosts";
+            owner = "root";
+            group = "root";
+            mode = "0644";
+        };
+        # Configure dnsmasq to use custom hosts file
+        environment.etc."dnsmasq.d/custom-hosts.conf".text = ''
+            addn-hosts=/etc/dnsmasq.d/custom-hosts
+        '';
+        
+
         services.unbound = {
             enable = true;
             
@@ -138,6 +152,10 @@ in
                     # Use Unbound as upstream DNS
                     upstreams = [ "127.0.0.1#5335" ];
                     dnssec = true;
+                };
+                misc = {
+                    # Enable for extra hosts
+                    etc_dnsmasq_d = true;
                 };
             };
             privacyLevel = 0;
