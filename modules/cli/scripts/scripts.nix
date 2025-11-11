@@ -10,6 +10,7 @@ let
     run-training = pkgs.writeShellScriptBin "run-training" ''${builtins.readFile ./run-training.sh}'';
     create-split-comparison = pkgs.writeShellScriptBin "create-split-comparison" ''${builtins.readFile ./create-split-comparison.sh}'';
     wg-toggle = pkgs.writeShellScriptBin "wg-toggle" ''${builtins.readFile ./wg-toggle.sh}'';
+    smart-ls = pkgs.writeShellScriptBin "smart-ls" ''${builtins.readFile ./smart-ls.sh}'';
 in {
     options.modules.cli.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
@@ -20,6 +21,7 @@ in {
             run-training
             create-split-comparison
             wg-toggle
+            smart-ls
         ];
     };
 }
