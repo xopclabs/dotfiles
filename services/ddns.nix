@@ -2,10 +2,10 @@
 
 with lib;
 let
-    cfg = config.services.ddns;
+    cfg = config.homelab.ddns;
 in
 {
-    options.services.ddns = {
+    options.homelab.ddns = {
         enable = mkEnableOption "Dynamic DNS update service";
         
         updateInterval = mkOption {
@@ -23,7 +23,7 @@ in
     
     config = mkIf cfg.enable {
         sops.secrets.ddns = {
-            sopsFile = ../secrets/hosts/homelab.yaml;
+            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "root";
             mode = "0400";
         };

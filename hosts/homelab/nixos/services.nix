@@ -5,7 +5,7 @@
         ../../../services/default.nix
     ];
     
-    config.services = {
+    config.homelab = {
         ddns.enable = true;
 
         pihole_unbound.enable = true;

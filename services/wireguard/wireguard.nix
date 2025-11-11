@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.services.wireguard;
+    cfg = config.homelab.wireguard;
     
     # Function to generate peer configuration
     mkPeer = name: peerCfg: {
@@ -15,7 +15,7 @@ let
     generate-wg-client = pkgs.writeShellScriptBin "generate-wg-client" ''${builtins.readFile ./generate-wg-client}'';
 in
 {
-    options.services.wireguard = {
+    options.homelab.wireguard = {
         enable = mkEnableOption "WireGuard VPN server";
             
         listenPort = mkOption {
@@ -71,7 +71,7 @@ in
         sops.secrets = mkMerge [
             {
                 "wg/privatekey" = {
-                    sopsFile = ../../secrets/hosts/${config.networking.hostName}.yaml;
+                    sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
                     owner = "root";
                     group = "root";
                     mode = "0400";
@@ -80,7 +80,7 @@ in
             (mapAttrs' (name: _: {
                 name = "wg/peers/${name}/presharedkey"; 
                 value = { 
-                    sopsFile = ../../secrets/hosts/${config.networking.hostName}.yaml;
+                    sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
                     owner = "root"; 
                     group = "root"; 
                     mode = "0400"; 

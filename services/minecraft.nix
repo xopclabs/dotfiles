@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.services.minecraft;
+    cfg = config.homelab.minecraft;
     
     betaSrc = pkgs.fetchurl {
         url = "https://meta.babric.glass-launcher.net/v2/versions/loader/b1.7.3/0.17.3/1.0.0-babric.2/server/jar";
@@ -18,7 +18,7 @@ let
     );
 in
 {
-    options.services.minecraft = {
+    options.homelab.minecraft = {
         enable = mkEnableOption "Minecraft servers";
             
         distantHorizons = {
@@ -52,13 +52,13 @@ in
         users.groups.minecraft.members = [ "homelab" ];
 
         sops.secrets."minecraft/ops.json" = {
-            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "minecraft";
             group = "minecraft";
             mode = "0660";
         };
         sops.secrets."minecraft/whitelist.json" = {
-            sopsFile = ../secrets/hosts/${config.networking.hostName}.yaml;
+            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "minecraft";
             group = "minecraft";
             mode = "0660";
