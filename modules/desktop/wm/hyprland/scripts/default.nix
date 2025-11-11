@@ -2,7 +2,7 @@
 
 let
     cfg = config.modules.desktop.wm.hyprland;
-    hardwareCfg = config.hardware;
+    hardwareCfg = config.metadata.hardware;
     hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./hypr-windowrule}'';
     toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./toggle-keyboard}'';
     monitor-dpms = pkgs.writeShellScriptBin "monitor-dpms" ''

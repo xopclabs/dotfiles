@@ -7,6 +7,7 @@
         inputs.nix-colors.homeManagerModules.default
 	    inputs.nixvim.homeModules.nixvim
     ];
+
     config.modules = {
         theming.stylix.enable = true;
         desktop.other.gtk.enable = true;

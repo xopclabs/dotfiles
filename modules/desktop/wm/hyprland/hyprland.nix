@@ -3,7 +3,7 @@
 let
     cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    hardwareCfg = config.hardware;
+    hardwareCfg = config.metadata.hardware;
     monitor_internal = "desc:${hardwareCfg.monitors.internal.name}";
     monitor_external = "desc:${hardwareCfg.monitors.external.name}";
     cursorTheme = "OpenZone_Black";

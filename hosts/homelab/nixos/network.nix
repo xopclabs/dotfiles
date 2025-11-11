@@ -6,12 +6,14 @@
         useDHCP = false;
             interfaces.ens18 = {
             useDHCP = false;
-            ipv4.addresses = [{
-                    address = "192.168.254.10";
+            ipv4.addresses = [
+                {
+                    address = config.metadata.network.ipv4;
                     prefixLength = 24;
-                }];
+                }
+            ];
         };
-        defaultGateway = "192.168.254.1";
+        defaultGateway = config.metadata.network.defaultGateway;
         nameservers = [ "127.0.0.1" "1.1.1.1" ];
         
         networkmanager = {

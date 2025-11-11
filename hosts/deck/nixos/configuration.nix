@@ -2,6 +2,9 @@
 
 {
     imports = [
+        ../../metadata.nix
+        ../metadata.nix
+        
         ./disko.nix
         ./system.nix
         ./btrfs.nix

@@ -4,7 +4,7 @@ let
     cfg = config.modules.desktop.wm.kanshi;
 
     # Get monitor names from configuration
-    internalMonitor = config.hardware.monitors.internal or null;
+    internalMonitor = config.metadata.hardware.monitors.internal or null;
     externalMonitor = config.hardware.monitors.external or null;
 
     # Check if monitors are configured

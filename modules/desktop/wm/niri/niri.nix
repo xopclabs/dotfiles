@@ -2,7 +2,7 @@
 
 let
     cfg = config.modules.desktop.wm.niri;
-    hardwareCfg = config.hardware;
+    hardwareCfg = config.metadata.hardware;
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
 in {
