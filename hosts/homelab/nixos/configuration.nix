@@ -12,6 +12,6 @@
 	    ./ssh.nix
         ./remote-builds.nix
 
-        ./services
+        ./services.nix
     ];
 }
