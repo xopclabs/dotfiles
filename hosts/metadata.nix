@@ -30,7 +30,7 @@ with lib;
                     };
                 };
             });
-            default = {};
+            default = null;
             description = "Hardware monitor configuration";
         };
 

@@ -43,7 +43,7 @@ in {
                         natural-scroll = true;
                         scroll-factor = 0.5;
                     };
-                    tablet.map-to-output = hardwareCfg.monitors.internal.name;
+                    tablet.map-to-output = lib.mkIf (hardwareCfg.monitors.internal != null) hardwareCfg.monitors.internal.name;
                 };
 
                 # Environment variables
