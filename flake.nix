@@ -123,6 +123,7 @@
                 laptop  = mkSystem inputs.nixpkgs "x86_64-linux" "laptop"  "xopc"    true;
                 deck    = mkSystem inputs.nixpkgs "x86_64-linux" "deck"    "xopc"    true;
                 homelab = mkSystem inputs.nixpkgs "x86_64-linux" "homelab" "homelab" true;
+                vps     = mkSystem inputs.nixpkgs "x86_64-linux" "vps"     "vps"     true;
             };
             homeConfigurations = {
                 #                              Architecture   Hostname Username

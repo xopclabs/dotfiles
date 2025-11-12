@@ -23,6 +23,10 @@ creation_rules:
     key_groups:
       - age:
         - *personal
+  - path_regex: secrets/hosts/vps.yaml$
+    key_groups:
+      - age:
+        - *personal
   - path_regex: secrets/hosts/work.yaml$
     key_groups:
       - age:
