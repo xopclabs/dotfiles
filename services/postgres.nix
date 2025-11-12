@@ -78,7 +78,6 @@ in
         services.postgresql = {
             enable = true;
             package = cfg.package;
-            port = cfg.port;
             dataDir = cfg.dataDir;
             enableTCPIP = cfg.enableTCPIP;
             authentication = cfg.authentication;
@@ -90,6 +89,9 @@ in
             }) cfg.ensureUsers;
             
             settings = mkMerge [
+                {
+                    port = cfg.port;
+                }
                 {
                     # Sensible defaults
                     max_connections = mkDefault 100;

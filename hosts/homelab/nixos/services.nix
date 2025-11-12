@@ -60,6 +60,20 @@
             };
         };
 
+        # Torrents
+        transmission = {
+            enable = true;
+            subdomain = "torrent.vm.local";
+        };
+
+        # Media automation
+        arr-stack = {
+            enable = true;
+            prowlarr.subdomain = "prowlarr.vm.local";
+            radarr.subdomain = "movies.vm.local";
+            sonarr.subdomain = "tv.vm.local";
+        };
+
         # Geolocation
         traccar = {
             enable = true;
