@@ -5,7 +5,7 @@ let
 
     # Get monitor names from configuration
     internalMonitor = config.metadata.hardware.monitors.internal or null;
-    externalMonitor = config.hardware.monitors.external or null;
+    externalMonitor = config.metadata.hardware.monitors.external or null;
 
     # Check if monitors are configured
     monitorsConfigured = internalMonitor != null && externalMonitor != null;
