@@ -9,6 +9,11 @@ in
         enable = mkEnableOption "Pi-hole and Unbound DNS services";
         
         pihole = {
+            subdomain = mkOption {
+                type = types.str;
+                description = "Subdomain for Pi-hole";
+            };
+
             webPort = mkOption {
                 type = types.str;
                 default = "8080";
@@ -51,14 +56,14 @@ in
     config = mkIf cfg.enable {
         # Sops secret for domain name
         sops.secrets.domain = {
-            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../secrets/shared/selfhost.yaml;
             owner = "unbound";
             mode = "0400";
         };
 
         # Sops secret for custom hosts
         sops.secrets.hosts = {
-            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../secrets/shared/selfhost.yaml;
             path = "/etc/dnsmasq.d/custom-hosts";
             owner = "root";
             group = "root";
@@ -173,7 +178,7 @@ in
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [
             {
                 name = "pihole";
-                subdomain = "pihole.vm.local";
+                subdomain = cfg.pihole.subdomain;
                 backendUrl = "http://127.0.0.1:${cfg.pihole.webPort}";
             }
         ];

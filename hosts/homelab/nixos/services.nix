@@ -7,9 +7,27 @@
     
     config.homelab = {
         # Essentials
-        traefik.enable = true;
         ddns.enable = true;
-        pihole_unbound.enable = true;
+        traefik = {
+            enable = true;
+            dashboardSubdomain = "traefik.vm.local";
+            certificateDomains = [
+                {
+                    # VM services
+                    main = "*.vm.local.$DOMAIN";
+                    sans = [ "vm.local.$DOMAIN" ];
+                }
+                {
+                    # Orange-Pi services 
+                    main = "*.pi.local.$DOMAIN";
+                    sans = [ "pi.local.$DOMAIN" ];
+                }
+            ];
+        };
+        pihole_unbound = {
+            enable = true;
+            pihole.subdomain = "pihole.vm.local";
+        };
 
         # VPN
         wireguard = {
@@ -43,7 +61,10 @@
         };
 
         # Geolocation
-        traccar.enable = true;
+        traccar = {
+            enable = true;
+            subdomain = "traccar.vm.local";
+        };
 
         # Gaming servers
         minecraft = {

@@ -7,6 +7,11 @@ in
 {
     options.homelab.traccar = {
         enable = mkEnableOption "Traccar GPS tracking system";
+
+        subdomain = mkOption {
+            type = types.str;
+            description = "Subdomain for Traccar";
+        };
     };
     
     config = mkIf cfg.enable {
@@ -47,15 +52,15 @@ in
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [
             {
                 name = "traccar";
-                subdomain = "traccar.vm.local";
+                subdomain = cfg.subdomain;
                 backendUrl = "http://127.0.0.1:8082";
-                middlewares = [ "default-headers" "home-ipwhitelist" ];
             }
             {
                 name = "traccar-api";
-                subdomain = "api.traccar.vm.local";
+                subdomain = "api.${cfg.subdomain}";
                 backendUrl = "http://127.0.0.1:5055";
-                middlewares = [ "default-headers" ];
+                # Explicitly allow public access even on .local subdomain
+                middlewares = [ "default-headers" "https-redirect" ];
             }
         ];
     };

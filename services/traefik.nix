@@ -4,20 +4,35 @@ with lib;
 let
     cfg = config.homelab.traefik;
     
+    # Helper function to determine if a subdomain requires IP whitelisting
+    # Local subdomains (*.local) should be whitelisted, public ones should not
+    requiresWhitelist = subdomain: 
+        builtins.match ".*\\.local$" subdomain != null;
+    
     # Helper function to create a Traefik route with sensible defaults
     # Usage: mkRoute { name = "service-name"; subdomain = "subdomain.vm.local"; backendUrl = "http://ip:port"; }
     mkRoute = { 
         name,
         subdomain,
         backendUrl,
-        middlewares ? [ "default-headers" "https-redirect" "home-ipwhitelist" ],
+        middlewares ? null,
         passHostHeader ? true,
         certResolver ? "cloudflare",
         entryPoints ? [ "websecure" ]
-    }: {
+    }: 
+    let
+        # Determine default middlewares based on subdomain pattern
+        defaultMiddlewares = 
+            if requiresWhitelist subdomain
+            then [ "default-headers" "https-redirect" "home-ipwhitelist" ]
+            else [ "default-headers" "https-redirect" ];
+        
+        actualMiddlewares = if middlewares != null then middlewares else defaultMiddlewares;
+    in {
         routers.${name} = {
             rule = "Host(`${subdomain}.$DOMAIN`)";
-            inherit entryPoints middlewares;
+            inherit entryPoints;
+            middlewares = actualMiddlewares;
             service = name;
             tls = { inherit certResolver; };
         };
@@ -36,7 +51,36 @@ in
 {
     options.homelab.traefik = {
         enable = mkEnableOption "Traefik reverse proxy";
-        
+
+        dashboardSubdomain = mkOption {
+            type = types.str;
+            default = "traefik.vm.local";
+            description = "Subdomain for Traefik dashboard (e.g., 'traefik.vm.local' or 'traefik.vps.local')";
+        };
+
+        certificateDomains = mkOption {
+            type = types.listOf (types.submodule {
+                options = {
+                    main = mkOption {
+                        type = types.str;
+                        description = "Main domain pattern (e.g., '*.vm.local.$DOMAIN' or '*.$DOMAIN')";
+                    };
+                    sans = mkOption {
+                        type = types.listOf types.str;
+                        default = [];
+                        description = "Subject Alternative Names";
+                    };
+                };
+            });
+            default = [
+                {
+                    main = "*.vm.local.$DOMAIN";
+                    sans = [ "vm.local.$DOMAIN" ];
+                }
+            ];
+            description = "List of certificate domain patterns to request";
+        };
+
         routes = mkOption {
             type = types.listOf (types.submodule {
                 options = {
@@ -46,16 +90,16 @@ in
                     };
                     subdomain = mkOption {
                         type = types.str;
-                        description = "Subdomain (e.g., 'pihole.vm.local')";
+                        description = "Subdomain (e.g., 'pihole.vm.local', 'api', etc.)";
                     };
                     backendUrl = mkOption {
                         type = types.str;
                         description = "Backend URL (e.g., 'http://192.168.1.10:8080')";
                     };
                     middlewares = mkOption {
-                        type = types.listOf types.str;
-                        default = [ "default-headers" "https-redirect" "home-ipwhitelist" ];
-                        description = "List of middlewares to apply";
+                        type = types.nullOr (types.listOf types.str);
+                        default = null;
+                        description = "List of middlewares to apply (null = auto-detect based on subdomain)";
                     };
                     passHostHeader = mkOption {
                         type = types.bool;
@@ -81,7 +125,7 @@ in
     
     config = mkIf cfg.enable {
         sops.secrets.traefik = {
-            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../secrets/shared/selfhost.yaml;
         };
 
         services.traefik = {
@@ -182,23 +226,20 @@ in
                         ];
                     };
 
-                    routers.traefik = {
-                        rule = "Host(`traefik.vm.local.$DOMAIN`)";
+                    routers.traefik = 
+                    let
+                        dashboardMiddlewares = 
+                            if requiresWhitelist cfg.dashboardSubdomain
+                            then [ "default-headers" "https-redirect" "home-ipwhitelist" ]
+                            else [ "default-headers" "https-redirect" ];
+                    in {
+                        rule = "Host(`${cfg.dashboardSubdomain}.$DOMAIN`)";
                         entryPoints = [ "websecure" ];
                         service = "api@internal";
-                        middlewares = [
-                            "default-headers"
-                            "https-redirect"
-                            "home-ipwhitelist"
-                        ];
+                        middlewares = dashboardMiddlewares;
                         tls = {
                             certResolver = "cloudflare";
-                            domains = [
-                                {
-                                    main = "*.vm.local.$DOMAIN";
-                                    sans = [ "vm.local.$DOMAIN" ];
-                                }
-                            ];
+                            domains = cfg.certificateDomains;
                         };
                     };
                 }

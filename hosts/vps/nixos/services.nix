@@ -7,8 +7,26 @@
     
     config.homelab = {
         # Essentials
-        traefik.enable = true;
-        pihole_unbound.enable = true;
+        traefik = {
+            enable = true;
+            dashboardSubdomain = "traefik.vps.local";
+            certificateDomains = [
+                {
+                    # Public services
+                    main = "*.$DOMAIN";
+                    sans = [ "$DOMAIN" ];
+                }
+                {
+                    # VPS local network services
+                    main = "*.vps.local.$DOMAIN";
+                    sans = [ "vps.local.$DOMAIN" ];
+                }
+            ];
+        };
+        pihole_unbound = {
+            enable = true;
+            pihole.subdomain = "pihole.vps.local";
+        };
 
         # VPN
         wireguard = {
