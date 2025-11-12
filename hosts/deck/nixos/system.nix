@@ -86,12 +86,6 @@
         HibernateDelaySec=3h 
     '';
     
-    # Ignore power button presses
-    # services.logind.settings.Login = {
-        # HandlePowerKey = lib.mkForce "suspend-then-hibernate";
-	    # HandlePowerKeyLongPress = lib.mkForce "poweroff";
-    # };
-
     # Docker support
     virtualisation.docker = {
         enable = true;

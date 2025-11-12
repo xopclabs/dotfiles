@@ -1,32 +1,14 @@
 { config, lib, inputs, ...}:
 
 {
-    imports = [ 
-        ../../modules/default.nix 
-        ./sops.nix
+    imports = [
+        ../../modules/default.nix
         ./home.nix
+        ./metadata.nix
         inputs.nix-colors.homeManagerModules.default
         inputs.nixvim.homeModules.nixvim
-        inputs.stylix.homeModules.stylix
     ];
-    config.hardware = {
-        monitors = {
-            internal = {
-                name = "Valve Corporation ANX7530 U 0x00000001";
-                mode = "800x1280@90";
-                scale = 1.0;
-                transform = "270";
-                position = "320,1080";
-            };
-            external = {
-                name = "AOC 22V2WG5 0x000000BF";
-                mode = "1920x1080@74.97";
-                scale = 1.0;
-                position = "0,0";
-            };
-        };
-
-    };
+    
     config.modules = {
         desktop = {
             bars = {
@@ -36,11 +18,15 @@
             };
             launchers.tofi.enable = true;
             wm = {
+                kanshi.enable = true;
                 hyprland = {
                     enable = true;
                     extraAutostart = [
                         "[workspace 7 silent] steam"
                     ];
+                };
+                niri = {
+                    enable = false;
                 };
                 hypridle = {
                     enable = true;
@@ -49,6 +35,7 @@
                     lock.enable = false;
                     suspend.timeout = 30 * 60;
                 };
+                scripts.enable = true;
             };
             other = {
                 xdg.enable = true;
@@ -71,9 +58,7 @@
             zoxide.enable = true;
             bat.enable = true;
             fzf.enable = true;
-        };
 
-        tools = {
             git.enable = true;
             gpg.enable = false;
             ssh.enable = true;
@@ -102,8 +87,6 @@
 
         gui = {
             flameshot.enable = false;
-            kicad.enable = false;
-            plover.enable = false;
         };
 
         browsers = {
@@ -119,6 +102,12 @@
         packages = {
             common.enable = true;
             optional.enable = true;
+        };
+
+        other = {
+            kicad.enable = false;
+            plover.enable = false;
+            minecraft.enable = true;
         };
     };
 

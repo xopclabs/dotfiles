@@ -3,37 +3,11 @@
 let
     cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
-    hardwareCfg = config.hardware;
+    hardwareCfg = config.metadata.hardware;
     monitor_internal = "desc:${hardwareCfg.monitors.internal.name}";
     monitor_external = "desc:${hardwareCfg.monitors.external.name}";
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
-    hypr-windowrule = pkgs.writeShellScriptBin "hypr-windowrule" ''${builtins.readFile ./scripts/hypr-windowrule}'';
-    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./scripts/bar-restart}'';
-    toggle-keyboard = pkgs.writeShellScriptBin "toggle-keyboard" ''${builtins.readFile ./scripts/toggle-keyboard}'';
-    monitor-dpms = pkgs.writeShellScriptBin "monitor-dpms" ''
-        ${builtins.replaceStrings 
-            ["@INTERNAL_MONITOR@" "@EXTERNAL_MONITOR@"] 
-            [hardwareCfg.monitors.internal.name hardwareCfg.monitors.external.name] 
-            (builtins.readFile ./scripts/monitor-dpms)
-        }
-    '';
-    screenshot = pkgs.writeShellScriptBin "screenshot" ''
-    	grim -g "$(slurp -d)" - | wl-copy
-    '';
-    annotate = pkgs.writeShellScriptBin "annotate" ''
-        wl-paste | swappy -f - -o - | wl-copy
-    '';
-    screenrecord = pkgs.writeShellScriptBin "screenrecord" ''
-        # Check if wf-recorder is currently running
-        if pgrep -x wf-recorder > /dev/null; then
-            echo "Stopping wf-recorder..."
-            pkill -SIGINT wf-recorder
-        else
-            echo "Starting wf-recorder..."
-            wf-recorder -g "$(slurp)" -f ~/screenshots/$(date +'%Y-%m-%d_%H-%M-%S').mkv &
-        fi
-    '';
 in {
     options.modules.desktop.wm.hyprland = {
         enable = lib.mkEnableOption "hyprland";
@@ -48,21 +22,13 @@ in {
             description = "Extra commands to run on startup in exec-once.";
         };
     };
-    imports = [
-        #./hyprlock.nix
-        ./hypridle.nix
-        ./kanshi.nix
-    ]; 
+    imports = [ ./scripts ];
+
     config = lib.mkIf cfg.enable {
+        
         home.packages = [
-            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard pkgs.wf-recorder pkgs.hypridle  pkgs.socat
+            pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard 
             pkgs.libinput pkgs.jq
-            hypr-windowrule
-            screenshot
-            annotate pkgs.swappy
-            screenrecord
-            toggle-keyboard
-            monitor-dpms
         ];
 
         home.pointerCursor = {
@@ -88,7 +54,7 @@ in {
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
-                # We define monitors with kanshi in ./display.nix
+                # We define monitors with kanshi
                 #monitor = [
                 #    "${monitor_external}, 1920x1080@74.97, 0x0, 1"
                 #    "${monitor_internal}, 1920x1080@60, 1920x0, 1"
@@ -103,7 +69,7 @@ in {
                     "[workspace 9 silent] slack"
                 ] ++ lib.optional config.modules.desktop.bars.waybar.enable "waybar"
                   ++ lib.optional config.modules.cli.tmux.enable "tmux new -s main"
-                  ++ lib.optional config.modules.gui.plover.enable "plover"
+                  ++ lib.optional config.modules.other.plover.enable "plover"
                   ++ [
                   ] ++ cfg.extraAutostart;
 
@@ -309,26 +275,28 @@ in {
                 bindm = [
                     "$mod,mouse:272,movewindow"
                 ];
-                bindle = let e = "exec, ags -b hypr -r"; in [
-                    ",XF86MonBrightnessUp,   ${e} 'brightness.screen += 0.05; indicator.display()'"
-                    ",XF86MonBrightnessDown, ${e} 'brightness.screen -= 0.05; indicator.display()'"
-                    ",XF86KbdBrightnessUp,   ${e} 'brightness.kbd++; indicator.kbd()'"
-                    ",XF86KbdBrightnessDown, ${e} 'brightness.kbd--; indicator.kbd()'"
-                    ",XF86AudioRaiseVolume,  ${e} 'audio.speaker.volume += 0.1; indicator.speaker()'"
-                    ",XF86AudioLowerVolume,  ${e} 'audio.speaker.volume -= 0.1; indicator.speaker()'"
+                bindle = [
+                    ",XF86MonBrightnessUp,   exec, brightnessctl s +5%"
+                    ",XF86MonBrightnessDown, exec, brightnessctl s 5%-"
+                    ",XF86KbdBrightnessUp,   exec, brightnessctl -d '*kbd*' s +1"
+                    ",XF86KbdBrightnessDown, exec, brightnessctl -d '*kbd*' s 1-"
+                    ",XF86AudioRaiseVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
+                    ",XF86AudioLowerVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
                 ];
 
                 bindl = [
                     ",switch:on:[Lid switch], exec, ${lock}"
                     ",switch:on:[Lid switch], exec, systemctl suspend"
-                    ",switch:off:[Lid switch], exec, freshman_start"
                 
                     # F13, F14 binds for keyboard layouts
                     ", XF86Tools, exec, hyprctl switchxkblayout sweep-keyboard 0"
                     ", XF86Tools, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 0"
                     ", XF86Launch5, exec, hyprctl switchxkblayout sweep-keyboard 1"
                     ", XF86Launch5, exec, hyprctl switchxkblayout zmk-project-sweep-keyboard 1"
+
+                    ", XF86PowerOff, exec, systemctl suspend"
                 ];
+
             };
             extraConfig = ''
                 device {
@@ -352,8 +320,6 @@ in {
         };
         # UWSM environment configuration for Hyprland
         xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh";
-
-        programs.zsh.shellAliases = { startx = "Hyprland"; };
 
     };
 }

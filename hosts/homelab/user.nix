@@ -3,11 +3,11 @@
 {
     imports = [ 
         ../../modules/default.nix 
-        ./sops.nix
         ./home.nix
         inputs.nix-colors.homeManagerModules.default
-	inputs.nixvim.homeModules.nixvim
+	    inputs.nixvim.homeModules.nixvim
     ];
+
     config.modules = {
         theming.stylix.enable = true;
         desktop.other.gtk.enable = true;
@@ -18,14 +18,15 @@
                 enable = true;
                 statusPosition = "bottom";
             };
-            starship.enable = true;
+            starship = {
+                enable = true;
+                userBlockColor = "yellow";
+            };
             eza.enable = true;
             zoxide.enable = true;
-            bat.enable = true;
+            bat.enable = true; 
             fzf.enable = true;
-        };
 
-        tools = {
             git.enable = true;
             gpg.enable = false;
             ssh.enable = true;

@@ -118,6 +118,8 @@
     "cursor.composer.shouldAllowCustomModes": true,
     "remote.SSH.remotePlatform": {
         "ml-workspace-1": "linux",
-        "freshman": "linux"
+        "freshman": "linux",
+        "homelab": "linux",
+        "vps": "linux"
     }
 }

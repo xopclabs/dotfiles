@@ -33,6 +33,18 @@
 
         jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
         jovian.inputs.nixpkgs.follows = "nixpkgs";
+
+        yeetmouse.url = "github:AndyFilter/YeetMouse?dir=nix";
+        yeetmouse.inputs.nixpkgs.follows = "nixpkgs";
+
+        prismlauncher.url = "github:Diegiwg/PrismLauncher-Cracked";
+        prismlauncher.inputs.nixpkgs.follows = "nixpkgs";
+
+        nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+        nix-minecraft.inputs.nixpkgs.follows = "nixpkgs";
+
+        niri.url = "github:sodiboo/niri-flake";
+        niri.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -52,7 +64,10 @@
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                         }
-                    ] ++ (if hostname == "deck" then [ inputs.jovian.nixosModules.default ] else []) ++ (if useHomeManager then [
+                    ] ++ (if hostname == "deck" then [ 
+                        inputs.jovian.nixosModules.default 
+                        inputs.yeetmouse.nixosModules.default
+                    ] else []) ++ (if useHomeManager then [
                         inputs.home-manager.nixosModules.home-manager
                         {
                             home-manager = {
@@ -64,6 +79,10 @@
                                     imports = [
                                         (./. + "/hosts/${hostname}/user.nix")
                                         (./. + "/hosts/metadata.nix")
+                                        inputs.sops-nix.homeManagerModules.sops
+                                        inputs.stylix.homeModules.stylix
+                                        inputs.niri.homeModules.niri
+                                        inputs.niri.homeModules.stylix
                                     ];
                                 };
                             };
@@ -85,7 +104,9 @@
                         (./. + "/hosts/${hostname}/user.nix")
                         (./. + "/hosts/metadata.nix")
                         inputs.sops-nix.homeManagerModules.sops
-                        inputs.stylix.homeManagerModules.stylix
+                        inputs.stylix.homeModules.stylix
+                        inputs.niri.homeModules.niri
+                        inputs.niri.homeModules.stylix
                         {
                             home = {
                                 username = username;

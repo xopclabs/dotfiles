@@ -9,12 +9,11 @@
             #    ipv4.method = "auto";
             #    ipv6.method = "disabled";
             #};
-            dns = "systemd-resolved";
+            dns = "dnsmasq";
         };
         wireless.iwd.enable = true;
         # enableIPv6 = false;
     };
-    services.resolved.enable = true;
     # Disable ipv6
     # boot.kernelParams = ["ipv6.disable=1"];
     sops.secrets."networkmanager/home" = {

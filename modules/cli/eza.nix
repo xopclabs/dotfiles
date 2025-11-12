@@ -8,7 +8,7 @@ in {
     config = mkIf cfg.enable {
         programs.eza = {
             enable = true;
-            enableZshIntegration = true;
+            enableZshIntegration = false;  # Using smart-ls script instead
             icons = "always";
             colors = "always";
             git = true;
@@ -16,6 +16,13 @@ in {
                 "--group-directories-first"
                 "--header"
             ];
+        };
+
+        # Alias ls to smart-ls
+        programs.zsh.shellAliases = {
+            ls = "smart-ls";
+            ll = "smart-ls -l";
+            la = "smart-ls -la";
         };
     };
 } 

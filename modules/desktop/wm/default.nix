@@ -3,10 +3,14 @@
 with lib;
 let
     cfg = config.modules.desktop.wm;
-    wmPriorities = [ "hyprland" ];
+    wmPriorities = [ "hyprland" "niri" ];
 in {
     imports = [
         ./hyprland/hyprland.nix
+        ./niri/niri.nix
+        ./kanshi.nix
+        ./hypridle.nix
+        ./scripts/scripts.nix
     ];
     
     options.modules.desktop.wm = {
@@ -21,6 +25,9 @@ in {
         modules.desktop.wm.default = utils.selectDefault {
             inherit cfg;
             priorities = wmPriorities;
+        };
+        programs.zsh.shellAliases = mkIf (config.modules.desktop.wm.default != null) {
+          startx = config.modules.desktop.wm.default;
         };
     };
 }

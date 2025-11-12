@@ -31,6 +31,11 @@ in {
         aws = {
             enable = mkEnableOption "aws module";
         };
+        userBlockColor = mkOption {
+            type = types.str;
+            default = "green";
+            description = "Background color for the OS logo and username block";
+        };
     };
     config = mkIf cfg.enable {
         programs.starship = {
@@ -69,7 +74,7 @@ in {
                 os = {
                     disabled = false;
                     format = "[ $symbol ]($style)";
-                    style = "bg:#${green} fg:#${fg}";
+                    style = "bg:#${colors.${cfg.userBlockColor}} fg:#${fg}";
                     symbols = {
                         Windows = "󰍲";
                         Ubuntu = "󰕈";
@@ -82,7 +87,7 @@ in {
                 };
                 username = {
                     show_always = true;
-                    style_user = "bg:#${green} fg:#${fg}";
+                    style_user = "bg:#${colors.${cfg.userBlockColor}} fg:#${fg}";
                     style_root = "bg:#${red} fg:#${fg}";
                     format = "[$user ]($style)";
                 };
@@ -90,7 +95,7 @@ in {
                     ssh_only = true;
                     ssh_symbol = "";
                     format = "[@$hostname]($style)";
-                    style = "bg:#${green} fg:#${fg} ";
+                    style = "bg:#${colors.${cfg.userBlockColor}} fg:#${fg} ";
                     disabled = false;
                 };
 

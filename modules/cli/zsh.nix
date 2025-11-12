@@ -30,7 +30,15 @@ in {
             enable = true;
             dotDir = "${config.xdg.configHome}/zsh";
 
-            envExtra = cfg.envExtra;
+            envExtra = lib.mkMerge [
+                cfg.envExtra
+                (lib.mkIf cfg.envFile.enable ''
+                    # Source env file if exists
+                    if [[ -f "${cfg.envFile.path}" ]]; then
+                        source "${cfg.envFile.path}"
+                    fi
+                '')
+            ];
             completionInit = cfg.completionInit;
             initContent = lib.mkMerge [
                 # Before everything
@@ -39,12 +47,6 @@ in {
                 (lib.mkOrder 550 cfg.initContentBeforeCompInit)
                 # Default place
                 (lib.mkOrder 1000 cfg.initContent)
-                (lib.mkOrder 1001 ''
-                    # Source env file if exitsts
-                    if [[ -f "${cfg.envFile.path}" ]]; then
-                        source "${cfg.envFile.path}"
-                    fi
-                '')
                 # After everything
                 #(lib.mkOrder 1500 "")
             ];
@@ -64,11 +66,10 @@ in {
 
             shellAliases = {
                 mkdir = "mkdir -vp";
-                rm = "rm -iv";
-                mv = "mv -iv";
-                cp = "cp -riv";
+                rm = "rm";
+                mv = "mv -i";
+                cp = "cp -ri";
                 grep = "grep --color=auto";
-                cat = "bat --paging=never --style=plain";
                 visecret = "sops $NIXOS_CONFIG_DIR/hosts/laptop/secrets.yaml";
             };
 

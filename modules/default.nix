@@ -28,13 +28,13 @@ in
         ./file_managers
         ./editors
         ./cli
-        ./tools
         ./terminals
         ./gui
         ./desktop
         ./players
         ./packages
         ./theming
+        ./other
     ];
 
     # Export the utility functions

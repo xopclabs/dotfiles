@@ -19,7 +19,8 @@ in {
             iputils
             usbutils
             pciutils
-            busybox
+            coreutils-full
+            dig
             ps
             brightnessctl
             ripgrep
@@ -44,10 +45,8 @@ in {
             pfetch
             sops
             devenv
-	    dust
-	    ncdu
-	    # programming
-	    d2
+            dust duf
+            ncdu
         ];
     };
 }

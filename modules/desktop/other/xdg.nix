@@ -91,5 +91,7 @@ in {
                     
                 };
         };
+        # Force the re-write of the mimeapps.list
+        xdg.configFile."mimeapps.list".force = true;
     };
 }

@@ -9,6 +9,7 @@
     nix = {
         settings.auto-optimise-store = true;
         settings.allowed-users = [ "homelab" ];
+        settings.trusted-users = [ "root" "homelab" ];
         gc = {
             automatic = true;
             dates = "weekly";
@@ -17,11 +18,10 @@
         extraOptions = ''
             experimental-features = nix-command flakes pipe-operators
             keep-outputs = true
-            trusted-users = root homelab
         '';
     };
     nixpkgs.config.allowUnfree = true;
-    environment.defaultPackages = [ pkgs.sudo ];
+    environment.defaultPackages = [ pkgs.sudo pkgs.vim ];
     environment.systemPackages = map lib.lowPrio [
         pkgs.curl
         pkgs.gitMinimal

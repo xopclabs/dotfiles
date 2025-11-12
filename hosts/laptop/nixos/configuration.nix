@@ -2,6 +2,9 @@
 
 {
     imports = [
+        ../../metadata.nix
+        ../metadata.nix
+        
         ./system.nix
         ./user.nix
         ./network.nix

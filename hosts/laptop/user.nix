@@ -1,38 +1,23 @@
 { config, lib, inputs, ...}:
 
 {
-    imports = [ 
-        ../../modules/default.nix 
-        ./sops.nix
+    imports = [
+        ../../modules/default.nix
         ./home.nix
+        ./metadata.nix
         inputs.nix-colors.homeManagerModules.default
         inputs.nixvim.homeModules.nixvim
-        inputs.stylix.homeModules.stylix
     ];
-    config.hardware = {
-        monitors = {
-            internal = {
-                name = "BOE 0x06B7";
-                mode = "1920x1080@60";
-                scale = 1.0;
-                position = "0,1080";
-            };
-            external = {
-                name = "AOC 22V2WG5 0x000000BF";
-                mode = "1920x1080@74.97";
-                scale = 1.0;
-                position = "0,0";
-            };
-        };
-
-    };
+    
     config.modules = {
         desktop = {
             bars.waybar.enable = true;
             launchers.tofi.enable = true;
             wm = {
+                kanshi.enable = true;
                 hyprland.enable = true;
                 hypridle.enable = true;
+                scripts.enable = true;
             };
             other = {
                 xdg.enable = true;
@@ -55,9 +40,7 @@
             zoxide.enable = true;
             bat.enable = true;
             fzf.enable = true;
-        };
 
-        tools = {
             git.enable = true;
             gpg.enable = false;
             ssh.enable = true;
@@ -86,8 +69,6 @@
 
         gui = {
             flameshot.enable = false;
-            kicad.enable = false;
-            plover.enable = true;
         };
 
         browsers = {
@@ -104,6 +85,12 @@
             common.enable = true;
             optional.enable = true;
         };
+
+        other = {
+            kicad.enable = false;
+            plover.enable = true;
+        };
+
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

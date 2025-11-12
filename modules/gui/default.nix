@@ -6,8 +6,6 @@ let
 in {
     imports = [
         ./flameshot.nix
-        ./kicad.nix
-        ./plover.nix
         ./wl-kbptr.nix
     ];
 }

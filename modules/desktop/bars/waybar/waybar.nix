@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.modules.desktop.bars.waybar;
+    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./bar-restart}'';
 in {
     options.modules.desktop.bars.waybar = {
         enable = mkEnableOption "waybar";
@@ -14,9 +15,10 @@ in {
     };
     imports = [ ./icons.nix ];
     config = mkIf cfg.enable {
+        home.packages = [ bar-restart ];
         programs.waybar = {
             enable = true;
-	    # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
+	        # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
             settings = {
                 mainBar = let
                     drawer-config = {
@@ -61,6 +63,7 @@ in {
                         drawer = drawer-config;
                         modules = [
                             "custom/power"
+                            "custom/gamescope"
                             "custom/keyboard"
                             "custom/quit"
                             "custom/lock"
@@ -100,8 +103,9 @@ in {
                     };
 
                     "hyprland/language" = {
-                        format = "{short}";
-			keyboard-name = "at-translated-set-2-keyboard";
+                        format-en = "en";
+                        format-ru = "ru";
+                        on-click = "hyprctl switchxkblayout current next";
                         tooltip = false;
                     };
 
@@ -177,6 +181,12 @@ in {
                         on-click = "systemctl reboot";
                     };
 
+                    "custom/gamescope" = {
+                        format = "󰓓";
+                        tooltip = false;
+                        on-click = "start-gamescope-session";
+                    };
+
                     "custom/keyboard" = {
                         format = "󰌌";
                         tooltip = false;
@@ -244,7 +254,7 @@ in {
                 quit-font-size = to-pt base-icon-size;
                 reboot-font-size = to-pt base-icon-size;
                 keyboard-font-size = to-pt base-icon-size;
-                
+                gamescope-font-size = to-pt base-icon-size;
                 # Spacing variables
                 gap = "0.3rem";  # Gap between modules
                 inside-gap = "0.3rem";  # Padding inside modules (controls clickable area)
@@ -295,6 +305,7 @@ in {
             @define-color lock-color @dynamic-yellow;
             @define-color quit-color @dynamic-purple;
             @define-color keyboard-color @dynamic-lightblue;
+            @define-color gamescope-color @dynamic-teal;
 
             /* Reset all styles */
             * {
@@ -373,6 +384,11 @@ in {
                 font-family: "${font-mono}";
                 font-size: ${keyboard-font-size};
             }
+
+            #custom-gamescope {
+                font-family: "${font-mono}";
+                font-size: ${gamescope-font-size};
+            }
             
             /* Text-specific styling */
             #language {
@@ -401,7 +417,8 @@ in {
             #custom-lock,
             #custom-quit,
             #custom-reboot,
-            #custom-keyboard {
+            #custom-keyboard,
+            #custom-gamescope {
                 margin-left: 0px;
                 margin-right: 0px;
                 margin-top: 0px;
@@ -522,6 +539,7 @@ in {
             #custom-lock { color: @lock-color; }
             #custom-quit { color: @quit-color; }
             #custom-keyboard { color: @keyboard-color; }
+            #custom-gamescope { color: @gamescope-color; }
 
             /* Slider-related CSS */
             slider {
