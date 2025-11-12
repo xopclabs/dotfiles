@@ -6,12 +6,12 @@
     ];
     
     config.homelab = {
+        # Essentials
         traefik.enable = true;
-
         ddns.enable = true;
-
         pihole_unbound.enable = true;
-        
+
+        # VPN
         wireguard = {
             enable = true;
             listenPort = 51820;
@@ -42,6 +42,10 @@
             };
         };
 
+        # Geolocation
+        traccar.enable = true;
+
+        # Gaming servers
         minecraft = {
             enable = true;
             distantHorizons.enable = true;
