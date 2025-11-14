@@ -121,6 +121,7 @@ in
         services.redsocks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
             enable = true;
             redsocks = [{
+                ip = "0.0.0.0";  # Listen on all interfaces for transparent proxying
                 type = "socks5";
                 proxy = "${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port}";
                 port = cfg.socks5Proxy.redsocksPort;
