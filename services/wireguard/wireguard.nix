@@ -120,12 +120,11 @@ in
         # tun2socks service for routing traffic through SOCKS5 proxy
         systemd.services.tun2socks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
             description = "tun2socks SOCKS5 tunnel";
-            after = [ "network.target" "wireguard-wg0.service" ];
-            wants = [ "wireguard-wg0.service" ];
+            before = [ "wireguard-wg0.service" ];
             wantedBy = [ "multi-user.target" ];
             
             serviceConfig = {
-                Type = "simple";
+                Type = "forking";
                 Restart = "on-failure";
                 RestartSec = "5s";
             };
@@ -136,11 +135,32 @@ in
                 ${pkgs.iproute2}/bin/ip addr add 10.250.251.1/24 dev tun0
                 ${pkgs.iproute2}/bin/ip link set dev tun0 up
                 
-                # Start tun2socks
-                ${pkgs.tun2socks}/bin/tun2socks -device tun0 -proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port}
+                # Setup routing for WireGuard traffic through tun0
+                ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
+                ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100
+                
+                # Add routes for local networks to bypass proxy
+                ${concatMapStringsSep "\n" (net: 
+                    "    ${pkgs.iproute2}/bin/ip route add ${net} dev wg0 table 100"
+                ) cfg.localNetworks}
+                
+                # Start tun2socks in background
+                ${pkgs.tun2socks}/bin/tun2socks -device tun0 -proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port} &
+                echo $! > /run/tun2socks.pid
             '';
             
             postStop = ''
+                # Stop tun2socks
+                if [ -f /run/tun2socks.pid ]; then
+                    kill $(cat /run/tun2socks.pid) 2>/dev/null || true
+                    rm /run/tun2socks.pid
+                fi
+                
+                # Remove routing rules
+                ${pkgs.iproute2}/bin/ip rule del from ${cfg.subnet} table 100 2>/dev/null || true
+                ${pkgs.iproute2}/bin/ip route flush table 100 2>/dev/null || true
+                
+                # Remove TUN interface
                 ${pkgs.iproute2}/bin/ip link del tun0 2>/dev/null || true
             '';
         };
@@ -151,30 +171,13 @@ in
             privateKeyFile = config.sops.secrets."wg/privatekey".path;
 
             postSetup = ''
+                # MASQUERADE for WireGuard traffic
+                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
+                
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
-                    # Wait for tun0 to be ready
-                    for i in {1..30}; do
-                        if ${pkgs.iproute2}/bin/ip link show tun0 >/dev/null 2>&1; then
-                            break
-                        fi
-                        sleep 0.1
-                    done
-                    
-                    # Create custom routing table for proxy traffic
-                    ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
-                    ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100 2>/dev/null || true
-                    
-                    # Add routes for local networks to bypass proxy
-                    ${concatMapStringsSep "\n" (net: 
-                        "    ${pkgs.iproute2}/bin/ip route add ${net} dev wg0 table 100 2>/dev/null || true"
-                    ) cfg.localNetworks}
-                    
-                    # MASQUERADE for tun0 traffic going out
+                    # MASQUERADE for tun0 traffic going out to external interface
                     ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE
                 ''}
-                
-                # MASQUERADE for direct WireGuard traffic (local networks)
-                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
             '';
             
             postShutdown = ''
@@ -183,10 +186,6 @@ in
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                     # Remove MASQUERADE for tun0
                     ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
-                    
-                    # Remove routing rules
-                    ${pkgs.iproute2}/bin/ip rule del from ${cfg.subnet} table 100 2>/dev/null || true
-                    ${pkgs.iproute2}/bin/ip route flush table 100 2>/dev/null || true
                 ''}
             '';
 
