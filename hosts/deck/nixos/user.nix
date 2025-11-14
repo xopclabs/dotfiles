@@ -23,5 +23,23 @@
         font = "Lat2-Terminus16";
         keyMap = "us";
     };
-    services.automatic-timezoned.enable = true;
+
+    # Manual timezone configuration using SOPS secret (to avoid VPN location detection)
+    services.automatic-timezoned.enable = false;
+    sops.secrets.timezone = {
+        sopsFile = ../../../secrets/hosts/${config.networking.hostName}.yaml;
+    };
+    systemd.services.set-timezone = {
+        description = "Set timezone from encrypted secret";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+        };
+        script = ''
+            TIMEZONE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.timezone.path})
+            ${pkgs.systemd}/bin/timedatectl set-timezone "$TIMEZONE"
+        '';
+    };
 }
