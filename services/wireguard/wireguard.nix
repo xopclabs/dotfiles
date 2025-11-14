@@ -133,7 +133,7 @@ in
             privateKeyFile = config.sops.secrets."wg/privatekey".path;
 
             postSetup = ''
-                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o eth0 -j MASQUERADE
+                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
                 
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                     # Create a custom chain for proxy redirection
@@ -157,7 +157,7 @@ in
             '';
             
             postShutdown = ''
-                ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o eth0 -j MASQUERADE
+                ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
                 
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                     # Remove the proxy chain
