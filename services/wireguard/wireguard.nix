@@ -42,6 +42,35 @@ in
             description = "External network interface for NAT";
         };
         
+        localNetworks = mkOption {
+            type = types.listOf types.str;
+            default = [ "192.168.0.0/16" "10.0.0.0/8" "172.16.0.0/12" ];
+            description = "Local networks that should not be proxied";
+        };
+        
+        socks5Proxy = mkOption {
+            type = types.nullOr (types.submodule {
+                options = {
+                    enable = mkEnableOption "SOCKS5 transparent proxy for WireGuard traffic";
+                    host = mkOption {
+                        type = types.str;
+                        description = "SOCKS5 proxy host";
+                    };
+                    port = mkOption {
+                        type = types.port;
+                        description = "SOCKS5 proxy port";
+                    };
+                    redsocksPort = mkOption {
+                        type = types.port;
+                        default = 12345;
+                        description = "Local port for redsocks to listen on";
+                    };
+                };
+            });
+            default = null;
+            description = "SOCKS5 proxy configuration for transparent proxying";
+        };
+        
         peers = mkOption {
             type = types.attrsOf (types.submodule {
                 options = {
@@ -66,7 +95,7 @@ in
             sops
             qrrs
             generate-wg-client
-        ];
+        ] ++ (if cfg.socks5Proxy != null && cfg.socks5Proxy.enable then [ pkgs.tun2socks ] else []);
 
         sops.secrets = mkMerge [
             {
@@ -88,16 +117,76 @@ in
                 } ) cfg.peers)
         ];
 
+        # tun2socks service for routing traffic through SOCKS5 proxy
+        systemd.services.tun2socks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
+            description = "tun2socks SOCKS5 tunnel";
+            before = [ "wireguard-wg0.service" ];
+            wantedBy = [ "multi-user.target" ];
+            
+            serviceConfig = {
+                Type = "forking";
+                Restart = "on-failure";
+                RestartSec = "5s";
+            };
+            
+            script = ''
+                # Create TUN interface
+                ${pkgs.iproute2}/bin/ip tuntap add mode tun dev tun0
+                ${pkgs.iproute2}/bin/ip addr add 10.250.251.1/24 dev tun0
+                ${pkgs.iproute2}/bin/ip link set dev tun0 up
+                
+                # Setup routing for WireGuard traffic through tun0
+                ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
+                ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100
+                
+                # Add routes for local networks to bypass proxy
+                ${concatMapStringsSep "\n" (net: 
+                    "    ${pkgs.iproute2}/bin/ip route add ${net} dev wg0 table 100"
+                ) cfg.localNetworks}
+                
+                # Start tun2socks in background
+                ${pkgs.tun2socks}/bin/tun2socks -device tun0 -proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port} &
+                echo $! > /run/tun2socks.pid
+            '';
+            
+            postStop = ''
+                # Stop tun2socks
+                if [ -f /run/tun2socks.pid ]; then
+                    kill $(cat /run/tun2socks.pid) 2>/dev/null || true
+                    rm /run/tun2socks.pid
+                fi
+                
+                # Remove routing rules
+                ${pkgs.iproute2}/bin/ip rule del from ${cfg.subnet} table 100 2>/dev/null || true
+                ${pkgs.iproute2}/bin/ip route flush table 100 2>/dev/null || true
+                
+                # Remove TUN interface
+                ${pkgs.iproute2}/bin/ip link del tun0 2>/dev/null || true
+            '';
+        };
+
         networking.wireguard.interfaces."wg0" = {
             ips = [ cfg.serverIP ];
             listenPort = cfg.listenPort;
             privateKeyFile = config.sops.secrets."wg/privatekey".path;
 
             postSetup = ''
-                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o eth0 -j MASQUERADE
+                # MASQUERADE for WireGuard traffic
+                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
+                
+                ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
+                    # MASQUERADE for tun0 traffic going out to external interface
+                    ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE
+                ''}
             '';
+            
             postShutdown = ''
-                ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o eth0 -j MASQUERADE
+                ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
+                
+                ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
+                    # Remove MASQUERADE for tun0
+                    ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
+                ''}
             '';
 
             peers = mapAttrsToList mkPeer cfg.peers;

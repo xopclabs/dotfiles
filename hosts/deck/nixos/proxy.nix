@@ -144,15 +144,20 @@ in {
 
     # Wireguard
     sops.secrets."vpn/home".path = "/etc/wireguard/home.conf";
-    sops.secrets."vpn/home_fallback".path = "/etc/wireguard/home_fallback.conf";
+    sops.secrets."vpn/home_lan".path = "/etc/wireguard/home_lan.conf";
+    sops.secrets."vpn/home_pi".path = "/etc/wireguard/home_pi.conf";
     sops.secrets."vpn/beta".path = "/etc/wireguard/beta.conf";
     networking.wg-quick.interfaces = {
         home = {
             configFile = config.sops.secrets."vpn/home".path;
             autostart = true;
         };
-        home_fallback = {
-            configFile = config.sops.secrets."vpn/home_fallback".path;
+        home_lan = {
+            configFile = config.sops.secrets."vpn/home_lan".path;
+            autostart = false;
+        };
+        home_pi = {
+            configFile = config.sops.secrets."vpn/home_pi".path;
             autostart = false;
         };
         beta = {
