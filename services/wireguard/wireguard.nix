@@ -95,7 +95,7 @@ in
             sops
             qrrs
             generate-wg-client
-        ];
+        ] ++ (if cfg.socks5Proxy != null && cfg.socks5Proxy.enable then [ pkgs.tun2socks ] else []);
 
         sops.secrets = mkMerge [
             {
@@ -117,17 +117,32 @@ in
                 } ) cfg.peers)
         ];
 
-        # Redsocks service for transparent SOCKS5 proxying
-        services.redsocks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
-            enable = true;
-            log_debug = true;
-            log_info = true;
-            redsocks = [{
-                ip = "0.0.0.0";  # Listen on all interfaces for transparent proxying
-                type = "socks5";
-                proxy = "${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port}";
-                port = cfg.socks5Proxy.redsocksPort;
-            }];
+        # tun2socks service for routing traffic through SOCKS5 proxy
+        systemd.services.tun2socks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
+            description = "tun2socks SOCKS5 tunnel";
+            after = [ "network.target" "wireguard-wg0.service" ];
+            wants = [ "wireguard-wg0.service" ];
+            wantedBy = [ "multi-user.target" ];
+            
+            serviceConfig = {
+                Type = "simple";
+                Restart = "on-failure";
+                RestartSec = "5s";
+            };
+            
+            script = ''
+                # Create TUN interface
+                ${pkgs.iproute2}/bin/ip tuntap add mode tun dev tun0
+                ${pkgs.iproute2}/bin/ip addr add 10.250.251.1/24 dev tun0
+                ${pkgs.iproute2}/bin/ip link set dev tun0 up
+                
+                # Start tun2socks
+                ${pkgs.tun2socks}/bin/tun2socks -device tun0 -proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port}
+            '';
+            
+            postStop = ''
+                ${pkgs.iproute2}/bin/ip link del tun0 2>/dev/null || true
+            '';
         };
 
         networking.wireguard.interfaces."wg0" = {
@@ -136,43 +151,42 @@ in
             privateKeyFile = config.sops.secrets."wg/privatekey".path;
 
             postSetup = ''
-                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
-                
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
-                    # Enable route_localnet for wg0 to allow transparent proxy to localhost
-                    echo 1 > /proc/sys/net/ipv4/conf/wg0/route_localnet
+                    # Wait for tun0 to be ready
+                    for i in {1..30}; do
+                        if ${pkgs.iproute2}/bin/ip link show tun0 >/dev/null 2>&1; then
+                            break
+                        fi
+                        sleep 0.1
+                    done
                     
-                    # Create a custom chain for proxy redirection
-                    ${pkgs.iptables}/bin/iptables -t nat -N WG_PROXY 2>/dev/null || true
-                    ${pkgs.iptables}/bin/iptables -t nat -F WG_PROXY
+                    # Create custom routing table for proxy traffic
+                    ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
+                    ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100 2>/dev/null || true
                     
-                    # Don't proxy local networks
+                    # Add routes for local networks to bypass proxy
                     ${concatMapStringsSep "\n" (net: 
-                        "    ${pkgs.iptables}/bin/iptables -t nat -A WG_PROXY -d ${net} -j RETURN"
+                        "    ${pkgs.iproute2}/bin/ip route add ${net} dev wg0 table 100 2>/dev/null || true"
                     ) cfg.localNetworks}
                     
-                    # Don't proxy the SOCKS5 proxy server itself
-                    ${pkgs.iptables}/bin/iptables -t nat -A WG_PROXY -d ${cfg.socks5Proxy.host} -j RETURN
-                    
-                    # Redirect all other TCP traffic to redsocks
-                    ${pkgs.iptables}/bin/iptables -t nat -A WG_PROXY -p tcp -j REDIRECT --to-ports ${toString cfg.socks5Proxy.redsocksPort}
-                    
-                    # Apply the chain to WireGuard traffic
-                    ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p tcp -j WG_PROXY
+                    # MASQUERADE for tun0 traffic going out
+                    ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE
                 ''}
+                
+                # MASQUERADE for direct WireGuard traffic (local networks)
+                ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
             '';
             
             postShutdown = ''
-                ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
+                ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
                 
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
-                    # Disable route_localnet for wg0
-                    echo 0 > /proc/sys/net/ipv4/conf/wg0/route_localnet 2>/dev/null || true
+                    # Remove MASQUERADE for tun0
+                    ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
                     
-                    # Remove the proxy chain
-                    ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p tcp -j WG_PROXY 2>/dev/null || true
-                    ${pkgs.iptables}/bin/iptables -t nat -F WG_PROXY 2>/dev/null || true
-                    ${pkgs.iptables}/bin/iptables -t nat -X WG_PROXY 2>/dev/null || true
+                    # Remove routing rules
+                    ${pkgs.iproute2}/bin/ip rule del from ${cfg.subnet} table 100 2>/dev/null || true
+                    ${pkgs.iproute2}/bin/ip route flush table 100 2>/dev/null || true
                 ''}
             '';
 
