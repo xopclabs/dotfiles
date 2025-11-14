@@ -70,6 +70,12 @@
                     allowedIPs = [ "10.250.250.101/32" ];
                 };
             };
+            socks5Proxy = {
+                enable = true;
+                host = "127.0.0.1";
+                port = 10808;
+                redsocksPort = 12345;
+            };
         };
 
         # Torrents
