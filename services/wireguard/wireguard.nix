@@ -136,6 +136,9 @@ in
                 ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
                 
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
+                    # Enable route_localnet for wg0 to allow transparent proxy to localhost
+                    echo 1 > /proc/sys/net/ipv4/conf/wg0/route_localnet
+                    
                     # Create a custom chain for proxy redirection
                     ${pkgs.iptables}/bin/iptables -t nat -N WG_PROXY 2>/dev/null || true
                     ${pkgs.iptables}/bin/iptables -t nat -F WG_PROXY
@@ -160,6 +163,9 @@ in
                 ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
                 
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
+                    # Disable route_localnet for wg0
+                    echo 0 > /proc/sys/net/ipv4/conf/wg0/route_localnet 2>/dev/null || true
+                    
                     # Remove the proxy chain
                     ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p tcp -j WG_PROXY 2>/dev/null || true
                     ${pkgs.iptables}/bin/iptables -t nat -F WG_PROXY 2>/dev/null || true
