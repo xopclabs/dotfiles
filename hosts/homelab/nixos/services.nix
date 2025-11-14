@@ -22,6 +22,18 @@
                     main = "*.pi.local.$DOMAIN";
                     sans = [ "pi.local.$DOMAIN" ];
                 }
+                {
+                    # Top-level local services
+                    main = "*.local.$DOMAIN";
+                    sans = [ "local.$DOMAIN" ];
+                }
+            ];
+            routes = [
+                {
+                    name = "proxmox";
+                    subdomain = "proxmox.local";
+                    backendUrl = "https://192.168.254.20:8006";
+                }
             ];
         };
         pihole_unbound = {

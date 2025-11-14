@@ -23,7 +23,6 @@
                     tvDir = "/mnt/nas/media/tv";
                     musicDir = "/mnt/nas/media/music";
                 };
-                services = "/mnt/nas-containers";
             };
         };
 

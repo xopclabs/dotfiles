@@ -55,6 +55,11 @@ in
                 subdomain = cfg.subdomain;
                 backendUrl = "http://127.0.0.1:3001";
             }
+            {
+                name = "transmission-api";
+                subdomain = "api.${cfg.subdomain}";
+                backendUrl = "http://127.0.0.1:9091";
+            }
         ];
     };
 }

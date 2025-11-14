@@ -8,8 +8,8 @@
     # Nix settings, auto cleanup and enable flakes
     nix = {
         settings.auto-optimise-store = true;
-        settings.allowed-users = [ "homelab" ];
-        settings.trusted-users = [ "root" "homelab" ];
+        settings.allowed-users = [ config.metadata.user ];
+        settings.trusted-users = [ "root" config.metadata.user ];
         gc = {
             automatic = true;
             dates = "weekly";
@@ -54,11 +54,6 @@
             fsType = "nfs";
             options = [ "x-systemd.automount" "noauto" ];
         };
-        "/mnt/nas-containers" = {
-            device = "192.168.254.11:/mnt/raid_pool/vm-containers";
-            fsType = "nfs";
-            options = [ "x-systemd.automount" "noauto" ];
-        };
     };
 
     # Automounting
@@ -75,7 +70,7 @@
 
     # System env variables
     environment.variables = {
-        NIXOS_CONFIG = "$HOME/dotfiles/hosts/homelab/nixos/configuration.nix";
+        NIXOS_CONFIG = "$HOME/dotfiles/hosts/${config.metadata.hostName}/nixos/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
         NH_FLAKE = "$HOME/dotfiles";
         EDITOR = "nvim";

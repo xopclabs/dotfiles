@@ -226,17 +226,12 @@ in
                         ];
                     };
 
-                    routers.traefik = 
-                    let
-                        dashboardMiddlewares = 
-                            if requiresWhitelist cfg.dashboardSubdomain
-                            then [ "default-headers" "https-redirect" "home-ipwhitelist" ]
-                            else [ "default-headers" "https-redirect" ];
-                    in {
+                    routers.traefik = {
                         rule = "Host(`${cfg.dashboardSubdomain}.$DOMAIN`)";
                         entryPoints = [ "websecure" ];
                         service = "api@internal";
-                        middlewares = dashboardMiddlewares;
+                        # Force dashboard to always use home-ipwhitelist middleware
+                        middlewares = [ "default-headers" "https-redirect" "home-ipwhitelist" ];
                         tls = {
                             certResolver = "cloudflare";
                             domains = cfg.certificateDomains;

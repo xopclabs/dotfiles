@@ -71,11 +71,6 @@ with lib;
                         description = "Base directory for music media";
                     };
                 };
-                services = mkOption {
-                    type = types.str;
-                    default = "/mnt/nas-containers";
-                    description = "Base directory for services storing general service data";
-                };
             };
         };
 
