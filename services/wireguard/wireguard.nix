@@ -120,6 +120,8 @@ in
         # Redsocks service for transparent SOCKS5 proxying
         services.redsocks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
             enable = true;
+            log_debug = true;
+            log_info = true;
             redsocks = [{
                 ip = "0.0.0.0";  # Listen on all interfaces for transparent proxying
                 type = "socks5";
