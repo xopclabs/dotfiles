@@ -7,7 +7,23 @@
     
     config.homelab = {
         # Essentials
-        ddns.enable = true;
+        ddns = {
+            enable = true;
+            providers = {
+                noip = {
+                    updateInterval = "15min";
+                    bootDelay = "5min";
+                };
+                afraid = {
+                    updateInterval = "15min";
+                    bootDelay = "5min";
+                };
+                duckdns = {
+                    updateInterval = "15min";
+                    bootDelay = "5min";
+                };
+            };
+        };
         traefik = {
             enable = true;
             dashboardSubdomain = "traefik.vm.local";
