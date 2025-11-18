@@ -59,6 +59,7 @@ in
             sopsFile = ../secrets/shared/selfhost.yaml;
             owner = "unbound";
             mode = "0400";
+            restartUnits = [ "unbound.service" ];
         };
 
         # Sops secret for custom hosts
@@ -68,6 +69,7 @@ in
             owner = "root";
             group = "root";
             mode = "0644";
+            restartUnits = [ "pihole-ftl.service" ];
         };
         # Configure dnsmasq to use custom hosts file
         environment.etc."dnsmasq.d/custom-hosts.conf".text = ''
