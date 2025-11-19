@@ -14,6 +14,28 @@
             };
         };
 
+        wireguard = {
+            enable = true;
+            peers = {
+                home = {
+                    enable = true;
+                    autostart = true;
+                };
+                home_lan = {
+                    enable = true;
+                    autostart = false;
+                };
+                home_pi = {
+                    enable = true;
+                    autostart = false;
+                };
+                beta = {
+                    enable = true;
+                    autostart = false;
+                };
+            };
+        };
+
         steam = {
             enable = true;
             extraPackages = true;

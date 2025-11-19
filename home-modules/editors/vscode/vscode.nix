@@ -4,8 +4,8 @@ with lib;
 let 
     cfg = config.modules.editors;
     configFiles = {
-        settings = "${config.home.homeDirectory}/dotfiles/modules/editors/vscode/settings.json";
-        keybindings = "${config.home.homeDirectory}/dotfiles/modules/editors/vscode/keybindings.json";
+        settings = "./settings.json";
+        keybindings = "./keybindings.json";
     };
     
     mkEditorConfig = editor: {

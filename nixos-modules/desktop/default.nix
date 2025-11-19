@@ -3,6 +3,7 @@
 {
     imports = [
         ./xray.nix
+        ./wireguard.nix
         ./steam.nix
         ./lutris.nix
         ./flatpak.nix
