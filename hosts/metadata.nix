@@ -11,6 +11,11 @@ with lib;
             type = types.str;
             description = "Hostname of the system";
         };
+        repositoryRelPath = mkOption {
+            type = types.str;
+            default = "dotfiles";
+            description = "Repository path relative to home directory";
+        };
 
         network = {
             ipv4 = mkOption {
