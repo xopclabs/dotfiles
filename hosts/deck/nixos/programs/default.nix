@@ -5,6 +5,7 @@
         ./steam.nix
         ./lutris.nix
         ./flatpak.nix
+        ./localsend.nix
         ./yeetmouse.nix
     ];
 }
