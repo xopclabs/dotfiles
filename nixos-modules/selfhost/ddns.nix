@@ -79,7 +79,7 @@ let
     # Create secrets for each provider
     mkDdnsSecret = providerName: providerCfg: {
         "ddns/${providerName}/url" = {
-            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "root";
             mode = "0400";
         };

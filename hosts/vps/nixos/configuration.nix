@@ -2,7 +2,6 @@
 
 {
     imports = [
-        ../../metadata.nix
         ../metadata.nix
         
         ./disko.nix
@@ -13,6 +12,6 @@
         ./security.nix
 	    ./ssh.nix
 
-        ./services.nix
+        ./selfhost.nix
     ];
 }

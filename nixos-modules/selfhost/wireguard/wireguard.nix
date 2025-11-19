@@ -100,7 +100,7 @@ in
         sops.secrets = mkMerge [
             {
                 "wg/privatekey" = {
-                    sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                    sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
                     owner = "root";
                     group = "root";
                     mode = "0400";
@@ -109,7 +109,7 @@ in
             (mapAttrs' (name: _: {
                 name = "wg/peers/${name}/presharedkey"; 
                 value = { 
-                    sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                    sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
                     owner = "root"; 
                     group = "root"; 
                     mode = "0400"; 

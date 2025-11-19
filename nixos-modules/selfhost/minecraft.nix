@@ -52,13 +52,13 @@ in
         users.groups.minecraft.members = [ "homelab" ];
 
         sops.secrets."minecraft/ops.json" = {
-            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "minecraft";
             group = "minecraft";
             mode = "0660";
         };
         sops.secrets."minecraft/whitelist.json" = {
-            sopsFile = ../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "minecraft";
             group = "minecraft";
             mode = "0660";

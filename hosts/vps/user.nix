@@ -2,7 +2,7 @@
 
 {
     imports = [ 
-        ../../modules/default.nix 
+        ../../home-modules
         ./home.nix
         inputs.nix-colors.homeManagerModules.default
 	    inputs.nixvim.homeModules.nixvim

@@ -1,6 +1,10 @@
 { ... }:
 
 {
+    imports = [
+        ../metadata.nix
+    ];
+
     metadata = {
         user = "homelab";
         hostName = "homelab";

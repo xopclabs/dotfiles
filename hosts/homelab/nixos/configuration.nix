@@ -2,7 +2,6 @@
 
 {
     imports = [
-        ../../metadata.nix
         ../metadata.nix
         
         ./disko.nix
@@ -15,6 +14,6 @@
 	    ./ssh.nix
         ./remote-builds.nix
 
-        ./services.nix
+        ./selfhost.nix
     ];
 }

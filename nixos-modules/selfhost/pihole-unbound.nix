@@ -56,7 +56,7 @@ in
     config = mkIf cfg.enable {
         # Sops secret for domain name
         sops.secrets.domain = {
-            sopsFile = ../secrets/shared/selfhost.yaml;
+            sopsFile = ../../secrets/shared/selfhost.yaml;
             owner = "unbound";
             mode = "0400";
             restartUnits = [ "unbound.service" "pihole-ftl.service" ];
@@ -64,7 +64,7 @@ in
 
         # Sops secret for custom hosts
         sops.secrets.hosts = {
-            sopsFile = ../secrets/shared/selfhost.yaml;
+            sopsFile = ../../secrets/shared/selfhost.yaml;
             path = "/etc/dnsmasq.d/custom-hosts";
             owner = "root";
             group = "root";

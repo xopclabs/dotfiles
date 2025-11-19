@@ -2,7 +2,7 @@
 
 {
     imports = [ 
-        ../../../services/default.nix
+        ../../../nixos-modules/selfhost/default.nix
     ];
     
     config.homelab = {

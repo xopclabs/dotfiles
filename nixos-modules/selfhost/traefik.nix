@@ -125,7 +125,7 @@ in
     
     config = mkIf cfg.enable {
         sops.secrets.traefik = {
-            sopsFile = ../secrets/shared/selfhost.yaml;
+            sopsFile = ../../secrets/shared/selfhost.yaml;
         };
 
         services.traefik = {
