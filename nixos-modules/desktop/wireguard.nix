@@ -38,10 +38,9 @@ in
         }) cfg.peers;
 
         # For each peer, create a wg-quick interface
-        networking.wireguard.interfaces = mapAttrs' (name: peer: {
+        networking.wg-quick.interfaces = mapAttrs' (name: peer: {
             name = name;
             value = {
-                enable = peer.enable;
                 autostart = peer.autostart;
                 configFile = config.sops.secrets."vpn/${name}".path;
             };
