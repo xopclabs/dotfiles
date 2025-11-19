@@ -12,8 +12,7 @@
         ./audio.nix
         ./security.nix
         ./gui.nix
-        ./proxy.nix
 
-        ./programs
+        ./programs.nix
     ];
 }

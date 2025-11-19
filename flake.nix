@@ -61,13 +61,12 @@
                         (./. + "/hosts/${hostname}/nixos/hardware-configuration.nix")
                         inputs.disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
+                        inputs.yeetmouse.nixosModules.default
+                        inputs.jovian.nixosModules.default 
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                         }
-                    ] ++ (if hostname == "deck" then [ 
-                        inputs.jovian.nixosModules.default 
-                        inputs.yeetmouse.nixosModules.default
-                    ] else []) ++ (if useHomeManager then [
+                    ] ++ (if useHomeManager then [
                         inputs.home-manager.nixosModules.home-manager
                         {
                             home-manager = {

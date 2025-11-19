@@ -1,0 +1,51 @@
+{ config, pkgs, inputs, ... }:
+
+{
+    imports = [
+        ../../../nixos-modules/desktop/default.nix
+    ];
+    
+    config.desktop = {
+        xray = {
+        enable = true;
+            proxychains = {
+                enable = true;
+                port = 10808;
+            };
+        };
+
+        steam = {
+            enable = true;
+            jovian = {
+                enable = true;
+                autoStart = true;
+                desktopSession = "hyprland-uwsm";
+                deckyLoader = {
+                    enable = true;
+                    user = "decky";
+                };
+            };
+            extraPackages = true;
+            hardware = {
+                xoneSupport = true;
+                joyconSupport = true;
+                trackpadDesktop = true;
+            };
+        };
+
+        lutris.enable = true;
+        flatpak.enable = true;
+        localsend.enable = true;
+        
+        yeetmouse = {
+            enable = false; 
+            sensitivity = 1.0;
+            mode = {
+                acceleration = 1.5;
+                midpoint = 7.5;
+                smoothness = 0.01;
+                useSmoothing = false;
+            };
+        };
+    };
+}

@@ -1,11 +1,13 @@
-{ config, pkgs, inputs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 {
     imports = [
+        ./xray.nix
         ./steam.nix
         ./lutris.nix
         ./flatpak.nix
-        ./localsend.nix
         ./yeetmouse.nix
+        ./localsend.nix
     ];
 }
+
