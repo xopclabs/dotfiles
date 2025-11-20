@@ -29,6 +29,9 @@ in
                 rpc-enabled = true;
                 rpc-port = 9091;
                 rpc-bind-address = "127.0.0.1";
+                rpc-username = "admin";
+                rpc-password = "{324aa5bb38e744cbed04fd177329c89fbb3a64101fqYtEbt";
+                rpc-authentication-required = true;
             };
         };
         
@@ -38,27 +41,12 @@ in
             "d ${config.metadata.selfhost.storage.downloads.incompleteDir} 0775 transmission transmission -"
         ];
         
-        # Flood UI
-        services.flood = {
-            enable = true;
-            port = 3001;
-            host = "127.0.0.1";
-            extraArgs = [
-                 "-trurl=http://127.0.0.1:9091/transmission/rpc"
-            ];
-        };
-        
         # Register with Traefik
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [
             {
                 name = "transmission";
                 subdomain = cfg.subdomain;
-                backendUrl = "http://127.0.0.1:3001";
-            }
-            {
-                name = "transmission-api";
-                subdomain = "api.${cfg.subdomain}";
-                backendUrl = "http://127.0.0.1:9091";
+                backendUrl = "http://127.0.0.1:${toString config.services.transmission.settings.rpc-port}";
             }
         ];
     };
