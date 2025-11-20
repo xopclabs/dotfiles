@@ -87,6 +87,11 @@ in
                 default = true;
                 description = "Enable Jellyfin media server";
             };
+            proxy = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Route Jellyfin through xray proxy";
+            };
             subdomain = mkOption {
                 type = types.str;
                 description = "Subdomain for Jellyfin";
@@ -163,6 +168,13 @@ in
         services.jellyfin = mkIf cfg.jellyfin.enable {
             enable = true;
             openFirewall = false;
+        };
+        systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
+            environment = {
+                HTTP_PROXY = "socks5://127.0.0.1:10808";
+                HTTPS_PROXY = "socks5://127.0.0.1:10808";
+                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+            };
         };
 
         services.jellyseerr = mkIf cfg.jellyseerr.enable {

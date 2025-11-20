@@ -108,7 +108,11 @@
             sonarr.subdomain = "tv.vm.local";
 
             jellyfin.subdomain = "jellyfin.vm.local";
-            jellyseerr.subdomain = "request.vm.local";
+            jellyseerr = {
+                subdomain = "request.vm.local";
+                # Disable proxy - Quad9 DNS bypasses country restrictions, proxy breaks local service connections
+                proxy = false;
+            };
 
             cleanuparr.subdomain = "cleanuparr.vm.local";
             huntarr.subdomain = "huntarr.vm.local";

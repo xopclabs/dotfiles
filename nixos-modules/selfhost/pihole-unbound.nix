@@ -131,6 +131,18 @@ in
                     control-enable = true;
                     control-interface = "127.0.0.1";
                 };
+                
+                # Forward TMDB domains to Quad9 to bypass country-level DNS censorship
+                forward-zone = [
+                    {
+                        name = "themoviedb.org";
+                        forward-addr = [ "9.9.9.9" "149.112.112.112" ];
+                    }
+                    {
+                        name = "tmdb.org";
+                        forward-addr = [ "9.9.9.9" "149.112.112.112" ];
+                    }
+                ];
             };
         };
         
