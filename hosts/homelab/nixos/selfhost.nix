@@ -103,8 +103,13 @@
         # Media automation
         arr-stack = {
             enable = true;
+
             radarr.subdomain = "movies.vm.local";
             sonarr.subdomain = "tv.vm.local";
+
+            jellyfin.subdomain = "jellyfin.vm.local";
+            jellyseerr.subdomain = "request.vm.local";
+
             prowlarr.subdomain = "prowlarr.vm.local";
             flaresolverr.subdomain = "flaresolverr.vm.local";
         };

@@ -75,6 +75,35 @@ in
                 description = "Subdomain for FlareSolverr";
             };
         };
+
+        jellyfin = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Jellyfin media server";
+            };
+            subdomain = mkOption {
+                type = types.str;
+                description = "Subdomain for Jellyfin";
+            };
+        };
+
+        jellyseerr = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Jellyseerr media request manager";
+            };
+            proxy = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Route Jellyseerr through xray proxy";
+            };
+            subdomain = mkOption {
+                type = types.str;
+                description = "Subdomain for Jellyseerr";
+            };
+        };
     };
     
     config = mkIf cfg.enable {
@@ -126,10 +155,28 @@ in
             };
         };
 
+        services.jellyfin = mkIf cfg.jellyfin.enable {
+            enable = true;
+            openFirewall = false;
+        };
+
+        services.jellyseerr = mkIf cfg.jellyseerr.enable {
+            enable = true;
+            openFirewall = false;
+        };
+        systemd.services.jellyseerr = mkIf cfg.jellyseerr.proxy {
+            environment = {
+                HTTP_PROXY = "socks5://127.0.0.1:10808";
+                HTTPS_PROXY = "socks5://127.0.0.1:10808";
+                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+            };
+        };
+
         # Create necessary directories for media
         systemd.tmpfiles.rules = [
-            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 radarr radarr -"
-            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 sonarr sonarr -"
+            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
         ];
 
         # Register with Traefik
@@ -160,6 +207,20 @@ in
                     name = "flaresolverr";
                     subdomain = cfg.flaresolverr.subdomain;
                     backendUrl = "http://127.0.0.1:8191";
+                }
+            ]) ++
+            (optionals cfg.jellyfin.enable [
+                {
+                    name = "jellyfin";
+                    subdomain = cfg.jellyfin.subdomain;
+                    backendUrl = "http://127.0.0.1:8096";
+                }
+            ]) ++
+            (optionals cfg.jellyseerr.enable [
+                {
+                    name = "jellyseerr";
+                    subdomain = cfg.jellyseerr.subdomain;
+                    backendUrl = "http://127.0.0.1:5055";
                 }
             ])
         );
