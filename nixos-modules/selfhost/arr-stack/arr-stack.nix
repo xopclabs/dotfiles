@@ -167,6 +167,7 @@ in
 
         services.jellyseerr = mkIf cfg.jellyseerr.enable {
             enable = true;
+            port = 15055;
             openFirewall = false;
         };
         systemd.services.jellyseerr = mkIf cfg.jellyseerr.proxy {
@@ -211,7 +212,7 @@ in
                 {
                     name = "flaresolverr";
                     subdomain = cfg.flaresolverr.subdomain;
-                    backendUrl = "http://127.0.0.1:8191";
+                    backendUrl = "http://127.0.0.1:${toString config.services.flaresolverr.port}";
                 }
             ]) ++
             (optionals cfg.jellyfin.enable [
@@ -225,7 +226,7 @@ in
                 {
                     name = "jellyseerr";
                     subdomain = cfg.jellyseerr.subdomain;
-                    backendUrl = "http://127.0.0.1:5055";
+                    backendUrl = "http://127.0.0.1:${toString config.services.jellyseerr.port}";
                 }
             ])
         );
