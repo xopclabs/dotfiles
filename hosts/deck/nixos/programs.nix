@@ -43,7 +43,7 @@
                 autoStart = true;
                 desktopSession = "hyprland-uwsm";
                 deckyLoader = {
-                    enable = true;
+                    enable = false;
                     user = "decky";
                 };
             };
