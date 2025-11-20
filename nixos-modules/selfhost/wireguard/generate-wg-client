@@ -18,7 +18,7 @@ show_help() {
 }
 
 # Get script directory
-TEMPLATE_FILE="$NIXOS_CONFIG_DIR/hosts/$(hostname)/nixos/services/wireguard/client_template.conf"
+TEMPLATE_FILE="$NIXOS_CONFIG_DIR/nixos-modules/selfhost/wireguard/client_template.conf"
 
 # Check if template file exists
 if [ ! -f "$TEMPLATE_FILE" ]; then

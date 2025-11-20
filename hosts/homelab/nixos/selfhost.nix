@@ -77,13 +77,9 @@
                     publicKey = "dgkPzUZ+R3ODZWzY46DROU7VOOvuvndJucQlWEu0UV0=";
                     allowedIPs = [ "10.250.250.4/32" ];
                 };
-                wife-pc = {
-                    publicKey = "cujVQ6lmprG+mszcD5GmzZK/Cgn5rwXMGh+rp1Qasmo=";
+                tv = {
+                    publicKey = "HrTCQLCg8TBAm/9+VfiOijQ17jRO18DrSyj+a/cpgDw=";
                     allowedIPs = [ "10.250.250.5/32" ];
-                };
-                extra = {
-                    publicKey = "89c8JEfe/ezs8OwC8aeTeJcJqj6Ew569xw87Wvs1jSs=";
-                    allowedIPs = [ "10.250.250.101/32" ];
                 };
             };
             socks5Proxy = {
