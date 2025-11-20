@@ -110,6 +110,9 @@
             jellyfin.subdomain = "jellyfin.vm.local";
             jellyseerr.subdomain = "request.vm.local";
 
+            cleanuparr.subdomain = "cleanuparr.vm.local";
+            huntarr.subdomain = "huntarr.vm.local";
+
             prowlarr.subdomain = "prowlarr.vm.local";
             flaresolverr.subdomain = "flaresolverr.vm.local";
         };

@@ -10,7 +10,7 @@ with lib;
         ./minecraft.nix
         ./ddns.nix
         ./transmission.nix
-        ./arr-stack.nix
+        ./arr-stack/arr-stack.nix
         ./wireguard/wireguard.nix
     ];
 }

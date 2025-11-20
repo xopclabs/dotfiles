@@ -5,6 +5,11 @@ let
     cfg = config.homelab.arr-stack;
 in
 {
+    imports = [
+        ./cleanuparr.nix
+        ./huntarr.nix
+    ];
+
     options.homelab.arr-stack = {
         enable = mkEnableOption "*arr stack";
 
