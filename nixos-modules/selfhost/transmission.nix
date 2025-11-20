@@ -21,10 +21,8 @@ in
             webHome = pkgs.flood-for-transmission;
             
             settings = {
-                download-dir = config.metadata.selfhost.storage.downloads.otherDir;
-
-                incomplete-dir-enabled = true;
-                incomplete-dir = config.metadata.selfhost.storage.downloads.incompleteDir;
+                download-dir = config.metadata.selfhost.storage.downloads.mainDir;
+                incomplete-dir-enabled = false;
                 
                 rpc-enabled = true;
                 rpc-port = 9091;
@@ -34,12 +32,6 @@ in
                 rpc-authentication-required = true;
             };
         };
-        
-        # Create necessary directories
-        systemd.tmpfiles.rules = [
-            "d ${config.metadata.selfhost.storage.downloads.otherDir} 0775 transmission transmission -"
-            "d ${config.metadata.selfhost.storage.downloads.incompleteDir} 0775 transmission transmission -"
-        ];
         
         # Register with Traefik
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [

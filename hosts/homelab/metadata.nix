@@ -16,11 +16,10 @@
         selfhost = {
             storage = {
                 downloads = {
+                    mainDir = "/mnt/nas/downloads/torrent";
                     moviesDir = "/mnt/nas/downloads/torrent/movies";
                     tvDir = "/mnt/nas/downloads/torrent/tv";
                     musicDir = "/mnt/nas/downloads/torrent/music";
-                    otherDir = "/mnt/nas/downloads/torrent/other";
-                    incompleteDir = "/mnt/nas/downloads/torrent/.incomplete";
                 };
                 media = {
                     moviesDir = "/mnt/nas/media/movies";

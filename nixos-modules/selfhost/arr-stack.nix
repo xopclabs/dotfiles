@@ -31,6 +31,11 @@ in
                 default = true;
                 description = "Enable Radarr movie manager";
             };
+            proxy = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Route Radarr through xray proxy";
+            };
             subdomain = mkOption {
                 type = types.str;
                 description = "Subdomain for Radarr";
@@ -42,6 +47,11 @@ in
                 type = types.bool;
                 default = true;
                 description = "Enable Sonarr TV show manager";
+            };
+            proxy = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Route Sonarr through xray proxy";
             };
             subdomain = mkOption {
                 type = types.str;
@@ -72,7 +82,6 @@ in
             enable = true;
             openFirewall = false;
         };
-        # Route Prowlarr through xray proxy
         systemd.services.prowlarr = mkIf cfg.prowlarr.proxy {
             environment = {
                 HTTP_PROXY = "socks5://127.0.0.1:10808";
@@ -85,17 +94,30 @@ in
             enable = true;
             openFirewall = false;
         };
+        systemd.services.radarr = mkIf cfg.radarr.proxy {
+            environment = {
+                HTTP_PROXY = "socks5://127.0.0.1:10808";
+                HTTPS_PROXY = "socks5://127.0.0.1:10808";
+                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+            };
+        };
 
         services.sonarr = mkIf cfg.sonarr.enable {
             enable = true;
             openFirewall = false;
+        };
+        systemd.services.sonarr = mkIf cfg.sonarr.proxy {
+            environment = {
+                HTTP_PROXY = "socks5://127.0.0.1:10808";
+                HTTPS_PROXY = "socks5://127.0.0.1:10808";
+                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+            };
         };
 
         services.flaresolverr = mkIf cfg.flaresolverr.enable {
             enable = true;
             openFirewall = false;
         };
-        # Route FlareSolverr through xray proxy
         systemd.services.flaresolverr = mkIf cfg.flaresolverr.proxy {
             environment = {
                 HTTP_PROXY = "socks5://127.0.0.1:10808";
@@ -104,15 +126,10 @@ in
             };
         };
 
-        # Create necessary directories for media and downloads
+        # Create necessary directories for media
         systemd.tmpfiles.rules = [
-            # Download directories
-            "d ${config.metadata.selfhost.storage.downloads.moviesDir} 0775 radarr radarr -"
-            "d ${config.metadata.selfhost.storage.downloads.tvDir} 0775 sonarr sonarr -"
-            
-            # Media directories
-            "d ${config.metadata.selfhost.storage.media.moviesDir} 0775 radarr radarr -"
-            "d ${config.metadata.selfhost.storage.media.tvDir} 0775 sonarr sonarr -"
+            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 radarr radarr -"
+            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 sonarr sonarr -"
         ];
 
         # Register with Traefik

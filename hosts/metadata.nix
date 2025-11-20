@@ -33,6 +33,11 @@ with lib;
         selfhost = {
             storage = {
                 downloads = {
+                    mainDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/downloads/torrent";
+                        description = "Base directory general downloads";
+                    };
                     moviesDir = mkOption {
                         type = types.str;
                         default = "/mnt/nas/downloads/torrent/movies";
@@ -48,14 +53,9 @@ with lib;
                         default = "/mnt/nas/downloads/torrent/music";
                         description = "Base directory for music downloads";
                     };
-                    otherDir = mkOption {
-                        type = types.str;
-                        default = "/mnt/nas/downloads/torrent/other";
-                        description = "Base directory general downloads";
-                    };
                     incompleteDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/downloads/torrent/.incomplete";
+                        default = null;
                         description = "Base directory for incomplete downloads";
                     };
                 };
