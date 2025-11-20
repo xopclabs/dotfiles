@@ -103,9 +103,10 @@
         # Media automation
         arr-stack = {
             enable = true;
-            prowlarr.subdomain = "prowlarr.vm.local";
             radarr.subdomain = "movies.vm.local";
             sonarr.subdomain = "tv.vm.local";
+            prowlarr.subdomain = "prowlarr.vm.local";
+            flaresolverr.subdomain = "flaresolverr.vm.local";
         };
 
         # Geolocation
