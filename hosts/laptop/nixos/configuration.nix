@@ -13,6 +13,7 @@
         ./security.nix
         ./gui.nix
         ./disko.nix
+        ./hardware-configuration.nix
         ./btrfs.nix
 
         ./programs.nix
