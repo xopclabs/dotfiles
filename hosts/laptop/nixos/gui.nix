@@ -104,11 +104,10 @@ in
         ];
     };
 
-/*
-    qt5 = { 
-       enable = true; 
-       style = lib.mkForce "kvantum"; 
-       platformTheme.name = lib.mkForce "qt5ct"; 
-    }; 
-*/
+    # Enable Hyprland with UWSM for proper session management
+    programs.hyprland = {
+        enable = true;
+        withUWSM = true;
+    };
+
 }

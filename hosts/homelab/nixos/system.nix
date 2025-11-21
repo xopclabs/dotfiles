@@ -40,12 +40,6 @@
             timeout = 2;
         };
     };
-    
-    # Enable SSH access for nixos-anywhere
-    services.openssh.enable = true;
-        users.users.root.openssh.authorizedKeys.keys = [
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/qy9bDzKgpuIyHMalEPhMFgJ9hamF2LhR0kfk+2Et7"
-    ];
 
     # NFS share client
     fileSystems = {

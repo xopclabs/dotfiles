@@ -2,16 +2,6 @@
 
 {
     # Sound
-    /*
-    sound = {
-        enable = true;
-    };
-    hardware.pulseaudio = {
-        enable = true;
-        support32Bit = true;
-        extraConfig = "load-module module-bluetooth-policy auto_switch=2";
-    };
-    */
     security.rtkit.enable = true;
     services.pipewire = {
         enable = true;

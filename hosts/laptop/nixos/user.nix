@@ -14,7 +14,7 @@
         extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" "tss" ];
         shell = pkgs.zsh;
         isNormalUser = true;
-        hashedPasswordFile = config.sops.secrets.userpass.path;
+        initialPassword = "xopc";
     };
 
     # Set up locales (timezone and keyboard layout)
@@ -23,5 +23,21 @@
         font = "Lat2-Terminus16";
         keyMap = "us";
     };
-    services.automatic-timezoned.enable = true;
+    services.automatic-timezoned.enable = false;
+    sops.secrets.timezone = {
+        sopsFile = ../../../secrets/hosts/${config.networking.hostName}.yaml;
+    };
+    systemd.services.set-timezone = {
+        description = "Set timezone from encrypted secret";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+        };
+        script = ''
+            TIMEZONE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.timezone.path})
+            ${pkgs.systemd}/bin/timedatectl set-timezone "$TIMEZONE"
+        '';
+    };
 }

@@ -110,11 +110,4 @@ in
         withUWSM = true;
     };
 
-/*
-    qt5 = { 
-       enable = true; 
-       style = lib.mkForce "kvantum"; 
-       platformTheme.name = lib.mkForce "qt5ct"; 
-    }; 
-*/
 }

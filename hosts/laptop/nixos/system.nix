@@ -113,7 +113,7 @@
     # Ignore power button presses
     services.logind = {
         powerKey = "ignore";
-	powerKeyLongPress = "poweroff";
+	    powerKeyLongPress = "poweroff";
     };
 
     # Docker support
