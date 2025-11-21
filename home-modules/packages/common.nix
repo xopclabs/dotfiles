@@ -30,6 +30,7 @@ in {
             gnupg 
             zip
             unzip 
+	    _7zz
             lm_sensors
             lowdown 
             zk
