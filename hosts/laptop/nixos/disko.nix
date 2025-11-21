@@ -1,0 +1,86 @@
+let
+    defaultMountOptions = [ "compress=zstd:1" ];
+in {
+    disko.devices.disk.primary = {
+        device = "/dev/sda";
+        type = "disk";
+        content = {
+            type = "gpt";
+            partitions = {
+
+                # EFI Partition
+                ESP = {
+                    size = "512M";
+                    type = "EF00";
+                    content = {
+                        type = "filesystem";
+                        format = "vfat";
+                        mountpoint = "/boot";
+                        mountOptions = [
+                            "defaults"
+                            "umask=0077"
+                        ];
+                    };
+                };
+
+                # Btrfs Root Partition
+                root = {
+                    size = "100%"; # Use remaining space
+                    type = "8300"; # Linux filesystem type
+                    content = {
+                        type = "btrfs";
+
+                        # Root subvolume
+                        subvolumes."@" = {
+                            mountOptions = defaultMountOptions; 
+                            mountpoint = "/";
+                        };
+                        
+                        # State subvolume
+                        subvolumes."@var" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/var";
+                        };
+                        subvolumes."@var-snapshots" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/var/.snapshots";
+                        };
+
+                        # Home subvolume
+                        subvolumes."@home" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/home";
+                        };
+                        subvolumes."@home-snapshots" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/home/.snapshots";
+                        };
+                        # Games and steam subvolumes separately to avoid big snapshots
+                        subvolumes."@home-games" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/home/xopc/games";
+                        };
+                        subvolumes."@home-steam" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/home/xopc/.local/share/Steam";
+                        };
+
+                        # Nix subvolume
+                        subvolumes."@nix" = {
+                            mountOptions = defaultMountOptions ++ [ "noatime" "noacl" ]; 
+                            mountpoint = "/nix";
+                        };
+
+                        # Swap subvolume
+                        subvolumes."@swap" = {
+                            mountpoint = "/.swap";
+                            swap = {
+                                swapfile.size = "8G";
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+}

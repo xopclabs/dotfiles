@@ -12,6 +12,8 @@
         ./audio.nix
         ./security.nix
         ./gui.nix
+        ./disko.nix
+        ./btrfs.nix
 
         ./programs.nix
     ];
