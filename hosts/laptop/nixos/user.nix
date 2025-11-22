@@ -14,7 +14,7 @@
         extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" "tss" ];
         shell = pkgs.zsh;
         isNormalUser = true;
-        initialPassword = "xopc";
+        hashedPasswordFile = config.sops.secrets.userpass.path;
     };
 
     # Set up locales (timezone and keyboard layout)
