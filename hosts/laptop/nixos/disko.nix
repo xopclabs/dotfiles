@@ -60,10 +60,6 @@ in {
                             mountOptions = defaultMountOptions;
                             mountpoint = "/home/xopc/games";
                         };
-                        subvolumes."@home-steam" = {
-                            mountOptions = defaultMountOptions;
-                            mountpoint = "/home/xopc/.local/share/Steam";
-                        };
 
                         # Nix subvolume
                         subvolumes."@nix" = {

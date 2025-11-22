@@ -192,12 +192,6 @@ in
             settingsFile = "/etc/xray/config.json";
         };
 
-        # Make xray depend on the subscription update service
-        systemd.services.xray = {
-            after = [ "xray-update-subscription.service" ];
-            wants = [ "xray-update-subscription.service" ];
-        };
-
         # Subscription update service
         systemd.services.xray-update-subscription = {
             description = "Download, merge xray configs and restart xray";
@@ -297,4 +291,5 @@ in
         };
     };
 }
+
 

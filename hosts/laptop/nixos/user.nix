@@ -20,7 +20,6 @@
     # Set correct ownership for games and steam directories
     systemd.tmpfiles.rules = [
         "d /home/${config.metadata.user}/games 0755 ${config.metadata.user} users -"
-        "d /home/${config.metadata.user}/.local/share/Steam 0755 ${config.metadata.user} users -"
     ];
 
     # Set up locales (timezone and keyboard layout)
