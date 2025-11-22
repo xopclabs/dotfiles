@@ -11,6 +11,12 @@ with lib;
             type = types.str;
             description = "Hostname of the system";
         };
+        repositoryRelPath = mkOption {
+            type = types.str;
+            default = "dotfiles";
+            description = "Repository path relative to home directory";
+        };
+
         network = {
             ipv4 = mkOption {
                 type = types.str;
@@ -21,6 +27,55 @@ with lib;
                 type = types.str;
                 default = null;
                 description = "Default gateway of the system";
+            };
+        };
+
+        selfhost = {
+            storage = {
+                downloads = {
+                    mainDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/downloads/torrent";
+                        description = "Base directory general downloads";
+                    };
+                    moviesDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/downloads/torrent/movies";
+                        description = "Base directory for movies downloads";
+                    };
+                    tvDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/downloads/torrent/tv-shows";
+                        description = "Base directory for tv shows downloads";
+                    };
+                    musicDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/downloads/torrent/music";
+                        description = "Base directory for music downloads";
+                    };
+                    incompleteDir = mkOption {
+                        type = types.str;
+                        default = null;
+                        description = "Base directory for incomplete downloads";
+                    };
+                };
+                media = {
+                    moviesDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/media/movies";
+                        description = "Base directory for movies media";
+                    };
+                    tvDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/media/tv";
+                        description = "Base directory for tv shows media";
+                    };
+                    musicDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/nas/media/music";
+                        description = "Base directory for music media";
+                    };
+                };
             };
         };
 

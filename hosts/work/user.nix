@@ -2,7 +2,7 @@
 
 {
     imports = [ 
-        ../../modules/default.nix 
+        ../../home-modules
         ./home.nix
         ./sops.nix
         inputs.nix-colors.homeManagerModules.default

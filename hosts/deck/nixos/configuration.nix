@@ -2,7 +2,6 @@
 
 {
     imports = [
-        ../../metadata.nix
         ../metadata.nix
         
         ./disko.nix
@@ -14,9 +13,8 @@
         ./audio.nix
         ./security.nix
         ./gui.nix
-        ./proxy.nix
         ./remote-builds.nix
 
-        ./programs
+        ./programs.nix
     ];
 }

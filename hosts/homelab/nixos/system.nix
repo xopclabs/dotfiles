@@ -8,8 +8,8 @@
     # Nix settings, auto cleanup and enable flakes
     nix = {
         settings.auto-optimise-store = true;
-        settings.allowed-users = [ "homelab" ];
-        settings.trusted-users = [ "root" "homelab" ];
+        settings.allowed-users = [ config.metadata.user ];
+        settings.trusted-users = [ "root" config.metadata.user ];
         gc = {
             automatic = true;
             dates = "weekly";
@@ -40,22 +40,11 @@
             timeout = 2;
         };
     };
-    
-    # Enable SSH access for nixos-anywhere
-    services.openssh.enable = true;
-        users.users.root.openssh.authorizedKeys.keys = [
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/qy9bDzKgpuIyHMalEPhMFgJ9hamF2LhR0kfk+2Et7"
-    ];
 
     # NFS share client
     fileSystems = {
         "/mnt/nas" = {
             device = "192.168.254.11:/mnt/raid_pool/shared";
-            fsType = "nfs";
-            options = [ "x-systemd.automount" "noauto" ];
-        };
-        "/mnt/nas-containers" = {
-            device = "192.168.254.11:/mnt/raid_pool/vm-containers";
             fsType = "nfs";
             options = [ "x-systemd.automount" "noauto" ];
         };
@@ -70,12 +59,15 @@
     virtualisation.docker = {
         enable = true;
         enableOnBoot = true;
-        rootless.enable = true;
+        daemon.settings = {
+            dns = lib.mkIf config.homelab.pihole_unbound.enable [ config.metadata.network.ipv4 "1.1.1.1" ];
+        };
     };
+    virtualisation.oci-containers.backend = "docker";
 
     # System env variables
     environment.variables = {
-        NIXOS_CONFIG = "$HOME/dotfiles/hosts/homelab/nixos/configuration.nix";
+        NIXOS_CONFIG = "$HOME/dotfiles/hosts/${config.metadata.hostName}/nixos/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
         NH_FLAKE = "$HOME/dotfiles";
         EDITOR = "nvim";

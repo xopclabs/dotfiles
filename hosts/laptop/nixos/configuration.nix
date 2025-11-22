@@ -12,8 +12,11 @@
         ./audio.nix
         ./security.nix
         ./gui.nix
-        ./proxy.nix
+        ./disko.nix
+        ./hardware-configuration.nix
+        ./btrfs.nix
+        ./ssh.nix
 
-        ./programs
+        ./programs.nix
     ];
 }
