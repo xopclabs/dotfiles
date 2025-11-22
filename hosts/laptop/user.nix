@@ -35,7 +35,10 @@
                 enable = true;
                 mouse.enable = true;
             };
-            starship.enable = true;
+            starship = {
+                enable = true;
+                userBlockColor = "teal";
+            };
             eza.enable = true;
             zoxide.enable = true;
             bat.enable = true;

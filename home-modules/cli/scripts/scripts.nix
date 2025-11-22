@@ -11,6 +11,7 @@ let
     create-split-comparison = pkgs.writeShellScriptBin "create-split-comparison" ''${builtins.readFile ./create-split-comparison.sh}'';
     wg-toggle = pkgs.writeShellScriptBin "wg-toggle" ''${builtins.readFile ./wg-toggle.sh}'';
     smart-ls = pkgs.writeShellScriptBin "smart-ls" ''${builtins.readFile ./smart-ls.sh}'';
+    install-nixos-anywhere = pkgs.writeShellScriptBin "install-nixos-anywhere" ''${builtins.readFile ./install-nixos-anywhere.sh}'';
 in {
     options.modules.cli.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
@@ -22,6 +23,7 @@ in {
             create-split-comparison
             wg-toggle
             smart-ls
+            install-nixos-anywhere
         ];
     };
 }
