@@ -57,8 +57,8 @@
         };
 
         editors = {
-            vscode.enable = true;
-            cursor.enable = true;
+            vscode.enable = false;
+            cursor.enable = false;
             nvim.enable = true;
         };
 
@@ -67,13 +67,9 @@
             nautilus.enable = true;
         };
 
-        gui = {
-            flameshot.enable = false;
-        };
-
         browsers = {
             firefox.enable = true;
-            chromium.enable = true;
+            chromium.enable = false;
         };
 
         players = {
@@ -84,11 +80,6 @@
         packages = {
             common.enable = true;
             optional.enable = true;
-        };
-
-        other = {
-            kicad.enable = false;
-            plover.enable = true;
         };
 
     };
