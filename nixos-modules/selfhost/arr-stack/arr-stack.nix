@@ -167,7 +167,7 @@ in
 
         services.jellyfin = mkIf cfg.jellyfin.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = true;
         };
         systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
             environment = {
