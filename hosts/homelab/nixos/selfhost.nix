@@ -110,6 +110,8 @@
                 proxy = false;
             };
 
+            bazarr.subdomain = "subtitles.vm.local";
+
             cleanuparr.subdomain = "cleanuparr.vm.local";
             huntarr.subdomain = "huntarr.vm.local";
 

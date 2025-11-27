@@ -114,6 +114,23 @@ in
                 description = "Subdomain for Jellyseerr";
             };
         };
+
+        bazarr = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Bazarr subtitle manager for Sonarr and Radarr";
+            };
+            proxy = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Route Bazarr through xray proxy";
+            };
+            subdomain = mkOption {
+                type = types.str;
+                description = "Subdomain for Bazarr";
+            };
+        };
     };
     
     config = mkIf cfg.enable {
@@ -190,6 +207,18 @@ in
             };
         };
 
+        services.bazarr = mkIf cfg.bazarr.enable {
+            enable = true;
+            openFirewall = false;
+        };
+        systemd.services.bazarr = mkIf cfg.bazarr.proxy {
+            environment = {
+                HTTP_PROXY = "socks5://127.0.0.1:10808";
+                HTTPS_PROXY = "socks5://127.0.0.1:10808";
+                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+            };
+        };
+
         # Create necessary directories for media
         systemd.tmpfiles.rules = [
             "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
@@ -239,6 +268,13 @@ in
                     name = "jellyseerr";
                     subdomain = cfg.jellyseerr.subdomain;
                     backendUrl = "http://127.0.0.1:${toString config.services.jellyseerr.port}";
+                }
+            ]) ++
+            (optionals cfg.bazarr.enable [
+                {
+                    name = "bazarr";
+                    subdomain = cfg.bazarr.subdomain;
+                    backendUrl = "http://127.0.0.1:${toString config.services.bazarr.listenPort}";
                 }
             ])
         );
