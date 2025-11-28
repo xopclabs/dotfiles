@@ -12,6 +12,7 @@ with lib;
         ./transmission.nix
         ./arr-stack/arr-stack.nix
         ./wireguard/wireguard.nix
+        ./glance.nix
     ];
 }
 

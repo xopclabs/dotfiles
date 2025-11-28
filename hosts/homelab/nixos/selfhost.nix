@@ -51,6 +51,11 @@
                     backendUrl = "https://192.168.254.20:8006";
                     insecureSkipVerify = true;
                 }
+                {
+                    name = "nas";
+                    subdomain = "nas.local";
+                    backendUrl = "http://192.168.254.10";
+                }
             ];
         };
         pihole_unbound = {
@@ -90,6 +95,27 @@
                 redsocksPort = 12345;
             };
         };
+
+        # Dashboard
+        glance = {
+            enable = true;
+            subdomain = "vm.local";
+            services = [
+                {
+                    title = "Proxmox";
+                    subdomain = "proxmox.local";
+                    icon = "si:proxmox";
+                    group = "Other";
+                }
+                {
+                    title = "TrueNAS";
+                    subdomain = "nas.local";
+                    icon = "si:truenas";
+                    group = "Other";
+                }
+            ];
+        };
+
 
         # Torrents
         transmission = {

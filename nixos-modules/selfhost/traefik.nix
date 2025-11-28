@@ -266,5 +266,15 @@ in
         ];
 
         networking.firewall.allowedTCPPorts = [ 80 443 ];
+
+        # Register with Glance dashboard
+        homelab.glance.services = mkIf config.homelab.glance.enable [
+            {
+                title = "Traefik";
+                subdomain = cfg.dashboardSubdomain;
+                icon = "si:traefikproxy";
+                group = "Other";
+            }
+        ];
     };
 }

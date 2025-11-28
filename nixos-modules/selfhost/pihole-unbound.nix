@@ -196,6 +196,16 @@ in
                 backendUrl = "http://127.0.0.1:${cfg.pihole.webPort}";
             }
         ];
+
+        # Register with Glance dashboard
+        homelab.glance.services = mkIf config.homelab.glance.enable [
+            {
+                title = "Pi-hole";
+                subdomain = cfg.pihole.subdomain;
+                icon = "si:pihole";
+                group = "Services";
+            }
+        ];
     };
 }
 

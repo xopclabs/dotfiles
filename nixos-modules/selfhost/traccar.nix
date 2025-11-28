@@ -63,6 +63,16 @@ in
                 middlewares = [ "default-headers" "https-redirect" ];
             }
         ];
+
+        # Register with Glance dashboard
+        homelab.glance.services = mkIf config.homelab.glance.enable [
+            {
+                title = "Traccar";
+                subdomain = cfg.subdomain;
+                icon = "mdi:map-marker-radius";
+                group = "Services";
+            }
+        ];
     };
 }
 

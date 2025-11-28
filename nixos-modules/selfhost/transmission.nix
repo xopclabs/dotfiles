@@ -49,6 +49,18 @@ in
                 backendUrl = "http://127.0.0.1:${toString config.services.transmission.settings.rpc-port}";
             }
         ];
+
+        # Register with Glance dashboard
+        homelab.glance.services = mkIf config.homelab.glance.enable [
+            {
+                title = "Transmission";
+                subdomain = cfg.subdomain;
+                icon = "si:transmission";
+                group = "*arr";
+                priority = 1;
+                altStatusCodes = [ 401 403];
+            }
+        ];
     };
 }
 

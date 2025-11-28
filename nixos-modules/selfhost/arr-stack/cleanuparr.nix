@@ -62,6 +62,16 @@ in
                 backendUrl = "http://127.0.0.1:${toString cfg.port}";
             }
         ];
+
+        homelab.glance.services = mkIf config.homelab.glance.enable [
+            {
+                title = "Cleanuparr";
+                subdomain = cfg.subdomain;
+                icon = "mdi:broom";
+                group = "*arr";
+                priority = 1001;
+            }
+        ];
     };
 }
 

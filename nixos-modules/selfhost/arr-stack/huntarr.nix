@@ -59,6 +59,16 @@ in
                 backendUrl = "http://127.0.0.1:${toString cfg.port}";
             }
         ];
+
+        homelab.glance.services = mkIf config.homelab.glance.enable [
+            {
+                title = "Huntarr";
+                subdomain = cfg.subdomain;
+                icon = "mdi:magnify";
+                group = "*arr";
+                priority = 1002;
+            }
+        ];
     };
 }
 

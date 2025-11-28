@@ -278,6 +278,62 @@ in
                 }
             ])
         );
+
+        # Register with Glance dashboard
+        homelab.glance.services = mkIf config.homelab.glance.enable (
+            (optionals cfg.jellyfin.enable [
+                {
+                    title = "Jellyfin";
+                    subdomain = cfg.jellyfin.subdomain;
+                    icon = "si:jellyfin";
+                    group = "Services";
+                    priority = 1;
+                }
+            ]) ++
+            (optionals cfg.jellyseerr.enable [
+                {
+                    title = "Jellyseerr";
+                    subdomain = cfg.jellyseerr.subdomain;
+                    icon = "mdi:jellyfish";
+                    group = "Services";
+                    priority = 2;
+                }
+            ]) ++
+            (optionals cfg.radarr.enable [
+                {
+                    title = "Radarr";
+                    subdomain = cfg.radarr.subdomain;
+                    icon = "si:radarr";
+                    group = "*arr";
+                    priority = 2;
+                }
+            ]) ++
+            (optionals cfg.sonarr.enable [
+                {
+                    title = "Sonarr";
+                    subdomain = cfg.sonarr.subdomain;
+                    icon = "si:sonarr";
+                    group = "*arr";
+                    priority = 3;
+                }
+            ]) ++
+            (optionals cfg.bazarr.enable [
+                {
+                    title = "Bazarr";
+                    subdomain = cfg.bazarr.subdomain;
+                    icon = "mdi:subtitles";
+                    group = "*arr";
+                }
+            ]) ++
+            (optionals cfg.prowlarr.enable [
+                {
+                    title = "Prowlarr";
+                    subdomain = cfg.prowlarr.subdomain;
+                    icon = "mdi:cat";
+                    group = "*arr";
+                }
+            ])
+        );
     };
 }
 
