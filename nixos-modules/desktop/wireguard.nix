@@ -45,12 +45,5 @@ in
                 configFile = config.sops.secrets."vpn/${name}".path;
             };
         }) cfg.peers;
-    
-        # Without this, wg interface with autostart fails the rebuild when already up
-        system.activationScripts = {
-            fix-wireguard-activation = ''
-                ${pkgs.iproute2}/bin/ip link del wg0
-            '';
-        };
     };
 }
