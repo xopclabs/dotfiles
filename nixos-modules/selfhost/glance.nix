@@ -4,6 +4,18 @@ with lib;
 let
     cfg = config.homelab.glance;
     piholeCfg = config.homelab.pihole_unbound;
+
+    # Build glance from dev branch with passwordless Pi-hole v6 support (PR #783)
+    glanceCustom = pkgs.glance.overrideAttrs (oldAttrs: rec {
+        version = "0.8.4-dev-if-you-are-reading-this-in-the-future-please-remove-this-override-they-probably-have-released-a-new-version";
+        src = pkgs.fetchFromGitHub {
+            owner = "glanceapp";
+            repo = "glance";
+            rev = "784bf5342570af94e62238c4f4a7b542d1853077";
+            hash = "sha256-vXdKSz89kSOb/gIwcq+vpRSYoHnKCWjQNodzLwsl/vs=";
+        };
+        vendorHash = "sha256-g5ZZneJ1g5rs3PJcNP+bi+SuRyZIXBPBjWiKt7wbe5I=";
+    });
     
     # Group services by their group attribute
     groupedServices = groupBy (s: s.group) cfg.services;
@@ -198,6 +210,8 @@ in
 
         services.glance = {
             enable = true;
+            # TODO: Remove this override once it's released
+            package = glanceCustom;
             environmentFile = config.sops.secrets.glance.path;
             settings = {
                 server.port = cfg.port;
@@ -247,7 +261,7 @@ in
                                         ] ++ (optional piholeCfg.enable {
                                             type = "dns-stats";
                                             service = "pihole-v6";
-                                            url = "http://127.0.0.1:${piholeCfg.pihole.webPort}";
+                                            url = "https://${piholeCfg.pihole.subdomain}.\${DOMAIN}";
                                         });
                                     }
                                 ] ++ (optional (cfg.bookmarks != []) {

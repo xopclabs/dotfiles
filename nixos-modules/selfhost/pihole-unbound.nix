@@ -54,14 +54,6 @@ in
     };
     
     config = mkIf cfg.enable {
-        # Sops secret for pihole password
-        sops.secrets.pihole = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
-            owner = "pihole";
-            mode = "0400";
-            restartUnits = [ "pihole-ftl.service" ];
-        };
-
         # Sops secret for domain name
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
@@ -184,7 +176,6 @@ in
                     # Enable for extra hosts
                     etc_dnsmasq_d = true;
                 };
-                webserver.api.app_pwhash = "$y$j9T$c.AYjaskxep/2dYB3XSvX.$HxofPRmY1NwX0022SrQX4S6MeGD6WDgGZe08v5d8wTA";
             };
             privacyLevel = 0;
         };
