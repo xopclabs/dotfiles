@@ -60,7 +60,7 @@
         enable = true;
         enableOnBoot = true;
         daemon.settings = {
-            dns = lib.mkIf config.homelab.pihole_unbound.enable [ config.metadata.network.ipv4 "1.1.1.1" ];
+            dns = lib.mkIf config.homelab.pihole_unbound.enable [ config.metadata.network.ipv4 "9.9.9.9" ];
         };
     };
     virtualisation.oci-containers.backend = "docker";

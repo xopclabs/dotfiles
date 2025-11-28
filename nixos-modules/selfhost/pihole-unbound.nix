@@ -142,6 +142,10 @@ in
                         name = "tmdb.org";
                         forward-addr = [ "9.9.9.9" "149.112.112.112" ];
                     }
+                    {
+                        name = "image.tmdb.org";
+                        forward-addr = [ "9.9.9.9" "149.112.112.112" ];
+                    }
                 ];
             };
         };

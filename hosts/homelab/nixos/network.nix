@@ -14,7 +14,7 @@
             ];
         };
         defaultGateway = config.metadata.network.defaultGateway;
-        nameservers = [ "127.0.0.1" "1.1.1.1" ];
+        nameservers = [ "127.0.0.1" "9.9.9.9" ];
         
         networkmanager = {
             enable = true;
