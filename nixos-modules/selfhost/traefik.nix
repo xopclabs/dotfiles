@@ -18,7 +18,8 @@ let
         middlewares ? null,
         passHostHeader ? true,
         certResolver ? "cloudflare",
-        entryPoints ? [ "websecure" ]
+        entryPoints ? [ "websecure" ],
+        insecureSkipVerify ? false
     }: 
     let
         # Determine default middlewares based on subdomain pattern
@@ -40,6 +41,8 @@ let
         services.${name}.loadBalancer = {
             inherit passHostHeader;
             servers = [ { url = backendUrl; } ];
+        } // optionalAttrs insecureSkipVerify {
+            serversTransport = "insecureTransport";
         };
     };
     
@@ -115,6 +118,11 @@ in
                         type = types.listOf types.str;
                         default = [ "websecure" ];
                         description = "Entry points for the route";
+                    };
+                    insecureSkipVerify = mkOption {
+                        type = types.bool;
+                        default = false;
+                        description = "Skip TLS verification for backends with self-signed certificates";
                     };
                 };
             });
@@ -193,6 +201,9 @@ in
 
             dynamicConfigOptions.http = mkMerge ([
                 {
+                    # Transport for backends with self-signed certificates
+                    serversTransports.insecureTransport.insecureSkipVerify = true;
+
                     middlewares = {
                         default-headers.headers = {
                             sslRedirect = true;

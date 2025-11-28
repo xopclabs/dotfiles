@@ -49,6 +49,7 @@
                     name = "proxmox";
                     subdomain = "proxmox.local";
                     backendUrl = "https://192.168.254.20:8006";
+                    insecureSkipVerify = true;
                 }
             ];
         };
