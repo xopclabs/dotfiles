@@ -211,11 +211,12 @@ in
                             stsIncludeSubdomains = true;
                             stsPreload = true;
                             forceSTSHeader = true;
-                            frameDeny = true;
                             sslTemporaryRedirect = true;
                             browserXssFilter = true;
                             contentTypeNosniff = true;
                             referrerPolicy = "same-origin";
+                            # We'll trust the self-hosted services to behave (this is needed so that I won't need to create a separate header for Proxmox to use noVNC there)
+                            frameDeny = false;
                         };
 
                         https-redirect.redirectScheme = {
