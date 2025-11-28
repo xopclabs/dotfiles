@@ -114,6 +114,8 @@
                     group = "Other";
                 }
             ];
+            clock.count = 4;
+            markets.count = 4;
         };
 
 

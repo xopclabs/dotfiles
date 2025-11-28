@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.homelab.glance;
+    piholeCfg = config.homelab.pihole_unbound;
     
     # Group services by their group attribute
     groupedServices = groupBy (s: s.group) cfg.services;
@@ -50,6 +51,12 @@ in
             description = "Port for Glance web interface";
         };
 
+        proxy = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Route Glance through SOCKS5 proxy";
+        };
+
         groupOrder = mkOption {
             type = types.listOf types.str;
             default = [ "Services" "*arr" "Other" ];
@@ -82,6 +89,40 @@ in
                 type = types.str;
                 default = "354 42% 56%"; # Nord base08
                 description = "Negative/error color in HSL format";
+            };
+        };
+
+        weather = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable weather widget (requires WEATHER_LOCATION in glance sops secret)";
+            };
+        };
+
+        clock = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable clock widget (uses TZ_1, TZ_1_LABEL, TZ_2, TZ_2_LABEL, etc. from sops secret)";
+            };
+            count = mkOption {
+                type = types.int;
+                default = 4;
+                description = "Number of timezones to display (uses TZ_1, TZ_1_LABEL, TZ_2, TZ_2_LABEL, etc. from sops secret)";
+            };
+        };
+
+        markets = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable markets widget (uses MARKET_1_SYMBOL, MARKET_1_NAME, etc. from sops secret)";
+            };
+            count = mkOption {
+                type = types.int;
+                default = 4;
+                description = "Number of markets to display";
             };
         };
 
@@ -151,11 +192,13 @@ in
     };
 
     config = mkIf cfg.enable {
+        sops.secrets.glance = {
+            sopsFile = ../../secrets/shared/selfhost.yaml;
+        };
+
         services.glance = {
             enable = true;
-            # Reuse traefik secret which contains DOMAIN variable
-            environmentFile = mkIf config.homelab.traefik.enable 
-                config.sops.secrets.traefik.path;
+            environmentFile = config.sops.secrets.glance.path;
             settings = {
                 server.port = cfg.port;
                 theme = mkIf cfg.theme.enable {
@@ -169,10 +212,25 @@ in
                 pages = [
                     {
                         name = "Startpage";
-                        width = "slim";
                         hide-desktop-navigation = true;
-                        center-vertically = true;
                         columns = [
+                            # Left column: clock, calendar, to-do
+                            {
+                                size = "small";
+                                widgets = (optional cfg.clock.enable {
+                                    type = "clock";
+                                    hour-format = "24h";
+                                    # Timezones from sops secret via environment variables
+                                    timezones = map (n: {
+                                        timezone = "\${TZ_${toString n}}";
+                                        label = "\${TZ_${toString n}_LABEL}";
+                                    }) (range 1 cfg.clock.count);
+                                }) ++ [
+                                    { type = "calendar"; }
+                                    { type = "to-do"; }
+                                ];
+                            }
+                            # Center column: search, monitors, stats, bookmarks
                             {
                                 size = "full";
                                 widgets = [
@@ -180,14 +238,56 @@ in
                                         type = "search";
                                         autofocus = true;
                                     }
-                                ] ++ monitorWidgets ++ (optional (cfg.bookmarks != []) {
+                                ] ++ monitorWidgets ++ [
+                                    # Server stats and DNS stats side by side
+                                    {
+                                        type = "split-column";
+                                        widgets = [
+                                            { type = "server-stats"; }
+                                        ] ++ (optional piholeCfg.enable {
+                                            type = "dns-stats";
+                                            service = "pihole-v6";
+                                            url = "http://127.0.0.1:${piholeCfg.pihole.webPort}";
+                                        });
+                                    }
+                                ] ++ (optional (cfg.bookmarks != []) {
                                     type = "bookmarks";
                                     groups = cfg.bookmarks;
+                                });
+                            }
+                            # Right column: weather, markets
+                            {
+                                size = "small";
+                                widgets = (optional cfg.weather.enable {
+                                    type = "weather";
+                                    hour-format = "24h";
+                                    # Location from sops secret via environment variable
+                                    location = "\${WEATHER_LOCATION}";
+                                }) ++ (optional cfg.markets.enable {
+                                    type = "markets";
+                                    # Markets from sops secret via environment variables
+                                    markets = map (n: {
+                                        symbol = "\${MARKET_${toString n}_SYMBOL}";
+                                        name = "\${MARKET_${toString n}_NAME}";
+                                    }) (range 1 cfg.markets.count);
                                 });
                             }
                         ];
                     }
                 ];
+            };
+        };
+
+        # Add traefik secret for DOMAIN variable + proxy settings
+        systemd.services.glance = {
+            serviceConfig.EnvironmentFile = mkIf config.homelab.traefik.enable [
+                config.sops.secrets.traefik.path
+            ];
+        } // optionalAttrs cfg.proxy {
+            environment = {
+                HTTP_PROXY = "socks5://127.0.0.1:10808";
+                HTTPS_PROXY = "socks5://127.0.0.1:10808";
+                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
             };
         };
 
