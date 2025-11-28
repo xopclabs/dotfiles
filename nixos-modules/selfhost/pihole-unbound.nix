@@ -8,6 +8,27 @@ in
     options.homelab.pihole_unbound = {
         enable = mkEnableOption "Pi-hole and Unbound DNS services";
         
+        unbound = {
+            forwardUpstream = mkOption {
+                type = types.bool;
+                default = true;
+                description = ''
+                    Forward DNS queries to upstream servers over DNS-over-TLS.
+                    When true: queries are encrypted and sent to Quad9 (better privacy from ISP).
+                    When false: Unbound performs recursive resolution directly to root servers (no third-party trust).
+                '';
+            };
+            
+            upstreamServers = mkOption {
+                type = types.listOf types.str;
+                default = [
+                    "9.9.9.9@853#dns.quad9.net"
+                    "149.112.112.112@853#dns.quad9.net"
+                ];
+                description = "Upstream DNS-over-TLS servers (only used when forwardUpstream is true)";
+            };
+        };
+        
         pihole = {
             subdomain = mkOption {
                 type = types.str;
@@ -112,8 +133,11 @@ in
                     hide-version = true;
                     qname-minimisation = true;
                     
-                    # DNSSEC
+                    # DNSSEC validation
                     auto-trust-anchor-file = "/var/lib/unbound/root.key";
+                    
+                    # TLS certificate bundle for upstream DoT
+                    tls-cert-bundle = "/etc/ssl/certs/ca-certificates.crt";
                     
                     # Logging
                     verbosity = 1;
@@ -132,21 +156,31 @@ in
                     control-interface = "127.0.0.1";
                 };
                 
-                # Forward TMDB domains to Quad9 to bypass country-level DNS censorship
-                forward-zone = [
-                    {
-                        name = "themoviedb.org";
-                        forward-addr = [ "9.9.9.9" "149.112.112.112" ];
-                    }
-                    {
-                        name = "tmdb.org";
-                        forward-addr = [ "9.9.9.9" "149.112.112.112" ];
-                    }
-                    {
-                        name = "image.tmdb.org";
-                        forward-addr = [ "9.9.9.9" "149.112.112.112" ];
-                    }
-                ];
+                forward-zone =
+                    # TMDB domains always forwarded to Quad9 (bypass country-level DNS censorship)
+                    [
+                        {
+                            name = "themoviedb.org";
+                            forward-tls-upstream = true;
+                            forward-addr = [ "9.9.9.9@853#dns.quad9.net" "149.112.112.112@853#dns.quad9.net" ];
+                        }
+                        {
+                            name = "tmdb.org";
+                            forward-tls-upstream = true;
+                            forward-addr = [ "9.9.9.9@853#dns.quad9.net" "149.112.112.112@853#dns.quad9.net" ];
+                        }
+                        {
+                            name = "image.tmdb.org";
+                            forward-tls-upstream = true;
+                            forward-addr = [ "9.9.9.9@853#dns.quad9.net" "149.112.112.112@853#dns.quad9.net" ];
+                        }
+                    ]
+                    # Optionally forward all other queries to upstream DoT servers
+                    ++ optional cfg.unbound.forwardUpstream {
+                        name = ".";
+                        forward-tls-upstream = true;
+                        forward-addr = cfg.unbound.upstreamServers;
+                    };
             };
         };
         

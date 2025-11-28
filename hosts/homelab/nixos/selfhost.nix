@@ -61,6 +61,7 @@
         pihole_unbound = {
             enable = true;
             pihole.subdomain = "pihole.vm.local";
+            unbound.forwardUpstream = true;
         };
 
         # VPN
