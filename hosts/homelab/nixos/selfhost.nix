@@ -54,7 +54,7 @@
                 {
                     name = "nas";
                     subdomain = "nas.local";
-                    backendUrl = "http://192.168.254.10";
+                    backendUrl = "http://192.168.254.11";
                 }
             ];
         };
