@@ -204,7 +204,7 @@ in
         # Register with Glance dashboard
         homelab.glance.services = mkIf config.homelab.glance.enable [
             {
-                title = "Pi-hole";
+                title = "Pihole";
                 subdomain = cfg.pihole.subdomain;
                 icon = "si:pihole";
                 group = "Services";
