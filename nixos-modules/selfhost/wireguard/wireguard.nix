@@ -177,6 +177,9 @@ in
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                     # MASQUERADE for tun0 traffic going out to external interface
                     ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE
+                    
+                    # Block QUIC (UDP 443) to force apps to use TCP/HTTPS which works better through SOCKS5
+                    ${pkgs.iptables}/bin/iptables -I FORWARD -i wg0 -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable
                 ''}
             '';
             
@@ -186,6 +189,9 @@ in
                 ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                     # Remove MASQUERADE for tun0
                     ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
+                    
+                    # Remove QUIC block rule
+                    ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable 2>/dev/null || true
                 ''}
             '';
 
