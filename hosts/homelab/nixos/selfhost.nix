@@ -150,5 +150,15 @@
             distantHorizons.enable = true;
             beta.enable = false;
         };
+
+        # Drive health monitoring
+        scrutiny = {
+            # Disabled for now, not working due to running in a VM
+            enable = false;
+            subdomain = "drives.vm.local";
+            devices = [ "/dev/sdb" "/dev/sdc" "/dev/sdd" "/dev/sde" ];
+            # Daily at midnight
+            collectorInterval = "0 0 * * *";
+        };
     };
 }

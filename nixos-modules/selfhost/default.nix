@@ -13,6 +13,7 @@ with lib;
         ./arr-stack/arr-stack.nix
         ./wireguard/wireguard.nix
         ./glance.nix
+        ./scrutiny.nix
     ];
 }
 
