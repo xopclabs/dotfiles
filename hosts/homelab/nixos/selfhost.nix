@@ -51,6 +51,11 @@
                     backendUrl = "https://192.168.254.20:8006";
                     insecureSkipVerify = true;
                 }
+                {
+                    name = "scrutiny";
+                    subdomain = "smart.local";
+                    backendUrl = "http://192.168.254.21:8080";
+                }
             ];
         };
         pihole_unbound = {
@@ -101,6 +106,12 @@
                     title = "Proxmox";
                     subdomain = "proxmox.local";
                     icon = "si:proxmox";
+                    group = "Other";
+                }
+                {
+                    title = "Scrutiny";
+                    subdomain = "smart.local";
+                    icon = "mdi:harddisk";
                     group = "Other";
                 }
             ];
