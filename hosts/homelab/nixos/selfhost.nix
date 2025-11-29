@@ -171,5 +171,42 @@
             # Daily at midnight
             collectorInterval = "0 0 * * *";
         };
+
+        # Borg backups
+        borgbackup = {
+            enable = true;
+            user = "root";
+
+            jobs = {
+                services-state = {
+                    paths = [ "/var/lib" ];
+                    repo = "/mnt/backup_pool/backups/services-state";
+                    schedule = "hourly";
+                    compression = "zstd";
+                    exclude = [
+                        "/var/lib/docker/overlay2"
+                        "/var/lib/containers/storage/overlay"
+                        "*.tmp"
+                        "*.cache"
+                        "**/cache/**"
+                        "**/Cache/**"
+                    ];
+                    prune.keep = {
+                        hourly = 12;
+                        daily = 7;
+                    };
+                };
+                proxmox-backup = {
+                    paths = [ "/mnt/raid_pool/proxmox-backup" ];
+                    repo = "/mnt/backup_pool/backups/proxmox-backup";
+                    schedule = "weekly";
+                    compression = "none";
+                    prune.keep = {
+                        # Keep only the latest backup
+                        weekly = 1;
+                    };
+                };
+            };
+        };
     };
 }

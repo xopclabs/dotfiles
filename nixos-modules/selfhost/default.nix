@@ -14,6 +14,7 @@ with lib;
         ./wireguard/wireguard.nix
         ./glance.nix
         ./scrutiny.nix
+        ./borgbackup.nix
     ];
 }
 
