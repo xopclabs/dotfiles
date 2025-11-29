@@ -29,7 +29,10 @@
 
     boot = {
         tmp.cleanOnBoot = true;
-        kernelPackages = pkgs.linuxPackages_latest;
+        kernelPackages =
+            if config.boot.zfs.enabled
+            then config.boot.zfs.package.latestCompatibleLinuxPackages
+            else pkgs.linuxPackages_latest;
         loader = {
             grub = {
                 enable = true;
@@ -41,14 +44,6 @@
         };
     };
 
-    # NFS share client
-    fileSystems = {
-        "/mnt/nas" = {
-            device = "192.168.254.11:/mnt/raid_pool/shared";
-            fsType = "nfs";
-            options = [ "x-systemd.automount" "noauto" ];
-        };
-    };
 
     # Automounting
     services.gvfs.enable = true;

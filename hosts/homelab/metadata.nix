@@ -16,15 +16,15 @@
         selfhost = {
             storage = {
                 downloads = {
-                    mainDir = "/mnt/nas/downloads/torrent";
-                    moviesDir = "/mnt/nas/downloads/torrent/movies";
-                    tvDir = "/mnt/nas/downloads/torrent/tv";
-                    musicDir = "/mnt/nas/downloads/torrent/music";
+                    mainDir = "/mnt/raid_pool/shared/downloads/torrent";
+                    moviesDir = "/mnt/raid_pool/shared/downloads/torrent/movies";
+                    tvDir = "/mnt/raid_pool/shared/downloads/torrent/tv";
+                    musicDir = "/mnt/raid_pool/shared/downloads/torrent/music";
                 };
                 media = {
-                    moviesDir = "/mnt/nas/media/movies";
-                    tvDir = "/mnt/nas/media/tv";
-                    musicDir = "/mnt/nas/media/music";
+                    moviesDir = "/mnt/raid_pool/shared/media/movies";
+                    tvDir = "/mnt/raid_pool/shared/media/tv";
+                    musicDir = "/mnt/raid_pool/shared/media/music";
                 };
             };
         };
