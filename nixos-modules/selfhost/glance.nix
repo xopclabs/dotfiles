@@ -257,7 +257,22 @@ in
                                     {
                                         type = "split-column";
                                         widgets = [
-                                            { type = "server-stats"; }
+                                            { 
+                                                type = "server-stats"; 
+                                                servers = [
+                                                    {
+                                                        type = "local";
+                                                        name = "homelab";
+                                                        hide-swap = true;
+                                                        hide-mountpoints-by-default = true;
+                                                        mountpoints = {
+                                                            "/".hide = false;
+                                                            "/mnt/raid_pool".hide = false;
+                                                            "/mnt/backup_pool".hide = false;
+                                                        };
+                                                    }
+                                                ];
+                                            }
                                         ] ++ (optional piholeCfg.enable {
                                             type = "dns-stats";
                                             service = "pihole-v6";
