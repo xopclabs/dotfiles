@@ -18,6 +18,12 @@ nh os switch --offline
 # --hostname homelab is equivalent to .#homelab from nixos-rebuild
 nh os switch --target-host 192.168.254.10 --hostname homelab
 
+# Force building on local machine
+nh os switch --max-jobs 0
+
+# Force building on remote machine
+nh os switch -- --builders ''
+
 # Rebuild using the nixos-rebuild command
 sudo nixos-rebuild switch --flake .#laptop
 
