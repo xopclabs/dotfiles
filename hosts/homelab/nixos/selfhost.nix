@@ -199,6 +199,7 @@
                 services-state-borgbase = {
                     paths = [ "/var/lib" ];
                     repo = "whm3082m@whm3082m.repo.borgbase.com:repo";
+                    schedule = "daily";
                     encryption.mode = "repokey-blake2";
                     prune.keep.daily = 2;
                 };
