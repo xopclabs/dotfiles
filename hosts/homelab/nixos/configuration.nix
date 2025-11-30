@@ -6,6 +6,7 @@
         
         ./disko.nix
         ./btrfs.nix
+        ./nas.nix
         ./system.nix
         ./user.nix
         ./network.nix

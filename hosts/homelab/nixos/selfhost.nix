@@ -52,9 +52,9 @@
                     insecureSkipVerify = true;
                 }
                 {
-                    name = "nas";
-                    subdomain = "nas.local";
-                    backendUrl = "http://192.168.254.11";
+                    name = "scrutiny";
+                    subdomain = "smart.local";
+                    backendUrl = "http://192.168.254.21:8080";
                 }
             ];
         };
@@ -109,9 +109,9 @@
                     group = "Other";
                 }
                 {
-                    title = "TrueNAS";
-                    subdomain = "nas.local";
-                    icon = "si:truenas";
+                    title = "Scrutiny";
+                    subdomain = "smart.local";
+                    icon = "mdi:harddisk";
                     group = "Other";
                 }
             ];
@@ -160,6 +160,58 @@
             enable = true;
             distantHorizons.enable = true;
             beta.enable = false;
+        };
+
+        # Drive health monitoring
+        scrutiny = {
+            # Disabled for now, not working due to running in a VM
+            enable = false;
+            subdomain = "drives.vm.local";
+            devices = [ "/dev/sdb" "/dev/sdc" "/dev/sdd" "/dev/sde" ];
+            # Daily at midnight
+            collectorInterval = "0 0 * * *";
+        };
+
+        # Borg backups
+        borgbackup = {
+            enable = true;
+            user = "root";
+
+            defaults = {
+                compression = "zstd";
+                exclude = [
+                    "/var/lib/docker/overlay2"
+                    "/var/lib/containers/storage/overlay"
+                    "*.tmp"
+                    "*.cache"
+                    "**/cache/**"
+                    "**/Cache/**"
+                ];
+            };
+
+            jobs = {
+                services-state = {
+                    paths = [ "/var/lib" ];
+                    repo = "/mnt/backup_pool/backups/services-state";
+                    schedule = "hourly";
+                    prune.keep = { hourly = 12; daily = 7; };
+                };
+                services-state-borgbase = {
+                    paths = [ "/var/lib" ];
+                    repo = "whm3082m@whm3082m.repo.borgbase.com:repo";
+                    schedule = "daily";
+                    encryption.mode = "repokey-blake2";
+                    prune.keep.daily = 2;
+                };
+                proxmox-backup = {
+                    paths = [ "/mnt/raid_pool/proxmox-backup" ];
+                    repo = "/mnt/backup_pool/backups/proxmox-backup";
+                    schedule = "weekly";
+                    compression = "none";
+                    exclude = [];
+                    prune.keep.weekly = 1;
+                };
+            };
         };
     };
 }

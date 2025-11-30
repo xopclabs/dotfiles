@@ -73,6 +73,13 @@
         };
     };
 
+    # NFS share client
+    fileSystems."/mnt/nas" = {
+        device = "192.168.254.10:/mnt/raid_pool/shared";
+        fsType = "nfs";
+        options = [ "x-systemd.automount" "noauto" ];
+    };
+
     # Battery?
     services.upower.enable = true;
     # Automounting
