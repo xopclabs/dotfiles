@@ -7,6 +7,7 @@ with lib;
         ./pihole-unbound.nix
         ./postgres.nix
         ./traccar.nix
+        ./nextcloud.nix
         ./minecraft.nix
         ./ddns.nix
         ./transmission.nix

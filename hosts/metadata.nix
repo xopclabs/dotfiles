@@ -35,22 +35,22 @@ with lib;
                 downloads = {
                     mainDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/downloads/torrent";
+                        default = "/mnt/raid_pool/shared/downloads/torrent";
                         description = "Base directory general downloads";
                     };
                     moviesDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/downloads/torrent/movies";
+                        default = "/mnt/raid_pool/shared/downloads/torrent/movies";
                         description = "Base directory for movies downloads";
                     };
                     tvDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/downloads/torrent/tv-shows";
+                        default = "/mnt/raid_pool/shared/downloads/torrent/tv-shows";
                         description = "Base directory for tv shows downloads";
                     };
                     musicDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/downloads/torrent/music";
+                        default = "/mnt/raid_pool/shared/downloads/torrent/music";
                         description = "Base directory for music downloads";
                     };
                     incompleteDir = mkOption {
@@ -62,18 +62,25 @@ with lib;
                 media = {
                     moviesDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/media/movies";
+                        default = "/mnt/raid_pool/shared/media/movies";
                         description = "Base directory for movies media";
                     };
                     tvDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/media/tv";
+                        default = "/mnt/raid_pool/shared/media/tv";
                         description = "Base directory for tv shows media";
                     };
                     musicDir = mkOption {
                         type = types.str;
-                        default = "/mnt/nas/media/music";
+                        default = "/mnt/raid_pool/shared/media/music";
                         description = "Base directory for music media";
+                    };
+                };
+                general = {
+                    nextcloudDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/raid_pool/nextcloud";
+                        description = "Base directory for Nextcloud data";
                     };
                 };
             };

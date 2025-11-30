@@ -155,6 +155,12 @@
             subdomain = "traccar.vm.local";
         };
 
+        # Cloud storage
+        nextcloud = {
+            enable = true;
+            subdomain = "cloud.vm.local";
+        };
+
         # Gaming servers
         minecraft = {
             enable = true;

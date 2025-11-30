@@ -26,6 +26,9 @@
                     tvDir = "/mnt/raid_pool/shared/media/tv";
                     musicDir = "/mnt/raid_pool/shared/media/music";
                 };
+                general = {
+                    nextcloudDir = "/mnt/raid_pool/nextcloud";
+                };
             };
         };
 
