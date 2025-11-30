@@ -39,6 +39,7 @@
         age.sshKeyPaths = [ "/home/xopc/.ssh/id_ed25519" ];
         age.keyFile = "/var/lib/sops/age/keys.txt";
     };
+    fileSystems."/home".neededForBoot = true;
 
     # Enable TPM2 to auto-unlock LUKS
     # NOTE: apparently my laptop doesn't support TPM2, so I've set every enable to false
