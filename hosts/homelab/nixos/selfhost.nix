@@ -177,34 +177,38 @@
             enable = true;
             user = "root";
 
+            defaults = {
+                compression = "zstd";
+                exclude = [
+                    "/var/lib/docker/overlay2"
+                    "/var/lib/containers/storage/overlay"
+                    "*.tmp"
+                    "*.cache"
+                    "**/cache/**"
+                    "**/Cache/**"
+                ];
+            };
+
             jobs = {
                 services-state = {
                     paths = [ "/var/lib" ];
                     repo = "/mnt/backup_pool/backups/services-state";
                     schedule = "hourly";
-                    compression = "zstd";
-                    exclude = [
-                        "/var/lib/docker/overlay2"
-                        "/var/lib/containers/storage/overlay"
-                        "*.tmp"
-                        "*.cache"
-                        "**/cache/**"
-                        "**/Cache/**"
-                    ];
-                    prune.keep = {
-                        hourly = 12;
-                        daily = 7;
-                    };
+                    prune.keep = { hourly = 12; daily = 7; };
+                };
+                services-state-borgbase = {
+                    paths = [ "/var/lib" ];
+                    repo = "whm3082m@whm3082m.repo.borgbase.com:repo";
+                    encryption.mode = "repokey-blake2";
+                    prune.keep.daily = 2;
                 };
                 proxmox-backup = {
                     paths = [ "/mnt/raid_pool/proxmox-backup" ];
                     repo = "/mnt/backup_pool/backups/proxmox-backup";
                     schedule = "weekly";
                     compression = "none";
-                    prune.keep = {
-                        # Keep only the latest backup
-                        weekly = 1;
-                    };
+                    exclude = [];
+                    prune.keep.weekly = 1;
                 };
             };
         };
