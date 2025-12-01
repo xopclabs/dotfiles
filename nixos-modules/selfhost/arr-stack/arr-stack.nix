@@ -219,11 +219,14 @@ in
             };
         };
 
-        # Create necessary directories for media
+        # Create necessary directories for media and ensure permissions
         systemd.tmpfiles.rules = [
-            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
+            "Z ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
+            "Z ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
+            "Z ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
         ];
 
         # Register with Traefik
