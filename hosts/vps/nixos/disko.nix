@@ -8,19 +8,10 @@ in {
             type = "gpt";
             partitions = {
 
-                # EFI Partition
-                ESP = {
-                    size = "512M";
-                    type = "EF00";
-                    content = {
-                        type = "filesystem";
-                        format = "vfat";
-                        mountpoint = "/boot";
-                        mountOptions = [
-                            "defaults"
-                            "umask=0077"
-                        ];
-                    };
+                # BIOS boot partition (required for GPT + BIOS)
+                boot = {
+                    size = "1M";
+                    type = "EF02";
                 };
 
                 # Btrfs Root Partition
