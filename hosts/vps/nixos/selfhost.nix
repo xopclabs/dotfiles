@@ -38,9 +38,5 @@
             peers = {
             };
         };
-
-        # Geolocation
-        traccar.enable = false;
-
     };
 }

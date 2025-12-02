@@ -63,6 +63,13 @@ HARDWARE CONFIG OPTIONS:
 
 OTHER OPTIONS:
     --vm-test                  Test configuration in a VM before actual installation
+    -e, --extra-arg ARG        Pass extra argument to nixos-anywhere. Can be specified multiple times.
+                               For options with values, pass flag and value as separate -e args:
+                                 -e --phases -e kexec,disko
+                                 -e --build-on -e remote
+                               For flags without values:
+                                 -e --no-disko-deps  (reduces memory for low-RAM VPS)
+                                 -e --no-reboot
     --help                     Show this help message
 
 EXAMPLES:
@@ -103,6 +110,16 @@ EXAMPLES:
     $(basename "$0") \\
         -f ~/dotfiles#laptop \\
         --vm-test
+
+    # Install on VPS with limited RAM (1GB), only kexec+disko phases
+    $(basename "$0") \\
+        -t root@ip \\
+        -f ~/dotfiles#vps \\
+        -a ~/.ssh/id_ed25519:/home/xopc/.ssh/id_ed25519 \\
+        -a ~/.ssh/id_ed25519.pub:/home/xopc/.ssh/id_ed25519.pub \\
+        -c /home/xopc/.ssh:1000:100 \\
+        -e --no-disko-deps \\
+        -e --phases -e kexec,disko
 
 EOF
 }
@@ -152,6 +169,10 @@ while [[ $# -gt 0 ]]; do
         --vm-test)
             EXTRA_ARGS+=("--vm-test")
             shift
+            ;;
+        -e|--extra-arg)
+            EXTRA_ARGS+=("$2")
+            shift 2
             ;;
         *)
             error "Unknown option: $1\nUse --help for usage information"
