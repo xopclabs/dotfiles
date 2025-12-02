@@ -23,7 +23,6 @@ in
             corefonts-subset
             noto-fonts
             noto-fonts-cjk-sans
-            noto-fonts-extra
             jetbrains-mono
             roboto
             openmoji-color
