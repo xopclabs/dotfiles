@@ -10,7 +10,7 @@
 
     # Sops for home-manager configuration
     sops = {
-        defaultSopsFile = ../../secrets/shared/personal.yaml;
+        defaultSopsFile = ../../secrets/shared/selfhost.yaml;
         age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
     };
 } 
