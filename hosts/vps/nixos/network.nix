@@ -8,8 +8,11 @@
         sopsFile = ../../../secrets/hosts/vps.yaml;
     };
 
-    # Disable default networking - we configure manually
-    networking.useDHCP = false;
+    # Disable DHCP and let our service handle it
+    networking = {
+        useDHCP = false;
+        nameservers = [ "9.9.9.9" "1.1.1.1" ];
+    };
 
     # Configure network after sops decrypts secrets
     systemd.services.network-addresses-ens3 = {
@@ -18,7 +21,7 @@
         wants = [ "sops-nix.service" ];
         requires = [ "sys-subsystem-net-devices-ens3.device" ];
         before = [ "network.target" ];
-        wantedBy = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
         serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
@@ -33,12 +36,6 @@
             ip route replace default via "$GW" dev ens3
         '';
     };
-
-    # Configure DNS
-    environment.etc."resolv.conf".text = ''
-        nameserver 9.9.9.9
-        nameserver 1.1.1.1
-    '';
 
     # Don't wait for network-online (we handle it ourselves)
     systemd.network.wait-online.enable = false;
