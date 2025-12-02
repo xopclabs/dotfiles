@@ -23,6 +23,11 @@ with lib;
                 default = null;
                 description = "Internal IP address of the system";
             };
+            prefixLength = mkOption {
+                type = types.int;
+                default = 24;
+                description = "Network prefix length (CIDR notation)";
+            };
             defaultGateway = mkOption {
                 type = types.str;
                 default = null;

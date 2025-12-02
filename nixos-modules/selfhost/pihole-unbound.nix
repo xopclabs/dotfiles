@@ -187,10 +187,11 @@ in
         # Route all local.PERSONAL_DOMAIN requests to this machine
         systemd.services.unbound.preStart = mkAfter ''
             DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+            LOCAL_IP=$(${pkgs.iproute2}/bin/ip route get 1 | ${pkgs.gawk}/bin/awk '{print $7; exit}')
             ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
                 server:
                     local-zone: "local.$DOMAIN." redirect
-                    local-data: "local.$DOMAIN. 3600 IN A ${config.metadata.network.ipv4}"
+                    local-data: "local.$DOMAIN. 3600 IN A $LOCAL_IP"
             EOF
             ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
             ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
