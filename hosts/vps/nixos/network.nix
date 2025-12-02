@@ -8,24 +8,38 @@
         sopsFile = ../../../secrets/hosts/vps.yaml;
     };
 
-    sops.templates."ens3.network" = {
-        content = ''
-            [Match]
-            Name=ens3
+    # Disable default networking - we configure manually
+    networking.useDHCP = false;
 
-            [Network]
-            Address=${config.sops.placeholder."network/ipv4"}/24
-            Gateway=${config.sops.placeholder."network/gateway"}
-            DNS=9.9.9.9
-            DNS=1.1.1.1
+    # Configure network after sops decrypts secrets
+    systemd.services.network-addresses-ens3 = {
+        description = "Configure ens3 network from sops secrets";
+        after = [ "sops-nix.service" "sys-subsystem-net-devices-ens3.device" ];
+        wants = [ "sops-nix.service" ];
+        requires = [ "sys-subsystem-net-devices-ens3.device" ];
+        before = [ "network.target" ];
+        wantedBy = [ "network.target" ];
+        serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+        };
+        path = [ pkgs.iproute2 ];
+        script = ''
+            IP=$(cat ${config.sops.secrets."network/ipv4".path})
+            GW=$(cat ${config.sops.secrets."network/gateway".path})
+
+            ip link set ens3 up
+            ip addr replace "$IP"/24 dev ens3
+            ip route replace default via "$GW" dev ens3
         '';
-        path = "/etc/systemd/network/10-ens3.network";
     };
 
-    networking = {
-        useDHCP = false;
-        useNetworkd = true;
-    };
+    # Configure DNS
+    environment.etc."resolv.conf".text = ''
+        nameserver 9.9.9.9
+        nameserver 1.1.1.1
+    '';
 
-    systemd.network.enable = true;
+    # Don't wait for network-online (we handle it ourselves)
+    systemd.network.wait-online.enable = false;
 }
