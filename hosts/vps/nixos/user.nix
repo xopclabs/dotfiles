@@ -20,7 +20,6 @@
         font = "Lat2-Terminus16";
         keyMap = "us";
     };
-    services.automatic-timezoned.enable = true;
 
     # Enable dynamically linked binaries to work
     programs.nix-ld.enable = true;
