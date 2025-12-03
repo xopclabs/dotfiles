@@ -20,7 +20,12 @@ in
 {
     options.homelab.minecraft = {
         enable = mkEnableOption "Minecraft servers";
-            
+        openFirewall = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Open firewall for Minecraft servers";
+        };
+
         distantHorizons = {
             enable = mkOption {
                 type = types.bool;
@@ -67,7 +72,7 @@ in
         services.minecraft-servers = {
             enable = true;
             eula = true;
-            openFirewall = true;
+            openFirewall = cfg.openFirewall;
 
             servers.distant-horizons = mkIf cfg.distantHorizons.enable {
                 enable = true;

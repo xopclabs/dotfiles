@@ -25,7 +25,14 @@
         };
         pihole_unbound = {
             enable = true;
-            pihole.subdomain = "pihole.vps.local";
+            pihole = {
+                firewall = {
+                    dns = false;
+                    dhcp = false;
+                    webserver = false;
+                };
+                subdomain = "pihole.vps.local";
+            };
         };
 
         # VPN

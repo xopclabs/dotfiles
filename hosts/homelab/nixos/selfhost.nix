@@ -60,7 +60,14 @@
         };
         pihole_unbound = {
             enable = true;
-            pihole.subdomain = "pihole.vm.local";
+            pihole = {
+                firewall = {
+                    dns = true;
+                    dhcp = true;
+                    webserver = false;
+                };
+                subdomain = "pihole.vm.local";
+            };
             unbound.forwardUpstream = true;
         };
 
@@ -134,11 +141,9 @@
             sonarr.subdomain = "tv.vm.local";
 
             jellyfin.subdomain = "jellyfin.vm.local";
-            jellyseerr = {
-                subdomain = "request.vm.local";
-                # Disable proxy - Quad9 DNS bypasses country restrictions, proxy breaks local service connections
-                proxy = false;
-            };
+            jellyfin.openFirewall = true;
+
+            jellyseerr.subdomain = "request.vm.local";
 
             bazarr.subdomain = "subtitles.vm.local";
 

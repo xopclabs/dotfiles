@@ -19,6 +19,7 @@ in
                 default = true;
                 description = "Enable Prowlarr indexer manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Prowlarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -36,6 +37,7 @@ in
                 default = true;
                 description = "Enable Radarr movie manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Radarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -53,6 +55,7 @@ in
                 default = true;
                 description = "Enable Sonarr TV show manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Sonarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -70,6 +73,7 @@ in
                 default = true;
                 description = "Enable FlareSolverr proxy for Cloudflare bypass";
             };
+            openFirewall = mkEnableOption "Open firewall for FlareSolverr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -87,6 +91,7 @@ in
                 default = true;
                 description = "Enable Jellyfin media server";
             };
+            openFirewall = mkEnableOption "Open firewall for Jellyfin";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -104,6 +109,7 @@ in
                 default = true;
                 description = "Enable Jellyseerr media request manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Jellyseerr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -121,6 +127,7 @@ in
                 default = true;
                 description = "Enable Bazarr subtitle manager for Sonarr and Radarr";
             };
+            openFirewall = mkEnableOption "Open firewall for Bazarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -136,7 +143,7 @@ in
     config = mkIf cfg.enable {
         services.prowlarr = mkIf cfg.prowlarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.prowlarr.openFirewall;
         };
         systemd.services.prowlarr = mkIf cfg.prowlarr.proxy {
             environment = {
@@ -148,7 +155,7 @@ in
 
         services.radarr = mkIf cfg.radarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.radarr.openFirewall;
         };
         systemd.services.radarr = mkIf cfg.radarr.proxy {
             environment = {
@@ -160,7 +167,7 @@ in
 
         services.sonarr = mkIf cfg.sonarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.sonarr.openFirewall;
         };
         systemd.services.sonarr = mkIf cfg.sonarr.proxy {
             environment = {
@@ -172,7 +179,7 @@ in
 
         services.flaresolverr = mkIf cfg.flaresolverr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.flaresolverr.openFirewall;
         };
         systemd.services.flaresolverr = mkIf cfg.flaresolverr.proxy {
             environment = {
@@ -184,7 +191,7 @@ in
 
         services.jellyfin = mkIf cfg.jellyfin.enable {
             enable = true;
-            openFirewall = true;
+            openFirewall = cfg.jellyfin.openFirewall;
         };
         systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
             environment = {
@@ -197,7 +204,7 @@ in
         services.jellyseerr = mkIf cfg.jellyseerr.enable {
             enable = true;
             port = 15055;
-            openFirewall = false;
+            openFirewall = cfg.jellyseerr.openFirewall;
         };
         systemd.services.jellyseerr = mkIf cfg.jellyseerr.proxy {
             environment = {
@@ -209,7 +216,7 @@ in
 
         services.bazarr = mkIf cfg.bazarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.bazarr.openFirewall;
         };
         systemd.services.bazarr = mkIf cfg.bazarr.proxy {
             environment = {

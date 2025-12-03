@@ -71,6 +71,24 @@ in
                 ];
                 description = "List of blocklists for Pi-hole";
             };
+
+            firewall = {
+                dns = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Open firewall for DNS";
+                };
+                dhcp = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Open firewall for DHCP";
+                };
+                webserver = mkOption {
+                    type = types.bool;
+                    default = false;
+                    description = "Open firewall for Webserver";
+                };
+            };
         };
     };
     
@@ -200,9 +218,9 @@ in
         # Pi-hole FTL DNS service
         services.pihole-ftl = {
             enable = true;
-            openFirewallDNS = true;
-            openFirewallDHCP = true;
-            openFirewallWebserver = true;
+            openFirewallDNS = cfg.pihole.firewall.dns;
+            openFirewallDHCP = cfg.pihole.firewall.dhcp;
+            openFirewallWebserver = cfg.pihole.firewall.webserver;
             lists = cfg.pihole.lists;
             
             settings = {
