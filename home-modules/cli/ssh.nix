@@ -16,11 +16,16 @@ in {
         programs.ssh = {
             enable = true;
             includes = [ "hosts_config" ];
-            extraConfig = ''
-                StrictHostKeyChecking no
-                ServerAliveInterval 10
-                ServerAliveCountMax 120
-            '';
+            
+            enableDefaultConfig = false;
+            matchBlocks."*" = {
+                extraOptions = {
+                    AddKeysToAgent = "yes";
+                    StrictHostKeyChecking = "no";
+                    ServerAliveInterval = "10";
+                    ServerAliveCountMax = "120";
+                };
+            };
         };
     };
 }

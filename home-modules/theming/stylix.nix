@@ -14,6 +14,7 @@ in {
         stylix = {
             enable = true;
             autoEnable = true;
+            enableReleaseChecks = false;
             fonts = {
                 sansSerif = {
                     name = "Ubuntu";

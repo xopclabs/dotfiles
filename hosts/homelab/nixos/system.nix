@@ -29,9 +29,10 @@
 
     boot = {
         tmp.cleanOnBoot = true;
+        # Use default LTS kernel for ZFS compatibility, or latest for non-ZFS
         kernelPackages =
             if config.boot.zfs.enabled
-            then config.boot.zfs.package.latestCompatibleLinuxPackages
+            then pkgs.linuxPackages
             else pkgs.linuxPackages_latest;
         loader = {
             grub = {
