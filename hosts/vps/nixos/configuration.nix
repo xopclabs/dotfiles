@@ -14,5 +14,6 @@
 	    ./ssh.nix
 
         ./selfhost.nix
+        ./programs.nix
     ];
 }
