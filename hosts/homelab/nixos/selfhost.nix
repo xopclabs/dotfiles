@@ -59,7 +59,7 @@
                 {
                     name = "incus";
                     subdomain = "incus.local";
-                    backendUrl = "http://192.168.254.100:8443";
+                    backendUrl = "https://192.168.254.100:8443";
                     insecureSkipVerify = true;
                 }
             ];
@@ -125,6 +125,12 @@
                     title = "Scrutiny";
                     subdomain = "smart.local";
                     icon = "mdi:harddisk";
+                    group = "Other";
+                }
+                {
+                    title = "Incus";
+                    subdomain = "incus.local";
+                    icon = "mdi:server-network";
                     group = "Other";
                 }
             ];
