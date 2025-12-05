@@ -56,6 +56,12 @@
                     subdomain = "smart.local";
                     backendUrl = "http://192.168.254.21:8080";
                 }
+                {
+                    name = "incus";
+                    subdomain = "incus.local";
+                    backendUrl = "http://192.168.254.100:8443";
+                    insecureSkipVerify = true;
+                }
             ];
         };
         pihole_unbound = {

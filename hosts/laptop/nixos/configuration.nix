@@ -14,6 +14,7 @@
         ./hardware-configuration.nix
         ./btrfs.nix
         ./ssh.nix
+        ./incus.nix
 
         ./programs.nix
     ];
