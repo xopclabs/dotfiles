@@ -165,12 +165,11 @@ in
     };
     
     config = mkIf cfg.enable {
-        sops.secrets."traefik/env" = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
-        };
-
-        # Client certificate secrets for mTLS backends
-        sops.secrets = mapAttrs' (name: certCfg: {
+        sops.secrets = {
+            "traefik/env" = {
+                sopsFile = ../../secrets/shared/selfhost.yaml;
+            };
+        } // mapAttrs' (name: certCfg: {
             name = "traefik/certs/${name}/cert";
             value = {
                 sopsFile = ../../secrets/shared/selfhost.yaml;
@@ -188,7 +187,7 @@ in
 
         services.traefik = {
             enable = true;
-            environmentFiles = [ config.sops.secrets.traefik.path ];
+            environmentFiles = [ config.sops.secrets."traefik/env".path ];
 
             staticConfigOptions = {
                 global = {
@@ -258,8 +257,8 @@ in
                         # Client certificate transport for mTLS backends
                         insecureSkipVerify = certCfg.insecureSkipVerify;
                         certificates = [{
-                            certFile = config.sops.secrets."traefik/client-certs/${name}/cert".path;
-                            keyFile = config.sops.secrets."traefik/client-certs/${name}/key".path;
+                            certFile = config.sops.secrets."traefik/certs/${name}/cert".path;
+                            keyFile = config.sops.secrets."traefik/certs/${name}/key".path;
                         }];
                     }) cfg.clientCerts);
 

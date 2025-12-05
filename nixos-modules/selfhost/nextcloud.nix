@@ -98,7 +98,7 @@ in
             serviceConfig = {
                 Type = "oneshot";
                 User = "nextcloud";
-                EnvironmentFile = config.sops.secrets.traefik.path;
+                EnvironmentFile = config.sops.secrets."traefik/env".path;
                 ExecStart = pkgs.writeShellScript "nextcloud-trusted-domain" ''
                     FULL_DOMAIN="${cfg.subdomain}.$DOMAIN"
                     ${config.services.nextcloud.occ}/bin/nextcloud-occ config:system:set trusted_domains 1 --value="$FULL_DOMAIN"
