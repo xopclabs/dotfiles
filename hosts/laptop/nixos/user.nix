@@ -45,4 +45,6 @@
             ${pkgs.systemd}/bin/timedatectl set-timezone "$TIMEZONE"
         '';
     };
+
+    programs.nix-ld.enable = true;
 }

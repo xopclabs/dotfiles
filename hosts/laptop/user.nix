@@ -10,6 +10,8 @@
     ];
     
     config.modules = {
+	    desktop.other.gtk.enable = true;
+
         theming = {
             stylix.enable = true;
         };
@@ -37,10 +39,6 @@
             nh.enable = true;
             tldr.enable = true;
             scripts.enable = true;
-        };
-
-        terminals = {
-            kitty.enable = true;
         };
 
         editors = {
