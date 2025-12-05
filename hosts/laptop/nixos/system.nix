@@ -110,10 +110,13 @@
         HibernateDelaySec=3h 
     '';
     
-    # Ignore power button presses
+    # Ignore power button presses, disable suspend on lid close
     services.logind = {
         powerKey = "ignore";
-	    powerKeyLongPress = "poweroff";
+        powerKeyLongPress = "poweroff";
+        lidSwitch = "ignore";
+        lidSwitchExternalPower = "ignore";
+        lidSwitchDocked = "ignore";
     };
 
     # Docker support
