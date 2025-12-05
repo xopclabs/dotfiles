@@ -60,9 +60,13 @@
                     name = "incus";
                     subdomain = "incus.local";
                     backendUrl = "https://192.168.254.100:8443";
-                    insecureSkipVerify = true;
+                    clientCert = "incus";  # Uses traefik/client-certs/incus/{cert,key} from sops
                 }
             ];
+            # Client certificates for mTLS backends
+            clientCerts.incus = {
+                insecureSkipVerify = true;  # Incus uses self-signed server cert
+            };
         };
         pihole_unbound = {
             enable = true;
