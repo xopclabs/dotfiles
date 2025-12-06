@@ -48,6 +48,8 @@
         };
     };
 
+    users.users."${config.metadata.user}".extraGroups = [ "incus-admin" ];
+
     networking.firewall.allowedTCPPorts = [ 8443 ];
 
     # IOMMU and VFIO for PCI passthrough (Windows VM with GPU)
