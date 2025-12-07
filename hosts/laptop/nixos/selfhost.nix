@@ -6,6 +6,15 @@
     ];
     
     config.homelab = {
+        # High availability
+        keepalived = {
+            enable = true;
+            virtualIP = "192.168.254.99";
+            interface = "wlan0";
+            priority = 100;
+        };
+
+        # DNS
         pihole_unbound = {
             enable = true;
             pihole = {

@@ -16,6 +16,7 @@ with lib;
         ./glance.nix
         ./scrutiny.nix
         ./borgbackup.nix
+        ./keepalived.nix
     ];
 }
 

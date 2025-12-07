@@ -6,7 +6,7 @@
     ];
     
     config.homelab = {
-        # Essentials
+        # Dynamic DNS
         ddns = {
             enable = true;
             providers = {
@@ -24,6 +24,8 @@
                 };
             };
         };
+
+        # Reverse proxy
         traefik = {
             enable = true;
             dashboardSubdomain = "traefik.vm.local";
@@ -68,6 +70,16 @@
                 insecureSkipVerify = true;  # Incus uses self-signed server cert
             };
         };
+
+        # High availability
+        keepalived = {
+            enable = true;
+            virtualIP = "192.168.254.99";
+            interface = "ens18";
+            priority = 150;
+        };
+
+        # DNS    
         pihole_unbound = {
             enable = true;
             pihole = {
@@ -141,7 +153,6 @@
             clock.count = 4;
             markets.count = 4;
         };
-
 
         # Torrents
         transmission = {
