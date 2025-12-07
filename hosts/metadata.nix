@@ -36,6 +36,11 @@ with lib;
         };
 
         selfhost = {
+            mainIpv4 = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "IPv4 address the main server for selfhosting";
+            };
             storage = {
                 downloads = {
                     mainDir = mkOption {

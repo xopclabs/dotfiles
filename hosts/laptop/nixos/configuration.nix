@@ -16,6 +16,7 @@
         ./ssh.nix
         ./incus.nix
 
+        ./selfhost.nix
         ./programs.nix
     ];
 }

@@ -203,17 +203,26 @@ in
         };
         
         # Route all local.PERSONAL_DOMAIN requests to this machine
-        systemd.services.unbound.preStart = mkAfter ''
-            DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
-            LOCAL_IP=$(${pkgs.iproute2}/bin/ip route get 1 | ${pkgs.gawk}/bin/awk '{print $7; exit}')
-            ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
-                server:
-                    local-zone: "local.$DOMAIN." redirect
-                    local-data: "local.$DOMAIN. 3600 IN A $LOCAL_IP"
+        # Wait for network to be online before starting unbound (needed for IP auto-detection)
+        systemd.services.unbound = {
+            after = [ "network-online.target" ];
+            wants = [ "network-online.target" ];
+            preStart = mkAfter ''
+                DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                ${if config.metadata.selfhost.mainIpv4 != null then ''
+                LOCAL_IP="${config.metadata.selfhost.mainIpv4}"
+                '' else ''
+                LOCAL_IP=$(${pkgs.iproute2}/bin/ip route get 1 | ${pkgs.gawk}/bin/awk '{print $7; exit}')
+                ''}
+                ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
+                    server:
+                        local-zone: "local.$DOMAIN." redirect
+                        local-data: "local.$DOMAIN. 3600 IN A $LOCAL_IP"
             EOF
-            ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
-            ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
-        '';
+                ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
+                ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
+            '';
+        };
         
         # Pi-hole FTL DNS service
         services.pihole-ftl = {
