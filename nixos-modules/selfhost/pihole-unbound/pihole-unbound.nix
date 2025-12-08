@@ -3,6 +3,8 @@
 with lib;
 let
     cfg = config.homelab.pihole_unbound;
+    
+    sync-to-orangepi = pkgs.writeShellScriptBin "sync-to-orangepi" ''${builtins.readFile ./sync-to-orangepi}'';
 in
 {
     options.homelab.pihole_unbound = {
@@ -93,9 +95,12 @@ in
     };
     
     config = mkIf cfg.enable {
+        # Install sync script
+        environment.systemPackages = [ sync-to-orangepi ];
+        
         # Sops secret for domain name
         sops.secrets.domain = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
             owner = "unbound";
             mode = "0400";
             restartUnits = [ "unbound.service" "pihole-ftl.service" ];
@@ -103,7 +108,7 @@ in
 
         # Sops secret for custom hosts
         sops.secrets.hosts = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
             path = "/etc/dnsmasq.d/custom-hosts";
             owner = "root";
             group = "root";
