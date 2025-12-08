@@ -35,11 +35,29 @@ in
             default = "keepalived";
             description = "Authentication password for VRRP (must be same on all nodes)";
         };
+        
+        trackPihole = mkOption {
+            type = types.bool;
+            default = config.homelab.pihole_unbound.enable;
+            description = "Track Pi-hole health - failover if pihole-FTL is not running. Defaults to true if pihole_unbound is enabled.";
+        };
     };
     
     config = mkIf cfg.enable {
         services.keepalived = {
             enable = true;
+            
+            vrrpScripts = mkIf cfg.trackPihole {
+                chk_pihole = {
+                    script = "${pkgs.procps}/bin/pgrep pihole-FTL";
+                    interval = 5;
+                    weight = -1000;
+                    fall = 2;
+                    rise = 1;
+                    user = "root";
+                    group = "root";
+                };
+            };
 
             vrrpInstances.main = {
                 interface = cfg.interface;
@@ -49,6 +67,8 @@ in
                 virtualIps = [
                     { addr = "${cfg.virtualIP}/24"; }
                 ];
+                
+                trackScripts = mkIf cfg.trackPihole [ "chk_pihole" ];
 
                 extraConfig = ''
                     advert_int 1
