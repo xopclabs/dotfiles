@@ -122,7 +122,6 @@
                 enable = true;
                 host = "127.0.0.1";
                 port = 10808;
-                redsocksPort = 12345;
             };
         };
 
@@ -171,6 +170,7 @@
             jellyfin.openFirewall = true;
 
             jellyseerr.subdomain = "request.vm.local";
+            jellyseerr.proxy = false;  # Proxy is configured in jellyseerr itself
 
             bazarr.subdomain = "subtitles.vm.local";
 

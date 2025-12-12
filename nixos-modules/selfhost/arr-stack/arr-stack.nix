@@ -3,6 +3,12 @@
 with lib;
 let
     cfg = config.homelab.arr-stack;
+    
+    # Base NO_PROXY for private networks
+    baseNoProxy = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+    
+    # Environment file that will contain NO_PROXY with domain
+    arrProxyEnvFile = "/run/arr-proxy.env";
 in
 {
     imports = [
@@ -141,16 +147,46 @@ in
     };
     
     config = mkIf cfg.enable {
+        # Reuse traefik's env file which contains DOMAIN
+        sops.secrets."traefik/env" = {
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
+        };
+
+        # Generate proxy environment file with domain included in NO_PROXY
+        systemd.services.arr-proxy-env = {
+            description = "Generate arr-stack proxy environment file";
+            wantedBy = [ "multi-user.target" ];
+            before = [ 
+                "prowlarr.service" "radarr.service" "sonarr.service" 
+                "flaresolverr.service" "jellyfin.service" "jellyseerr.service" "bazarr.service"
+            ];
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+            };
+            script = ''
+                # Source traefik env to get DOMAIN variable
+                set -a
+                source ${config.sops.secrets."traefik/env".path}
+                set +a
+                
+                ${pkgs.coreutils}/bin/cat > ${arrProxyEnvFile} <<EOF
+                    HTTP_PROXY=http://127.0.0.1:10808
+                    HTTPS_PROXY=http://127.0.0.1:10808
+                    NO_PROXY=${baseNoProxy},.$DOMAIN
+                EOF
+                ${pkgs.coreutils}/bin/chmod 644 ${arrProxyEnvFile}
+            '';
+        };
+
         services.prowlarr = mkIf cfg.prowlarr.enable {
             enable = true;
             openFirewall = cfg.prowlarr.openFirewall;
         };
         systemd.services.prowlarr = mkIf cfg.prowlarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.radarr = mkIf cfg.radarr.enable {
@@ -158,11 +194,9 @@ in
             openFirewall = cfg.radarr.openFirewall;
         };
         systemd.services.radarr = mkIf cfg.radarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.sonarr = mkIf cfg.sonarr.enable {
@@ -170,11 +204,9 @@ in
             openFirewall = cfg.sonarr.openFirewall;
         };
         systemd.services.sonarr = mkIf cfg.sonarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.flaresolverr = mkIf cfg.flaresolverr.enable {
@@ -182,11 +214,9 @@ in
             openFirewall = cfg.flaresolverr.openFirewall;
         };
         systemd.services.flaresolverr = mkIf cfg.flaresolverr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.jellyfin = mkIf cfg.jellyfin.enable {
@@ -194,11 +224,9 @@ in
             openFirewall = cfg.jellyfin.openFirewall;
         };
         systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.jellyseerr = mkIf cfg.jellyseerr.enable {
@@ -207,11 +235,9 @@ in
             openFirewall = cfg.jellyseerr.openFirewall;
         };
         systemd.services.jellyseerr = mkIf cfg.jellyseerr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.bazarr = mkIf cfg.bazarr.enable {
@@ -219,11 +245,9 @@ in
             openFirewall = cfg.bazarr.openFirewall;
         };
         systemd.services.bazarr = mkIf cfg.bazarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         # Create necessary directories for media and ensure permissions

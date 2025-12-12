@@ -76,6 +76,7 @@ let
                     elif .port == 10809 then .port = 10809
                     else . end
                   )
+                + [{ port: 10810, listen: "127.0.0.1", protocol: "http", tag: "http-in" }]
               )
             | .outbounds = ( [$p1, $p2] + ($a.outbounds | map(select(.tag!="proxy"))) )
             | .observatory = {
