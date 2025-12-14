@@ -44,7 +44,7 @@
                 desktopSession = "hyprland-uwsm";
                 deckyLoader = {
                     enable = false;
-                    user = "decky";
+                    user = "xopc";
                 };
             };
             extraPackages = true;
