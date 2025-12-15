@@ -1,24 +1,42 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
-    networking = {
-        # Static ip
-        useDHCP = false;
-            interfaces.ens18 = {
-                useDHCP = false;
-                ipv4.addresses = [
-                    {
-                        address = config.metadata.network.ipv4;
-                        prefixLength = 24;
-                    }
-                ];
-        };
-        defaultGateway = config.metadata.network.defaultGateway;
-        nameservers = [ "9.9.9.9" ];
-        
-        networkmanager = {
-            enable = true;
-            dns = "default";
-        };
+    sops.secrets."network/ipv4" = {
+        sopsFile = ../../../secrets/hosts/vps.yaml;
     };
+    sops.secrets."network/gateway" = {
+        sopsFile = ../../../secrets/hosts/vps.yaml;
+    };
+
+    # Disable DHCP and let our service handle it
+    networking = {
+        useDHCP = false;
+        nameservers = [ "9.9.9.9" "1.1.1.1" ];
+    };
+
+    # Configure network after sops decrypts secrets
+    systemd.services.network-addresses-ens3 = {
+        description = "Configure ens3 network from sops secrets";
+        after = [ "sops-nix.service" "sys-subsystem-net-devices-ens3.device" ];
+        wants = [ "sops-nix.service" ];
+        requires = [ "sys-subsystem-net-devices-ens3.device" ];
+        before = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+        };
+        path = [ pkgs.iproute2 ];
+        script = ''
+            IP=$(cat ${config.sops.secrets."network/ipv4".path})
+            GW=$(cat ${config.sops.secrets."network/gateway".path})
+
+            ip link set ens3 up
+            ip addr replace "$IP"/24 dev ens3
+            ip route replace default via "$GW" dev ens3
+        '';
+    };
+
+    # Don't wait for network-online (we handle it ourselves)
+    systemd.network.wait-online.enable = false;
 }

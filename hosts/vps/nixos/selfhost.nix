@@ -25,22 +25,29 @@
         };
         pihole_unbound = {
             enable = true;
-            pihole.subdomain = "pihole.vps.local";
+            pihole = {
+                firewall = {
+                    dns = false;
+                    dhcp = false;
+                    webserver = false;
+                };
+                subdomain = "pihole.vps.local";
+            };
         };
 
         # VPN
         wireguard = {
-            enable = false;
-            listenPort = 51820;
+            enable = true;
+            listenPort = 12333;
             serverIP = "10.250.250.1/24";
             subnet = "10.250.250.0/24";
             externalInterface = "ens18";
             peers = {
+                pavel = {
+                    publicKey = "1LXVJGpJcmtb/QawSGDeNxO6DcFZG1PoipDmhtTvJxI=";
+                    allowedIPs = [ "10.250.250.102/32" ];
+                };
             };
         };
-
-        # Geolocation
-        traccar.enable = false;
-
     };
 }

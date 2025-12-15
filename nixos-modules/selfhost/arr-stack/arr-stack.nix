@@ -3,6 +3,12 @@
 with lib;
 let
     cfg = config.homelab.arr-stack;
+    
+    # Base NO_PROXY for private networks
+    baseNoProxy = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+    
+    # Environment file that will contain NO_PROXY with domain
+    arrProxyEnvFile = "/run/arr-proxy.env";
 in
 {
     imports = [
@@ -19,6 +25,7 @@ in
                 default = true;
                 description = "Enable Prowlarr indexer manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Prowlarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -36,6 +43,7 @@ in
                 default = true;
                 description = "Enable Radarr movie manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Radarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -53,6 +61,7 @@ in
                 default = true;
                 description = "Enable Sonarr TV show manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Sonarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -70,6 +79,7 @@ in
                 default = true;
                 description = "Enable FlareSolverr proxy for Cloudflare bypass";
             };
+            openFirewall = mkEnableOption "Open firewall for FlareSolverr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -87,6 +97,7 @@ in
                 default = true;
                 description = "Enable Jellyfin media server";
             };
+            openFirewall = mkEnableOption "Open firewall for Jellyfin";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -104,6 +115,7 @@ in
                 default = true;
                 description = "Enable Jellyseerr media request manager";
             };
+            openFirewall = mkEnableOption "Open firewall for Jellyseerr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -121,6 +133,7 @@ in
                 default = true;
                 description = "Enable Bazarr subtitle manager for Sonarr and Radarr";
             };
+            openFirewall = mkEnableOption "Open firewall for Bazarr";
             proxy = mkOption {
                 type = types.bool;
                 default = true;
@@ -134,96 +147,117 @@ in
     };
     
     config = mkIf cfg.enable {
+        # Reuse traefik's env file which contains DOMAIN
+        sops.secrets."traefik/env" = {
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
+        };
+
+        # Generate proxy environment file with domain included in NO_PROXY
+        systemd.services.arr-proxy-env = {
+            description = "Generate arr-stack proxy environment file";
+            wantedBy = [ "multi-user.target" ];
+            before = [ 
+                "prowlarr.service" "radarr.service" "sonarr.service" 
+                "flaresolverr.service" "jellyfin.service" "jellyseerr.service" "bazarr.service"
+            ];
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+            };
+            script = ''
+                # Source traefik env to get DOMAIN variable
+                set -a
+                source ${config.sops.secrets."traefik/env".path}
+                set +a
+                
+                ${pkgs.coreutils}/bin/cat > ${arrProxyEnvFile} <<EOF
+                    HTTP_PROXY=http://127.0.0.1:10808
+                    HTTPS_PROXY=http://127.0.0.1:10808
+                    NO_PROXY=${baseNoProxy},.$DOMAIN
+                EOF
+                ${pkgs.coreutils}/bin/chmod 644 ${arrProxyEnvFile}
+            '';
+        };
+
         services.prowlarr = mkIf cfg.prowlarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.prowlarr.openFirewall;
         };
         systemd.services.prowlarr = mkIf cfg.prowlarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.radarr = mkIf cfg.radarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.radarr.openFirewall;
         };
         systemd.services.radarr = mkIf cfg.radarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.sonarr = mkIf cfg.sonarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.sonarr.openFirewall;
         };
         systemd.services.sonarr = mkIf cfg.sonarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.flaresolverr = mkIf cfg.flaresolverr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.flaresolverr.openFirewall;
         };
         systemd.services.flaresolverr = mkIf cfg.flaresolverr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.jellyfin = mkIf cfg.jellyfin.enable {
             enable = true;
-            openFirewall = true;
+            openFirewall = cfg.jellyfin.openFirewall;
         };
         systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.jellyseerr = mkIf cfg.jellyseerr.enable {
             enable = true;
             port = 15055;
-            openFirewall = false;
+            openFirewall = cfg.jellyseerr.openFirewall;
         };
         systemd.services.jellyseerr = mkIf cfg.jellyseerr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
         services.bazarr = mkIf cfg.bazarr.enable {
             enable = true;
-            openFirewall = false;
+            openFirewall = cfg.bazarr.openFirewall;
         };
         systemd.services.bazarr = mkIf cfg.bazarr.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
-            };
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
-        # Create necessary directories for media
+        # Create necessary directories for media and ensure permissions
         systemd.tmpfiles.rules = [
-            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
+            "Z ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
+            "Z ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
+            "Z ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
         ];
 
         # Register with Traefik

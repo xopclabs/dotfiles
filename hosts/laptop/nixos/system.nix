@@ -110,10 +110,13 @@
         HibernateDelaySec=3h 
     '';
     
-    # Ignore power button presses
+    # Ignore power button presses, disable suspend on lid close
     services.logind = {
         powerKey = "ignore";
-	    powerKeyLongPress = "poweroff";
+        powerKeyLongPress = "poweroff";
+        lidSwitch = "ignore";
+        lidSwitchExternalPower = "ignore";
+        lidSwitchDocked = "ignore";
     };
 
     # Docker support
@@ -128,11 +131,7 @@
         NIXOS_CONFIG = "$HOME/dotfiles/hosts/laptop/system/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
         NH_FLAKE = "$HOME/dotfiles";
-        GTK_RC_FILES = "$HOME/.local/share/gtk-1.0/gtkrc";
-        GTK2_RC_FILES = "$HOME/.local/share/gtk-2.0/gtkrc";
-        MOZ_ENABLE_WAYLAND = "1";
         EDITOR = "nvim";
-        TERM="xterm-kitty";
     };
 
     services.thermald.enable = true;

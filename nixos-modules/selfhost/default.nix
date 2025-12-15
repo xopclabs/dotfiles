@@ -4,7 +4,7 @@ with lib;
 {
     imports = [
         ./traefik.nix
-        ./pihole-unbound.nix
+        ./pihole-unbound/pihole-unbound.nix
         ./postgres.nix
         ./traccar.nix
         ./nextcloud.nix
@@ -16,6 +16,7 @@ with lib;
         ./glance.nix
         ./scrutiny.nix
         ./borgbackup.nix
+        ./keepalived.nix
     ];
 }
 

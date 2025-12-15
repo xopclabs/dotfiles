@@ -76,6 +76,7 @@ let
                     elif .port == 10809 then .port = 10809
                     else . end
                   )
+                + [{ port: 10810, listen: "127.0.0.1", protocol: "http", tag: "http-in" }]
               )
             | .outbounds = ( [$p1, $p2] + ($a.outbounds | map(select(.tag!="proxy"))) )
             | .observatory = {
@@ -170,16 +171,16 @@ in
     };
 
     config = mkIf cfg.enable {
-        # SOPS secrets configuration
+        # SOPS secrets configuration 
         sops.secrets = mkMerge [
             (mkIf cfg.subscriptions.alpha {
-                "xray/subscription-alpha".restartUnits = [ "xray-update-subscription.service" ];
+                "xray/subscription-alpha" = {};
             })
             (mkIf cfg.subscriptions.beta {
-                "xray/subscription-beta".restartUnits = [ "xray-update-subscription.service" ];
+                "xray/subscription-beta" = {};
             })
             (mkIf cfg.directDomains.enable {
-                "xray/direct-domains".restartUnits = [ "xray-update-subscription.service" ];
+                "xray/direct-domains" = {};
             })
         ];
 
@@ -197,7 +198,12 @@ in
             description = "Download, merge xray configs and restart xray";
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
-            wantedBy = [ "multi-user.target" ];  # Run on boot
+            wantedBy = [ "multi-user.target" ];
+            unitConfig = {
+                # Only run on boot if config doesn't exist (first install)
+                # After that, only timer triggers updates
+                ConditionPathExists = "!/etc/xray/config.json";
+            };
             script = ''
                 mkdir -p /etc/xray
 
@@ -211,14 +217,14 @@ in
                     done
                 fi
 
-                # Fetch raw JSON from each subscription
+                # Fetch raw JSON from each subscription (with timeout)
                 ${optionalString cfg.subscriptions.beta ''
                 echo "Fetching subscription-beta"
-                ${pkgs.curl}/bin/curl -fLo /tmp/xray1.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
+                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 30 -fLo /tmp/xray1.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
                 ''}
                 ${optionalString cfg.subscriptions.alpha ''
                 echo "Fetching subscription-alpha"
-                ${pkgs.curl}/bin/curl -fLo /tmp/xray2.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})
+                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 30 -fLo /tmp/xray2.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})
                 ''}
 
                 ${mkMergeScript}
@@ -235,6 +241,8 @@ in
             wantedBy = [ "timers.target" ];
             timerConfig = {
                 OnCalendar = cfg.updateInterval;
+                OnBootSec = "2min";
+                Persistent = true;
                 Unit = "xray-update-subscription.service";
             };
         };
@@ -246,8 +254,8 @@ in
             wants = [ "network-online.target" ];
             script = ''
                 mkdir -p /etc/xray
-                ${pkgs.curl}/bin/curl -fLo /etc/xray/geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
-                ${pkgs.curl}/bin/curl -fLo /etc/xray/geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 60 -fLo /etc/xray/geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 60 -fLo /etc/xray/geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
             '';
             serviceConfig = {
                 Type = "oneshot";

@@ -1,7 +1,7 @@
-{ config, pkgs, inputs, ... }:
+{ config, lib, inputs, ... }:
 
 {
-    imports = [
+    imports = [ 
         ../../../nixos-modules/desktop/default.nix
     ];
     
@@ -15,3 +15,4 @@
         };
     };
 }
+

@@ -3,6 +3,8 @@
 with lib;
 let
     cfg = config.homelab.pihole_unbound;
+    
+    sync-to-orangepi = pkgs.writeShellScriptBin "sync-to-orangepi" ''${builtins.readFile ./sync-to-orangepi}'';
 in
 {
     options.homelab.pihole_unbound = {
@@ -71,13 +73,34 @@ in
                 ];
                 description = "List of blocklists for Pi-hole";
             };
+
+            firewall = {
+                dns = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Open firewall for DNS";
+                };
+                dhcp = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Open firewall for DHCP";
+                };
+                webserver = mkOption {
+                    type = types.bool;
+                    default = false;
+                    description = "Open firewall for Webserver";
+                };
+            };
         };
     };
     
     config = mkIf cfg.enable {
+        # Install sync script
+        environment.systemPackages = [ sync-to-orangepi ];
+        
         # Sops secret for domain name
         sops.secrets.domain = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
             owner = "unbound";
             mode = "0400";
             restartUnits = [ "unbound.service" "pihole-ftl.service" ];
@@ -85,7 +108,7 @@ in
 
         # Sops secret for custom hosts
         sops.secrets.hosts = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
             path = "/etc/dnsmasq.d/custom-hosts";
             owner = "root";
             group = "root";
@@ -185,23 +208,33 @@ in
         };
         
         # Route all local.PERSONAL_DOMAIN requests to this machine
-        systemd.services.unbound.preStart = mkAfter ''
-            DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
-            ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
-                server:
-                    local-zone: "local.$DOMAIN." redirect
-                    local-data: "local.$DOMAIN. 3600 IN A ${config.metadata.network.ipv4}"
+        # Wait for network to be online before starting unbound (needed for IP auto-detection)
+        systemd.services.unbound = {
+            after = [ "network-online.target" ];
+            wants = [ "network-online.target" ];
+            preStart = mkAfter ''
+                DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                ${if config.metadata.selfhost.mainIpv4 != null then ''
+                LOCAL_IP="${config.metadata.selfhost.mainIpv4}"
+                '' else ''
+                LOCAL_IP=$(${pkgs.iproute2}/bin/ip route get 1 | ${pkgs.gawk}/bin/awk '{print $7; exit}')
+                ''}
+                ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
+                    server:
+                        local-zone: "local.$DOMAIN." redirect
+                        local-data: "local.$DOMAIN. 3600 IN A $LOCAL_IP"
             EOF
-            ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
-            ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
-        '';
+                ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
+                ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
+            '';
+        };
         
         # Pi-hole FTL DNS service
         services.pihole-ftl = {
             enable = true;
-            openFirewallDNS = true;
-            openFirewallDHCP = true;
-            openFirewallWebserver = true;
+            openFirewallDNS = cfg.pihole.firewall.dns;
+            openFirewallDHCP = cfg.pihole.firewall.dhcp;
+            openFirewallWebserver = cfg.pihole.firewall.webserver;
             lists = cfg.pihole.lists;
             
             settings = {

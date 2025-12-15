@@ -310,7 +310,7 @@ in
         # Add traefik secret for DOMAIN variable + proxy settings
         systemd.services.glance = {
             serviceConfig.EnvironmentFile = mkIf config.homelab.traefik.enable [
-                config.sops.secrets.traefik.path
+                config.sops.secrets."traefik/env".path
             ];
         } // optionalAttrs cfg.proxy {
             environment = {

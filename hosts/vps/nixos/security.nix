@@ -28,7 +28,7 @@
     services.gnome.gnome-keyring.enable = true;
 
     sops = {
-        defaultSopsFile = ../../../secrets/shared/personal.yaml;
+        defaultSopsFile = ../../../secrets/shared/selfhost.yaml;
         age.sshKeyPaths = [ "/etc/ssh/id_ed25519" ];
     };
 }

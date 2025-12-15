@@ -19,7 +19,8 @@ let
         passHostHeader ? true,
         certResolver ? "cloudflare",
         entryPoints ? [ "websecure" ],
-        insecureSkipVerify ? false
+        insecureSkipVerify ? false,
+        clientCert ? null
     }: 
     let
         # Determine default middlewares based on subdomain pattern
@@ -29,6 +30,12 @@ let
             else [ "default-headers" "https-redirect" ];
         
         actualMiddlewares = if middlewares != null then middlewares else defaultMiddlewares;
+        
+        # Determine which serversTransport to use
+        transport = 
+            if clientCert != null then clientCert
+            else if insecureSkipVerify then "insecureTransport"
+            else null;
     in {
         routers.${name} = {
             rule = "Host(`${subdomain}.$DOMAIN`)";
@@ -41,8 +48,8 @@ let
         services.${name}.loadBalancer = {
             inherit passHostHeader;
             servers = [ { url = backendUrl; } ];
-        } // optionalAttrs insecureSkipVerify {
-            serversTransport = "insecureTransport";
+        } // optionalAttrs (transport != null) {
+            serversTransport = transport;
         };
     };
     
@@ -124,21 +131,63 @@ in
                         default = false;
                         description = "Skip TLS verification for backends with self-signed certificates";
                     };
+                    clientCert = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        description = "Name of serversTransport with client certificate (for mTLS backends like Incus)";
+                    };
                 };
             });
             default = [];
             description = "List of routes to configure in Traefik";
         };
+
+        # Client certificates for mTLS to backends (e.g., Incus)
+        # Secrets should be stored in sops as traefik.certs.<name>/cert and .../key
+        clientCerts = mkOption {
+            type = types.attrsOf (types.submodule {
+                options = {
+                    insecureSkipVerify = mkOption {
+                        type = types.bool;
+                        default = true;
+                        description = "Skip server certificate verification";
+                    };
+                };
+            });
+            default = {};
+            description = ''
+                Client certificates for mTLS connections to backends.
+                For each entry, you must add PEM-encoded secrets to sops:
+                - traefik.certs.<name>/cert - the client certificate
+                - traefik.certs.<name>/key - the private key
+            '';
+        };
     };
     
     config = mkIf cfg.enable {
-        sops.secrets.traefik = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
-        };
+        sops.secrets = {
+            "traefik/env" = {
+                sopsFile = ../../secrets/shared/selfhost.yaml;
+            };
+        } // mapAttrs' (name: certCfg: {
+            name = "traefik/certs/${name}/cert";
+            value = {
+                sopsFile = ../../secrets/shared/selfhost.yaml;
+                owner = "traefik";
+                group = "traefik";
+            };
+        }) cfg.clientCerts // mapAttrs' (name: certCfg: {
+            name = "traefik/certs/${name}/key";
+            value = {
+                sopsFile = ../../secrets/shared/selfhost.yaml;
+                owner = "traefik";
+                group = "traefik";
+            };
+        }) cfg.clientCerts;
 
         services.traefik = {
             enable = true;
-            environmentFiles = [ config.sops.secrets.traefik.path ];
+            environmentFiles = [ config.sops.secrets."traefik/env".path ];
 
             staticConfigOptions = {
                 global = {
@@ -202,7 +251,16 @@ in
             dynamicConfigOptions.http = mkMerge ([
                 {
                     # Transport for backends with self-signed certificates
-                    serversTransports.insecureTransport.insecureSkipVerify = true;
+                    serversTransports = {
+                        insecureTransport.insecureSkipVerify = true;
+                    } // (mapAttrs (name: certCfg: {
+                        # Client certificate transport for mTLS backends
+                        insecureSkipVerify = certCfg.insecureSkipVerify;
+                        certificates = [{
+                            certFile = config.sops.secrets."traefik/certs/${name}/cert".path;
+                            keyFile = config.sops.secrets."traefik/certs/${name}/key".path;
+                        }];
+                    }) cfg.clientCerts);
 
                     middlewares = {
                         default-headers.headers = {

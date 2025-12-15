@@ -3,6 +3,7 @@
 {
     imports = [
         ../metadata.nix
+        ./hardware-configuration.nix
         
         ./disko.nix
         ./btrfs.nix
@@ -13,5 +14,6 @@
 	    ./ssh.nix
 
         ./selfhost.nix
+        ./programs.nix
     ];
 }

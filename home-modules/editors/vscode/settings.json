@@ -120,6 +120,7 @@
         "ml-workspace-1": "linux",
         "freshman": "linux",
         "homelab": "linux",
-        "vps": "linux"
+        "vps": "linux",
+        "192.168.254.100": "linux"
     }
 }

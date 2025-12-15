@@ -55,11 +55,6 @@ in {
                             mountOptions = defaultMountOptions;
                             mountpoint = "/home/.snapshots";
                         };
-                        # Games and steam subvolumes separately to avoid big snapshots
-                        subvolumes."@home-games" = {
-                            mountOptions = defaultMountOptions;
-                            mountpoint = "/home/xopc/games";
-                        };
 
                         # Nix subvolume
                         subvolumes."@nix" = {

@@ -31,12 +31,7 @@
         tmp.cleanOnBoot = true;
         kernelPackages = pkgs.linuxPackages_latest;
         loader = {
-            grub = {
-                enable = true;
-		        device = "nodev";
-                efiSupport = true;
-                efiInstallAsRemovable = true;
-            };
+            grub.enable = true;
             timeout = 2;
         };
     };

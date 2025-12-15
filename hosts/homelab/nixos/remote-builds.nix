@@ -5,6 +5,8 @@
         trusted-users = [ "remote-builder" ];
         allowed-users = [ "remote-builder" ];
         max-jobs = 4;
+        # Allow building 32-bit packages (needed for Steam)
+        extra-platforms = [ "i686-linux" ];
     };
     
     # Set up user builder user and group (important!)

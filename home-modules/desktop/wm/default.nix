@@ -7,7 +7,7 @@ let
 in {
     imports = [
         ./hyprland/hyprland.nix
-        ./niri/niri.nix
+        #./niri/niri.nix
         ./kanshi.nix
         ./hypridle.nix
         ./scripts/scripts.nix

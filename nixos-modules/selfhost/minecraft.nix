@@ -20,7 +20,12 @@ in
 {
     options.homelab.minecraft = {
         enable = mkEnableOption "Minecraft servers";
-            
+        openFirewall = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Open firewall for Minecraft servers";
+        };
+
         distantHorizons = {
             enable = mkOption {
                 type = types.bool;
@@ -67,11 +72,11 @@ in
         services.minecraft-servers = {
             enable = true;
             eula = true;
-            openFirewall = true;
+            openFirewall = cfg.openFirewall;
 
             servers.distant-horizons = mkIf cfg.distantHorizons.enable {
                 enable = true;
-                autoStart = true;
+                autoStart = false;
                 package = pkgs.fabricServers.fabric-1_21_10;
 
                 jvmOpts = "-Xms4G -Xmx8G -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysActAsServerClassMachine -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+UseNUMA -XX:NmethodSweepActivity=1 -XX:ReservedCodeCacheSize=400M -XX:NonNMethodCodeHeapSize=12M -XX:ProfiledCodeHeapSize=194M -XX:NonProfiledCodeHeapSize=194M -XX:-DontCompileHugeMethods -XX:MaxNodeLimit=240000 -XX:NodeLimitFudgeFactor=8000 -XX:+UseVectorCmov -XX:+PerfDisableSharedMem -XX:+UseFastUnorderedTimeStamps -XX:+UseCriticalJavaThreadPriority -XX:ThreadPriorityPolicy=1 -XX:+UseG1GC -XX:MaxGCPauseMillis=130 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=28 -XX:G1HeapRegionSize=16M -XX:G1ReservePercent=20 -XX:G1MixedGCCountTarget=3 -XX:InitiatingHeapOccupancyPercent=10 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=0 -XX:SurvivorRatio=32 -XX:MaxTenuringThreshold=1 -XX:G1SATBBufferEnqueueingThresholdPercent=30 -XX:G1ConcMarkStepDurationMillis=5 -XX:G1ConcRSHotCardLimit=16 -XX:G1ConcRefinementServiceIntervalMillis=150";
@@ -138,7 +143,7 @@ in
 
             servers.beta = mkIf cfg.beta.enable {
                 enable = true;
-                autoStart = true;
+                autoStart = false;
                 package = beta173Pkg;
 
                 jvmOpts = "-Xms512M -Xmx1G -XX:+UseG1GC";

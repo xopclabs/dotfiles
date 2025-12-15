@@ -9,6 +9,10 @@
             forceImportRoot = false;
             extraPools = [ "backup_pool" "raid_pool" ];
         };
+        kernelParams = [
+            # Limit ZFS ARC to 8GB max
+            "zfs.zfs_arc_max=8589934592"
+        ];
     };
 
     services.zfs = {
@@ -22,14 +26,15 @@
         };
     };
 
+    # NFS - works for light workloads, but causes RCU stalls under heavy I/O
+    # Using Samba for Proxmox backups instead.
     services.nfs.server = {
         enable = true;
         lockdPort = 4001;
         mountdPort = 4002;
         statdPort = 4000;
         exports = ''
-            /mnt/raid_pool/proxmox-backup  192.168.254.0/24(rw,sync,no_subtree_check,no_root_squash)
-            /mnt/raid_pool/shared  192.168.254.0/24(rw,sync,no_subtree_check,no_root_squash)
+            /mnt/raid_pool/shared  192.168.254.0/24(rw,async,no_subtree_check,no_root_squash)
         '';
     };
 
@@ -56,6 +61,18 @@
                 "create mask" = "0664";
                 "directory mask" = "0775";
             };
+            "proxmox-backup" = {
+                path = "/mnt/raid_pool/proxmox-backup";
+                browseable = "yes";
+                "read only" = "no";
+                "guest ok" = "no";
+                "valid users" = "@users";
+                "create mask" = "0644";
+                "directory mask" = "0755";
+                "force user" = "root";
+                "force group" = "root";
+                "strict locking" = "no";
+            };
         };
     };
 
@@ -77,4 +94,3 @@
         ];
     };
 }
-

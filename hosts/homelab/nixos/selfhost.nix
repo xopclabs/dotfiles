@@ -6,7 +6,7 @@
     ];
     
     config.homelab = {
-        # Essentials
+        # Dynamic DNS
         ddns = {
             enable = true;
             providers = {
@@ -24,6 +24,8 @@
                 };
             };
         };
+
+        # Reverse proxy
         traefik = {
             enable = true;
             dashboardSubdomain = "traefik.vm.local";
@@ -56,11 +58,38 @@
                     subdomain = "smart.local";
                     backendUrl = "http://192.168.254.21:8080";
                 }
+                {
+                    name = "incus";
+                    subdomain = "incus.local";
+                    backendUrl = "https://192.168.254.100:8443";
+                    clientCert = "incus";  # Uses traefik/client-certs/incus/{cert,key} from sops
+                }
             ];
+            # Client certificates for mTLS backends
+            clientCerts.incus = {
+                insecureSkipVerify = true;  # Incus uses self-signed server cert
+            };
         };
+
+        # High availability
+        keepalived = {
+            enable = true;
+            virtualIP = "192.168.254.99";
+            interface = "ens18";
+            priority = 150;
+        };
+
+        # DNS    
         pihole_unbound = {
             enable = true;
-            pihole.subdomain = "pihole.vm.local";
+            pihole = {
+                firewall = {
+                    dns = true;
+                    dhcp = true;
+                    webserver = false;
+                };
+                subdomain = "pihole.vm.local";
+            };
             unbound.forwardUpstream = true;
         };
 
@@ -93,7 +122,6 @@
                 enable = true;
                 host = "127.0.0.1";
                 port = 10808;
-                redsocksPort = 12345;
             };
         };
 
@@ -114,11 +142,16 @@
                     icon = "mdi:harddisk";
                     group = "Other";
                 }
+                {
+                    title = "Incus";
+                    subdomain = "incus.local";
+                    icon = "mdi:server-network";
+                    group = "Other";
+                }
             ];
             clock.count = 4;
             markets.count = 4;
         };
-
 
         # Torrents
         transmission = {
@@ -134,11 +167,10 @@
             sonarr.subdomain = "tv.vm.local";
 
             jellyfin.subdomain = "jellyfin.vm.local";
-            jellyseerr = {
-                subdomain = "request.vm.local";
-                # Disable proxy - Quad9 DNS bypasses country restrictions, proxy breaks local service connections
-                proxy = false;
-            };
+            jellyfin.openFirewall = true;
+
+            jellyseerr.subdomain = "request.vm.local";
+            jellyseerr.proxy = false;  # Proxy is configured in jellyseerr itself
 
             bazarr.subdomain = "subtitles.vm.local";
 

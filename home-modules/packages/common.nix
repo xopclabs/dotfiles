@@ -15,7 +15,7 @@ in {
             lua 
             zig 
             # linux utils
-            utillinux
+            util-linux
             iputils
             usbutils
             pciutils

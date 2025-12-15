@@ -4,6 +4,15 @@
     metadata = {
         user = "xopc";
         hostName = "laptop";
+
+        network = {
+            ipv4 = "192.168.254.100";
+            defaultGateway = "192.168.254.1";
+        };
+
+        selfhost = {
+            mainIpv4 = "192.168.254.10";
+        };
         
         hardware = {
             monitors = {
