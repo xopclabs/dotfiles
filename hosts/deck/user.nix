@@ -25,9 +25,6 @@
                         "[workspace 7 silent] steam"
                     ];
                 };
-                niri = {
-                    enable = false;
-                };
                 hypridle = {
                     enable = true;
                     dpmsInternal.timeout = 3 * 60;
