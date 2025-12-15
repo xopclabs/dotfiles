@@ -192,7 +192,6 @@ in
         services.radarr = mkIf cfg.radarr.enable {
             enable = true;
             openFirewall = cfg.radarr.openFirewall;
-            user = config.metadata.user;
             group = "users";
         };
         systemd.services.radarr = mkIf cfg.radarr.proxy {
@@ -204,7 +203,6 @@ in
         services.sonarr = mkIf cfg.sonarr.enable {
             enable = true;
             openFirewall = cfg.sonarr.openFirewall;
-            user = config.metadata.user;
             group = "users";
         };
         systemd.services.sonarr = mkIf cfg.sonarr.proxy {
