@@ -192,6 +192,8 @@ in
         services.radarr = mkIf cfg.radarr.enable {
             enable = true;
             openFirewall = cfg.radarr.openFirewall;
+            user = config.metadata.user;
+            group = "users";
         };
         systemd.services.radarr = mkIf cfg.radarr.proxy {
             after = [ "arr-proxy-env.service" ];
@@ -202,6 +204,8 @@ in
         services.sonarr = mkIf cfg.sonarr.enable {
             enable = true;
             openFirewall = cfg.sonarr.openFirewall;
+            user = config.metadata.user;
+            group = "users";
         };
         systemd.services.sonarr = mkIf cfg.sonarr.proxy {
             after = [ "arr-proxy-env.service" ];
@@ -222,6 +226,8 @@ in
         services.jellyfin = mkIf cfg.jellyfin.enable {
             enable = true;
             openFirewall = cfg.jellyfin.openFirewall;
+            # If we setup a user to homelab, jellyfin doesn't start, perhaps due to /var/lib ownership
+            group = "users";
         };
         systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
             after = [ "arr-proxy-env.service" ];
