@@ -80,8 +80,6 @@
                                         (./. + "/hosts/metadata.nix")
                                         inputs.sops-nix.homeManagerModules.sops
                                         inputs.stylix.homeModules.stylix
-                                        inputs.niri.homeModules.niri
-                                        inputs.niri.homeModules.stylix
                                     ];
                                 };
                             };
@@ -104,8 +102,6 @@
                         (./. + "/hosts/metadata.nix")
                         inputs.sops-nix.homeManagerModules.sops
                         inputs.stylix.homeModules.stylix
-                        inputs.niri.homeModules.niri
-                        inputs.niri.homeModules.stylix
                         {
                             home = {
                                 username = username;
