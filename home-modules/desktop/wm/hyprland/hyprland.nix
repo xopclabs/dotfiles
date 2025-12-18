@@ -181,6 +181,10 @@ in {
                     "float, title:zoom_linux_float_video_window"
                     "pin, title:zoom_linux_float_video_window"
                     "stayfocused, class:zoom, title:menu window"
+                    # Zoom chat popup - no focus steal, bottom-right of internal monitor
+                    "noinitialfocus, class:zoom, title:Zoom Workplace"
+                    "monitor ${monitor_internal}, class:zoom, title:Zoom Workplace"
+                    "move 100%-320 100%-150, class:zoom, title:Zoom Workplace"
 
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
