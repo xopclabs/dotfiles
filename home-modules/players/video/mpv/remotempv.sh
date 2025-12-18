@@ -13,7 +13,16 @@ REMOTE=""
 RSYNC_FILTERS=()
 INCLUDE_PATS=()
 EXCLUDE_PATS=()
-ONLY_PAT=""
+
+# Common media extensions (default filter)
+MEDIA_EXTS=(
+    # Video
+    mp4 mkv avi mov wmv flv webm m4v mpg mpeg ts m2ts
+    # Audio
+    mp3 flac wav aac ogg m4a wma opus
+    # Image
+    jpg jpeg png gif webp bmp tiff
+)
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -32,7 +41,7 @@ while [ $# -gt 0 ]; do
             RSYNC_FILTERS+=("--include=*/")
             RSYNC_FILTERS+=("--include=$2")
             RSYNC_FILTERS+=("--exclude=*")
-            ONLY_PAT="$2"
+            INCLUDE_PATS+=("$2")
             shift 2 ;;
         --*) shift ;;  # ignore unknown flags
         *)
@@ -46,6 +55,16 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "${REMOTE-}" ] || { echo "Usage: remotempv host:/abs/path [--save|--sync [dest]] [--include PAT] [--exclude PAT] [--only PAT]"; exit 2; }
+
+# Apply default media filter if no --only/--include was specified
+if [ ${#INCLUDE_PATS[@]} -eq 0 ]; then
+    RSYNC_FILTERS+=("--include=*/")
+    for ext in "${MEDIA_EXTS[@]}"; do
+        RSYNC_FILTERS+=("--include=*.$ext" "--include=*.${ext^^}")
+        INCLUDE_PATS+=("*.$ext" "*.${ext^^}")
+    done
+    RSYNC_FILTERS+=("--exclude=*")
+fi
 
 ##################### 2. split “host:/path” ##################################
 HOST=${REMOTE%%:*}
@@ -64,11 +83,36 @@ if ! mountpoint -q "$MP"; then
           -o cache=yes,attr_timeout=5,follow_symlinks,no_readahead
 fi
 
-##################### 4. stream vs save ######################################
+##################### 4. helper: find filtered files ##########################
+find_filtered_files() {
+    local dir="$1"
+    local find_args=("$dir" -type f)
+
+    if [ ${#INCLUDE_PATS[@]} -gt 0 ]; then
+        find_args+=("(")
+        local first=1
+        for pat in "${INCLUDE_PATS[@]}"; do
+            [ "$first" -eq 1 ] || find_args+=(-o)
+            find_args+=(-name "$pat")
+            first=0
+        done
+        find_args+=(")")
+    fi
+    for pat in "${EXCLUDE_PATS[@]}"; do
+        find_args+=(! -name "$pat")
+    done
+
+    find "${find_args[@]}" | sort
+}
+
+##################### 5. stream vs save ######################################
 if [ "$SAVE" -eq 1 ]; then
     # Build rsync options
     RSYNC_OPTS=(-avPL)
-    [ "$SYNC" -eq 1 ] && RSYNC_OPTS+=(--delete)
+    if [ "$SYNC" -eq 1 ]; then
+        # --delete-excluded ensures non-media files are also removed
+        RSYNC_OPTS+=(--delete --delete-excluded)
+    fi
 
     if ssh "$HOST" "test -d \"$RPATH\""; then
         # remote is a directory
@@ -85,7 +129,19 @@ if [ "$SAVE" -eq 1 ]; then
             echo "→ rsyncing directory to $RSYNC_DST"
         fi
         rsync "${RSYNC_OPTS[@]}" "${RSYNC_FILTERS[@]}" "$RSYNC_SRC" "$RSYNC_DST"
-        mpv -- "$RSYNC_DST"
+
+        # Play only filtered files if filters are set
+        if [ ${#INCLUDE_PATS[@]} -gt 0 ] || [ ${#EXCLUDE_PATS[@]} -gt 0 ]; then
+            mapfile -t FILES < <(find_filtered_files "$RSYNC_DST")
+            if [ ${#FILES[@]} -eq 0 ]; then
+                echo "No files matched the filter"
+                exit 1
+            fi
+            echo "→ playing ${#FILES[@]} matching files"
+            mpv -- "${FILES[@]}"
+        else
+            mpv -- "$RSYNC_DST"
+        fi
     else
         # remote is a single file
         RSYNC_SRC="$HOST:$RPATH"
@@ -105,35 +161,9 @@ else
     LOCAL_PATH="$MP$RPATH"
 
     # Check if we need filtering (only works for directories)
-    if [ -n "$ONLY_PAT" ] || [ ${#INCLUDE_PATS[@]} -gt 0 ] || [ ${#EXCLUDE_PATS[@]} -gt 0 ]; then
+    if [ ${#INCLUDE_PATS[@]} -gt 0 ] || [ ${#EXCLUDE_PATS[@]} -gt 0 ]; then
         if [ -d "$LOCAL_PATH" ]; then
-            # Build find command with filters
-            FIND_ARGS=("$LOCAL_PATH" -type f)
-
-            if [ -n "$ONLY_PAT" ]; then
-                # --only: match only this pattern
-                FIND_ARGS+=(-name "$ONLY_PAT")
-            else
-                # Build include/exclude logic
-                # Includes: match any of the patterns (OR)
-                if [ ${#INCLUDE_PATS[@]} -gt 0 ]; then
-                    FIND_ARGS+=("(")
-                    first=1
-                    for pat in "${INCLUDE_PATS[@]}"; do
-                        [ "$first" -eq 1 ] || FIND_ARGS+=(-o)
-                        FIND_ARGS+=(-name "$pat")
-                        first=0
-                    done
-                    FIND_ARGS+=(")")
-                fi
-                # Excludes: reject any of the patterns
-                for pat in "${EXCLUDE_PATS[@]}"; do
-                    FIND_ARGS+=(! -name "$pat")
-                done
-            fi
-
-            # Find files and play them
-            mapfile -t FILES < <(find "${FIND_ARGS[@]}" | sort)
+            mapfile -t FILES < <(find_filtered_files "$LOCAL_PATH")
             if [ ${#FILES[@]} -eq 0 ]; then
                 echo "No files matched the filter"
                 exit 1
