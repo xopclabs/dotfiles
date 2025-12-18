@@ -122,5 +122,6 @@
         "homelab": "linux",
         "vps": "linux",
         "192.168.254.100": "linux"
-    }
+    },
+    "cursor.general.disableHttp2": true
 }
