@@ -17,6 +17,7 @@ with lib;
         ./scrutiny.nix
         ./borgbackup.nix
         ./keepalived.nix
+        ./wallos.nix
     ];
 }
 

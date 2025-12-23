@@ -192,6 +192,12 @@
             flaresolverr.subdomain = "flaresolverr.vm.local";
         };
 
+        # Subscription tracking
+        wallos = {
+            enable = true;
+            subdomain = "subscriptions.vm.local";
+        };
+
         # Geolocation
         traccar = {
             enable = true;
