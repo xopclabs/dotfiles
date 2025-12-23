@@ -59,6 +59,11 @@
                     backendUrl = "http://192.168.254.21:8080";
                 }
                 {
+                    name = "shadowing";
+                    subdomain = "shadowing.vm.local";
+                    backendUrl = "http://192.168.254.10:8848";
+                }
+                {
                     name = "incus";
                     subdomain = "incus.local";
                     backendUrl = "https://192.168.254.100:8443";
@@ -146,6 +151,12 @@
                     title = "Incus";
                     subdomain = "incus.local";
                     icon = "mdi:server-network";
+                    group = "Other";
+                }
+                {
+                    title = "Shadowing";
+                    subdomain = "shadowing.vm.local";
+                    icon = "mdi:microphone";
                     group = "Other";
                 }
             ];

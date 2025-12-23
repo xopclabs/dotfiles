@@ -13,6 +13,7 @@
         hashedPasswordFile = config.sops.secrets.userpass.path;
     };
     programs.zsh.enable = true;
+    programs.direnv.enable = true;
 
     # Set up locales (timezone and keyboard layout)
     i18n.defaultLocale = "en_US.UTF-8";
