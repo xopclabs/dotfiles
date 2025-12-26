@@ -2,14 +2,17 @@
 
 # Monitor DPMS control script
 # Maps config monitor names to actual hyprctl monitor names
-# Usage: monitor-dpms [internal|external] [on|off|toggle]
+# Usage: monitor-dpms [internal|ext-<key>] [on|off|toggle]
+# Examples:
+#   monitor-dpms internal off
+#   monitor-dpms ext-aoc22 toggle
 
 set -euo pipefail
 
 # Configuration mapping: config_name -> description
 declare -A MONITOR_CONFIG=(
     ["internal"]="@INTERNAL_MONITOR@"
-    ["external"]="@EXTERNAL_MONITOR@"
+    @EXTERNAL_MONITORS@
 )
 
 # Function to get hyprctl monitor name from description
@@ -30,7 +33,7 @@ get_monitor_name() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [internal|external] [on|off|toggle]"
+    echo "Usage: $0 [internal|ext-<key>] [on|off|toggle]"
     echo ""
     echo "Monitor mappings:"
     for config_name in "${!MONITOR_CONFIG[@]}"; do

@@ -3,12 +3,12 @@
 let
     cfg = config.modules.desktop.wm.kanshi;
 
-    # Get monitor names from configuration
-    internalMonitor = config.metadata.hardware.monitors.internal or null;
-    externalMonitor = config.metadata.hardware.monitors.external or null;
+    # Get monitor configuration
+    internalMonitor = config.metadata.hardware.monitors.internal;
+    externalMonitors = config.metadata.hardware.monitors.external;
 
     # Check if monitors are configured
-    monitorsConfigured = internalMonitor != null && externalMonitor != null;
+    monitorsConfigured = internalMonitor != null && externalMonitors != {};
 
     # Helper function to generate workspace move commands
     generateWorkspaceMoves = monitorName: [
@@ -23,30 +23,30 @@ let
         "${pkgs.hyprland}/bin/hyprctl keyword monitor \"${name}, disable\""
     ) monitorNames;
 
-    # Wallpaper command
-    wallpaperCmd = "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png";
+    # Helper to create internal monitor output config
+    mkInternalOutput = {
+        criteria = internalMonitor.name;
+        status = "enable";
+        mode = internalMonitor.mode;
+        scale = internalMonitor.scale;
+        position = internalMonitor.position;
+        transform = internalMonitor.transform;
+    };
 
-    # Define kanshi profiles using monitor names from configuration
-    kanshiProfiles = if monitorsConfigured then [
+    # Generate HDMI + Type-C profiles for each external monitor
+    mkProfilesForExternal = key: ext: [
         {
             profile = {
-                name = "hdmi";
+                name = "hdmi-${key}";
                 outputs = [
                     {
-                        criteria = "HDMI-A-2";
+                        criteria = ext.name;
                         status = "enable";
-                        mode = externalMonitor.mode;
-                        position = externalMonitor.position;
-                        scale = externalMonitor.scale;
+                        mode = ext.mode;
+                        position = ext.position;
+                        scale = ext.scale;
                     }
-                    {
-                        criteria = internalMonitor.name;
-                        status = "enable";
-                        mode = internalMonitor.mode;
-                        scale = internalMonitor.scale;
-                        position = internalMonitor.position;
-                        transform = internalMonitor.transform;
-                    }
+                    mkInternalOutput
                 ];
                 exec = builtins.concatStringsSep ", " ([
                     "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
@@ -55,48 +55,41 @@ let
         }
         {
             profile = {
-                name = "type-c";
+                name = "type-c-${key}";
                 outputs = [
                     {
-                        criteria = "DP-1";
+                        criteria = ext.name;
                         status = "enable";
-                        mode = externalMonitor.mode;
-                        position = externalMonitor.position;
-                        scale = externalMonitor.scale;
+                        mode = ext.mode;
+                        position = ext.position;
+                        scale = ext.scale;
                     }
-                    {
-                        criteria = internalMonitor.name;
-                        status = "enable";
-                        mode = internalMonitor.mode;
-                        scale = internalMonitor.scale;
-                        position = internalMonitor.position;
-                        transform = internalMonitor.transform;
-                    }
+                    mkInternalOutput
                 ];
                 exec = builtins.concatStringsSep ", " ([
                     "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
                 ] ++ generateWorkspaceMoves "DP-1");
             };
         }
-        {
-            profile = {
-                name = "on-the-go";
-                outputs = [
-                    {
-                        criteria = internalMonitor.name;
-                        status = "enable";
-                        mode = internalMonitor.mode;
-                        scale = internalMonitor.scale;
-                        position = "0,0";
-                        transform = internalMonitor.transform;
-                    }
-                ];
-                exec = builtins.concatStringsSep ", " ([
-                    "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
-                ] ++ generateMonitorDisables ["HDMI-A-2" "DP-1"]);
-            };
-        }
-    ] else [];
+    ];
+
+    # On-the-go profile (internal monitor only)
+    onTheGoProfile = {
+        profile = {
+            name = "on-the-go";
+            outputs = [
+                (mkInternalOutput // { position = "0,0"; })
+            ];
+            exec = builtins.concatStringsSep ", " ([
+                "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
+            ] ++ generateMonitorDisables ["HDMI-A-2" "DP-1"]);
+        };
+    };
+
+    # Flatten all profiles: generate for each external monitor + on-the-go
+    kanshiProfiles = if monitorsConfigured then
+        lib.flatten (lib.mapAttrsToList mkProfilesForExternal externalMonitors) ++ [ onTheGoProfile ]
+    else [];
 in {
     options.modules.desktop.wm.kanshi = {
         enable = lib.mkEnableOption "kanshi";

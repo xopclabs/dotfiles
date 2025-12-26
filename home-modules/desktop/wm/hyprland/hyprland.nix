@@ -4,8 +4,27 @@ let
     cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     hardwareCfg = config.metadata.hardware;
+    
+    # Internal monitor reference
     monitor_internal = "desc:${hardwareCfg.monitors.internal.name}";
-    monitor_external = "desc:${hardwareCfg.monitors.external.name}";
+    
+    # Generate workspace rules for all external monitors
+    # Since only one external is connected at a time, rules for disconnected monitors are ignored
+    externalWorkspaceRules = lib.flatten (lib.mapAttrsToList (key: ext: let
+        monitor_desc = "desc:${ext.name}";
+    in [
+        "1, monitor:${monitor_desc}, default:true"
+        "2, monitor:${monitor_desc}"
+        "3, monitor:${monitor_desc}"
+        "4, monitor:${monitor_desc}"
+        "5, monitor:${monitor_desc}"
+    ]) hardwareCfg.monitors.external);
+    
+    # Check if disableGapsOutOn matches any external monitor
+    externalMonitorNames = lib.mapAttrsToList (k: v: v.name) hardwareCfg.monitors.external;
+    disableGapsOnExternal = cfg.disableGapsOutOn != null && 
+        lib.any (name: name == cfg.disableGapsOutOn) externalMonitorNames;
+    
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
 in {
@@ -202,12 +221,7 @@ in {
                     # Launcher under waybar
                     "order -1, launcher"
                 ];
-                workspace = [
-                    "1, monitor:${monitor_external}, default:true"
-                    "2, monitor:${monitor_external}"
-                    "3, monitor:${monitor_external}"
-                    "4, monitor:${monitor_external}"
-                    "5, monitor:${monitor_external}"
+                workspace = externalWorkspaceRules ++ [
                     "6, monitor:${monitor_internal}, default:true"
                     "7, monitor:${monitor_internal}"
                     "8, monitor:${monitor_internal}"
@@ -220,7 +234,7 @@ in {
                     "8, gapsout:0"
                     "9, gapsout:0"
                     "10, gapsout:0"
-                ] else if cfg.disableGapsOutOn != null && cfg.disableGapsOutOn == hardwareCfg.monitors.external.name then [
+                ] else if disableGapsOnExternal then [
                     "1, gapsout:0"
                     "2, gapsout:0"
                     "3, gapsout:0"
