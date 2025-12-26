@@ -254,7 +254,7 @@ in
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
-        # Create necessary directories for media and ensure permissions
+        # Create necessary directories for media (d) and ensure permissions (Z)
         systemd.tmpfiles.rules = [
             "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
             "Z ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"

@@ -198,6 +198,12 @@
             subdomain = "subscriptions.vm.local";
         };
 
+        # Ebook management
+        calibre-web = {
+            enable = true;
+            subdomain = "calibre.vm.local";
+        };
+
         # Geolocation
         traccar = {
             enable = true;

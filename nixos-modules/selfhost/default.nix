@@ -18,6 +18,7 @@ with lib;
         ./borgbackup.nix
         ./keepalived.nix
         ./wallos.nix
+        ./calibre-web.nix
     ];
 }
 
