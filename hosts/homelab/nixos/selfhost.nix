@@ -204,6 +204,12 @@
             subdomain = "calibre.vm.local";
         };
 
+        # Push notifications
+        ntfy = {
+            enable = true;
+            subdomain = "ntfy.vm.local";
+        };
+
         # Geolocation
         traccar = {
             enable = true;

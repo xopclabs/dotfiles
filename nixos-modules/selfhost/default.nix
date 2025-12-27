@@ -19,6 +19,7 @@ with lib;
         ./keepalived.nix
         ./wallos.nix
         ./calibre-web.nix
+        ./ntfy.nix
     ];
 }
 
