@@ -20,6 +20,8 @@ with lib;
         ./wallos.nix
         ./calibre-web.nix
         ./ntfy.nix
+        ./booklore.nix
+        ./immich.nix
     ];
 }
 

@@ -85,6 +85,11 @@ with lib;
                         default = "/mnt/raid_pool/shared/media/music";
                         description = "Base directory for music media";
                     };
+                    picturesDir = mkOption {
+                        type = types.str;
+                        default = "/mnt/raid_pool/shared/media/pictures";
+                        description = "Base directory for pictures/photos media";
+                    };
                 };
                 general = {
                     nextcloudDir = mkOption {

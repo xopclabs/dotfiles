@@ -199,9 +199,9 @@
         };
 
         # Ebook management
-        calibre-web = {
+        booklore = {
             enable = true;
-            subdomain = "calibre.vm.local";
+            subdomain = "books.vm.local";
         };
 
         # Push notifications
@@ -220,6 +220,12 @@
         nextcloud = {
             enable = true;
             subdomain = "cloud.vm.local";
+        };
+
+        # Photo management
+        immich = {
+            enable = true;
+            subdomain = "photos.vm.local";
         };
 
         # Gaming servers
