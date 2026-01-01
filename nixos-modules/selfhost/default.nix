@@ -22,6 +22,7 @@ with lib;
         ./ntfy.nix
         ./booklore.nix
         ./immich.nix
+        ./shadowing.nix
     ];
 }
 

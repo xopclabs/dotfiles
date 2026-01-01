@@ -59,11 +59,6 @@
                     backendUrl = "http://192.168.254.21:8080";
                 }
                 {
-                    name = "shadowing";
-                    subdomain = "shadowing.vm.local";
-                    backendUrl = "http://192.168.254.10:8848";
-                }
-                {
                     name = "incus";
                     subdomain = "incus.local";
                     backendUrl = "https://192.168.254.100:8443";
@@ -153,12 +148,6 @@
                     icon = "mdi:server-network";
                     group = "Other";
                 }
-                {
-                    title = "Shadowing";
-                    subdomain = "shadowing.vm.local";
-                    icon = "mdi:microphone";
-                    group = "Other";
-                }
             ];
             clock.count = 4;
             markets.count = 4;
@@ -233,6 +222,14 @@
             enable = true;
             distantHorizons.enable = true;
             beta.enable = false;
+        };
+
+        # Shadowing app
+        shadowing = {
+            enable = true;
+            subdomain = "shadowing.vm.local";
+            dataDir = "/var/lib/shadowing";
+            # mediaDir = "/mnt/raid_pool/media";  # Uncomment when path exists
         };
 
         # Drive health monitoring

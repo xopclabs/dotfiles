@@ -45,6 +45,9 @@
 
         niri.url = "github:sodiboo/niri-flake";
         niri.inputs.nixpkgs.follows = "nixpkgs";
+
+        shadowing.url = "github:xopclabs/shadowing";
+        shadowing.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -62,7 +65,8 @@
                         inputs.disko.nixosModules.disko
                         inputs.sops-nix.nixosModules.sops
                         inputs.yeetmouse.nixosModules.default
-                        inputs.jovian.nixosModules.default 
+                        inputs.jovian.nixosModules.default
+                        inputs.shadowing.nixosModules.default
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                         }
