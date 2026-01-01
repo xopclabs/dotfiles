@@ -276,18 +276,34 @@
                     encryption.mode = "repokey-blake2";
                     prune.keep.daily = 2;
                 };
+
                 nextcloud = {
                     paths = [ "/mnt/raid_pool/nextcloud" ];
                     repo = "/mnt/backup_pool/backups/nextcloud";
                     schedule = "daily";
                     prune.keep = { daily = 2; weekly = 1; monthly = 1; };
                 };
+                nextcloud-borgbase = {
+                    paths = [ "/mnt/raid_pool/nextcloud" ];
+                    repo = "ag1ysfku@ag1ysfku.repo.borgbase.com";
+                    schedule = "daily";
+                    prune.keep = { daily = 2; weekly = 1; monthly = 1; };
+                };
+
                 immich = {
                     paths = [ "/mnt/raid_pool/immich" ];
                     repo = "/mnt/backup_pool/backups/immich";
                     schedule = "daily";
                     prune.keep = { daily = 2; weekly = 1; monthly = 1; };
                 };
+                immich-borgbase = {
+                    paths = [ "/mnt/raid_pool/immich" ];
+                    repo = "oneh1984@oneh1984.repo.borgbase.com:repo";
+                    schedule = "daily";
+                    encryption.mode = "repokey-blake2";
+                    prune.keep = { daily = 1; };
+                };
+
                 proxmox-backup = {
                     paths = [ "/mnt/raid_pool/proxmox-backup" ];
                     repo = "/mnt/backup_pool/backups/proxmox-backup";
