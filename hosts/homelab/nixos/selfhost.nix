@@ -276,6 +276,18 @@
                     encryption.mode = "repokey-blake2";
                     prune.keep.daily = 2;
                 };
+                nextcloud = {
+                    paths = [ "/mnt/raid_pool/nextcloud" ];
+                    repo = "/mnt/backup_pool/backups/nextcloud";
+                    schedule = "daily";
+                    prune.keep = { daily = 2; weekly = 1; monthly = 1; };
+                };
+                immich = {
+                    paths = [ "/mnt/raid_pool/immich" ];
+                    repo = "/mnt/backup_pool/backups/immich";
+                    schedule = "daily";
+                    prune.keep = { daily = 2; weekly = 1; monthly = 1; };
+                };
                 proxmox-backup = {
                     paths = [ "/mnt/raid_pool/proxmox-backup" ];
                     repo = "/mnt/backup_pool/backups/proxmox-backup";
