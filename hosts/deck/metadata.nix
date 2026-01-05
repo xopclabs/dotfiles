@@ -18,12 +18,6 @@
                 position = "320,1080";
             };
             external = {
-                aoc27 = {
-                    name = "AOC 22V2WG5 0x000000BF";
-                    mode = "1920x1080@74.97";
-                    scale = 1.0;
-                    position = "0,0";
-                };
                 oled = {
                     name = "Woodwind Communications Systems Inc SF13TO demoset-1";
                     mode = "1920x1080@60.00";
