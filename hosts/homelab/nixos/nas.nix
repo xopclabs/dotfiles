@@ -34,7 +34,7 @@
         mountdPort = 4002;
         statdPort = 4000;
         exports = ''
-            /mnt/raid_pool/shared  192.168.254.0/24(rw,async,no_subtree_check,no_root_squash)
+            /mnt/raid_pool/shared  192.168.254.0/24(rw,async,no_subtree_check,no_root_squash) 10.250.250.0/24(rw,async,no_subtree_check,no_root_squash)
         '';
     };
 
@@ -47,7 +47,7 @@
                 "server string" = "homelab";
                 "netbios name" = "homelab";
                 security = "user";
-                "hosts allow" = "192.168.254. 127.0.0.1 localhost";
+                "hosts allow" = "192.168.254. 10.250.250. 127.0.0.1 localhost";
                 "hosts deny" = "0.0.0.0/0";
                 "guest account" = "nobody";
                 "map to guest" = "bad user";
