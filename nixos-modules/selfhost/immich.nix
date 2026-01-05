@@ -69,11 +69,13 @@ in
         ];
 
         # Register with Traefik (use localhost - Immich binds to IPv6 ::1 by default)
+        # Uses defaultTransport for longer upload timeouts
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [
             {
                 name = "immich";
                 subdomain = cfg.subdomain;
                 backendUrl = "http://[::1]:${toString config.services.immich.port}";
+                serversTransport = "defaultTransport";
             }
         ];
 

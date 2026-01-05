@@ -20,7 +20,8 @@ let
         certResolver ? "cloudflare",
         entryPoints ? [ "websecure" ],
         insecureSkipVerify ? false,
-        clientCert ? null
+        clientCert ? null,
+        serversTransport ? null
     }: 
     let
         # Determine default middlewares based on subdomain pattern
@@ -31,9 +32,10 @@ let
         
         actualMiddlewares = if middlewares != null then middlewares else defaultMiddlewares;
         
-        # Determine which serversTransport to use
+        # Determine which serversTransport to use (explicit > clientCert > insecureSkipVerify)
         transport = 
-            if clientCert != null then clientCert
+            if serversTransport != null then serversTransport
+            else if clientCert != null then clientCert
             else if insecureSkipVerify then "insecureTransport"
             else null;
     in {
@@ -136,6 +138,11 @@ in
                         default = null;
                         description = "Name of serversTransport with client certificate (for mTLS backends like Incus)";
                     };
+                    serversTransport = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        description = "Name of serversTransport to use (e.g., 'defaultTransport' for long upload timeouts)";
+                    };
                 };
             });
             default = [];
@@ -214,6 +221,11 @@ in
 
                     websecure = {
                         address = ":443";
+                        transport.respondingTimeouts = {
+                            readTimeout = "600s";   # 10 minutes for large uploads
+                            writeTimeout = "600s";
+                            idleTimeout = "180s";
+                        };
                     };
                 };
 
@@ -253,6 +265,8 @@ in
                     # Transport for backends with self-signed certificates
                     serversTransports = {
                         insecureTransport.insecureSkipVerify = true;
+                        # Long timeout for large file uploads (Immich, Nextcloud, etc.)
+                        defaultTransport.forwardingTimeouts.responseHeaderTimeout = "600s";
                     } // (mapAttrs (name: certCfg: {
                         # Client certificate transport for mTLS backends
                         insecureSkipVerify = certCfg.insecureSkipVerify;
