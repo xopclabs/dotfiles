@@ -15,7 +15,7 @@
                 mode = "800x1280@90";
                 scale = 1.0;
                 transform = "270";
-                position = "320,1080";
+                position = "1920,140";
             };
             external = {
                 oled = {
