@@ -58,17 +58,33 @@ if [ ! -d "$CONFIG_DIR" ]; then
     mkdir -p "$CONFIG_DIR"
 fi
 
-# Generate keys
-PRIVATE_KEY=$(wg genkey)
-PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
-PRESHARED_KEY=$(wg genpsk)
-
 # Get server public key from sops-encrypted file
 SERVER_PUBLIC_KEY=$(sops --extract '["wg"]["publickey"]' --decrypt "$SECRETS_FILE")
 
 if [ -z "$SERVER_PUBLIC_KEY" ]; then
     echo "Error: Could not find server public key in secrets file at path 'wg.publickey'"
     exit 1
+fi
+
+# Check if peer already exists in secrets file
+EXISTING_PRIVATE_KEY=$(sops --extract '["wg"]["peers"]["'"$CONFIG_NAME"'"]["privatekey"]' --decrypt "$SECRETS_FILE" 2>/dev/null || true)
+
+if [ -n "$EXISTING_PRIVATE_KEY" ]; then
+    echo "Peer '$CONFIG_NAME' already exists in secrets file. Regenerating config and QR code..."
+    PRIVATE_KEY="$EXISTING_PRIVATE_KEY"
+    PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
+    PRESHARED_KEY=$(sops --extract '["wg"]["peers"]["'"$CONFIG_NAME"'"]["presharedkey"]' --decrypt "$SECRETS_FILE")
+else
+    echo "Creating new peer '$CONFIG_NAME'..."
+    # Generate keys
+    PRIVATE_KEY=$(wg genkey)
+    PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
+    PRESHARED_KEY=$(wg genpsk)
+
+    # Update the sops-encrypted secrets file with the new keys
+    sops --set '["wg"]["peers"]["'"$CONFIG_NAME"'"]["privatekey"] "'"$PRIVATE_KEY"'"' "$SECRETS_FILE"
+    sops --set '["wg"]["peers"]["'"$CONFIG_NAME"'"]["publickey"] "'"$PUBLIC_KEY"'"' "$SECRETS_FILE"
+    sops --set '["wg"]["peers"]["'"$CONFIG_NAME"'"]["presharedkey"] "'"$PRESHARED_KEY"'"' "$SECRETS_FILE"
 fi
 
 # Create configuration file from template
@@ -94,14 +110,16 @@ echo "$PRESHARED_KEY" > "$CONFIG_DIR/preshared.key"
 # Set proper permissions
 chmod 600 "$CONFIG_DIR/private.key" "$CONFIG_DIR/preshared.key"
 
-# Update the sops-encrypted secrets file with the new keys
-sops --set '["wg"]["peers"]["'"$CONFIG_NAME"'"]["privatekey"] "'"$PRIVATE_KEY"'"' "$SECRETS_FILE"
-sops --set '["wg"]["peers"]["'"$CONFIG_NAME"'"]["publickey"] "'"$PUBLIC_KEY"'"' "$SECRETS_FILE"
-sops --set '["wg"]["peers"]["'"$CONFIG_NAME"'"]["presharedkey"] "'"$PRESHARED_KEY"'"' "$SECRETS_FILE"
-
 qrrs - "$CONFIG_DIR/$CONFIG_NAME.png" < "$CONFIG_FILE"
 
+echo ""
 echo "Wireguard configuration has been generated successfully."
 echo "Public key: $PUBLIC_KEY"
 echo "QR-code path: $CONFIG_DIR/$CONFIG_NAME.png"
 echo ".conf path: $CONFIG_FILE"
+echo ""
+echo "Nix peer definition:"
+echo "$CONFIG_NAME = {"
+echo "    publicKey = \"$PUBLIC_KEY\";"
+echo "    allowedIPs = [ \"$ALLOWED_IPS\" ];"
+echo "};"
