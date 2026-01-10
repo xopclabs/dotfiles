@@ -2,10 +2,11 @@
 
 # Monitor DPMS control script
 # Maps config monitor names to actual hyprctl monitor names
-# Usage: monitor-dpms [internal|ext-<key>] [on|off|toggle]
+# Usage: monitor-dpms [internal|external|ext-<key>] [on|off|toggle]
 # Examples:
 #   monitor-dpms internal off
-#   monitor-dpms ext-aoc22 toggle
+#   monitor-dpms external off    # all external monitors
+#   monitor-dpms ext-oled toggle # specific external monitor
 
 set -euo pipefail
 
@@ -33,7 +34,11 @@ get_monitor_name() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [internal|ext-<key>] [on|off|toggle]"
+    echo "Usage: $0 [internal|external|ext-<key>] [on|off|toggle]"
+    echo ""
+    echo "Special keywords:"
+    echo "  internal -> internal monitor"
+    echo "  external -> all ext-* monitors"
     echo ""
     echo "Monitor mappings:"
     for config_name in "${!MONITOR_CONFIG[@]}"; do
@@ -63,6 +68,31 @@ main() {
     if [[ ! "$action" =~ ^(on|off|toggle)$ ]]; then
         echo "Error: Action must be 'on', 'off', or 'toggle'" >&2
         exit 1
+    fi
+    
+    # Special case: "external" targets all ext-* monitors
+    if [[ "$config_monitor" == "external" ]]; then
+        local found_any=false
+        for key in "${!MONITOR_CONFIG[@]}"; do
+            if [[ "$key" == ext-* ]]; then
+                local target_description="${MONITOR_CONFIG[$key]}"
+                local actual_monitor_name
+                actual_monitor_name=$(get_monitor_name "$target_description" 2>/dev/null) || continue
+                
+                if [[ -n "$actual_monitor_name" ]]; then
+                    echo "Found external monitor: $actual_monitor_name ($target_description)"
+                    echo "Executing: hyprctl dispatch dpms $action $actual_monitor_name"
+                    hyprctl dispatch dpms "$action" "$actual_monitor_name"
+                    found_any=true
+                fi
+            fi
+        done
+        
+        if [[ "$found_any" == "false" ]]; then
+            echo "No external monitors found or connected" >&2
+            exit 0  # Exit gracefully - no external monitor is not an error
+        fi
+        return 0
     fi
     
     # Check if config monitor exists

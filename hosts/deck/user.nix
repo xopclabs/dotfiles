@@ -28,7 +28,7 @@
                 hypridle = {
                     enable = true;
                     dpmsInternal.timeout = 3 * 60;
-                    dpmsExternal.timeout = 15 * 60;
+                    dpmsExternal.timeout = 5 * 60;
                     lock.enable = false;
                     suspend.timeout = 30 * 60;
                 };
