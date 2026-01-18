@@ -139,9 +139,9 @@ in
                 ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
                 ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100
                 
-                # Add routes for local networks to bypass proxy
+                # Add routes for local networks to bypass proxy (route to LAN interface, not wg0)
                 ${concatMapStringsSep "\n" (net: 
-                    "    ${pkgs.iproute2}/bin/ip route add ${net} dev wg0 table 100"
+                    "    ${pkgs.iproute2}/bin/ip route add ${net} dev ${cfg.externalInterface} table 100"
                 ) cfg.localNetworks}
                 
                 # Start tun2socks in background
@@ -208,8 +208,9 @@ in
             internalInterfaces = [ "wg0" ];
         };
         
-        # Allow wireguard traffic
+        # Allow wireguard traffic and trust wg0 interface for forwarding to LAN
         networking.firewall.allowedUDPPorts = [ cfg.listenPort ];
+        networking.firewall.trustedInterfaces = [ "wg0" ];
     };
 }
 
