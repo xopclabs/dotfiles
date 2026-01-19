@@ -48,6 +48,7 @@ in {
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard 
             pkgs.libinput pkgs.jq
+	    pkgs.playerctl
         ];
 
         home.pointerCursor = {
@@ -300,6 +301,9 @@ in {
                     ",XF86KbdBrightnessDown, exec, brightnessctl -d '*kbd*' s 1-"
                     ",XF86AudioRaiseVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
                     ",XF86AudioLowerVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+                    ",XF86AudioPlay,         exec, playerctl play-pause"
+                    ",XF86AudioPause,        exec, playerctl play-pause"
+                    ",XF86AudioPlayPause,    exec, playerctl play-pause"
                 ];
 
                 bindl = [
