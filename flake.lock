@@ -710,6 +710,26 @@
         "type": "github"
       }
     },
+    "p81": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1742230586,
+        "narHash": "sha256-0R1Xllnz/oDnKmu0Mw3RRX5x027vY7GaSbMiyF5sTvU=",
+        "owner": "devusb",
+        "repo": "p81-nix",
+        "rev": "4194a6cc972f075cb9e932713b0fd03709ae77c5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "devusb",
+        "repo": "p81-nix",
+        "type": "github"
+      }
+    },
     "plover": {
       "inputs": {
         "nixpkgs": "nixpkgs_4",
@@ -866,6 +886,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixvim": "nixvim",
         "nur": "nur",
+        "p81": "p81",
         "plover": "plover",
         "prismlauncher": "prismlauncher",
         "shadowing": "shadowing",

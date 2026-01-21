@@ -58,6 +58,7 @@
         lutris.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
+        p81.enable = true;
         
         yeetmouse = {
             enable = false; 

@@ -48,6 +48,9 @@
 
         shadowing.url = "github:xopclabs/shadowing";
         shadowing.inputs.nixpkgs.follows = "nixpkgs";
+
+        p81.url = "github:devusb/p81-nix";
+        p81.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -67,6 +70,7 @@
                         inputs.yeetmouse.nixosModules.default
                         inputs.jovian.nixosModules.default
                         inputs.shadowing.nixosModules.default
+                        inputs.p81.nixosModules.perimeter81
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                         }
