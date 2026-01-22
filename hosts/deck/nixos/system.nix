@@ -39,7 +39,14 @@
             };
             timeout = 2;
         };
+
+        # Hibernation: resume from btrfs swapfile
+        resumeDevice = "/dev/disk/by-partlabel/disk-primary-root";
+        kernelParams = [ "resume_offset=533760" ];
     };
+
+    # Disable zram since prevents hibernation since it's RAM-based
+    zramSwap.enable = false;
 
     services.udev.extraRules = ''
         # Steno stuff
