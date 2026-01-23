@@ -8,5 +8,6 @@ in {
         ./kicad.nix
         ./plover.nix
         ./minecraft.nix
+        ./androidcam.nix
     ];
 }

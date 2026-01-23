@@ -58,7 +58,7 @@
         lutris.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
-        droidcam.enable = true;
+        virtual_webcam.enable = true;
         p81.enable = true;
         
         yeetmouse = {
