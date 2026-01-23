@@ -6,7 +6,7 @@
         networkmanager = {
             enable = true;
         };
-        wireless.iwd.enable = true;
+        wireless.enable = true;
     };
     sops.secrets."networkmanager/home" = {
         path = "/etc/NetworkManager/system-connections/home.nmconnection";

@@ -153,7 +153,7 @@ in {
                     mfact = 0.6;
                 };
 
-                windowrule = [
+                windowrulev2 = [
                     # Fix telegram and slack (use direct id's because here we can't desc:*)
                     "workspace 8, monitor 0, class:^(telegram-desktop)$"
                     "workspace 9, monitor 0, class:^(slack)$"
@@ -178,49 +178,49 @@ in {
                     "maxsize 600 600, title:^(Plover: Lookup)$"
 
                     # Float telegram media viewer popups
-                    "float, class:org.telegram.desktop, title:Media viewer"
-                    "keepaspectratio, class:org.telegram.desktop, title:Media viewer" 
-                    "size <80% <80%, class:org.telegram.desktop, title:Media viewer"
+                    "float, class:^(org.telegram.desktop)$, title:^(Media viewer)$"
+                    "keepaspectratio, class:^(org.telegram.desktop)$, title:^(Media viewer)$" 
+                    "size <80% <80%, class:^(org.telegram.desktop)$, title:^(Media viewer)$"
 
-                    # Fix Shaing Indicator of firefox
+                    # Fix Sharing Indicator of firefox
                     "float, title:(.*)(Sharing Indicator)"
                     "move 50% 2%, title:(.*)(Sharing Indicator)" 
                     "noshadow, title:(.*)(Sharing Indicator)" 
                     "noinitialfocus, title:(.*)(Sharing Indicator)" 
 
                     # flameshot
-                    "suppressevent fullscreen, class:flameshot"
-                    "float, class:flameshot"
-                    "monitor 1, class:flameshot"
-                    "move 0 0, class:flameshot"
-                    "noanim, class:flameshot"
+                    "suppressevent fullscreen, class:^(flameshot)$"
+                    "float, class:^(flameshot)$"
+                    "monitor 1, class:^(flameshot)$"
+                    "move 0 0, class:^(flameshot)$"
+                    "no_anim, class:^(flameshot)$"
 
                     # Malware aka zoom-us
-                    "float, title:as_toolbar"
-                    "pin, title:as_toolbar"
-                    "float, title:zoom_linux_float_video_window"
-                    "pin, title:zoom_linux_float_video_window"
-                    "stayfocused, class:zoom, title:menu window"
+                    "float, title:^(as_toolbar)$"
+                    "pin, title:^(as_toolbar)$"
+                    "float, title:^(zoom_linux_float_video_window)$"
+                    "pin, title:^(zoom_linux_float_video_window)$"
+                    "stayfocused, class:^(zoom)$, title:^(menu window)$"
                     # Zoom chat popup - no focus steal, bottom-right of internal monitor
-                    "noinitialfocus, class:zoom, title:Zoom Workplace"
-                    "monitor ${monitor_internal}, class:zoom, title:Zoom Workplace"
-                    "move 100%-320 100%-150, class:zoom, title:Zoom Workplace"
+                    "noinitialfocus, class:^(zoom)$, title:^(Zoom Workplace)$"
+                    "monitor ${monitor_internal}, class:^(zoom)$, title:^(Zoom Workplace)$"
+                    "move 100%-320 100%-150, class:^(zoom)$, title:^(Zoom Workplace)$"
 
                     # XWayland stuff
-                    "opacity 0.0 override 0.0 override,class:(xwaylandvideobridge)"
-                    "noanim,class:(xwaylandvideobridge)"
-                    "noinitialfocus,class:(xwaylandvideobridge)"
-                    "maxsize 1 1,class:(xwaylandvideobridge)"
-                    "noblur,class:(xwaylandvideobridge)"
-                    "immediate,class:^(steam_app_38400)$"
+                    "opacity 0.0 override 0.0 override, class:^(xwaylandvideobridge)$"
+                    "no_anim, class:^(xwaylandvideobridge)$"
+                    "noinitialfocus, class:^(xwaylandvideobridge)$"
+                    "maxsize 1 1, class:^(xwaylandvideobridge)$"
+                    "noblur, class:^(xwaylandvideobridge)$"
+                    "immediate, class:^(steam_app_38400)$"
                 ];
 
                 layerrule = [
-                    "noanim, waybar"
-                    "noanim, launcher"
-                    "noanim, selection"
+                    "no_anim on, match:namespace waybar"
+                    "no_anim on, match:namespace launcher"
+                    "no_anim on, match:namespace selection"
                     # Launcher under waybar
-                    "order -1, launcher"
+                    "order -1, match:namespace launcher"
                 ];
                 workspace = externalWorkspaceRules ++ [
                     "6, monitor:${monitor_internal}, default:true"

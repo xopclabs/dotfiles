@@ -19,7 +19,7 @@
             peers = {
                 home = {
                     enable = true;
-                    autostart = true;
+                    autostart = false;
                 };
                 home_lan = {
                     enable = true;
@@ -58,6 +58,7 @@
         lutris.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
+        droidcam.enable = true;
         p81.enable = true;
         
         yeetmouse = {

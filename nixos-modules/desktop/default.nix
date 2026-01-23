@@ -9,6 +9,7 @@
         ./flatpak.nix
         ./yeetmouse.nix
         ./localsend.nix
+        ./droidcam.nix
         ./p81.nix
     ];
 }
