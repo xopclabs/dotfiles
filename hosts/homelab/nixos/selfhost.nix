@@ -228,8 +228,8 @@
         shadowing = {
             enable = true;
             subdomain = "shadowing.vm.local";
-            dataDir = "/var/lib/shadowing";
-            # mediaDir = "/mnt/raid_pool/media";  # Uncomment when path exists
+            dataDir = "/mnt/raid_pool/shadowing";
+            mediaDir = "/mnt/raid_pool/shared/media";
         };
 
         # Drive health monitoring

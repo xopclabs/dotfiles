@@ -128,6 +128,16 @@ in
                                 url = "https://cdn.modrinth.com/data/ghrZDhGW/versions/ZIKgsH8x/skinrestorer-2.5.0+1.21.11-fabric.jar";
                                 sha512 = "sha512-v9XWeFK7jl11eu6GV+3RuLYmjVJkYiJDNzE7HAHcXbWB5EukEIXKpJYQOekOc6L6DgFFFDUeNWaty03h/jCRtw==";
                             };
+
+                            itemframes = pkgs.fetchurl {
+                                url = "https://cdn.modrinth.com/data/aONWPSiA/versions/TlQcxFP0/easeon.ss.chestpeek.teron.fabric-1.1.0.1+1.21.11.jar";
+                                sha512 = "sha512-Wo0/tHLyLX7Md/XsMaRVz7sd8uwY/1LNTKHfWGH9cRtpc1G2JQ9SML400+7TZyi7q+7yNgUGKAYX61JGdHmcZA==";
+                            };
+                            easeon-ss-core = pkgs.fetchurl {
+                                url = "https://cdn.modrinth.com/data/bUCIzqY5/versions/dRR7zWnE/easeon.ss.core.teron.fabric-1.1.30.0+1.21.11.jar";
+                                sha512 = "sha512-/fD8hjtkiDrtM5knLgKPRBgK8X6XwTmfucjln28HY43TyoO7CtH9wnvCmQSAEHfDevbnkF9IA+sUe3XGOdpnjQ==";
+                            };
+
                             sortitout = pkgs.fetchurl {
                                 url = "https://cdn.modrinth.com/data/jcOSOvm1/versions/idY3jZnE/sort_it_out-fabric-1.2.0+1.21.11.jar";
                                 sha512 = "sha512-WnL1VHCnCQMVtQRPzbTVWjky5uzdi54b9pJAnRNjISkeFBPuzZsbBFPU2fSvS4zmTHG7vzwcA6RTc1TeoE1wBw==";
