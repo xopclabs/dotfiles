@@ -6,7 +6,46 @@ let
     hardwareCfg = config.metadata.hardware;
     
     # Internal monitor reference
-    monitor_internal = "desc:${hardwareCfg.monitors.internal.name}";
+    internalMon = hardwareCfg.monitors.internal;
+    monitor_internal = "desc:${internalMon.name}";
+    
+    # Helper to convert transform string to number for hyprland
+    transformToNum = t: {
+        "normal" = 0; "0" = 0;
+        "90" = 1;
+        "180" = 2;
+        "270" = 3;
+        "flipped" = 4;
+        "flipped-90" = 5;
+        "flipped-180" = 6;
+        "flipped-270" = 7;
+    }.${t} or 0;
+    
+    # Helper to format scale (avoid 1.000000, use 1 instead)
+    formatScale = s: let
+        str = toString s;
+        # If it's a whole number like 1.000000, just use the integer part
+    in if lib.hasSuffix ".000000" str 
+       then lib.removeSuffix ".000000" str 
+       else str;
+    
+    # Generate monitor rules from metadata
+    # Format: NAME,RES@Hz,OFFSET,SCALE (no spaces after commas!)
+    # Internal monitor
+    internalMonitorRule = let
+        transform = if internalMon ? transform then ",transform,${toString (transformToNum internalMon.transform)}" else "";
+    in "desc:${internalMon.name},${internalMon.mode},${internalMon.position},${formatScale internalMon.scale}${transform}";
+    
+    # External monitors
+    externalMonitorRules = lib.mapAttrsToList (key: ext: 
+        "desc:${ext.name},${ext.mode},${ext.position},${formatScale ext.scale}"
+    ) hardwareCfg.monitors.external;
+    
+    # All monitor rules including fallback for unknown monitors
+    monitorRules = [ internalMonitorRule ] ++ externalMonitorRules ++ [
+        # Fallback: enable any unknown monitor with preferred settings
+        ",preferred,auto,1"
+    ];
     
     # Generate workspace rules for all external monitors
     # Since only one external is connected at a time, rules for disconnected monitors are ignored
@@ -48,8 +87,15 @@ in {
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard 
             pkgs.libinput pkgs.jq
-	    pkgs.playerctl
+            pkgs.playerctl
+            pkgs.swww
         ];
+
+        # Symlink wallpaper directory
+        home.file.".config/wallpaper" = {
+            recursive = true;
+            source = ../wallpaper;
+        };
 
         home.pointerCursor = {
             name = cursorTheme;
@@ -74,16 +120,13 @@ in {
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
 
-                # We define monitors with kanshi
-                #monitor = [
-                #    "${monitor_external}, 1920x1080@74.97, 0x0, 1"
-                #    "${monitor_internal}, 1920x1080@60, 1920x0, 1"
-                #];
+                # Monitor configuration from metadata
+                monitor = monitorRules;
 
                 exec-once = [
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
-                    "swww-daemon"
+                    "swww-daemon && sleep 0.5 && swww img ~/.config/wallpaper/nord.png"
                     "hypr-windowrule"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"

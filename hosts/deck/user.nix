@@ -18,7 +18,6 @@
             };
             launchers.tofi.enable = true;
             wm = {
-                kanshi.enable = true;
                 hyprland = {
                     enable = true;
                     extraAutostart = [

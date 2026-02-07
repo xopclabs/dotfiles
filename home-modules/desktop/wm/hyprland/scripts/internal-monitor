@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+
+# Toggle internal monitor on/off
+# Usage: internal-monitor [on|off|toggle|status|debug]
+# Default action is toggle
+
+set -euo pipefail
+
+INTERNAL_DESC="@INTERNAL_MONITOR@"
+INTERNAL_MODE="@INTERNAL_MODE@"
+INTERNAL_SCALE="@INTERNAL_SCALE@"
+INTERNAL_POSITION="@INTERNAL_POSITION@"
+INTERNAL_TRANSFORM="@INTERNAL_TRANSFORM@"
+
+DEBUG=0
+
+debug() {
+    if [[ $DEBUG -eq 1 ]]; then
+        echo "[DEBUG] $*" >&2
+    fi
+}
+
+# Get the actual hyprctl monitor name from description
+get_monitor_name() {
+    hyprctl monitors all -j | jq -r --arg desc "$INTERNAL_DESC" \
+        '.[] | select(.description == $desc) | .name'
+}
+
+# Check if internal monitor is currently enabled (has active output)
+is_enabled() {
+    local name
+    name=$(get_monitor_name)
+    
+    if [[ -z "$name" || "$name" == "null" ]]; then
+        return 1
+    fi
+    
+    # Check if monitor is in the active (non-disabled) monitors list
+    local disabled
+    disabled=$(hyprctl monitors all -j | jq -r --arg desc "$INTERNAL_DESC" \
+        '.[] | select(.description == $desc) | .disabled')
+    
+    debug "Monitor disabled field: $disabled"
+    [[ "$disabled" == "false" ]]
+}
+
+enable_internal() {
+    local name
+    name=$(get_monitor_name)
+    
+    if [[ -z "$name" || "$name" == "null" ]]; then
+        echo "Error: Internal monitor not found" >&2
+        exit 1
+    fi
+    
+    # Build command with optional transform (no spaces after commas!)
+    local cmd="$name,$INTERNAL_MODE,$INTERNAL_POSITION,$INTERNAL_SCALE"
+    if [[ -n "$INTERNAL_TRANSFORM" && "$INTERNAL_TRANSFORM" != "0" ]]; then
+        cmd="$cmd,transform,$INTERNAL_TRANSFORM"
+    fi
+    
+    echo "Enabling internal monitor: $name"
+    debug "Command: hyprctl keyword monitor \"$cmd\""
+    debug "Monitor state BEFORE:"
+    if [[ $DEBUG -eq 1 ]]; then
+        hyprctl monitors all -j | jq --arg desc "$INTERNAL_DESC" '.[] | select(.description == $desc)' >&2
+    fi
+    
+    local result
+    result=$(hyprctl keyword monitor "$cmd" 2>&1)
+    echo "$result"
+    
+    debug "Monitor state AFTER:"
+    if [[ $DEBUG -eq 1 ]]; then
+        hyprctl monitors all -j | jq --arg desc "$INTERNAL_DESC" '.[] | select(.description == $desc)' >&2
+    fi
+}
+
+get_other_monitor() {
+    # Get first monitor that isn't the internal one
+    hyprctl monitors -j | jq -r --arg desc "$INTERNAL_DESC" \
+        '[.[] | select(.description != $desc)][0].name // empty'
+}
+
+move_workspaces_from_internal() {
+    local internal_name="$1"
+    local target_monitor="$2"
+    
+    # Get all workspaces on the internal monitor
+    local workspaces
+    workspaces=$(hyprctl workspaces -j | jq -r --arg mon "$internal_name" \
+        '.[] | select(.monitor == $mon) | .id')
+    
+    if [[ -n "$workspaces" ]]; then
+        debug "Moving workspaces from $internal_name to $target_monitor: $workspaces"
+        for ws in $workspaces; do
+            debug "Moving workspace $ws to $target_monitor"
+            hyprctl dispatch moveworkspacetomonitor "$ws" "$target_monitor"
+        done
+    fi
+}
+
+disable_internal() {
+    local name
+    name=$(get_monitor_name)
+    
+    if [[ -z "$name" || "$name" == "null" ]]; then
+        echo "Error: Internal monitor not found" >&2
+        exit 1
+    fi
+    
+    # Check if there's another monitor to move workspaces to
+    local other_monitor
+    other_monitor=$(get_other_monitor)
+    
+    if [[ -z "$other_monitor" ]]; then
+        echo "Error: No other monitor available. Cannot disable the only monitor." >&2
+        exit 1
+    fi
+    
+    echo "Disabling internal monitor: $name"
+    debug "Target monitor for workspaces: $other_monitor"
+    debug "Monitor state BEFORE:"
+    if [[ $DEBUG -eq 1 ]]; then
+        hyprctl monitors all -j | jq --arg desc "$INTERNAL_DESC" '.[] | select(.description == $desc)' >&2
+    fi
+    
+    # First move all workspaces off the internal monitor
+    move_workspaces_from_internal "$name" "$other_monitor"
+    
+    # Focus the other monitor
+    debug "Focusing monitor: $other_monitor"
+    hyprctl dispatch focusmonitor "$other_monitor"
+    
+    # Now disable the internal monitor
+    local cmd="$name,disable"
+    debug "Command: hyprctl keyword monitor \"$cmd\""
+    
+    local result
+    result=$(hyprctl keyword monitor "$cmd" 2>&1)
+    echo "$result"
+    
+    debug "Monitor state AFTER:"
+    if [[ $DEBUG -eq 1 ]]; then
+        hyprctl monitors all -j | jq --arg desc "$INTERNAL_DESC" '.[] | select(.description == $desc)' >&2
+    fi
+}
+
+show_status() {
+    echo "Config: $INTERNAL_DESC"
+    echo "Monitor name: $(get_monitor_name)"
+    if is_enabled; then
+        echo "Monitor: ENABLED"
+    else
+        echo "Monitor: DISABLED"
+    fi
+}
+
+show_debug_info() {
+    echo "=== Configuration ==="
+    echo "INTERNAL_DESC: $INTERNAL_DESC"
+    echo "INTERNAL_MODE: $INTERNAL_MODE"
+    echo "INTERNAL_SCALE: $INTERNAL_SCALE"
+    echo "INTERNAL_POSITION: $INTERNAL_POSITION"
+    echo "INTERNAL_TRANSFORM: $INTERNAL_TRANSFORM"
+    echo ""
+    echo "=== Monitor Name Lookup ==="
+    echo "Resolved name: $(get_monitor_name)"
+    echo ""
+    echo "=== All Monitors ==="
+    hyprctl monitors all -j | jq .
+    echo ""
+    echo "=== Internal Monitor Details ==="
+    hyprctl monitors all -j | jq --arg desc "$INTERNAL_DESC" '.[] | select(.description == $desc)'
+}
+
+# Parse arguments
+ACTION="toggle"
+for arg in "$@"; do
+    case "$arg" in
+        -d|--debug)
+            DEBUG=1
+            ;;
+        on|off|toggle|status|debug)
+            ACTION="$arg"
+            ;;
+        *)
+            echo "Usage: $0 [-d|--debug] [on|off|toggle|status|debug]"
+            exit 1
+            ;;
+    esac
+done
+
+case "$ACTION" in
+    on)
+        enable_internal
+        ;;
+    off)
+        disable_internal
+        ;;
+    toggle)
+        if is_enabled; then
+            disable_internal
+        else
+            enable_internal
+        fi
+        ;;
+    status)
+        show_status
+        ;;
+    debug)
+        show_debug_info
+        ;;
+esac

@@ -19,12 +19,50 @@ let
             (builtins.readFile ./monitor-dpms)
         }
     '';
+
+    # Helper to convert transform string to number for hyprland
+    transformToNum = t: {
+        "normal" = "0"; "0" = "0";
+        "90" = "1";
+        "180" = "2";
+        "270" = "3";
+        "flipped" = "4";
+        "flipped-90" = "5";
+        "flipped-180" = "6";
+        "flipped-270" = "7";
+    }.${t} or "0";
+    
+    # Helper to format scale (avoid 1.000000, use 1 instead)
+    formatScale = s: let
+        str = toString s;
+    in if lib.hasSuffix ".000000" str 
+       then lib.removeSuffix ".000000" str 
+       else str;
+    
+    internalTransform = if hardwareCfg.monitors.internal ? transform 
+        then transformToNum hardwareCfg.monitors.internal.transform 
+        else "0";
+
+    internal-monitor = pkgs.writeShellScriptBin "internal-monitor" ''
+        ${builtins.replaceStrings 
+            ["@INTERNAL_MONITOR@" "@INTERNAL_MODE@" "@INTERNAL_SCALE@" "@INTERNAL_POSITION@" "@INTERNAL_TRANSFORM@"] 
+            [
+                hardwareCfg.monitors.internal.name
+                hardwareCfg.monitors.internal.mode
+                (formatScale hardwareCfg.monitors.internal.scale)
+                hardwareCfg.monitors.internal.position
+                internalTransform
+            ] 
+            (builtins.readFile ./internal-monitor)
+        }
+    '';
 in {
     config = lib.mkIf cfg.enable {
         home.packages = [
             hypr-windowrule
             toggle-keyboard
             monitor-dpms
+            internal-monitor
             pkgs.socat
         ];
     };
