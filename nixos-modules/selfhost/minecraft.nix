@@ -32,6 +32,18 @@ in
                 default = true;
                 description = "Enable the Distant Horizons server";
             };
+            backup = {
+                enable = mkOption {
+                    type = types.bool;
+                    default = false;
+                    description = "Enable borgbase backup for the Distant Horizons server";
+                };
+                repo = mkOption {
+                    type = types.str;
+                    default = "";
+                    description = "Borgbase repository URL for Distant Horizons backups";
+                };
+            };
         };
         
         beta = {
@@ -45,6 +57,18 @@ in
                 type = types.port;
                 default = 25575;
                 description = "Server port for Beta server";
+            };
+            backup = {
+                enable = mkOption {
+                    type = types.bool;
+                    default = false;
+                    description = "Enable borgbase backup for the Beta server";
+                };
+                repo = mkOption {
+                    type = types.str;
+                    default = "";
+                    description = "Borgbase repository URL for Beta backups";
+                };
             };
         };
     };
@@ -176,6 +200,28 @@ in
                 };
             };
         };
+
+        # Borgbase backups for minecraft servers
+        homelab.borgbackup.jobs = mkMerge [
+            (mkIf (cfg.distantHorizons.enable && cfg.distantHorizons.backup.enable) {
+                minecraft-distant-horizons-borgbase = {
+                    paths = [ "/srv/minecraft/distant-horizons" ];
+                    repo = cfg.distantHorizons.backup.repo;
+                    schedule = "daily";
+                    encryption.mode = "repokey-blake2";
+                    prune.keep = { daily = 7; weekly = 4; };
+                };
+            })
+            (mkIf (cfg.beta.enable && cfg.beta.backup.enable) {
+                minecraft-beta-borgbase = {
+                    paths = [ "/srv/minecraft/beta" ];
+                    repo = cfg.beta.backup.repo;
+                    schedule = "daily";
+                    encryption.mode = "repokey-blake2";
+                    prune.keep = { daily = 7; weekly = 4; };
+                };
+            })
+        ];
     };
 }
 

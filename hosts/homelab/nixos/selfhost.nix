@@ -220,8 +220,16 @@
         # Gaming servers
         minecraft = {
             enable = true;
-            distantHorizons.enable = true;
-            beta.enable = false;
+            distantHorizons = {
+                enable = true;
+                backup = {
+                    enable = true;
+                    repo = "f176w76v@f176w76v.repo.borgbase.com:repo";
+                };
+            };
+            beta = {
+                enable = false;
+            };
         };
 
         # Shadowing app
