@@ -13,8 +13,10 @@ in {
             bindings = {
                 "Shift+Left"  = "playlist-prev";
                 "Shift+Right"  = "playlist-next";
+                "f" = "script-message toggle-frame-counter";
             };
             config = {
+                script = "${./frame-counter.lua}";
                 loop-file = "inf";
                 cache = "yes";
                 cache-secs = 300;
