@@ -30,6 +30,9 @@
             home = {
                 SUBVOLUME = "/home";
             } // params;
+            srv = {
+                SUBVOLUME = "/srv";
+            } // params;
         };
     };
 }

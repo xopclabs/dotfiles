@@ -46,6 +46,16 @@ in {
                             mountpoint = "/var/.snapshots";
                         };
 
+                        # Servers subvolume
+                        subvolumes."@srv" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/srv";
+                        };
+                        subvolumes."@srv-snapshots" = {
+                            mountOptions = defaultMountOptions;
+                            mountpoint = "/srv/.snapshots";
+                        };
+
                         # Home subvolume
                         subvolumes."@home" = {
                             mountOptions = defaultMountOptions;
