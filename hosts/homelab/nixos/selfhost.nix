@@ -117,6 +117,10 @@
                     publicKey = "HrTCQLCg8TBAm/9+VfiOijQ17jRO18DrSyj+a/cpgDw=";
                     allowedIPs = [ "10.250.250.5/32" ];
                 };
+                friend = {
+                    publicKey = "Rei42zgS2gGIgzcqQq1mwAsKBvc1ZG/YI2+W7fN5+Ec=";
+                    allowedIPs = [ "10.250.250.6/32" ];
+                };
             };
             socks5Proxy = {
                 enable = true;
