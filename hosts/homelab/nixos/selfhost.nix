@@ -121,6 +121,14 @@
                     publicKey = "Rei42zgS2gGIgzcqQq1mwAsKBvc1ZG/YI2+W7fN5+Ec=";
                     allowedIPs = [ "10.250.250.6/32" ];
                 };
+                dad = {
+                    publicKey = "oeVcaSF66inhr7nLpofaYeqUL3+rtH/tAaiK8HJn2nY=";
+                    allowedIPs = [ "10.250.250.7/32" ];
+                };
+                mom = {
+                    publicKey = "Q078G6FBL9iynVRuuQutVRIOWHIEV9NRr9pUWjfV7AE=";
+                    allowedIPs = [ "10.250.250.8/32" ];
+                };
             };
             socks5Proxy = {
                 enable = true;
