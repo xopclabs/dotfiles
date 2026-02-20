@@ -96,9 +96,9 @@
 
     # Hibernate
     powerManagement.enable = true;
-    systemd.sleep.extraConfig = ''
-        HibernateDelaySec=3h 
-    '';
+    # systemd.sleep.extraConfig = ''
+        # HibernateDelaySec=3h 
+    # '';
     
     # Docker support
     virtualisation.docker = {
