@@ -196,66 +196,66 @@ in {
                     mfact = 0.6;
                 };
 
-                windowrulev2 = [
+                windowrule = [
                     # Fix telegram and slack (use direct id's because here we can't desc:*)
-                    "workspace 8, monitor 0, class:^(telegram-desktop)$"
-                    "workspace 9, monitor 0, class:^(slack)$"
+                    "workspace 8, monitor 0, match:class ^(telegram-desktop)$"
+                    "workspace 9, monitor 0, match:class ^(slack)$"
 
                     # PiP are floating and pinned, resizing according to aspect ratio
-                    "float, title:^(Picture-in-Picture)$"
-                    "pin, title:^(Picture-in-Picture)$" 
-                    "keepaspectratio, title:^(Picture-in-Picture)$" 
+                    "float on, match:title ^(Picture-in-Picture)$"
+                    "pin on, match:title ^(Picture-in-Picture)$"
+                    "keep_aspect_ratio on, match:title ^(Picture-in-Picture)$"
 
                     # Cursor modal windows are moved to the cursor
-                    "move onscreen cursor -50% -50%, title:^(Cursor)$"
+                    "move onscreen cursor -50% -50%, match:title ^(Cursor)$"
 
                     # Plover modal windows are floating and pinned
-                    "float, title:^(Plover: .*)$"
-                    "pin, title:^(Plover: .*)$" 
-                    "move onscreen cursor -50% -50%, title:^(Plover: .*)$"
+                    "float on, match:title ^(Plover: .*)$"
+                    "pin on, match:title ^(Plover: .*)$"
+                    "move onscreen cursor -50% -50%, match:title ^(Plover: .*)$"
                     # Paper Tape size
-                    "minsize 250 400, title:^(Plover: Paper Tape)$"
-                    "maxsize 300 800, title:^(Plover: Paper Tape)$"
+                    "min_size 250 400, match:title ^(Plover: Paper Tape)$"
+                    "max_size 300 800, match:title ^(Plover: Paper Tape)$"
                     # Lookup
-                    "minsize 300 300, title:^(Plover: Lookup)$"
-                    "maxsize 600 600, title:^(Plover: Lookup)$"
+                    "min_size 300 300, match:title ^(Plover: Lookup)$"
+                    "max_size 600 600, match:title ^(Plover: Lookup)$"
 
                     # Float telegram media viewer popups
-                    "float, class:^(org.telegram.desktop)$, title:^(Media viewer)$"
-                    "keepaspectratio, class:^(org.telegram.desktop)$, title:^(Media viewer)$" 
-                    "size <80% <80%, class:^(org.telegram.desktop)$, title:^(Media viewer)$"
+                    "float on, match:class ^(org.telegram.desktop)$, match:title ^(Media viewer)$"
+                    "keep_aspect_ratio on, match:class ^(org.telegram.desktop)$, match:title ^(Media viewer)$"
+                    "size <80% <80%, match:class ^(org.telegram.desktop)$, match:title ^(Media viewer)$"
 
                     # Fix Sharing Indicator of firefox
-                    "float, title:(.*)(Sharing Indicator)"
-                    "move 50% 2%, title:(.*)(Sharing Indicator)" 
-                    "noshadow, title:(.*)(Sharing Indicator)" 
-                    "noinitialfocus, title:(.*)(Sharing Indicator)" 
+                    "float on, match:title (.*)(Sharing Indicator)"
+                    "move 50% 2%, match:title (.*)(Sharing Indicator)"
+                    "no_shadow on, match:title (.*)(Sharing Indicator)"
+                    "no_initial_focus on, match:title (.*)(Sharing Indicator)"
 
                     # flameshot
-                    "suppressevent fullscreen, class:^(flameshot)$"
-                    "float, class:^(flameshot)$"
-                    "monitor 1, class:^(flameshot)$"
-                    "move 0 0, class:^(flameshot)$"
-                    "no_anim, class:^(flameshot)$"
+                    "suppress_event fullscreen, match:class ^(flameshot)$"
+                    "float on, match:class ^(flameshot)$"
+                    "monitor 1, match:class ^(flameshot)$"
+                    "move 0 0, match:class ^(flameshot)$"
+                    "no_anim on, match:class ^(flameshot)$"
 
                     # Malware aka zoom-us
-                    "float, title:^(as_toolbar)$"
-                    "pin, title:^(as_toolbar)$"
-                    "float, title:^(zoom_linux_float_video_window)$"
-                    "pin, title:^(zoom_linux_float_video_window)$"
-                    "stayfocused, class:^(zoom)$, title:^(menu window)$"
+                    "float on, match:title ^(as_toolbar)$"
+                    "pin on, match:title ^(as_toolbar)$"
+                    "float on, match:title ^(zoom_linux_float_video_window)$"
+                    "pin on, match:title ^(zoom_linux_float_video_window)$"
+                    "stay_focused on, match:class ^(zoom)$, match:title ^(menu window)$"
                     # Zoom chat popup - no focus steal, bottom-right of internal monitor
-                    "noinitialfocus, class:^(zoom)$, title:^(Zoom Workplace)$"
-                    "monitor ${monitor_internal}, class:^(zoom)$, title:^(Zoom Workplace)$"
-                    "move 100%-320 100%-150, class:^(zoom)$, title:^(Zoom Workplace)$"
+                    "no_initial_focus on, match:class ^(zoom)$, match:title ^(Zoom Workplace)$"
+                    "monitor ${monitor_internal}, match:class ^(zoom)$, match:title ^(Zoom Workplace)$"
+                    "move 100%-320 100%-150, match:class ^(zoom)$, match:title ^(Zoom Workplace)$"
 
                     # XWayland stuff
-                    "opacity 0.0 override 0.0 override, class:^(xwaylandvideobridge)$"
-                    "no_anim, class:^(xwaylandvideobridge)$"
-                    "noinitialfocus, class:^(xwaylandvideobridge)$"
-                    "maxsize 1 1, class:^(xwaylandvideobridge)$"
-                    "noblur, class:^(xwaylandvideobridge)$"
-                    "immediate, class:^(steam_app_38400)$"
+                    "opacity 0.0 override 0.0 override, match:class ^(xwaylandvideobridge)$"
+                    "no_anim on, match:class ^(xwaylandvideobridge)$"
+                    "no_initial_focus on, match:class ^(xwaylandvideobridge)$"
+                    "max_size 1 1, match:class ^(xwaylandvideobridge)$"
+                    "no_blur on, match:class ^(xwaylandvideobridge)$"
+                    "immediate on, match:class ^(steam_app_38400)$"
                 ];
 
                 layerrule = [
