@@ -252,6 +252,12 @@
             mediaDir = "/mnt/raid_pool/shared/media";
         };
 
+        # Recipe management
+        tandoor-recipes = {
+            enable = true;
+            subdomain = "recipes.vm.local";
+        };
+
         # Drive health monitoring
         scrutiny = {
             # Disabled for now, not working due to running in a VM

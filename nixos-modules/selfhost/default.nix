@@ -23,6 +23,7 @@ with lib;
         ./booklore.nix
         ./immich.nix
         ./shadowing.nix
+        ./tandoor-recipes.nix
     ];
 }
 
