@@ -176,7 +176,7 @@ in
 
             albumPrependArtist = mkOption {
                 type = types.bool;
-                default = false;
+                default = true;
                 description = "Prepend artist name when searching for albums";
             };
 
