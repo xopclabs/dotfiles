@@ -867,11 +867,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1768781415,
-        "narHash": "sha256-qlGiUSk/htaTvHqPV3v6/emBamDWrC2+Y4m2yTa+q/A=",
+        "lastModified": 1773624530,
+        "narHash": "sha256-zD638cmE1kFrlGjGzY2sqywQ1HHsCbG04trTldvUSkI=",
         "owner": "xopclabs",
         "repo": "shadowing",
-        "rev": "c5924033d03bf335751b4d860a4d0b38f7a1dd4a",
+        "rev": "dc65b1af431d44e429ee95525dd9e9bbafddd557",
         "type": "github"
       },
       "original": {

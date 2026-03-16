@@ -177,6 +177,7 @@
 
             radarr.subdomain = "movies.vm.local";
             sonarr.subdomain = "tv.vm.local";
+            lidarr.subdomain = "music.vm.local";
 
             jellyfin.subdomain = "jellyfin.vm.local";
             jellyfin.openFirewall = true;
@@ -188,6 +189,7 @@
 
             cleanuparr.subdomain = "cleanuparr.vm.local";
             huntarr.subdomain = "huntarr.vm.local";
+            huntarr.enable = false;
 
             prowlarr.subdomain = "prowlarr.vm.local";
             flaresolverr.subdomain = "flaresolverr.vm.local";

@@ -73,6 +73,24 @@ in
             };
         };
 
+        lidarr = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Lidarr music collection manager";
+            };
+            openFirewall = mkEnableOption "Open firewall for Lidarr";
+            proxy = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Route Lidarr through xray proxy";
+            };
+            subdomain = mkOption {
+                type = types.str;
+                description = "Subdomain for Lidarr";
+            };
+        };
+
         flaresolverr = {
             enable = mkOption {
                 type = types.bool;
@@ -157,7 +175,7 @@ in
             description = "Generate arr-stack proxy environment file";
             wantedBy = [ "multi-user.target" ];
             before = [ 
-                "prowlarr.service" "radarr.service" "sonarr.service" 
+                "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service"
                 "flaresolverr.service" "jellyfin.service" "jellyseerr.service" "bazarr.service"
             ];
             serviceConfig = {
@@ -206,6 +224,17 @@ in
             group = "users";
         };
         systemd.services.sonarr = mkIf cfg.sonarr.proxy {
+            after = [ "arr-proxy-env.service" ];
+            requires = [ "arr-proxy-env.service" ];
+            serviceConfig.EnvironmentFile = arrProxyEnvFile;
+        };
+
+        services.lidarr = mkIf cfg.lidarr.enable {
+            enable = true;
+            openFirewall = cfg.lidarr.openFirewall;
+            group = "users";
+        };
+        systemd.services.lidarr = mkIf cfg.lidarr.proxy {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -287,6 +316,13 @@ in
                     backendUrl = "http://127.0.0.1:8989";
                 }
             ]) ++
+            (optionals cfg.lidarr.enable [
+                {
+                    name = "lidarr";
+                    subdomain = cfg.lidarr.subdomain;
+                    backendUrl = "http://127.0.0.1:8686";
+                }
+            ]) ++
             (optionals cfg.flaresolverr.enable [
                 {
                     name = "flaresolverr";
@@ -353,6 +389,15 @@ in
                     icon = "si:sonarr";
                     group = "*arr";
                     priority = 3;
+                }
+            ]) ++
+            (optionals cfg.lidarr.enable [
+                {
+                    title = "Lidarr";
+                    subdomain = cfg.lidarr.subdomain;
+                    icon = "si:lidarr";
+                    group = "*arr";
+                    priority = 4;
                 }
             ]) ++
             (optionals cfg.bazarr.enable [
