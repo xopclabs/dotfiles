@@ -239,7 +239,7 @@ in
 
         scriptInterval = mkOption {
             type = types.int;
-            default = 500;
+            default = 300;
             description = "How often Soularr runs in seconds";
         };
 
@@ -274,11 +274,13 @@ in
         systemd.services.slskd = {
             after = [ "soularr-config.service" ];
             requires = [ "soularr-config.service" ];
+            serviceConfig.UMask = "0002";
         };
 
         systemd.tmpfiles.rules = [
             "d ${cfg.dataDir} 0750 ${config.metadata.user} users -"
-            "d ${cfg.slskd.downloadsDir} 0775 slskd users -"
+            "d ${cfg.slskd.downloadsDir} 2775 slskd users -"
+            "a+ ${cfg.slskd.downloadsDir} - - - - d:g:users:rwx,g:users:rwx"
         ];
 
         systemd.services.soularr-config = {
