@@ -15,6 +15,7 @@ in
     # Remove unecessary preinstalled packages
     environment.defaultPackages = [ pkgs.sudo ];
     services.xserver.desktopManager.xterm.enable = false;
+    services.displayManager.sddm.wayland.enable = true;
 
     # Install fonts
     fonts = {

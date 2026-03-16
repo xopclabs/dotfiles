@@ -38,7 +38,6 @@ in {
             age 
             libnotify
             pqiv
-            neofetch
             #clamav
             pipes
             tio
