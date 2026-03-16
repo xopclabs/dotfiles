@@ -14,6 +14,7 @@ in
     imports = [
         ./cleanuparr.nix
         ./huntarr.nix
+        ./soularr.nix
     ];
 
     options.homelab.arr-stack = {
@@ -395,7 +396,7 @@ in
                 {
                     title = "Lidarr";
                     subdomain = cfg.lidarr.subdomain;
-                    icon = "si:lidarr";
+                    icon = "mdi:music-circle";
                     group = "*arr";
                     priority = 4;
                 }

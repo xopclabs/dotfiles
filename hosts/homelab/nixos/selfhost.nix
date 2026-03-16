@@ -193,6 +193,13 @@
 
             prowlarr.subdomain = "prowlarr.vm.local";
             flaresolverr.subdomain = "flaresolverr.vm.local";
+
+            soularr = {
+                slskd = {
+                    subdomain = "soulseek.vm.local";
+                    openFirewall = true;
+                };
+            };
         };
 
         # Subscription tracking
