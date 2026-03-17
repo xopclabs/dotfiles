@@ -64,9 +64,14 @@ if tmux has-session 2>/dev/null; then
         tmux attach-session
     else
         unique_groups=$(tmux list-sessions -F '#{session_group}' | sort -u | wc -l)
+        main_clients=$(tmux display-message -t "$session_name" -p '#{session_attached}' 2>/dev/null)
 
         if ! tmux has-session -t "$session_name" 2>/dev/null; then
             tmux new-session -s "$session_name" \; run-shell "$(sessionx_cmd)"
+        elif [ "${main_clients:-0}" -eq 0 ] && [ "$unique_groups" -le 1 ]; then
+            tmux attach-session -t "$session_name"
+        elif [ "${main_clients:-0}" -eq 0 ] && [ "$unique_groups" -gt 1 ]; then
+            tmux attach-session -t "$session_name" \; run-shell "$(sessionx_cmd)"
         elif [ "$unique_groups" -gt 1 ]; then
             attach_or_link \; run-shell "$(sessionx_cmd)"
         else
