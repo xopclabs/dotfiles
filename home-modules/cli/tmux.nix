@@ -75,6 +75,8 @@ in {
                         set -g @sessionx-preview-ratio '55%'
                         set -g @sessionx-filter-current 'false'
 
+                        set -g @sessionx-filtered-sessions '~'
+
                         set -g @sessionx-bind-tree-mode 'ctrl-w'
                         set -g @sessionx-bind-new-window 'ctrl-c'
                         set -g @sessionx-bind-kill-session 'ctrl-d'
