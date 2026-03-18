@@ -243,11 +243,8 @@ in {
                     "pin on, match:title ^(as_toolbar)$"
                     "float on, match:title ^(zoom_linux_float_video_window)$"
                     "pin on, match:title ^(zoom_linux_float_video_window)$"
-                    "stay_focused on, match:class ^(zoom)$, match:title ^(menu window)$"
-                    # Zoom chat popup - no focus steal, bottom-right of internal monitor
-                    "no_initial_focus on, match:class ^(zoom)$, match:title ^(Zoom Workplace)$"
-                    "monitor ${monitor_internal}, match:class ^(zoom)$, match:title ^(Zoom Workplace)$"
-                    "move 100%-320 100%-150, match:class ^(zoom)$, match:title ^(Zoom Workplace)$"
+                    "move onscreen cursor, match:class ^(zoom)$, match:title ^(menu window)$"
+                    "move onscreen cursor, match:class ^(zoom)$, match:title ^(sub menu window)$"
 
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override, match:class ^(xwaylandvideobridge)$"
