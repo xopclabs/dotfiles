@@ -158,7 +158,7 @@ in
 
             allowedFiletypes = mkOption {
                 type = types.listOf types.str;
-                default = [ "flac 24/192" "flac 24/96" "flac 24/48" "flac 16/44.1" "flac" "mp3 320" ];
+                default = [ "flac 16/44.1" "flac 24/48" "flac 24/192" "flac 24/96" "flac" "mp3 320" ];
                 description = "Preferred file types and qualities (most to least preferred)";
             };
 
