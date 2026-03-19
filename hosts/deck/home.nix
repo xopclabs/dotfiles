@@ -3,6 +3,7 @@
 {
     imports = [
         inputs.sops-nix.homeManagerModules.sops
+        inputs.autofirma.homeManagerModules.default
     ];
 
     # Let home-manager manage itself

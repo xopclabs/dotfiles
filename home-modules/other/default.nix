@@ -9,5 +9,6 @@ in {
         ./plover.nix
         ./minecraft.nix
         ./androidcam.nix
+        ./autofirma.nix
     ];
 }

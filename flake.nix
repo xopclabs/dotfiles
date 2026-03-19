@@ -51,6 +51,9 @@
 
         p81.url = "github:devusb/p81-nix";
         p81.inputs.nixpkgs.follows = "nixpkgs";
+    
+        autofirma.url = "github:nix-community/autofirma-nix";
+        autofirma.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -110,6 +113,7 @@
                         (./. + "/hosts/metadata.nix")
                         inputs.sops-nix.homeManagerModules.sops
                         inputs.stylix.homeModules.stylix
+                        inputs.autofirma.homeManagerModules.default
                         {
                             home = {
                                 username = username;
