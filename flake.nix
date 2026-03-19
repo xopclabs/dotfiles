@@ -91,6 +91,7 @@
                                         (./. + "/hosts/metadata.nix")
                                         inputs.sops-nix.homeManagerModules.sops
                                         inputs.stylix.homeModules.stylix
+                                        inputs.autofirma.homeManagerModules.default
                                     ];
                                 };
                             };

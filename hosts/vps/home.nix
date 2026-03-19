@@ -1,10 +1,6 @@
 { config, lib, pkgs, inputs, ... }:
 
 {
-    imports = [
-        inputs.sops-nix.homeManagerModules.sops
-    ];
-
     # Let home-manager manage itself
     programs.home-manager.enable = true;
 
