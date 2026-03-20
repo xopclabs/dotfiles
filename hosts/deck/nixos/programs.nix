@@ -60,6 +60,10 @@
         localsend.enable = true;
         virtual_webcam.enable = true;
         p81.enable = true;
+        ereader_relay = {
+            enable = true;
+            subdomain = "books.vm.local";
+        };
         
         yeetmouse = {
             enable = false; 

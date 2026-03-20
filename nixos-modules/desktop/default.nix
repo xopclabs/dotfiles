@@ -11,6 +11,7 @@
         ./localsend.nix
         ./p81.nix
         ./virtual_webcam.nix
+        ./ereader-relay.nix
     ];
 }
 
