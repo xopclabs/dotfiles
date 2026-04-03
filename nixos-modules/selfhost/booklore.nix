@@ -94,7 +94,8 @@ in
 
         # BookLore main container
         virtualisation.oci-containers.containers.booklore = {
-            image = "booklore/booklore:latest";
+            # booklore/booklore was removed from Docker Hub; Grimmory is the community fork (drop-in image swap per upstream compose).
+            image = "grimmory/grimmory:latest";
             dependsOn = [ "booklore-mariadb" ];
             ports = [ "${toString cfg.port}:${toString cfg.port}" ];
             environment = {
