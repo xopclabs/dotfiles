@@ -9,7 +9,7 @@ let
         echo "Loading custom direct domains"
         # Read custom domains from sops secret and convert to JSON array
         CUSTOM_DOMAINS=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/direct-domains".path} | ${pkgs.gnugrep}/bin/grep -v '^#' | ${pkgs.gnugrep}/bin/grep -v '^$' | ${pkgs.jq}/bin/jq -R . | ${pkgs.jq}/bin/jq -s .)
-        
+        echo "CUSTOM_DOMAINS: $CUSTOM_DOMAINS"
         echo "Merging configs"
         # Merge JSON configs into one with custom domains
         ${pkgs.jq}/bin/jq -s --argjson customDomains "$CUSTOM_DOMAINS" '
@@ -174,13 +174,22 @@ in
         # SOPS secrets configuration 
         sops.secrets = mkMerge [
             (mkIf cfg.subscriptions.alpha {
-                "xray/subscription-alpha" = {};
+                "xray/subscription-alpha" = {
+                    sopsFile = ../../secrets/shared/selfhost.yaml;
+                    restartUnits = [ "xray-update-subscription.service" "xray.service" ];
+                };
             })
             (mkIf cfg.subscriptions.beta {
-                "xray/subscription-beta" = {};
+                "xray/subscription-beta" = {
+                    sopsFile = ../../secrets/shared/selfhost.yaml;
+                    restartUnits = [ "xray-update-subscription.service" "xray.service" ];
+                };
             })
             (mkIf cfg.directDomains.enable {
-                "xray/direct-domains" = {};
+                "xray/direct-domains" = {
+                    sopsFile = ../../secrets/shared/selfhost.yaml;
+                    restartUnits = [ "xray-update-subscription.service" "xray.service" ];
+                };
             })
         ];
 
@@ -199,11 +208,6 @@ in
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
             wantedBy = [ "multi-user.target" ];
-            unitConfig = {
-                # Only run on boot if config doesn't exist (first install)
-                # After that, only timer triggers updates
-                ConditionPathExists = "!/etc/xray/config.json";
-            };
             script = ''
                 mkdir -p /etc/xray
 
