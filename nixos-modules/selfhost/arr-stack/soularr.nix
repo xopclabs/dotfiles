@@ -74,8 +74,17 @@ in
 
             downloadsDir = mkOption {
                 type = types.path;
-                default = "/var/lib/slskd/downloads";
-                description = "Directory for Slskd downloads (must be accessible by Lidarr)";
+                default = "/mnt/raid_pool/shared/downloads/soulseek/downloads";
+                description = ''
+                  Directory for completed Slskd downloads (must be accessible by Lidarr and Soularr).
+                  Created by soularr-config before slskd starts (after the filesystem is mounted).
+                '';
+            };
+
+            incompleteDir = mkOption {
+                type = types.path;
+                default = "/mnt/raid_pool/shared/downloads/soulseek/incomplete";
+                description = "Directory for in-progress Slskd downloads; created by soularr-config with downloadsDir.";
             };
 
             shareDirectories = mkOption {
@@ -158,7 +167,7 @@ in
 
             allowedFiletypes = mkOption {
                 type = types.listOf types.str;
-                default = [ "flac 16/44.1" "flac 24/48" "flac 24/192" "flac 24/96" "flac" "mp3 320" ];
+                default = [ "flac 16/44.1" "flac 24/48" "flac" "mp3 320" ];
                 description = "Preferred file types and qualities (most to least preferred)";
             };
 
@@ -266,21 +275,32 @@ in
             group = "users";
             settings = {
                 directories.downloads = cfg.slskd.downloadsDir;
+                directories.incomplete = cfg.slskd.incompleteDir;
                 shares.directories = cfg.slskd.shareDirectories;
                 web.port = cfg.slskd.port;
             };
         };
 
+        # ReadWritePaths for slskd must exist before systemd builds the service mount namespace;
+        # ExecStartPre runs too late, so create dirs here (before slskd, after pool is mounted).
         systemd.services.slskd = {
             after = [ "soularr-config.service" ];
             requires = [ "soularr-config.service" ];
-            serviceConfig.UMask = "0002";
+            serviceConfig = {
+                UMask = "0002";
+                RequiresMountsFor = [
+                    cfg.slskd.downloadsDir
+                    cfg.slskd.incompleteDir
+                ];
+            };
+        };
+
+        systemd.services."${config.virtualisation.oci-containers.backend}-soularr" = {
+            after = [ "slskd.service" ];
         };
 
         systemd.tmpfiles.rules = [
             "d ${cfg.dataDir} 0750 ${config.metadata.user} users -"
-            "d ${cfg.slskd.downloadsDir} 2775 slskd users -"
-            "a+ ${cfg.slskd.downloadsDir} - - - - d:g:users:rwx,g:users:rwx"
         ];
 
         systemd.services.soularr-config = {
@@ -290,11 +310,21 @@ in
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
+                RequiresMountsFor = [
+                    cfg.slskd.downloadsDir
+                    cfg.slskd.incompleteDir
+                ];
             };
             script = ''
                 set -a
                 source ${config.sops.secrets."traefik/env".path}
                 set +a
+
+                ${pkgs.coreutils}/bin/mkdir -p ${cfg.slskd.downloadsDir} ${cfg.slskd.incompleteDir}
+                ${pkgs.coreutils}/bin/chown slskd:users ${cfg.slskd.downloadsDir} ${cfg.slskd.incompleteDir}
+                ${pkgs.coreutils}/bin/chmod 2775 ${cfg.slskd.downloadsDir} ${cfg.slskd.incompleteDir}
+                ${pkgs.acl}/bin/setfacl -m g:users:rwx ${cfg.slskd.downloadsDir} ${cfg.slskd.incompleteDir}
+                ${pkgs.acl}/bin/setfacl -d -m g:users:rwx ${cfg.slskd.downloadsDir} ${cfg.slskd.incompleteDir}
 
                 KEY_FILE="${cfg.dataDir}/slskd-api-key"
                 if [ ! -f "$KEY_FILE" ]; then
