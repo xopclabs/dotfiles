@@ -205,6 +205,7 @@ in
         # Subscription update service
         systemd.services.xray-update-subscription = {
             description = "Download, merge xray configs and restart xray";
+            restartIfChanged = false; 
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
             wantedBy = [ "multi-user.target" ];
@@ -224,11 +225,11 @@ in
                 # Fetch raw JSON from each subscription (with timeout)
                 ${optionalString cfg.subscriptions.beta ''
                 echo "Fetching subscription-beta"
-                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 30 -fLo /tmp/xray1.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
+                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/xray1.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
                 ''}
                 ${optionalString cfg.subscriptions.alpha ''
                 echo "Fetching subscription-alpha"
-                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 30 -fLo /tmp/xray2.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})
+                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/xray2.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})
                 ''}
 
                 ${mkMergeScript}
