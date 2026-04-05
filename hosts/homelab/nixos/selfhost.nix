@@ -177,12 +177,12 @@
 
             radarr.subdomain = "movies.vm.local";
             sonarr.subdomain = "tv.vm.local";
+
             lidarr.subdomain = "music.vm.local";
 
             jellyfin.subdomain = "jellyfin.vm.local";
             jellyfin.openFirewall = true;
 
-            navidrome.subdomain = "navidrome.vm.local";
 
             jellyseerr.subdomain = "request.vm.local";
             jellyseerr.proxy = false;  # Proxy is configured in jellyseerr itself
@@ -196,12 +196,23 @@
             prowlarr.subdomain = "prowlarr.vm.local";
             flaresolverr.subdomain = "flaresolverr.vm.local";
 
-            soularr = {
+            soulseek = {
                 slskd = {
                     subdomain = "soulseek.vm.local";
                     openFirewall = true;
                 };
+
+                soularr.enable = true;
+
+                soulsync = {
+                    enable = true;
+                    stagingDir = "/mnt/raid_pool/shared/drop/soulsync";
+                    subdomain = "soulsync.vm.local";
+                    proxy = true;
+                };
             };
+
+            navidrome.subdomain = "navidrome.vm.local";
 
             lrcget = {
                 enable = true;

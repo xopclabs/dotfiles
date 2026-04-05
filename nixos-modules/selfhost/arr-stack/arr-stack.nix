@@ -14,7 +14,7 @@ in
     imports = [
         ./cleanuparr.nix
         ./huntarr.nix
-        ./soularr.nix
+        ./soulseek.nix
         ./lrcget.nix
         ./navidrome.nix
     ];
@@ -178,18 +178,19 @@ in
             description = "Generate arr-stack proxy environment file";
             wantedBy = [ "multi-user.target" ];
             before =
-                [
-                    "prowlarr.service"
-                    "radarr.service"
-                    "sonarr.service"
-                    "lidarr.service"
-                    "flaresolverr.service"
-                    "jellyfin.service"
-                    "jellyseerr.service"
-                    "bazarr.service"
-                ]
+                optionals cfg.prowlarr.enable [ "prowlarr.service" ]
+                ++ optionals cfg.radarr.enable [ "radarr.service" ]
+                ++ optionals cfg.sonarr.enable [ "sonarr.service" ]
+                ++ optionals cfg.lidarr.enable [ "lidarr.service" ]
+                ++ optionals cfg.flaresolverr.enable [ "flaresolverr.service" ]
+                ++ optionals cfg.jellyfin.enable [ "jellyfin.service" ]
+                ++ optionals cfg.jellyseerr.enable [ "jellyseerr.service" ]
+                ++ optionals cfg.bazarr.enable [ "bazarr.service" ]
                 ++ optionals (cfg.lrcget.enable && cfg.lrcget.proxy) [ "lrcget-watch.service" ]
-                ++ optionals (cfg.navidrome.enable && cfg.navidrome.proxy) [ "navidrome.service" ];
+                ++ optionals (cfg.navidrome.enable && cfg.navidrome.proxy) [ "navidrome.service" ]
+                ++ optionals (cfg.soulseek.soulsync.enable && cfg.soulseek.soulsync.proxy) [
+                    "${config.virtualisation.oci-containers.backend}-soulsync.service"
+                ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -213,7 +214,7 @@ in
             enable = true;
             openFirewall = cfg.prowlarr.openFirewall;
         };
-        systemd.services.prowlarr = mkIf cfg.prowlarr.proxy {
+        systemd.services.prowlarr = mkIf (cfg.prowlarr.enable && cfg.prowlarr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -224,7 +225,7 @@ in
             openFirewall = cfg.radarr.openFirewall;
             group = "users";
         };
-        systemd.services.radarr = mkIf cfg.radarr.proxy {
+        systemd.services.radarr = mkIf (cfg.radarr.enable && cfg.radarr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -235,7 +236,7 @@ in
             openFirewall = cfg.sonarr.openFirewall;
             group = "users";
         };
-        systemd.services.sonarr = mkIf cfg.sonarr.proxy {
+        systemd.services.sonarr = mkIf (cfg.sonarr.enable && cfg.sonarr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -246,7 +247,7 @@ in
             openFirewall = cfg.lidarr.openFirewall;
             group = "users";
         };
-        systemd.services.lidarr = mkIf cfg.lidarr.proxy {
+        systemd.services.lidarr = mkIf (cfg.lidarr.enable && cfg.lidarr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -256,7 +257,7 @@ in
             enable = true;
             openFirewall = cfg.flaresolverr.openFirewall;
         };
-        systemd.services.flaresolverr = mkIf cfg.flaresolverr.proxy {
+        systemd.services.flaresolverr = mkIf (cfg.flaresolverr.enable && cfg.flaresolverr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -268,7 +269,7 @@ in
             # If we setup a user to homelab, jellyfin doesn't start, perhaps due to /var/lib ownership
             group = "users";
         };
-        systemd.services.jellyfin = mkIf cfg.jellyfin.proxy {
+        systemd.services.jellyfin = mkIf (cfg.jellyfin.enable && cfg.jellyfin.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -279,7 +280,7 @@ in
             port = 15055;
             openFirewall = cfg.jellyseerr.openFirewall;
         };
-        systemd.services.jellyseerr = mkIf cfg.jellyseerr.proxy {
+        systemd.services.jellyseerr = mkIf (cfg.jellyseerr.enable && cfg.jellyseerr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
@@ -289,7 +290,7 @@ in
             enable = true;
             openFirewall = cfg.bazarr.openFirewall;
         };
-        systemd.services.bazarr = mkIf cfg.bazarr.proxy {
+        systemd.services.bazarr = mkIf (cfg.bazarr.enable && cfg.bazarr.proxy) {
             after = [ "arr-proxy-env.service" ];
             requires = [ "arr-proxy-env.service" ];
             serviceConfig.EnvironmentFile = arrProxyEnvFile;

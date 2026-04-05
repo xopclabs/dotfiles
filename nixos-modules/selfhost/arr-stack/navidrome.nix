@@ -54,6 +54,7 @@ in
     config = mkIf (arrCfg.enable && cfg.enable) {
         services.navidrome = {
             enable = true;
+            group = "users";
             openFirewall = cfg.openFirewall;
             settings = recursiveUpdate {
                 Address = "127.0.0.1";

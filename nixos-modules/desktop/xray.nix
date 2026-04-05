@@ -205,7 +205,7 @@ in
         # Subscription update service
         systemd.services.xray-update-subscription = {
             description = "Download, merge xray configs and restart xray";
-            restartIfChanged = false; 
+            restartIfChanged = false;
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
             wantedBy = [ "multi-user.target" ];
@@ -222,21 +222,37 @@ in
                     done
                 fi
 
+                FETCH_FAILED=0
                 # Fetch raw JSON from each subscription (with timeout)
                 ${optionalString cfg.subscriptions.beta ''
                 echo "Fetching subscription-beta"
-                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/xray1.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})
+                if ! ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/xray1.json "$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})"; then
+                    echo "WARNING: xray-update-subscription: curl failed for subscription-beta"
+                    FETCH_FAILED=1
+                fi
                 ''}
                 ${optionalString cfg.subscriptions.alpha ''
                 echo "Fetching subscription-alpha"
-                ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/xray2.json $(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})
+                if ! ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/xray2.json "$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})"; then
+                    echo "WARNING: xray-update-subscription: curl failed for subscription-alpha"
+                    FETCH_FAILED=1
+                fi
                 ''}
 
+                if [ "$FETCH_FAILED" -ne 0 ]; then
+                    if [ -f /etc/xray/config.json ]; then
+                        echo "xray-update-subscription: subscription fetch failed; keeping existing /etc/xray/config.json"
+                        exit 0
+                    fi
+                    echo "xray-update-subscription: subscription fetch failed and no existing /etc/xray/config.json"
+                    exit 1
+                fi
+
                 ${mkMergeScript}
+                ${pkgs.systemd}/bin/systemctl restart xray.service
             '';
             serviceConfig = {
                 Type = "oneshot";
-                ExecStartPost = "${pkgs.systemd}/bin/systemctl restart xray.service";
             };
         };
 
