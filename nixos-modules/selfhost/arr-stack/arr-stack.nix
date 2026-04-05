@@ -15,6 +15,7 @@ in
         ./cleanuparr.nix
         ./huntarr.nix
         ./soularr.nix
+        ./lrcget.nix
     ];
 
     options.homelab.arr-stack = {
@@ -175,10 +176,18 @@ in
         systemd.services.arr-proxy-env = {
             description = "Generate arr-stack proxy environment file";
             wantedBy = [ "multi-user.target" ];
-            before = [ 
-                "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service"
-                "flaresolverr.service" "jellyfin.service" "jellyseerr.service" "bazarr.service"
-            ];
+            before =
+                [
+                    "prowlarr.service"
+                    "radarr.service"
+                    "sonarr.service"
+                    "lidarr.service"
+                    "flaresolverr.service"
+                    "jellyfin.service"
+                    "jellyseerr.service"
+                    "bazarr.service"
+                ]
+                ++ optionals (cfg.lrcget.enable && cfg.lrcget.proxy) [ "lrcget-watch.service" ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;

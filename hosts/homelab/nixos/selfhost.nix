@@ -200,6 +200,11 @@
                     openFirewall = true;
                 };
             };
+
+            lrcget = {
+                enable = true;
+                tryEmbedLyrics = true;
+            };
         };
 
         # Subscription tracking

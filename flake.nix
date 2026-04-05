@@ -49,6 +49,9 @@
         shadowing.url = "github:xopclabs/shadowing";
         shadowing.inputs.nixpkgs.follows = "nixpkgs";
 
+        lrcget-cli.url = "github:xopclabs/lrcget-cli/nix-flake-testbranch";
+        lrcget-cli.inputs.nixpkgs.follows = "nixpkgs";
+
         p81.url = "github:devusb/p81-nix";
         p81.inputs.nixpkgs.follows = "nixpkgs";
     
