@@ -16,6 +16,7 @@ in
         ./huntarr.nix
         ./soularr.nix
         ./lrcget.nix
+        ./navidrome.nix
     ];
 
     options.homelab.arr-stack = {
@@ -187,7 +188,8 @@ in
                     "jellyseerr.service"
                     "bazarr.service"
                 ]
-                ++ optionals (cfg.lrcget.enable && cfg.lrcget.proxy) [ "lrcget-watch.service" ];
+                ++ optionals (cfg.lrcget.enable && cfg.lrcget.proxy) [ "lrcget-watch.service" ]
+                ++ optionals (cfg.navidrome.enable && cfg.navidrome.proxy) [ "navidrome.service" ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -405,7 +407,7 @@ in
                 {
                     title = "Lidarr";
                     subdomain = cfg.lidarr.subdomain;
-                    icon = "mdi:music-circle";
+                    icon = "mdi:radar";
                     group = "*arr";
                     priority = 4;
                 }

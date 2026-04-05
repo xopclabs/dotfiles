@@ -182,6 +182,8 @@
             jellyfin.subdomain = "jellyfin.vm.local";
             jellyfin.openFirewall = true;
 
+            navidrome.subdomain = "navidrome.vm.local";
+
             jellyseerr.subdomain = "request.vm.local";
             jellyseerr.proxy = false;  # Proxy is configured in jellyseerr itself
 
