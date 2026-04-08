@@ -52,8 +52,6 @@
         lrcget-cli.url = "github:xopclabs/lrcget-cli/nix-flake-testbranch";
         lrcget-cli.inputs.nixpkgs.follows = "nixpkgs";
 
-        p81.url = "github:devusb/p81-nix";
-        p81.inputs.nixpkgs.follows = "nixpkgs";
     
         autofirma.url = "github:nix-community/autofirma-nix";
         autofirma.inputs.nixpkgs.follows = "nixpkgs";
@@ -76,7 +74,6 @@
                         inputs.yeetmouse.nixosModules.default
                         inputs.jovian.nixosModules.default
                         inputs.shadowing.nixosModules.default
-                        inputs.p81.nixosModules.perimeter81
                         {
                             nixpkgs.overlays = [ inputs.nur.overlays.default ];
                         }

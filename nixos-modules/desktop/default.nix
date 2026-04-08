@@ -9,7 +9,7 @@
         ./flatpak.nix
         ./yeetmouse.nix
         ./localsend.nix
-        ./p81.nix
+        ./p81
         ./virtual_webcam.nix
         ./ereader-relay.nix
     ];
