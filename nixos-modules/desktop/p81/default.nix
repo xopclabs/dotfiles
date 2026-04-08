@@ -44,9 +44,6 @@ in
                 User = "root";
                 Group = "root";
                 WorkingDirectory = "/";
-                ProtectHome = true;
-                ProtectSystem = "full";
-                InaccessiblePaths = [ "-/media" "-/mnt" ];
             };
         };
     };
