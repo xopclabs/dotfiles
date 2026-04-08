@@ -25,6 +25,7 @@ with lib;
         ./shadowing.nix
         ./tandoor-recipes.nix
         ./syncthing.nix
+        ./matrix.nix
     ];
 }
 

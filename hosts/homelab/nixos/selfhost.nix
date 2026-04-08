@@ -256,6 +256,13 @@
             subdomain = "photos.vm.local";
         };
 
+        # Matrix messaging & voice/video calls
+        matrix = {
+            enable = true;
+            subdomain = "matrix.vm.local";
+            elementSubdomain = "element.vm.local";
+        };
+
         syncthing = {
             enable = true;
             subdomain = "syncthing.vm.local";
