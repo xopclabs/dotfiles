@@ -256,6 +256,18 @@
             subdomain = "photos.vm.local";
         };
 
+        syncthing = {
+            enable = true;
+            subdomain = "syncthing.vm.local";
+            openDefaultPorts = false;
+            folders = {
+                music = {
+                    path = config.metadata.selfhost.storage.media.musicDir;
+                    label = "Music";
+                };
+            };
+        };
+
         # Gaming servers
         minecraft = {
             enable = true;

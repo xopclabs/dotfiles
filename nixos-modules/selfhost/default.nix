@@ -24,6 +24,7 @@ with lib;
         ./immich.nix
         ./shadowing.nix
         ./tandoor-recipes.nix
+        ./syncthing.nix
     ];
 }
 
