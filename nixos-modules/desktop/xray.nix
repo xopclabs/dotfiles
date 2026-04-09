@@ -30,7 +30,7 @@ let
               )
             | .outbounds = ( [$p1, $p2] + ($a.outbounds | map(select(.tag!="proxy"))) )
             | .observatory = {
-                subjectSelector: ["proxy1"],
+                subjectSelector: ["proxy"],
                 pingConfig: {
                   destination: "http://cp.cloudflare.com/",
                   interval:    "20s",
@@ -41,8 +41,7 @@ let
             | .routing.balancers = [
                 {
                   tag:         "proxy",
-                  selector:    ["proxy1"],
-                  fallbackTag: "proxy2",
+                  selector:    ["proxy"],
                   strategy:    { type: "random" }
                 }
               ]
@@ -51,6 +50,7 @@ let
                   [{ type: "field", domain: $customDomains, network: "tcp,udp", outboundTag: "direct" }]
                 else [] end)
                 + [
+                  { type: "field", ip: ["geoip:private"], network: "tcp,udp", outboundTag: "direct" },
                   { type: "field", ip: ["geoip:ru"], network: "tcp,udp", outboundTag: "direct" },
                   { type: "field", domain: ["geosite:category-ru"], network: "tcp,udp", outboundTag: "direct" }
                 ] + [
@@ -80,7 +80,7 @@ let
               )
             | .outbounds = ( [$p1, $p2] + ($a.outbounds | map(select(.tag!="proxy"))) )
             | .observatory = {
-                subjectSelector: ["proxy1"],
+                subjectSelector: ["proxy"],
                 pingConfig: {
                   destination: "http://cp.cloudflare.com/",
                   interval:    "20s",
@@ -91,13 +91,13 @@ let
             | .routing.balancers = [
                 {
                   tag:         "proxy",
-                  selector:    ["proxy1"],
-                  fallbackTag: "proxy2",
+                  selector:    ["proxy"],
                   strategy:    { type: "random" }
                 }
               ]
             | .routing.rules = (
                 [
+                  { type: "field", ip: ["geoip:private"], network: "tcp,udp", outboundTag: "direct" },
                   { type: "field", ip: ["geoip:ru"], network: "tcp,udp", outboundTag: "direct" },
                   { type: "field", domain: ["geosite:category-ru"], network: "tcp,udp", outboundTag: "direct" }
                 ] + [
@@ -176,19 +176,19 @@ in
             (mkIf cfg.subscriptions.alpha {
                 "xray/subscription-alpha" = {
                     sopsFile = ../../secrets/shared/selfhost.yaml;
-                    restartUnits = [ "xray-update-subscription.service" "xray.service" ];
+                    restartUnits = [ "xray-update-subscription.service" ];
                 };
             })
             (mkIf cfg.subscriptions.beta {
                 "xray/subscription-beta" = {
                     sopsFile = ../../secrets/shared/selfhost.yaml;
-                    restartUnits = [ "xray-update-subscription.service" "xray.service" ];
+                    restartUnits = [ "xray-update-subscription.service" ];
                 };
             })
             (mkIf cfg.directDomains.enable {
                 "xray/direct-domains" = {
                     sopsFile = ../../secrets/shared/selfhost.yaml;
-                    restartUnits = [ "xray-update-subscription.service" "xray.service" ];
+                    restartUnits = [ "xray-update-subscription.service" ];
                 };
             })
         ];
@@ -249,7 +249,21 @@ in
                 fi
 
                 ${mkMergeScript}
-                ${pkgs.systemd}/bin/systemctl restart xray.service
+
+                # Only restart xray if the config actually changed
+                OLD_HASH=""
+                if [ -f /etc/xray/config.json.prev ]; then
+                    OLD_HASH=$(${pkgs.coreutils}/bin/sha256sum /etc/xray/config.json.prev | ${pkgs.coreutils}/bin/cut -d' ' -f1)
+                fi
+                NEW_HASH=$(${pkgs.coreutils}/bin/sha256sum /etc/xray/config.json | ${pkgs.coreutils}/bin/cut -d' ' -f1)
+
+                if [ "$OLD_HASH" = "$NEW_HASH" ]; then
+                    echo "Config unchanged, skipping xray restart"
+                else
+                    echo "Config changed, restarting xray"
+                    ${pkgs.coreutils}/bin/cp /etc/xray/config.json /etc/xray/config.json.prev
+                    ${pkgs.systemd}/bin/systemctl restart xray.service
+                fi
             '';
             serviceConfig = {
                 Type = "oneshot";
