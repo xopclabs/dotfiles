@@ -10,12 +10,27 @@ in
 {
     options.desktop.p81 = {
         enable = mkEnableOption "Perimeter81 corporate VPN support";
-        restartAfterSleep = mkOption {
-            type = types.bool;
-            default = false;
+        sleepResumeRecovery = mkOption {
+            type = types.enum [ "none" "async-restart" "async-reset" ];
+            default = "async-restart";
             description = ''
-                After suspend/hibernate, restart perimeter81-helper-daemon so the tunnel
-                does not stay half-dead (UI out of sync, no ping through VPN).
+                After suspend/hibernate, schedule recovery so the GUI does not sit in an
+                endless "connecting" state while Wi-Fi and DNS come back.
+
+                - `none`: do nothing automatically (use `sudo p81-reset` when stuck).
+                - `async-restart`: queue a delayed `systemctl restart` via `systemd-run`
+                  (does not block resume; avoids the freezes caused by a synchronous
+                  restart inside system-sleep).
+                - `async-reset`: same timing but runs `p81-reset` (harder flush of tun0
+                  and children) if a plain restart is not enough.
+            '';
+        };
+        sleepResumeDelaySec = mkOption {
+            type = types.ints.positive;
+            default = 20;
+            description = ''
+                Seconds to wait after resume before running sleep resume recovery (Wi-Fi
+                and NetworkManager often need a moment before the helper can reconnect).
             '';
         };
         restartOnPhysicalLinkUp = mkOption {
@@ -56,10 +71,18 @@ in
                     chmod 644 /var/lib/p81/resolv.conf
                 '';
                 ExecStart = "${perimeter81}/bin/p81-helper-daemon";
-                ExecStop = "${perimeter81}/bin/p81-helper-daemon stop";
+                ExecStop = pkgs.writeShellScript "p81-stop" ''
+                    set +e
+                    ${pkgs.coreutils}/bin/timeout 35 ${perimeter81}/bin/p81-helper-daemon stop
+                    code=$?
+                    if [ "$code" -eq 124 ]; then
+                        echo "p81-stop: graceful stop timed out after 35s" >&2
+                    fi
+                    exit 0
+                '';
                 Restart = "always";
                 RestartSec = "5";
-                TimeoutStopSec = "90";
+                TimeoutStopSec = "50";
                 SyslogIdentifier = "perimeter81helper";
                 User = "root";
                 Group = "root";
@@ -68,18 +91,30 @@ in
         };
 
         environment.etc = mkMerge [
-            (mkIf cfg.restartAfterSleep {
-                "systemd/system-sleep/p81-resume" = {
+            (mkIf (cfg.sleepResumeRecovery != "none") (let
+                postResumeRun = pkgs.writeShellScript "p81-postresume-run" ''
+                    set -euo pipefail
+                    sleep ${toString cfg.sleepResumeDelaySec}
+                    ${if cfg.sleepResumeRecovery == "async-reset" then ''
+                        exec ${p81-reset}/bin/p81-reset
+                    '' else ''
+                        exec ${pkgs.systemd}/bin/systemctl restart perimeter81-helper-daemon
+                    ''}
+                '';
+            in {
+                "systemd/system-sleep/p81-resume-async" = {
                     mode = "0755";
-                    source = pkgs.writeShellScript "p81-resume" ''
+                    source = pkgs.writeShellScript "p81-resume-async" ''
                         case "$1/$2" in
                             post/*)
-                                ${pkgs.systemd}/bin/systemctl restart perimeter81-helper-daemon || true
+                                exec ${pkgs.systemd}/bin/systemd-run --no-block \
+                                    --description="Perimeter81 post-resume recovery" \
+                                    ${postResumeRun}
                                 ;;
                         esac
                     '';
                 };
-            })
+            }))
             (mkIf cfg.restartOnPhysicalLinkUp {
                 "NetworkManager/dispatcher.d/99-p81-physical-up" = {
                     mode = "0755";
