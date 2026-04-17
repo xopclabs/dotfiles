@@ -12,6 +12,7 @@ let
     wg-toggle = pkgs.writeShellScriptBin "wg-toggle" ''${builtins.readFile ./wg-toggle.sh}'';
     smart-ls = pkgs.writeShellScriptBin "smart-ls" ''${builtins.readFile ./smart-ls.sh}'';
     install-nixos-anywhere = pkgs.writeShellScriptBin "install-nixos-anywhere" ''${builtins.readFile ./install-nixos-anywhere.sh}'';
+    eq-preset = pkgs.writeShellScriptBin "eq-preset" ''${builtins.readFile ./eq-preset.sh}'';
 in {
     options.modules.cli.scripts = { enable = mkEnableOption "scripts"; };
     config = mkIf cfg.enable {
@@ -24,6 +25,8 @@ in {
             wg-toggle
             smart-ls
             install-nixos-anywhere
+            eq-preset
+            pkgs.jq
         ];
     };
 }

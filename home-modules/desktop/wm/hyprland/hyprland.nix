@@ -79,6 +79,11 @@ in {
             default = [];
             description = "Extra commands to run on startup in exec-once.";
         };
+        extraBinds = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [];
+            description = "Extra keybindings appended to hyprland settings.bind.";
+        };
     };
     imports = [ ./scripts ];
 
@@ -313,6 +318,8 @@ in {
                     "$altMod, Space, exec, $newterminal"
                     "$mod, H, exec, ${config.modules.browsers.default}"
 
+                    "$mod, J, exec, eq-preset" 
+
                     "$mod, D, killactive"
                     "$mod, U, togglefloating"
                     "$mod, U, pin"
@@ -329,7 +336,8 @@ in {
                     (mvwindow "o" "r")
                 ]
                 ++ (map (w: ws w.key w.n) workspaces)
-                ++ (map (w: mvtows w.key w.n) workspaces);
+                ++ (map (w: mvtows w.key w.n) workspaces)
+                ++ cfg.extraBinds;
 
                 bindm = [
                     "$mod,mouse:272,movewindow"

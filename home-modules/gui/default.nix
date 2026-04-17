@@ -7,5 +7,6 @@ in {
     imports = [
         ./flameshot.nix
         ./wl-kbptr.nix
+        ./easyeffects.nix
     ];
 }

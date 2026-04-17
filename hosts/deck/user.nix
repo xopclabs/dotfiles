@@ -83,6 +83,7 @@
 
         gui = {
             flameshot.enable = false;
+            easyeffects.enable = true;
         };
 
         browsers = {
