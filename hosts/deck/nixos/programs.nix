@@ -59,7 +59,10 @@
         flatpak.enable = true;
         localsend.enable = true;
         virtual_webcam.enable = true;
-        p81.enable = true;
+        p81 = {
+            enable = true;
+            splitDns.enable = true;
+        };
         ereader_relay = {
             enable = true;
             subdomain = "books.vm.local";

@@ -8,6 +8,8 @@ let
     p81-reset = pkgs.callPackage ./reset.nix {};
 in
 {
+    imports = [ ./split-dns.nix ];
+
     options.desktop.p81 = {
         enable = mkEnableOption "Perimeter81 corporate VPN support";
         sleepResumeRecovery = mkOption {
