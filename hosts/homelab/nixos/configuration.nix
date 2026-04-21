@@ -14,6 +14,8 @@
 	    ./ssh.nix
         ./remote-builds.nix
 
+        ./gpu.nix
+
         ./programs.nix
         ./selfhost.nix
     ];
