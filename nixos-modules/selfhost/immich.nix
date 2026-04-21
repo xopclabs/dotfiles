@@ -62,10 +62,11 @@ in
         # Add metadata.user to video/render groups for hardware acceleration
         users.users.${config.metadata.user}.extraGroups = mkIf cfg.hardwareAcceleration.enable [ "video" "render" ];
 
-        # Create media directory and ensure permissions (metadata.user, users group)
+        # Create media directory and ensure top-level permissions only.
+        # Non-recursive (z) to avoid walking the entire Immich library on boot.
         systemd.tmpfiles.rules = [
             "d ${cfg.mediaLocation} 0777 ${config.metadata.user} users -"
-            "Z ${cfg.mediaLocation} 0777 ${config.metadata.user} users -"
+            "z ${cfg.mediaLocation} 0777 ${config.metadata.user} users -"
         ];
 
         # Register with Traefik (use localhost - Immich binds to IPv6 ::1 by default)

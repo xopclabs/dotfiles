@@ -34,9 +34,9 @@ in
 
     config = mkIf cfg.enable {
         systemd.tmpfiles.rules = [
-            "d ${cfg.dataDir} 0750 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${cfg.dataDir}/db 0750 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${cfg.dataDir}/logos 0750 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${cfg.dataDir} 0750 ${config.metadata.user} users -"
+            "d ${cfg.dataDir}/db 0750 ${config.metadata.user} users -"
+            "d ${cfg.dataDir}/logos 0750 ${config.metadata.user} users -"
         ];
 
         virtualisation.oci-containers.containers.wallos = {

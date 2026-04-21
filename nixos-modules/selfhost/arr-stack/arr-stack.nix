@@ -296,14 +296,16 @@ in
             serviceConfig.EnvironmentFile = arrProxyEnvFile;
         };
 
-        # Create necessary directories for media (d) and ensure permissions (Z)
+        # Create necessary directories for media (d) and ensure top-level
+        # permissions (z, non-recursive). Recursive Z on huge media trees
+        # was blocking boot for 3+ minutes on every restart.
         systemd.tmpfiles.rules = [
             "d ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
-            "Z ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
+            "z ${config.metadata.selfhost.storage.media.moviesDir} 0777 ${config.metadata.user} users -"
             "d ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
-            "Z ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
+            "z ${config.metadata.selfhost.storage.media.tvDir} 0777 ${config.metadata.user} users -"
             "d ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
-            "Z ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
+            "z ${config.metadata.selfhost.storage.media.musicDir} 0777 ${config.metadata.user} users -"
         ];
 
         # Register with Traefik

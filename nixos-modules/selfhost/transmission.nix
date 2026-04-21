@@ -35,10 +35,10 @@ in
         
         # Create necessary directories for downloads
         systemd.tmpfiles.rules = [
-            "d ${config.metadata.selfhost.storage.downloads.mainDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.downloads.moviesDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.downloads.tvDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
-            "d ${config.metadata.selfhost.storage.downloads.musicDir} 0777 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${config.metadata.selfhost.storage.downloads.mainDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.downloads.moviesDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.downloads.tvDir} 0777 ${config.metadata.user} users -"
+            "d ${config.metadata.selfhost.storage.downloads.musicDir} 0777 ${config.metadata.user} users -"
         ];
         
         # Register with Traefik

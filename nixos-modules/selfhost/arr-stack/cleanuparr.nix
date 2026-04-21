@@ -33,7 +33,7 @@ in
 
     config = mkIf (arrCfg.enable && cfg.enable) {
         systemd.tmpfiles.rules = [
-            "d ${cfg.dataDir} 0750 ${config.metadata.user} ${config.metadata.user} -"
+            "d ${cfg.dataDir} 0750 ${config.metadata.user} users -"
         ];
 
         virtualisation.oci-containers.containers.cleanuparr = {

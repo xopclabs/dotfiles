@@ -49,22 +49,23 @@ in
             sopsFile = ../../secrets/shared/selfhost.yaml;
         };
 
-        # Create necessary directories
+        # Create necessary directories. Using z (non-recursive) to avoid
+        # walking the entire books/mariadb trees on every boot.
         systemd.tmpfiles.rules = [
             "d ${cfg.dataDir} 0755 ${config.metadata.user} users -"
-            "Z ${cfg.dataDir} 0755 ${config.metadata.user} users -"
+            "z ${cfg.dataDir} 0755 ${config.metadata.user} users -"
 
             "d ${cfg.dataDir}/data 0755 ${config.metadata.user} users -"
-            "Z ${cfg.dataDir}/data 0755 ${config.metadata.user} users -"
+            "z ${cfg.dataDir}/data 0755 ${config.metadata.user} users -"
 
             "d ${cfg.dataDir}/mariadb 0755 ${config.metadata.user} users -"
-            "Z ${cfg.dataDir}/mariadb 0755 ${config.metadata.user} users -"
+            "z ${cfg.dataDir}/mariadb 0755 ${config.metadata.user} users -"
 
             "d ${cfg.booksDir} 0777 ${config.metadata.user} users -"
-            "Z ${cfg.booksDir} 0777 ${config.metadata.user} users -"
+            "z ${cfg.booksDir} 0777 ${config.metadata.user} users -"
 
             "d ${cfg.bookdropDir} 0777 ${config.metadata.user} users -"
-            "Z ${cfg.bookdropDir} 0777 ${config.metadata.user} users -"
+            "z ${cfg.bookdropDir} 0777 ${config.metadata.user} users -"
         ];
 
         # MariaDB container for BookLore
