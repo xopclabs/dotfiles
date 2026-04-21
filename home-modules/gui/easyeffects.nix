@@ -51,6 +51,33 @@ let
         fi
     '';
 
+    # Re-apply the preset after activations 
+    loadLastPresetScript = pkgs.writeShellScript "easyeffects-load-last-preset" ''
+        set -euo pipefail
+        rc="''${XDG_CONFIG_HOME:-$HOME/.config}/easyeffects/db/easyeffectsrc"
+        [ -f "$rc" ] || exit 0
+        preset=$(${pkgs.gawk}/bin/awk '
+            /^\[.*\]$/ { in_sec = ($0 == "[Presets]"); next }
+            in_sec && /^lastLoadedOutputPreset=/ {
+                sub(/^lastLoadedOutputPreset=/, "")
+                print
+                exit
+            }
+        ' "$rc")
+        [ -n "$preset" ] || exit 0
+        # Wait briefly for the daemon to be up. The wrapped binary's comm is
+        # '.easyeffects-wr' (truncated at 15 chars) so exact -x won't match;
+        # use substring match against comm and command line. Give up silently
+        # after ~5s so we never fail activation.
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            if ${pkgs.procps}/bin/pgrep -f 'easyeffects' >/dev/null 2>&1; then
+                break
+            fi
+            sleep 0.5
+        done
+        ${pkgs.easyeffects}/bin/easyeffects -l "$preset" >/dev/null 2>&1 || true
+    '';
+
 in {
     options.modules.gui.easyeffects = { enable = mkEnableOption "easyeffects"; };
     config = mkIf cfg.enable {
@@ -59,6 +86,11 @@ in {
         home.activation.easyeffectsPatchRc =
             lib.hm.dag.entryAfter [ "writeBoundary" ] ''
                 run ${patchScript}
+            '';
+
+        home.activation.easyeffectsLoadLastPreset =
+            lib.hm.dag.entryAfter [ "reloadSystemd" ] ''
+                run ${loadLastPresetScript}
             '';
     };
 }
