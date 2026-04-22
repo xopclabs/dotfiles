@@ -275,4 +275,39 @@
         "command": "workbench.action.toggleUnifiedSidebarFromKeyboard",
         "when": "cursor.agentIdeUnification.enabled == true && !isAuxiliaryWindowFocusedContext"
     },
+    {
+        "key": "ctrl+shift+[Backslash]",
+        "command": "-editor.action.commentLine",
+        "when": "editorTextFocus && !editorReadonly"
+    },
+    {
+        "key": "ctrl+[IntlBackslash]",
+        "command": "-editor.action.accessibleViewAcceptInlineCompletion",
+        "when": "accessibleViewIsShown && accessibleViewCurrentProviderId == 'inlineCompletions'"
+    },
+    {
+        "key": "ctrl+[IntlBackslash]",
+        "command": "-cmdk.togglePromptBarModel",
+        "when": "editorHasPromptBar && editorPromptBarFocused"
+    },
+    {
+        "key": "ctrl+[IntlBackslash]",
+        "command": "-composer.openModelToggle",
+        "when": "composerFocused && !editorTextFocus"
+    },
+    {
+        "key": "ctrl+[IntlBackslash]",
+        "command": "-terminalSuggestToggleExplainMode",
+        "when": "terminalFocus && terminalHasBeenCreated && terminalIsOpen && terminalSuggestWidgetVisible || terminalFocus && terminalIsOpen && terminalProcessSupported && terminalSuggestWidgetVisible"
+    },
+    {
+        "key": "ctrl+[IntlBackslash]",
+        "command": "-toggleExplainMode",
+        "when": "suggestWidgetVisible"
+    },
+    {
+        "key": "ctrl+[IntlBackslash]",
+        "command": "-workbench.action.terminal.sendSequence",
+        "when": "terminalFocus"
+    },
 ]
