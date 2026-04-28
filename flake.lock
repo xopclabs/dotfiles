@@ -484,11 +484,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1775254524,
-        "narHash": "sha256-Tp3bSU+B6a4AGLWkrxZIzViSDyFPycUrJpf64+Qt5mg=",
+        "lastModified": 1777383291,
+        "narHash": "sha256-licZyGQsACHY6GaNfJdS61fYwttjIN/TqOOHZTl6r4Q=",
         "owner": "xopclabs",
         "repo": "lrcget-cli",
-        "rev": "2d8d372e74affa7929828647e4d8749b45012153",
+        "rev": "1c9b3f7bdbf30a7af8ee562b17f2d95701981d68",
         "type": "github"
       },
       "original": {
