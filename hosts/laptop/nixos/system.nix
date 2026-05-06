@@ -106,9 +106,9 @@
 
     # Hibernate
     powerManagement.enable = true;
-    systemd.sleep.extraConfig = ''
-        HibernateDelaySec=3h 
-    '';
+    systemd.sleep.settings.Sleep = {
+        HibernateDelaySec = "3h";
+    };
     
     # Ignore power button presses, disable suspend on lid close
     services.logind = {

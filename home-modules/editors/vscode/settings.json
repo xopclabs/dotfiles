@@ -124,5 +124,6 @@
         "192.168.254.100": "linux"
     },
     "cursor.general.disableHttp2": true,
-    "keyboard.dispatch": "keyCode"
+    "keyboard.dispatch": "keyCode",
+    "window.commandCenter": true
 }
