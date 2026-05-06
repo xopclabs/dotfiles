@@ -46,7 +46,6 @@
             };
             starship = {
                 enable = true;
-                userBlockColor = "teal";
             };
             eza.enable = true;
             zoxide.enable = true;
