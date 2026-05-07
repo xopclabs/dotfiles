@@ -26,6 +26,7 @@ with lib;
         ./tandoor-recipes.nix
         ./syncthing.nix
         ./matrix.nix
+        ./reitti.nix
     ];
 }
 

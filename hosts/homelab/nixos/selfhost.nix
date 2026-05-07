@@ -244,6 +244,18 @@
             subdomain = "traccar.vm.local";
         };
 
+        # Location tracking and route analysis
+        reitti = {
+            enable = true;
+            subdomain = "reitti.vm.local";
+            gps = {
+                enable = true;
+                authorizedKeys = [
+                    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP4ickpgvhJ9WAxmD1Eilflm6x0pgQT33zq5b2gslX2/ gpslogger@android"
+                ];
+            };
+        };
+
         # Cloud storage
         nextcloud = {
             enable = true;
