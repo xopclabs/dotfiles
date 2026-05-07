@@ -83,10 +83,14 @@ in
             configureRedis = false;
         };
 
-        # Ensure Nextcloud starts after PostgreSQL
+        # Ensure Nextcloud starts after PostgreSQL, and fix ownership of the
+        # config dir afterwards (can get wrong owner after flake upgrades)
         systemd.services.nextcloud-setup = {
             after = [ "postgresql.service" ];
             requires = [ "postgresql.service" ];
+            serviceConfig.ExecStartPost = [
+                "+${pkgs.coreutils}/bin/chown -hR nextcloud:nextcloud ${config.metadata.selfhost.storage.general.nextcloudDir}/config"
+            ];
         };
 
         # Configure trusted domain from sops secret after setup

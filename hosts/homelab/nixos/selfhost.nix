@@ -354,7 +354,7 @@
                 };
                 nextcloud-borgbase = {
                     paths = [ "/mnt/raid_pool/nextcloud" ];
-                    repo = "ag1ysfku@ag1ysfku.repo.borgbase.com";
+                    repo = "ag1ysfku@ag1ysfku.repo.borgbase.com:repo";
                     schedule = "daily";
                     prune.keep = { daily = 2; weekly = 1; monthly = 1; };
                 };
