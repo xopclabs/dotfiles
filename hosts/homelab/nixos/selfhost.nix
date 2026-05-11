@@ -129,6 +129,10 @@
                     publicKey = "Q078G6FBL9iynVRuuQutVRIOWHIEV9NRr9pUWjfV7AE=";
                     allowedIPs = [ "10.250.250.8/32" ];
                 };
+                player = {
+                    publicKey = "fKfKXEK6U7RZtaYLrmLG8UCbR4o3xvT1joS8hEZUGHU=";
+                    allowedIPs = [ "10.250.250.9/32" ];
+                };
             };
             socks5Proxy = {
                 enable = true;
