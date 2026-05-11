@@ -128,6 +128,23 @@ in
                 type = types.str;
                 description = "Subdomain for Jellyfin";
             };
+            publicSubdomain = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                example = "jellyfin";
+                description = ''
+                    Optional public-facing subdomain for Jellyfin (e.g. "jellyfin"
+                    yields `jellyfin.$DOMAIN`). When set, Traefik gets a sibling
+                    `jellyfin-public` router that shares the existing `jellyfin`
+                    service but uses public middlewares (no IP whitelist) and
+                    orders its own wildcard cert via the Cloudflare resolver.
+
+                    Intended for setups where a public VPS does TLS SNI passthrough
+                    for this hostname over WireGuard back to the homelab; this host
+                    must remain reachable on the WG interface but does not need
+                    public WAN ports.
+                '';
+            };
         };
 
         jellyseerr = {
@@ -350,6 +367,7 @@ in
                     name = "jellyfin";
                     subdomain = cfg.jellyfin.subdomain;
                     backendUrl = "http://127.0.0.1:8096";
+                    publicAlias = cfg.jellyfin.publicSubdomain;
                 }
             ]) ++
             (optionals cfg.jellyseerr.enable [

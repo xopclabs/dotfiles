@@ -21,7 +21,9 @@ let
         entryPoints ? [ "websecure" ],
         insecureSkipVerify ? false,
         clientCert ? null,
-        serversTransport ? null
+        serversTransport ? null,
+        publicAlias ? null,
+        publicCertDomains ? [ { main = "$DOMAIN"; sans = [ "*.$DOMAIN" ]; } ]
     }: 
     let
         # Determine default middlewares based on subdomain pattern
@@ -39,14 +41,31 @@ let
             else if insecureSkipVerify then "insecureTransport"
             else null;
     in {
-        routers.${name} = {
-            rule = "Host(`${subdomain}.$DOMAIN`)";
-            inherit entryPoints;
-            middlewares = actualMiddlewares;
-            service = name;
-            tls = { inherit certResolver; };
+        routers = {
+            ${name} = {
+                rule = "Host(`${subdomain}.$DOMAIN`)";
+                inherit entryPoints;
+                middlewares = actualMiddlewares;
+                service = name;
+                tls = { inherit certResolver; };
+            };
+        } // optionalAttrs (publicAlias != null) {
+            # Sibling router that exposes the same backend on a public hostname.
+            # Routed via a separate path (typically a SNI-passthrough relay on a
+            # public VPS), so it gets only public middlewares (no IP whitelist)
+            # and pre-orders its own cert via the same DNS-01 resolver.
+            "${name}-public" = {
+                rule = "Host(`${publicAlias}.$DOMAIN`)";
+                inherit entryPoints;
+                middlewares = [ "default-headers" "https-redirect" ];
+                service = name;
+                tls = {
+                    inherit certResolver;
+                    domains = publicCertDomains;
+                };
+            };
         };
-        
+
         services.${name}.loadBalancer = {
             inherit passHostHeader;
             servers = [ { url = backendUrl; } ];
@@ -142,6 +161,45 @@ in
                         type = types.nullOr types.str;
                         default = null;
                         description = "Name of serversTransport to use (e.g., 'defaultTransport' for long upload timeouts)";
+                    };
+                    publicAlias = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        example = "jellyfin";
+                        description = ''
+                            Optional public-facing subdomain alias for this service.
+                            When set, generates a sibling router named `<name>-public`
+                            that matches `Host(<publicAlias>.$DOMAIN)`, points at the
+                            same `service = <name>` (no duplicated backend), uses only
+                            public middlewares (no IP whitelist), and orders its own
+                            cert via `publicCertDomains`.
+
+                            Intended for services exposed externally via a SNI-pass-
+                            through relay (e.g. a public VPS forwarding raw TLS to
+                            this host over WireGuard). The internal route declared by
+                            `subdomain` is left untouched.
+                        '';
+                    };
+                    publicCertDomains = mkOption {
+                        type = types.listOf (types.submodule {
+                            options = {
+                                main = mkOption {
+                                    type = types.str;
+                                    description = "Main domain pattern for the public alias cert";
+                                };
+                                sans = mkOption {
+                                    type = types.listOf types.str;
+                                    default = [];
+                                    description = "Subject Alternative Names";
+                                };
+                            };
+                        });
+                        default = [ { main = "$DOMAIN"; sans = [ "*.$DOMAIN" ]; } ];
+                        description = ''
+                            Certificate domains to request for the public alias router.
+                            Defaults to a wildcard for `$DOMAIN`. Only used when
+                            `publicAlias` is set.
+                        '';
                     };
                 };
             });

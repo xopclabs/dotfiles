@@ -135,6 +135,16 @@
                 host = "127.0.0.1";
                 port = 10808;
             };
+            clients = {
+                vps = {
+                    address = "10.13.13.2/24";
+                    routeAllTraffic = false;
+                    peer = {
+                        publicKey = "uYPuzqG3iRU4SPV/IXznJEuf547D0MFBWRgdpLWeGUA=";
+                        allowedIPs = [ "0.0.0.0/0" ];
+                    };
+                };
+            };
         };
 
         # Dashboard
@@ -182,6 +192,7 @@
 
             jellyfin.subdomain = "jellyfin.vm.local";
             jellyfin.openFirewall = true;
+            jellyfin.publicSubdomain = "jellyfin";
 
 
             jellyseerr.subdomain = "request.vm.local";
