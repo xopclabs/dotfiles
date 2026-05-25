@@ -93,7 +93,7 @@ in {
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard 
             pkgs.libinput pkgs.jq
             pkgs.playerctl
-            pkgs.swww
+            pkgs.awww
         ];
 
         # Symlink wallpaper directory
@@ -111,6 +111,7 @@ in {
 
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
             enable = true;
+            configType = "hyprlang";
             package = null;
             portalPackage = null;
             xwayland.enable = true;
@@ -131,7 +132,7 @@ in {
                 exec-once = [
                     "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
-                    "swww-daemon && sleep 0.5 && swww img ~/.config/wallpaper/nord.png"
+                    "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"
                     "hypr-windowrule"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"

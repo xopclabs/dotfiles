@@ -55,6 +55,7 @@ in {
             enable = true;
             font.name = "Ubuntu";
             theme.name = gtk-theme;
+            gtk4.theme.name = gtk-theme;
             iconTheme.name = "Papirus";
             gtk3.extraCss = ''
                 headerbar, .titlebar,

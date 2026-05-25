@@ -29,7 +29,6 @@
         plover.url = "github:dnaq/plover-flake";
 
         nixvim.url = "github:nix-community/nixvim";
-        nixvim.inputs.nixpkgs.follows = "nixpkgs";
 
         jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
         jovian.inputs.nixpkgs.follows = "nixpkgs";

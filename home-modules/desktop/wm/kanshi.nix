@@ -49,7 +49,7 @@ let
                     mkInternalOutput
                 ];
                 exec = builtins.concatStringsSep ", " ([
-                    "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
+                    "${pkgs.awww}/bin/awww img ~/.config/wallpaper/nord.png"
                 ] ++ generateWorkspaceMoves "HDMI-A-2");
             };
         }
@@ -67,7 +67,7 @@ let
                     mkInternalOutput
                 ];
                 exec = builtins.concatStringsSep ", " ([
-                    "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
+                    "${pkgs.awww}/bin/awww img ~/.config/wallpaper/nord.png"
                 ] ++ generateWorkspaceMoves "DP-1");
             };
         }
@@ -81,7 +81,7 @@ let
                 (mkInternalOutput // { position = "0,0"; })
             ];
             exec = builtins.concatStringsSep ", " ([
-                "${pkgs.swww}/bin/swww img ~/.config/wallpaper/nord.png"
+                "${pkgs.awww}/bin/awww img ~/.config/wallpaper/nord.png"
             ] ++ generateMonitorDisables ["HDMI-A-2" "DP-1"]);
         };
     };
@@ -96,7 +96,7 @@ in {
     };
 
     config = lib.mkIf (cfg.enable && monitorsConfigured) {
-        home.packages = [ pkgs.swww ];
+        home.packages = [ pkgs.awww ];
 
         # Symlink your wallpaper directory into ~/.config/hypr/wallpaper
         home.file.".config/wallpaper" = {

@@ -28,6 +28,7 @@ in {
         ];
         xdg.userDirs = {
             enable = true;
+            setSessionVariables = true;
             documents = "$HOME/other/";
             download = "$HOME/downloads/";
             videos = "$HOME/other/";
