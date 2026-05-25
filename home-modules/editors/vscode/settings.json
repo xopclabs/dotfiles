@@ -125,5 +125,6 @@
     },
     "cursor.general.disableHttp2": true,
     "keyboard.dispatch": "keyCode",
-    "window.commandCenter": true
+    "window.commandCenter": true,
+    "window.autoDetectColorScheme": false
 }

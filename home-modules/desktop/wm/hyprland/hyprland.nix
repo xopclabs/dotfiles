@@ -156,6 +156,7 @@ in {
 
                 misc = {
                     disable_hyprland_logo = true;
+                    disable_splash_rendering = true;
                     disable_autoreload = false;
                     enable_swallow = true;
                     enable_anr_dialog = false;
@@ -182,11 +183,7 @@ in {
 
                 decoration = {
                     rounding = 0;
-                    shadow = {
-                        enabled = true;
-                        range = 30;
-                        color = lib.mkForce "0x8800000";
-                    };
+                    shadow.enabled = false;
                 };
 
                 animations  = {

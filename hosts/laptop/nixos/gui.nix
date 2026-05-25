@@ -86,8 +86,6 @@ in
         };
     };
     environment.systemPackages = with pkgs; [ 
-        libsForQt5.qtstyleplugin-kvantum
-        libsForQt5.qt5ct
         kdePackages.qtstyleplugin-kvantum
         kdePackages.qt6ct
     ];

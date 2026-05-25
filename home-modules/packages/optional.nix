@@ -26,7 +26,6 @@ in {
             pkgs.wf-recorder 
             pkgs.adwaita-icon-theme
             pkgs.telegram-desktop
-            pkgs.libsForQt5.qt5.qtwayland
             pkgs.pavucontrol
             pkgs.moonlight-qt
             pkgs.tigervnc
