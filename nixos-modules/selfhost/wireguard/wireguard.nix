@@ -243,6 +243,11 @@ in
                 # Setup routing for WireGuard traffic through tun0
                 ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
                 ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100
+
+                # Peer-to-peer within the VPN subnet must stay on wg0. localNetworks
+                # includes 10.0.0.0/8, which would otherwise steal 10.250.250.x via ens18
+                # and break pings/sync between the server and remote clients.
+                ${pkgs.iproute2}/bin/ip route add ${cfg.subnet} dev wg0 table 100
                 
                 # Add routes for local networks to bypass proxy (route to LAN interface, not wg0)
                 ${concatMapStringsSep "\n" (net: 
