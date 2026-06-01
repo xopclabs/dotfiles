@@ -248,6 +248,8 @@ in {
                     "pin on, match:title ^(zoom_linux_float_video_window)$"
                     "move onscreen cursor, match:class ^(zoom)$, match:title ^(menu window)$"
                     "move onscreen cursor, match:class ^(zoom)$, match:title ^(sub menu window)$"
+                    "float on, match:class ^(zoom)$, match:title ^(annotate_toolbar)$"
+                    "no_initial_focus on, match:class ^(zoom)$, match:title ^(annotate_toolbar)$"
 
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override, match:class ^(xwaylandvideobridge)$"
