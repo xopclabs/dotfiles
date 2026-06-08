@@ -2,7 +2,7 @@ let
     defaultMountOptions = [ "compress=zstd:1" ];
 in {
     disko.devices.disk.primary = {
-        device = "/dev/vda";
+        device = "/dev/sda";
         type = "disk";
         content = {
             type = "gpt";
