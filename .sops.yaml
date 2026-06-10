@@ -1,6 +1,6 @@
 keys:
   - &personal age17k8jp2whraxnl94c52tqxnnslyvazcx2gtjdr5fxlxgky3n86shq4lsu2c
-  - &selfhost age10cskr6k6zp2d0xmcqqjaqhngqw4uy60d4gu0nrf3mx56vqkkgvfs44xujw
+  - &vps age1084259vm0gyt0jhurs5h6u26rjduzuk7gqqxaam9qd7n28lnjs5q87ty5h
   - &work age1fsg3cfw5tz5vt5hkpvsfz8a8fsz65mfqsaj3uk6vxpt3l2pe6d5s86pgpd
 creation_rules:
   - path_regex: secrets/shared/personal.yaml$
@@ -10,8 +10,8 @@ creation_rules:
   - path_regex: secrets/shared/selfhost.yaml$
     key_groups:
       - age:
-        - *selfhost
         - *personal
+        - *vps
   - path_regex: secrets/shared/work.yaml$
     key_groups:
       - age:
@@ -32,7 +32,7 @@ creation_rules:
   - path_regex: secrets/hosts/vps.yaml$
     key_groups:
       - age:
-        - *selfhost
+        - *vps
         - *personal
   - path_regex: secrets/hosts/work.yaml$
     key_groups:
