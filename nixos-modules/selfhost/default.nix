@@ -27,6 +27,7 @@ with lib;
         ./syncthing.nix
         ./matrix.nix
         ./reitti.nix
+        ./ollama.nix
     ];
 }
 

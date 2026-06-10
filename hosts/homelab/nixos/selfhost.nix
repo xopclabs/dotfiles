@@ -253,6 +253,14 @@
             subdomain = "ntfy.vm.local";
         };
 
+        # Local LLM API (OpenAI-compatible)
+        ollama = {
+            enable = true;
+            subdomain = "ollama.vm.local";
+            modelsDir = "/mnt/raid_pool/ollama/models";
+            loadModels = [ "qwen2.5:3b" ];
+        };
+
         # Geolocation
         traccar = {
             enable = true;
