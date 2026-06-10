@@ -7,7 +7,7 @@
     
     config.desktop = {
         xray = {
-            enable = true;
+            enable = false;
             proxychains = {
                 enable = true;
                 port = 10808;

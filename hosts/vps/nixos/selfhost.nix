@@ -39,13 +39,17 @@
         wireguard = {
             enable = true;
             listenPort = 12333;
-            serverIP = "10.250.250.1/24";
-            subnet = "10.250.250.0/24";
+            serverIP = "10.13.13.1/24";
+            subnet = "10.13.13.0/24";
             externalInterface = "ens18";
             peers = {
+                homelab = {
+                    publicKey = "O97secDiMhizN4f4m5QjO2QgXMJr172Fia6G7v9/uiQ=";
+                    allowedIPs = [ "10.13.13.2/32" ];
+                };
                 pavel = {
-                    publicKey = "1LXVJGpJcmtb/QawSGDeNxO6DcFZG1PoipDmhtTvJxI=";
-                    allowedIPs = [ "10.250.250.102/32" ];
+                    publicKey = "RxKN8Gt9RCmSzsKsscHoXmgjzr2h3RNNI1Q/a+mAuUw=";
+                    allowedIPs = [ "10.13.13.3/32" ];
                 };
             };
         };
