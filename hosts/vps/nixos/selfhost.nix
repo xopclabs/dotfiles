@@ -41,7 +41,7 @@
             listenPort = 12333;
             serverIP = "10.13.13.1/24";
             subnet = "10.13.13.0/24";
-            externalInterface = "ens18";
+            externalInterface = "enp1s0";
             peers = {
                 homelab = {
                     publicKey = "O97secDiMhizN4f4m5QjO2QgXMJr172Fia6G7v9/uiQ=";
