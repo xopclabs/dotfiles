@@ -4,14 +4,10 @@ with lib;
 let
     cfg = config.desktop.xray;
     
-    # Base jq merge script with conditional direct domains support
-    mkMergeScript = if cfg.directDomains.enable then ''
+    mkMergeScript = ''
         echo "Loading custom direct domains"
-        # Read custom domains from sops secret and convert to JSON array
-        CUSTOM_DOMAINS=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/direct-domains".path} | ${pkgs.gnugrep}/bin/grep -v '^#' | ${pkgs.gnugrep}/bin/grep -v '^$' | ${pkgs.jq}/bin/jq -R . | ${pkgs.jq}/bin/jq -s .)
-        echo "CUSTOM_DOMAINS: $CUSTOM_DOMAINS"
+        CUSTOM_DOMAINS=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."smart_routing/direct-domains".path} | ${pkgs.gnugrep}/bin/grep -v '^#' | ${pkgs.gnugrep}/bin/grep -v '^$' | ${pkgs.jq}/bin/jq -R . | ${pkgs.jq}/bin/jq -s .)
         echo "Merging configs"
-        # Merge JSON configs into one with custom domains
         ${pkgs.jq}/bin/jq -s --argjson customDomains "$CUSTOM_DOMAINS" '
           .[0] as $a
           | .[1] as $b
@@ -58,53 +54,6 @@ let
                 ]
               )
         ' /tmp/xray1.json /tmp/xray2.json > /etc/xray/config.json
-    '' else ''
-        echo "Merging configs"
-        # Merge JSON configs into one without custom domains
-        ${pkgs.jq}/bin/jq -s '
-          .[0] as $a
-          | .[1] as $b
-          | ($a.outbounds[] | select(.tag=="proxy")) as $raw1
-          | ($b.outbounds[] | select(.tag=="proxy")) as $raw2
-          | ($raw1 | .tag="proxy1")       as $p1
-          | ($raw2 | .tag="proxy2")       as $p2
-          | $a
-            | .inbounds = (
-                .inbounds
-                | map(
-                    if .port == 10808 then .port = 10808
-                    elif .port == 10809 then .port = 10809
-                    else . end
-                  )
-                + [{ port: 10810, listen: "127.0.0.1", protocol: "http", tag: "http-in" }]
-              )
-            | .outbounds = ( [$p1, $p2] + ($a.outbounds | map(select(.tag!="proxy"))) )
-            | .observatory = {
-                subjectSelector: ["proxy"],
-                pingConfig: {
-                  destination: "http://cp.cloudflare.com/",
-                  interval:    "20s",
-                  timeout:     "2s",
-                  sampling:    3
-                }
-              }
-            | .routing.balancers = [
-                {
-                  tag:         "proxy",
-                  selector:    ["proxy"],
-                  strategy:    { type: "random" }
-                }
-              ]
-            | .routing.rules = (
-                [
-                  { type: "field", ip: ["geoip:private"], network: "tcp,udp", outboundTag: "direct" },
-                  { type: "field", ip: ["geoip:ru"], network: "tcp,udp", outboundTag: "direct" },
-                  { type: "field", domain: ["geosite:category-ru"], network: "tcp,udp", outboundTag: "direct" }
-                ] + [
-                  { type: "field", network: "tcp,udp", balancerTag:  "proxy" }
-                ]
-              )
-        ' /tmp/xray1.json /tmp/xray2.json > /etc/xray/config.json
     '';
 in
 {
@@ -122,14 +71,6 @@ in
                 type = types.bool;
                 default = true;
                 description = "Enable beta subscription";
-            };
-        };
-
-        directDomains = {
-            enable = mkOption {
-                type = types.bool;
-                default = true;
-                description = "Enable custom direct domains routing";
             };
         };
 
@@ -173,6 +114,12 @@ in
     config = mkIf cfg.enable {
         # SOPS secrets configuration 
         sops.secrets = mkMerge [
+            {
+                "smart_routing/direct-domains" = {
+                    sopsFile = ../../secrets/shared/selfhost.yaml;
+                    restartUnits = [ "xray-update-subscription.service" ];
+                };
+            }
             (mkIf cfg.subscriptions.alpha {
                 "xray/subscription-alpha" = {
                     sopsFile = ../../secrets/shared/selfhost.yaml;
@@ -181,12 +128,6 @@ in
             })
             (mkIf cfg.subscriptions.beta {
                 "xray/subscription-beta" = {
-                    sopsFile = ../../secrets/shared/selfhost.yaml;
-                    restartUnits = [ "xray-update-subscription.service" ];
-                };
-            })
-            (mkIf cfg.directDomains.enable {
-                "xray/direct-domains" = {
                     sopsFile = ../../secrets/shared/selfhost.yaml;
                     restartUnits = [ "xray-update-subscription.service" ];
                 };

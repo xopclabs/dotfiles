@@ -286,9 +286,6 @@ in
                     privateKeyFile = config.sops.secrets."wg/privatekey".path;
 
                     postSetup = ''
-                        # MASQUERADE for WireGuard traffic
-                        ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE
-                        
                         ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                             # MASQUERADE for tun0 traffic going out to external interface
                             ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE
@@ -299,8 +296,6 @@ in
                     '';
                     
                     postShutdown = ''
-                        ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${cfg.subnet} -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
-                        
                         ${optionalString (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) ''
                             # Remove MASQUERADE for tun0
                             ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 10.250.251.0/24 -o ${cfg.externalInterface} -j MASQUERADE 2>/dev/null || true
