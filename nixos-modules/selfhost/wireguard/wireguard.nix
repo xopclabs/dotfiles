@@ -200,6 +200,7 @@ in
                     owner = "root";
                     group = "root";
                     mode = "0400";
+                    restartUnits = [ "wireguard-wg-${name}.service" ];
                 };
             }) cfg.clients)
             (mapAttrs' (name: _: {
@@ -209,6 +210,7 @@ in
                     owner = "root";
                     group = "root";
                     mode = "0400";
+                    restartUnits = [ "wireguard-wg-${name}.service" ];
                 };
             }) cfg.clients)
             (mapAttrs' (name: _: {
@@ -218,6 +220,7 @@ in
                     owner = "root";
                     group = "root";
                     mode = "0400";
+                    restartUnits = [ "wireguard-wg-${name}.service" ];
                 };
             }) cfg.clients)
         ];
