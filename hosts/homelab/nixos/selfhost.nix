@@ -144,7 +144,7 @@
                     address = "10.13.13.2/24";
                     routeAllTraffic = false;
                     peer = {
-                        publicKey = "uYPuzqG3iRU4SPV/IXznJEuf547D0MFBWRgdpLWeGUA=";
+                        publicKey = "FPVXWSxA7pu4YznVvoqTPdJilNYghEA6Z8bBj69GqQg=";
                         allowedIPs = [ "0.0.0.0/0" ];
                     };
                 };
