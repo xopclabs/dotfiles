@@ -44,7 +44,7 @@
             externalInterface = "enp1s0";
             peers = {
                 homelab = {
-                    publicKey = "O97secDiMhizN4f4m5QjO2QgXMJr172Fia6G7v9/uiQ=";
+                    publicKey = "8XESi3lyv2L/CUtGyfB/dWAgFz97NcgJXKhVq5Xp5XU=";
                     allowedIPs = [ "10.13.13.2/32" ];
                 };
                 pavel = {
