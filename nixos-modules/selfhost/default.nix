@@ -30,6 +30,7 @@ with lib;
         ./reitti.nix
         ./ollama.nix
         ./vaultwarden.nix
+        ./reality.nix
     ];
 }
 

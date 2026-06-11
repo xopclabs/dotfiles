@@ -39,6 +39,11 @@
             };
         };
 
+        reality = {
+            server.enable = true;
+            maskSubdomain = "vaultwarden";
+        };
+
         vaultwarden = {
             enable = true;
             subdomain = "vaultwarden";

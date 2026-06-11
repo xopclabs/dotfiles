@@ -25,6 +25,11 @@
             };
         };
 
+        reality = {
+            client.enable = true;
+            maskSubdomain = "vaultwarden";
+        };
+
         # Reverse proxy
         traefik = {
             enable = true;

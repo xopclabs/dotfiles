@@ -89,6 +89,31 @@ in
             description = "Subdomain for Traefik dashboard (e.g., 'traefik.vm.local' or 'traefik.vps.local')";
         };
 
+        websecureAddress = mkOption {
+            type = types.str;
+            default = ":443";
+            example = "127.0.0.1:8443";
+            description = ''
+                Address for the HTTPS (websecure) entrypoint. Defaults to the
+                public ":443". Set to a loopback address (e.g. "127.0.0.1:8443")
+                when another service (such as the Reality proxy) owns the public
+                :443 and forwards non-proxy TLS here. When loopback, Traefik no
+                longer opens :443 in the firewall.
+            '';
+        };
+
+        proxyProtocolTrustedIPs = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            example = [ "127.0.0.1/32" ];
+            description = ''
+                Trusted source IPs for PROXY protocol on the websecure entrypoint.
+                When non-empty, Traefik reads the real client IP from the PROXY
+                protocol header (used when a front proxy like Xray/Reality with
+                xver forwards connections to a loopback entrypoint).
+            '';
+        };
+
         certificateDomains = mkOption {
             type = types.listOf (types.submodule {
                 options = {
@@ -278,12 +303,14 @@ in
                     };
 
                     websecure = {
-                        address = ":443";
+                        address = cfg.websecureAddress;
                         transport.respondingTimeouts = {
                             readTimeout = "600s";   # 10 minutes for large uploads
                             writeTimeout = "600s";
                             idleTimeout = "180s";
                         };
+                    } // optionalAttrs (cfg.proxyProtocolTrustedIPs != []) {
+                        proxyProtocol.trustedIPs = cfg.proxyProtocolTrustedIPs;
                     };
                 };
 
@@ -396,7 +423,11 @@ in
             '')
         ];
 
-        networking.firewall.allowedTCPPorts = [ 80 443 ];
+        # Open :443 publicly only when the websecure entrypoint is public.
+        # When it binds a loopback address (e.g. behind a Reality front proxy),
+        # the front proxy opens :443 instead.
+        networking.firewall.allowedTCPPorts = [ 80 ]
+            ++ optional (hasPrefix ":" cfg.websecureAddress || hasPrefix "0.0.0.0:" cfg.websecureAddress) 443;
 
         # Register with Glance dashboard
         homelab.glance.services = mkIf config.homelab.glance.enable [
