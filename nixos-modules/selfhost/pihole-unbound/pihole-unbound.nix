@@ -3,7 +3,12 @@
 with lib;
 let
     cfg = config.homelab.pihole_unbound;
-    
+
+    localZonesFile = "/var/lib/pihole/local-zones.conf";
+
+    sortedLocalZones =
+        sort (a: b: (stringLength a) > (stringLength b)) (attrNames cfg.localZones);
+
     sync-to-orangepi = pkgs.writeShellScriptBin "sync-to-orangepi" ''${builtins.readFile ./sync-to-orangepi}'';
 in
 {
@@ -92,8 +97,31 @@ in
                 };
             };
         };
+
+        localZones = mkOption {
+            type = types.attrsOf types.str;
+            default = {
+                "vm.local" = "homelab";
+                "pi.local" = "pi";
+                "vps.local" = "vps";
+                "local" = "homelab";
+            };
+            example = {
+                "vm.local" = "homelab";
+                "pi.local" = "pi";
+                "vps.local" = "vps";
+                "local" = "homelab";
+            };
+            description = ''
+                Private zones under $DOMAIN served only by Pi-hole (no public DNS).
+                Values are short hostnames from the sops `hosts` file; IPs are read at
+                runtime. List longer zones (e.g. `vps.local`) before the shorter `local`
+                zone — dnsmasq uses longest suffix match, and a lone `local` rule would
+                otherwise catch `traefik.vps.local.$DOMAIN`.
+            '';
+        };
     };
-    
+
     config = mkIf cfg.enable {
         # Install sync script
         environment.systemPackages = [ sync-to-orangepi ];
@@ -207,28 +235,37 @@ in
             };
         };
         
-        # Route all local.PERSONAL_DOMAIN requests to this machine
-        # Wait for network to be online before starting unbound (needed for IP auto-detection)
         systemd.services.unbound = {
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
-            preStart = mkAfter ''
-                DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
-                ${if config.metadata.selfhost.mainIpv4 != null then ''
-                LOCAL_IP="${config.metadata.selfhost.mainIpv4}"
-                '' else ''
-                LOCAL_IP=$(${pkgs.iproute2}/bin/ip route get 1 | ${pkgs.gawk}/bin/awk '{print $7; exit}')
-                ''}
-                ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
-                    server:
-                        local-zone: "local.$DOMAIN." redirect
-                        local-data: "local.$DOMAIN. 3600 IN A $LOCAL_IP"
-            EOF
-                ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
-                ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
-            '';
+            preStart = mkAfter (
+                if cfg.localZones != { } then
+                    ''
+                        ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
+                            server:
+                        EOF
+                        ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
+                        ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
+                    ''
+                else
+                    ''
+                        DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                        ${if config.metadata.selfhost.mainIpv4 != null then ''
+                        LOCAL_IP="${config.metadata.selfhost.mainIpv4}"
+                        '' else ''
+                        LOCAL_IP=$(${pkgs.iproute2}/bin/ip route get 1 | ${pkgs.gawk}/bin/awk '{print $7; exit}')
+                        ''}
+                        ${pkgs.coreutils}/bin/cat > /var/lib/unbound/local-domain.conf <<EOF
+                            server:
+                                local-zone: "local.$DOMAIN." redirect
+                                local-data: "local.$DOMAIN. 3600 IN A $LOCAL_IP"
+                        EOF
+                        ${pkgs.coreutils}/bin/chown unbound:unbound /var/lib/unbound/local-domain.conf
+                        ${pkgs.coreutils}/bin/chmod 644 /var/lib/unbound/local-domain.conf
+                    ''
+            );
         };
-        
+
         # Pi-hole FTL DNS service
         services.pihole-ftl = {
             enable = true;
@@ -246,9 +283,43 @@ in
                 misc = {
                     # Enable for extra hosts
                     etc_dnsmasq_d = true;
+                } // optionalAttrs (cfg.localZones != { }) {
+                    dnsmasq_lines = [
+                        "conf-file=${localZonesFile}"
+                    ];
                 };
             };
             privacyLevel = 0;
+        };
+
+        # "+" runs as root despite User=pihole; needed to read the domain sops secret
+        # (owner unbound) and write /var/lib/pihole/local-zones.conf.
+        systemd.services.pihole-ftl = mkIf (cfg.localZones != { }) {
+            serviceConfig.ExecStartPre = mkBefore [
+                "+${pkgs.writeShellScript "pihole-ftl-local-zones" ''
+                    set -euo pipefail
+                    DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                    HOSTS=${config.sops.secrets.hosts.path}
+                    lookup_host() {
+                        ${pkgs.gawk}/bin/awk -v name="$1" '$2 == name { print $1; exit }' "$HOSTS"
+                    }
+                    ${pkgs.coreutils}/bin/mkdir -p /var/lib/pihole
+                    {
+                        ${concatMapStringsSep "\n" (
+                            zone:
+                            let
+                                host = cfg.localZones.${zone};
+                            in
+                            ''
+                                ip=$(lookup_host ${host})
+                                if [ -n "$ip" ]; then
+                                    echo "address=/${zone}.''${DOMAIN}/$ip"
+                                fi
+                            ''
+                        ) sortedLocalZones}
+                    } > ${localZonesFile}
+                ''}"
+            ];
         };
         
         services.pihole-web = {
