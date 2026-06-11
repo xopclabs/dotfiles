@@ -63,50 +63,11 @@ let
         }
     '';
 
-    # sing-box client config template (homelab). Routes all traffic through the
-    # Reality tunnel to the VPS exit; private ranges stay direct.
-    clientTemplate = pkgs.writeText "sing-box-reality.json.tmpl" ''
-        {
-          "log": { "level": "warn" },
-          "inbounds": [
-            {
-              "type": "mixed",
-              "tag": "mixed-in",
-              "listen": "127.0.0.1",
-              "listen_port": ${toString cfg.client.listenPort}
-            }
-          ],
-          "outbounds": [
-            {
-              "type": "vless",
-              "tag": "reality-out",
-              "server": "''${REALITY_SERVER_ENDPOINT}",
-              "server_port": ${toString cfg.client.serverPort},
-              "uuid": "''${REALITY_UUID}",
-              "flow": "xtls-rprx-vision",
-              "tls": {
-                "enabled": true,
-                "server_name": "''${REALITY_SERVER_NAME}",
-                "utls": { "enabled": true, "fingerprint": "chrome" },
-                "reality": {
-                  "enabled": true,
-                  "public_key": "''${REALITY_PUBLIC_KEY}",
-                  "short_id": "''${REALITY_SHORT_ID}"
-                }
-              }
-            },
-            { "type": "direct", "tag": "direct" }
-          ],
-          "route": {
-            "rules": [
-              { "inbound": "mixed-in", "action": "sniff" },
-              { "ip_is_private": true, "outbound": "direct" }
-            ],
-            "final": "reality-out",
-            "auto_detect_interface": true
-          }
-        }
-    '';
+    # Rule-sets for smart routing (Russian IPs / sites stay on the local
+    # connection; everything else exits through the Reality tunnel).
+    rulesetDir = "/var/lib/sing-box-reality/rule-sets";
+    geositeUrl = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ru.srs";
+    geoipUrl = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-ru.srs";
 in
 {
     options.homelab.reality = {
@@ -147,11 +108,12 @@ in
 
             listenPort = mkOption {
                 type = types.port;
-                default = 10810;
+                default = 10808;
                 description = ''
-                    Local mixed (SOCKS5 + HTTP) inbound port for the Reality tunnel.
-                    Bound to 127.0.0.1 only. Distinct from desktop.singbox (10808)
-                    so both can run side by side.
+                    Local mixed (SOCKS5 + HTTP) inbound port for the Reality tunnel,
+                    bound to 127.0.0.1 only. Smart-routed: Russian IPs/sites and the
+                    configured direct domains egress locally; everything else exits
+                    through the Reality tunnel to the VPS.
                 '';
             };
 
@@ -169,6 +131,23 @@ in
                 type = types.port;
                 default = 443;
                 description = "Port the client dials for the Reality server.";
+            };
+
+            proxychains = {
+                enable = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Configure system proxychains to use this Reality proxy.";
+                };
+            };
+
+            updateInterval = mkOption {
+                type = types.str;
+                default = "daily";
+                description = ''
+                    How often to refresh the geo rule-sets and rebuild the client
+                    config (systemd calendar format).
+                '';
             };
         };
     };
@@ -242,35 +221,134 @@ in
 
         # ---- Reality client (dedicated sing-box instance) ----
         (mkIf cfg.client.enable {
-            sops.secrets."reality/public_key".sopsFile = ../../secrets/shared/selfhost.yaml;
+            sops.secrets = {
+                "reality/public_key".sopsFile = ../../secrets/shared/selfhost.yaml;
+                "smart_routing/direct-domains" = {
+                    sopsFile = ../../secrets/shared/selfhost.yaml;
+                    restartUnits = [ "sing-box-reality-config.service" ];
+                };
+            };
+
+            environment.systemPackages = with pkgs; [ sing-box ];
 
             systemd.services.sing-box-reality-config = {
-                description = "Render sing-box Reality client config from secrets";
+                description = "Build sing-box Reality client config (geo routing + secrets)";
+                restartIfChanged = false;
                 before = [ "sing-box-reality.service" ];
                 requiredBy = [ "sing-box-reality.service" ];
                 wantedBy = [ "multi-user.target" ];
-                serviceConfig = {
-                    Type = "oneshot";
-                    RemainAfterExit = true;
-                };
+                after = [ "network-online.target" ];
+                wants = [ "network-online.target" ];
+                path = with pkgs; [ jq curl coreutils gnugrep sing-box systemd ];
+                serviceConfig.Type = "oneshot";
                 script = ''
-                    set -euo pipefail
+                    set -uo pipefail
                     umask 077
-                    mkdir -p /run/sing-box-reality
-                    export REALITY_UUID=$(${pkgs.coreutils}/bin/cat ${uuidPath})
-                    export REALITY_PUBLIC_KEY=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."reality/public_key".path})
-                    export REALITY_SHORT_ID=$(${pkgs.coreutils}/bin/cat ${shortIdPath})
-                    export REALITY_SERVER_NAME="${cfg.maskSubdomain}.$(${pkgs.coreutils}/bin/cat ${domainPath})"
-                    export REALITY_SERVER_ENDPOINT="${
-                        if cfg.client.serverEndpoint != null
-                        then cfg.client.serverEndpoint
-                        else "$REALITY_SERVER_NAME"
-                    }"
-                    ${pkgs.envsubst}/bin/envsubst \
-                        '$REALITY_UUID $REALITY_PUBLIC_KEY $REALITY_SHORT_ID $REALITY_SERVER_NAME $REALITY_SERVER_ENDPOINT' \
-                        < ${clientTemplate} > /run/sing-box-reality/config.json
-                    ${pkgs.sing-box}/bin/sing-box check -c /run/sing-box-reality/config.json
+                    mkdir -p /run/sing-box-reality ${rulesetDir}
+
+                    # Refresh geo rule-sets (best effort; missing ones are simply
+                    # omitted from routing so the config stays valid).
+                    curl -fsSL --connect-timeout 10 --max-time 60 \
+                        -o "${rulesetDir}/geosite-category-ru.srs" "${geositeUrl}" \
+                        || echo "WARNING: could not download geosite-category-ru.srs"
+                    curl -fsSL --connect-timeout 10 --max-time 60 \
+                        -o "${rulesetDir}/geoip-ru.srs" "${geoipUrl}" \
+                        || echo "WARNING: could not download geoip-ru.srs"
+
+                    HAVE_GEOSITE=false; [ -f "${rulesetDir}/geosite-category-ru.srs" ] && HAVE_GEOSITE=true
+                    HAVE_GEOIP=false; [ -f "${rulesetDir}/geoip-ru.srs" ] && HAVE_GEOIP=true
+
+                    REALITY_UUID=$(cat ${uuidPath})
+                    REALITY_PUBLIC_KEY=$(cat ${config.sops.secrets."reality/public_key".path})
+                    REALITY_SHORT_ID=$(cat ${shortIdPath})
+                    SERVER_NAME="${cfg.maskSubdomain}.$(cat ${domainPath})"
+                    ENDPOINT="${optionalString (cfg.client.serverEndpoint != null) cfg.client.serverEndpoint}"
+                    [ -n "$ENDPOINT" ] || ENDPOINT="$SERVER_NAME"
+
+                    CUSTOM_DOMAINS=$(cat ${config.sops.secrets."smart_routing/direct-domains".path} \
+                        | grep -v '^#' | grep -v '^$' | jq -R . | jq -s .) || CUSTOM_DOMAINS='[]'
+
+                    jq -n \
+                        --arg listen_port "${toString cfg.client.listenPort}" \
+                        --arg server "$ENDPOINT" \
+                        --arg server_port "${toString cfg.client.serverPort}" \
+                        --arg uuid "$REALITY_UUID" \
+                        --arg server_name "$SERVER_NAME" \
+                        --arg public_key "$REALITY_PUBLIC_KEY" \
+                        --arg short_id "$REALITY_SHORT_ID" \
+                        --arg ruleset_dir "${rulesetDir}" \
+                        --argjson custom_domains "$CUSTOM_DOMAINS" \
+                        --argjson have_geoip "$HAVE_GEOIP" \
+                        --argjson have_geosite "$HAVE_GEOSITE" \
+                        '{
+                            log: { level: "warn" },
+                            inbounds: [
+                                { type: "mixed", tag: "mixed-in", listen: "127.0.0.1", listen_port: ($listen_port | tonumber) }
+                            ],
+                            outbounds: [
+                                {
+                                    type: "vless",
+                                    tag: "reality-out",
+                                    server: $server,
+                                    server_port: ($server_port | tonumber),
+                                    uuid: $uuid,
+                                    flow: "xtls-rprx-vision",
+                                    tls: {
+                                        enabled: true,
+                                        server_name: $server_name,
+                                        utls: { enabled: true, fingerprint: "chrome" },
+                                        reality: { enabled: true, public_key: $public_key, short_id: $short_id }
+                                    }
+                                },
+                                { type: "direct", tag: "direct" }
+                            ],
+                            route: {
+                                rule_set: (
+                                    (if $have_geosite then [{ tag: "category-ru", type: "local", format: "binary", path: ($ruleset_dir + "/geosite-category-ru.srs") }] else [] end)
+                                    + (if $have_geoip then [{ tag: "geoip-ru", type: "local", format: "binary", path: ($ruleset_dir + "/geoip-ru.srs") }] else [] end)
+                                ),
+                                rules: (
+                                    [ { inbound: "mixed-in", action: "sniff" } ]
+                                    + (if ($custom_domains | length) > 0 then [{ domain: $custom_domains, outbound: "direct" }] else [] end)
+                                    + [ { ip_is_private: true, outbound: "direct" } ]
+                                    + (if $have_geoip then [{ rule_set: "geoip-ru", outbound: "direct" }] else [] end)
+                                    + (if $have_geosite then [{ rule_set: "category-ru", outbound: "direct" }] else [] end)
+                                ),
+                                final: "reality-out",
+                                auto_detect_interface: true
+                            }
+                        }' > /run/sing-box-reality/config.json
+
+                    if ! sing-box check -c /run/sing-box-reality/config.json; then
+                        if [ -f /var/lib/sing-box-reality/config.json.prev ]; then
+                            echo "WARNING: new config invalid; restoring previous"
+                            cp /var/lib/sing-box-reality/config.json.prev /run/sing-box-reality/config.json
+                        else
+                            echo "WARNING: new config invalid and no previous config to restore"
+                            exit 1
+                        fi
+                    else
+                        cp /run/sing-box-reality/config.json /var/lib/sing-box-reality/config.json.prev
+                    fi
+
+                    # Non-blocking reload only when already running (timer refresh);
+                    # on boot, sing-box-reality starts after this unit via Requires=.
+                    if systemctl is-active --quiet sing-box-reality.service; then
+                        systemctl --no-block try-restart sing-box-reality.service || true
+                    fi
+                    exit 0
                 '';
+            };
+
+            systemd.timers.sing-box-reality-config = {
+                description = "Refresh sing-box Reality client geo rule-sets";
+                wantedBy = [ "timers.target" ];
+                timerConfig = {
+                    OnCalendar = cfg.client.updateInterval;
+                    OnBootSec = "2min";
+                    Persistent = true;
+                    Unit = "sing-box-reality-config.service";
+                };
             };
 
             systemd.services.sing-box-reality = {
@@ -288,6 +366,17 @@ in
                     ExecStart = "${pkgs.sing-box}/bin/sing-box -D /var/lib/sing-box-reality -c /run/sing-box-reality/config.json run";
                     Restart = "on-failure";
                     RestartSec = "5s";
+                };
+            };
+
+            programs.proxychains = mkIf cfg.client.proxychains.enable {
+                enable = true;
+                quietMode = true;
+                proxies.reality = {
+                    enable = true;
+                    type = "socks5";
+                    host = "127.0.0.1";
+                    port = cfg.client.listenPort;
                 };
             };
 
