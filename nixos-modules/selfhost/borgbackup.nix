@@ -95,6 +95,12 @@ let
             default = null;
             description = "Path to environment file containing BORG_PASSPHRASE";
         };
+
+        preHook = mkOption {
+            type = types.str;
+            default = "";
+            description = "Shell commands to run before borg create";
+        };
     };
 
     # Merge job config with defaults (job values take precedence)
@@ -118,6 +124,7 @@ let
         };
         sshKey = job.sshKey;
         environmentFile = if job.environmentFile != null then job.environmentFile else cfg.defaults.environmentFile;
+        preHook = if job.preHook != "" then job.preHook else cfg.defaults.preHook;
     };
 in
 {
@@ -152,6 +159,16 @@ in
             });
             default = {};
             description = "Backup job configurations";
+        };
+
+        passphraseSopsFile = mkOption {
+            type = types.path;
+            default = ../../secrets/shared/personal.yaml;
+            description = ''
+                SOPS file containing the `backup-passphrase` secret used for
+                encrypted Borg repositories. Override on hosts that cannot
+                decrypt the default file (e.g. VPS should use its host secret).
+            '';
         };
 
         # SSH known hosts for remote repositories
@@ -212,11 +229,12 @@ in
             environment = optionalAttrs (job.sshKey != null) {
                 BORG_RSH = "ssh -o StrictHostKeyChecking=accept-new -i ${job.sshKey}";
             };
+
+            preHook = job.preHook;
         }) cfg.jobs;
 
-        # BorgBase passphrase secret
         sops.secrets."backup-passphrase" = {
-            sopsFile = ../../secrets/shared/personal.yaml;
+            sopsFile = cfg.passphraseSopsFile;
         };
 
         # SSH known hosts for remote borg repositories

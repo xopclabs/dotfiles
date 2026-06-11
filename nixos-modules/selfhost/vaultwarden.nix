@@ -46,6 +46,47 @@ in
             default = true;
             description = "Apply Traefik rate limiting to the Vaultwarden route";
         };
+
+        backup = {
+            enable = mkEnableOption "BorgBackup of Vaultwarden data to a remote repository";
+
+            dir = mkOption {
+                type = types.str;
+                default = "/var/backup/vaultwarden";
+                description = ''
+                    Local directory where Vaultwarden writes consistent SQLite
+                    snapshots before Borg uploads them (services.vaultwarden.backupDir).
+                '';
+            };
+
+            repo = mkOption {
+                type = types.str;
+                description = "Borg repository URL (e.g. ssh://user@host/./repo)";
+            };
+
+            schedule = mkOption {
+                type = types.str;
+                default = "daily";
+                description = "Systemd calendar expression for the Borg backup timer";
+            };
+
+            prune = {
+                keep = {
+                    daily = mkOption {
+                        type = types.nullOr types.int;
+                        default = 7;
+                    };
+                    weekly = mkOption {
+                        type = types.nullOr types.int;
+                        default = 4;
+                    };
+                    monthly = mkOption {
+                        type = types.nullOr types.int;
+                        default = 6;
+                    };
+                };
+            };
+        };
     };
 
     config = mkIf cfg.enable {
@@ -80,6 +121,7 @@ in
 
         services.vaultwarden = {
             enable = true;
+            backupDir = mkIf cfg.backup.enable cfg.backup.dir;
             config = {
                 DATA_FOLDER = toString cfg.dataDir;
                 ROCKET_ADDRESS = "127.0.0.1";
@@ -94,6 +136,9 @@ in
             ];
         };
 
+        # Borg triggers the native backup on demand; skip the built-in timer.
+        systemd.timers.backup-vaultwarden.enable = mkIf cfg.backup.enable (mkForce false);
+
         systemd.services.vaultwarden = {
             after = [ "vaultwarden-env.service" ];
             requires = [ "vaultwarden-env.service" ];
@@ -104,6 +149,17 @@ in
                 average = 10;
                 burst = 25;
                 period = "1m";
+            };
+        };
+
+        homelab.borgbackup.jobs = mkIf (cfg.backup.enable && config.homelab.borgbackup.enable) {
+            vaultwarden-borgbase = {
+                paths = [ cfg.backup.dir ];
+                repo = cfg.backup.repo;
+                schedule = cfg.backup.schedule;
+                encryption.mode = "repokey-blake2";
+                prune.keep = filterAttrs (_: v: v != null) cfg.backup.prune.keep;
+                preHook = "${pkgs.systemd}/bin/systemctl start backup-vaultwarden.service";
             };
         };
 

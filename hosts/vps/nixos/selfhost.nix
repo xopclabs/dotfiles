@@ -38,6 +38,15 @@
         vaultwarden = {
             enable = true;
             subdomain = "vaultwarden";
+            backup = {
+                enable = true;
+                repo = "og0k9udz@og0k9udz.repo.borgbase.com:repo";
+            };
+        };
+
+        borgbackup = {
+            enable = true;
+            passphraseSopsFile = ../../../secrets/hosts/vps.yaml;
         };
 
         # VPN
