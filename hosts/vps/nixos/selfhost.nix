@@ -35,6 +35,11 @@
             };
         };
 
+        vaultwarden = {
+            enable = true;
+            subdomain = "vaultwarden";
+        };
+
         # VPN
         wireguard = {
             enable = true;

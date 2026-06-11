@@ -42,6 +42,7 @@
         enableOnBoot = true;
         rootless.enable = true;
     };
+    virtualisation.oci-containers.backend = "docker";
 
     # System env variables
     environment.variables = {

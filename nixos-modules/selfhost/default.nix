@@ -28,6 +28,7 @@ with lib;
         ./matrix.nix
         ./reitti.nix
         ./ollama.nix
+        ./vaultwarden.nix
     ];
 }
 
