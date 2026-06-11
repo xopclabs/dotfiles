@@ -47,6 +47,14 @@ in
             description = "Apply Traefik rate limiting to the Vaultwarden route";
         };
 
+        fail2ban = {
+            enable = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Ban repeated failed logins and admin probes via Traefik access logs";
+            };
+        };
+
         backup = {
             enable = mkEnableOption "BorgBackup of Vaultwarden data to a remote repository";
 
@@ -172,6 +180,36 @@ in
                     if cfg.rateLimit
                     then [ "default-headers" "https-redirect" "vaultwarden-ratelimit" ]
                     else null;
+            }
+        ];
+
+        homelab.fail2ban.jails = mkIf (cfg.fail2ban.enable && config.homelab.fail2ban.enable) [
+            {
+                name = "vaultwarden-login";
+                traefik = {
+                    host = cfg.subdomain;
+                    paths = [ "/identity/connect/token" ];
+                    methods = [ "POST" ];
+                    statusCodes = [ 400 401 ];
+                };
+                settings = {
+                    maxretry = 5;
+                    findtime = "10m";
+                    bantime = "1h";
+                };
+            }
+            {
+                name = "vaultwarden-admin";
+                traefik = {
+                    host = cfg.subdomain;
+                    pathPrefixes = [ "/admin" ];
+                    statusCodes = [ 401 403 ];
+                };
+                settings = {
+                    maxretry = 3;
+                    findtime = "10m";
+                    bantime = "24h";
+                };
             }
         ];
     };

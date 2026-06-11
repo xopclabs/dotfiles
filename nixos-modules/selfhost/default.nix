@@ -3,6 +3,7 @@
 with lib;
 {
     imports = [
+        ./fail2ban.nix
         ./traefik.nix
         ./pihole-unbound/pihole-unbound.nix
         ./postgres.nix

@@ -7,6 +7,10 @@
     
     config.homelab = {
         # Essentials
+        fail2ban = {
+            enable = true;
+        };
+
         traefik = {
             enable = true;
             dashboardSubdomain = "traefik.vps.local";
