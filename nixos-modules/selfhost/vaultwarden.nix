@@ -20,7 +20,7 @@ in
         port = mkOption {
             type = types.int;
             default = 8081;
-            description = "Host port for Vaultwarden HTTP (bound to localhost only)";
+            description = "Local port for Vaultwarden HTTP (bound to localhost only)";
         };
 
         dataDir = mkOption {
@@ -59,14 +59,13 @@ in
         };
 
         systemd.tmpfiles.rules = [
-            "d ${cfg.dataDir} 0750 ${config.metadata.user} users -"
             "d /run/vaultwarden 0750 root root -"
         ];
 
         systemd.services.vaultwarden-env = {
             description = "Generate Vaultwarden runtime environment";
             wantedBy = [ "multi-user.target" ];
-            before = [ "docker-vaultwarden.service" ];
+            before = [ "vaultwarden.service" ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -74,32 +73,28 @@ in
             script = ''
                 DOMAIN_BASE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
-DOMAIN=https://${cfg.subdomain}.$DOMAIN_BASE
-WEBSOCKET_ENABLED=true
-SIGNUPS_ALLOWED=${if cfg.signupsAllowed then "true" else "false"}
-INVITATIONS_ALLOWED=${if cfg.invitationsAllowed then "true" else "false"}
-ROCKET_ADDRESS=0.0.0.0
-ROCKET_PORT=80
-EOF
+                DOMAIN=https://${cfg.subdomain}.$DOMAIN_BASE
+                EOF
             '';
         };
 
-        virtualisation.oci-containers.containers.vaultwarden = {
-            image = "vaultwarden/server:1.34.3";
-            ports = [ "127.0.0.1:${toString cfg.port}:80" ];
-            volumes = [
-                "${cfg.dataDir}:/data"
-            ];
-            environmentFiles = [
+        services.vaultwarden = {
+            enable = true;
+            config = {
+                DATA_FOLDER = toString cfg.dataDir;
+                ROCKET_ADDRESS = "127.0.0.1";
+                ROCKET_PORT = cfg.port;
+                ENABLE_WEBSOCKET = true;
+                SIGNUPS_ALLOWED = cfg.signupsAllowed;
+                INVITATIONS_ALLOWED = cfg.invitationsAllowed;
+            };
+            environmentFile = [
                 runtimeEnv
                 config.sops.secrets.vaultwarden_env.path
             ];
-            extraOptions = [
-                "--pull=always"
-            ];
         };
 
-        systemd.services."docker-vaultwarden" = {
+        systemd.services.vaultwarden = {
             after = [ "vaultwarden-env.service" ];
             requires = [ "vaultwarden-env.service" ];
         };
