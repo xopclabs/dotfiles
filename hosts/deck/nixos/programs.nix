@@ -21,7 +21,7 @@
                     enable = true;
                     autostart = false;
                 };
-                beta = {
+                vps = {
                     enable = true;
                     autostart = false;
                 };
