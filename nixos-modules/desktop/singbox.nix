@@ -154,6 +154,8 @@ in
                 [ "sing-box-update-config.service" "network-online.target" ]
                 ++ optional cfg.outbounds.wg.enable "wireguard-wg-${cfg.outbounds.wg.wireguardClient}.service"
             );
+            requires = [ "sing-box-update-config.service" ]
+                ++ optional cfg.outbounds.wg.enable "wireguard-wg-${cfg.outbounds.wg.wireguardClient}.service";
             wants = [ "network-online.target" ];
             wantedBy = [ "multi-user.target" ];
             serviceConfig = {
@@ -172,7 +174,6 @@ in
             restartIfChanged = false;
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
-            wantedBy = [ "multi-user.target" ];
             path = with pkgs; [ jq curl coreutils sing-box ];
             script = ''
                 set -uo pipefail
@@ -255,12 +256,20 @@ in
                 fi
                 NEW_HASH=$(${pkgs.coreutils}/bin/sha256sum /etc/sing-box/config.json | ${pkgs.coreutils}/bin/cut -d' ' -f1)
 
-                if [ "$OLD_HASH" = "$NEW_HASH" ]; then
-                    echo "Config unchanged, skipping sing-box restart"
-                else
-                    echo "Config changed, restarting sing-box"
+                if [ "$OLD_HASH" != "$NEW_HASH" ]; then
+                    echo "Config changed, saving"
                     ${pkgs.coreutils}/bin/cp /etc/sing-box/config.json /etc/sing-box/config.json.prev
-                    ${pkgs.systemd}/bin/systemctl try-restart sing-box.service || \
+                else
+                    echo "Config unchanged"
+                fi
+
+                # Non-blocking restart only when sing-box is already running (timer refresh).
+                # On boot, sing-box.service starts after this unit via Requires= — a blocking
+                # try-restart here deadlocks NixOS activation.
+                if [ "$OLD_HASH" != "$NEW_HASH" ] \
+                    && ${pkgs.systemd}/bin/systemctl is-active --quiet sing-box.service; then
+                    echo "Requesting sing-box reload"
+                    ${pkgs.systemd}/bin/systemctl --no-block try-restart sing-box.service || \
                         echo "WARNING: sing-box-update-config: could not restart sing-box.service"
                 fi
 
