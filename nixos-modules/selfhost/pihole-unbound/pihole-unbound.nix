@@ -109,9 +109,10 @@ in
             };
             example = {
                 "vm.local" = "homelab";
+                "local" = "homelab";
                 "pi.local" = "pi";
                 "vps.local" = "vps";
-                "local" = "homelab";
+                "" = "vps";
             };
             description = ''
                 Private zones under $DOMAIN served only by Pi-hole (no public DNS).

@@ -3,6 +3,9 @@
 with lib;
 let
     cfg = config.homelab.ntfy;
+    runtimeEnv = "/run/ntfy/env";
+
+    isPublic = builtins.match ".*\\.local$" cfg.subdomain == null;
 in
 {
     options.homelab.ntfy = {
@@ -10,13 +13,16 @@ in
 
         subdomain = mkOption {
             type = types.str;
-            description = "Subdomain for ntfy";
+            description = ''
+                Subdomain for ntfy (e.g. "ntfy" for public ntfy.$DOMAIN,
+                or "ntfy.vm.local" for VPN-only access).
+            '';
         };
 
         port = mkOption {
             type = types.int;
             default = 8089;
-            description = "Port for ntfy HTTP server";
+            description = "Local port for ntfy HTTP (bound to localhost only)";
         };
 
         enableWebPush = mkOption {
@@ -24,20 +30,86 @@ in
             default = false;
             description = "Enable web push notifications (requires VAPID keys setup)";
         };
+
+        rateLimit = mkOption {
+            type = types.nullOr types.bool;
+            default = null;
+            description = ''
+                Apply Traefik rate limiting to the ntfy route.
+                Null auto-enables for public subdomains (not ending in .local).
+            '';
+        };
+
+        fail2ban = {
+            enable = mkOption {
+                type = types.nullOr types.bool;
+                default = null;
+                description = ''
+                    Ban repeated failed logins via Traefik access logs.
+                    Null auto-enables for public subdomains (not ending in .local).
+                '';
+            };
+        };
     };
 
-    config = mkIf cfg.enable {
+    config = mkIf cfg.enable (let
+        rateLimitEnabled = if cfg.rateLimit != null then cfg.rateLimit else isPublic;
+        fail2banEnabled = if cfg.fail2ban.enable != null then cfg.fail2ban.enable else isPublic;
+    in {
+        sops.secrets.domain = {
+            sopsFile = ../../secrets/shared/selfhost.yaml;
+        };
+
+        systemd.tmpfiles.rules = [
+            "d /run/ntfy 0750 root root -"
+        ];
+
+        systemd.services.ntfy-env = {
+            description = "Generate ntfy runtime environment";
+            wantedBy = [ "multi-user.target" ];
+            before = [ "ntfy-sh.service" ];
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+            };
+            script = ''
+                DOMAIN_BASE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
+                NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
+                EOF
+            '';
+        };
 
         services.ntfy-sh = {
             enable = true;
-            environmentFile = config.sops.secrets."traefik/env".path;
+            environmentFile = runtimeEnv;
             settings = {
                 listen-http = "127.0.0.1:${toString cfg.port}";
+                # Overridden at runtime via ntfy-env.service (NTFY_BASE_URL).
+                base-url = "http://127.0.0.1:${toString cfg.port}";
                 behind-proxy = true;
-                base-url = "https://${cfg.subdomain}.\$DOMAIN";
                 cache-file = "/var/lib/ntfy-sh/cache.db";
                 auth-file = "/var/lib/ntfy-sh/auth.db";
                 attachment-cache-dir = "/var/lib/ntfy-sh/attachments";
+            } // optionalAttrs isPublic {
+                auth-default-access = "deny-all";
+                enable-login = true;
+                enable-signup = false;
+            } // optionalAttrs cfg.enableWebPush {
+                web-push-file = "/var/lib/ntfy-sh/webpush.db";
+            };
+        };
+
+        systemd.services.ntfy-sh = {
+            after = [ "ntfy-env.service" ];
+            requires = [ "ntfy-env.service" ];
+        };
+
+        services.traefik.dynamicConfigOptions.http.middlewares = mkIf rateLimitEnabled {
+            ntfy-ratelimit.rateLimit = {
+                average = 30;
+                burst = 60;
+                period = "1m";
             };
         };
 
@@ -46,6 +118,27 @@ in
                 name = "ntfy";
                 subdomain = cfg.subdomain;
                 backendUrl = "http://127.0.0.1:${toString cfg.port}";
+                middlewares =
+                    if rateLimitEnabled
+                    then [ "default-headers" "https-redirect" "ntfy-ratelimit" ]
+                    else null;
+            }
+        ];
+
+        homelab.fail2ban.jails = mkIf (fail2banEnabled && config.homelab.fail2ban.enable) [
+            {
+                name = "ntfy-auth";
+                traefik = {
+                    host = cfg.subdomain;
+                    pathPrefixes = [ "/v1/account" ];
+                    methods = [ "POST" ];
+                    statusCodes = [ 401 403 ];
+                };
+                settings = {
+                    maxretry = 5;
+                    findtime = "10m";
+                    bantime = "1h";
+                };
             }
         ];
 
@@ -57,6 +150,5 @@ in
                 group = "Other";
             }
         ];
-    };
+    });
 }
-

@@ -48,6 +48,11 @@
             };
         };
 
+        ntfy = {
+            enable = true;
+            subdomain = "ntfy";
+        };
+
         borgbackup = {
             enable = true;
             passphraseSopsFile = ../../../secrets/hosts/vps.yaml;
