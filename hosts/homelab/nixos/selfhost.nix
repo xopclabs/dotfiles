@@ -28,11 +28,6 @@
         reality = {
             client.enable = true;
             maskSubdomain = "vaultwarden";
-            hysteria2 = {
-                enable = true;
-                upMbps = 50;
-                downMbps = 150;
-            };
         };
 
         # Reverse proxy
@@ -144,13 +139,10 @@
                     allowedIPs = [ "10.250.250.9/32" ];
                 };
             };
-            # Pipe all WireGuard peer traffic (minus local nets / VPN subnet)
-            # into the Reality client's local SOCKS inbound, which then smart-routes
-            # RU/direct traffic out locally and everything else through the VPS tunnel.
             socks5Proxy = {
                 enable = true;
                 host = "127.0.0.1";
-                port = config.homelab.reality.client.listenPort;
+                port = 10808;
             };
             clients = {
                 vps = {
