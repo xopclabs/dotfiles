@@ -68,6 +68,12 @@ let
     rulesetDir = "/var/lib/sing-box-reality/rule-sets";
     geositeUrl = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ru.srs";
     geoipUrl = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-ru.srs";
+
+    # Hysteria2 (QUIC) exit transport. Self-signed cert lives in the server's
+    # state dir (regenerated only if missing); the client trusts it via SNI +
+    # `insecure` since the real auth/stealth is the password + Salamander obfs.
+    hysteriaStateDir = "/var/lib/sing-box-hysteria";
+    hysteriaRunDir = "/run/sing-box-hysteria";
 in
 {
     options.homelab.reality = {
@@ -150,6 +156,47 @@ in
                 '';
             };
         };
+
+        hysteria2 = {
+            enable = mkEnableOption ''
+                Hysteria2 (QUIC) as the proxy exit transport instead of VLESS+Reality
+                over TCP. Hysteria2 uses a UDP/QUIC datagram tunnel with the Brutal
+                congestion controller and Salamander obfuscation, which is far more
+                resistant to the volumetric DPI throttling that chokes TCP-based
+                Reality connections crossing the Russian border. Enable on BOTH the
+                server (VPS) and the client (homelab); the Reality server keeps
+                running on TCP :443 as a fallback / Traefik front
+            '';
+
+            port = mkOption {
+                type = types.port;
+                default = 443;
+                description = ''
+                    UDP port the Hysteria2 server listens on and the client dials.
+                    Independent of the Reality TCP :443 listener (different protocol).
+                '';
+            };
+
+            upMbps = mkOption {
+                type = types.int;
+                default = 50;
+                description = ''
+                    Client uplink bandwidth in Mbps advertised to the Brutal
+                    congestion controller. Set close to the real upload capacity of
+                    the homelab line; too high causes loss, too low caps throughput.
+                '';
+            };
+
+            downMbps = mkOption {
+                type = types.int;
+                default = 150;
+                description = ''
+                    Client downlink bandwidth in Mbps for the Brutal congestion
+                    controller. Set close to the real download capacity of the
+                    homelab line.
+                '';
+            };
+        };
     };
 
     config = mkMerge [
@@ -159,6 +206,14 @@ in
                 "domain".sopsFile = ../../secrets/shared/selfhost.yaml;
                 "reality/uuid".sopsFile = ../../secrets/shared/selfhost.yaml;
                 "reality/short_id".sopsFile = ../../secrets/shared/selfhost.yaml;
+            };
+        })
+
+        # ---- Hysteria2 shared secrets (auth password + Salamander obfs) ----
+        (mkIf (cfg.hysteria2.enable && (cfg.server.enable || cfg.client.enable)) {
+            sops.secrets = {
+                "reality/hysteria_password".sopsFile = ../../secrets/shared/selfhost.yaml;
+                "reality/hysteria_obfs".sopsFile = ../../secrets/shared/selfhost.yaml;
             };
         })
 
@@ -219,6 +274,94 @@ in
             networking.firewall.allowedTCPPorts = [ cfg.server.listenPort ];
         })
 
+        # ---- Hysteria2 server (sing-box, QUIC/UDP exit on the VPS) ----
+        (mkIf (cfg.server.enable && cfg.hysteria2.enable) {
+            systemd.services.sing-box-hysteria-config = {
+                description = "Render Hysteria2 server config + self-signed cert from secrets";
+                before = [ "sing-box-hysteria.service" ];
+                requiredBy = [ "sing-box-hysteria.service" ];
+                wantedBy = [ "multi-user.target" ];
+                path = with pkgs; [ jq gawk coreutils sing-box ];
+                serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    StateDirectory = "sing-box-hysteria";
+                };
+                script = ''
+                    set -euo pipefail
+                    umask 077
+                    mkdir -p ${hysteriaRunDir} ${hysteriaStateDir}
+
+                    SNI="${cfg.maskSubdomain}.$(cat ${domainPath})"
+
+                    # Self-signed keypair, generated once and reused (the client
+                    # trusts it via SNI + insecure, so it just needs to be stable).
+                    if [ ! -s ${hysteriaStateDir}/cert.pem ] || [ ! -s ${hysteriaStateDir}/key.pem ]; then
+                        sing-box generate tls-keypair "$SNI" -m 120 > ${hysteriaStateDir}/keypair.pem
+                        awk '/BEGIN PRIVATE KEY/,/END PRIVATE KEY/' ${hysteriaStateDir}/keypair.pem > ${hysteriaStateDir}/key.pem
+                        awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/' ${hysteriaStateDir}/keypair.pem > ${hysteriaStateDir}/cert.pem
+                        rm -f ${hysteriaStateDir}/keypair.pem
+                    fi
+
+                    HY_PASSWORD=$(cat ${config.sops.secrets."reality/hysteria_password".path})
+                    HY_OBFS=$(cat ${config.sops.secrets."reality/hysteria_obfs".path})
+
+                    jq -n \
+                        --arg port "${toString cfg.hysteria2.port}" \
+                        --arg password "$HY_PASSWORD" \
+                        --arg obfs "$HY_OBFS" \
+                        --arg cert "${hysteriaStateDir}/cert.pem" \
+                        --arg key "${hysteriaStateDir}/key.pem" \
+                        '{
+                            log: { level: "warn" },
+                            inbounds: [
+                                {
+                                    type: "hysteria2",
+                                    tag: "hysteria2-in",
+                                    listen: "::",
+                                    listen_port: ($port | tonumber),
+                                    users: [ { password: $password } ],
+                                    obfs: { type: "salamander", password: $obfs },
+                                    tls: { enabled: true, alpn: [ "h3" ], certificate_path: $cert, key_path: $key }
+                                }
+                            ],
+                            outbounds: [
+                                { type: "direct", tag: "direct" },
+                                { type: "block", tag: "block" }
+                            ],
+                            route: {
+                                rules: [ { protocol: [ "bittorrent" ], outbound: "block" } ]
+                            }
+                        }' > ${hysteriaRunDir}/config.json
+
+                    sing-box check -c ${hysteriaRunDir}/config.json
+                '';
+            };
+
+            systemd.services.sing-box-hysteria = {
+                description = "Hysteria2 server (QUIC exit)";
+                documentation = [ "https://sing-box.sagernet.org" ];
+                after = [ "network-online.target" "sing-box-hysteria-config.service" ];
+                requires = [ "sing-box-hysteria-config.service" ];
+                wants = [ "network-online.target" ];
+                wantedBy = [ "multi-user.target" ];
+                serviceConfig = {
+                    Type = "simple";
+                    User = "root";
+                    StateDirectory = "sing-box-hysteria";
+                    WorkingDirectory = hysteriaStateDir;
+                    ExecStart = "${pkgs.sing-box}/bin/sing-box -D ${hysteriaStateDir} -c ${hysteriaRunDir}/config.json run";
+                    Restart = "on-failure";
+                    RestartSec = "5s";
+                };
+            };
+
+            networking.firewall.allowedUDPPorts = [ cfg.hysteria2.port ];
+
+            sops.secrets."reality/hysteria_password".restartUnits = [ "sing-box-hysteria-config.service" "sing-box-hysteria.service" ];
+            sops.secrets."reality/hysteria_obfs".restartUnits = [ "sing-box-hysteria-config.service" "sing-box-hysteria.service" ];
+        })
+
         # ---- Reality client (dedicated sing-box instance) ----
         (mkIf cfg.client.enable {
             sops.secrets = {
@@ -265,6 +408,13 @@ in
                     ENDPOINT="${optionalString (cfg.client.serverEndpoint != null) cfg.client.serverEndpoint}"
                     [ -n "$ENDPOINT" ] || ENDPOINT="$SERVER_NAME"
 
+                    HY_PASSWORD=""
+                    HY_OBFS=""
+                    ${optionalString cfg.hysteria2.enable ''
+                        HY_PASSWORD=$(cat ${config.sops.secrets."reality/hysteria_password".path})
+                        HY_OBFS=$(cat ${config.sops.secrets."reality/hysteria_obfs".path})
+                    ''}
+
                     CUSTOM_DOMAINS=$(cat ${config.sops.secrets."smart_routing/direct-domains".path} \
                         | grep -v '^#' | grep -v '^$' | jq -R . | jq -s .) || CUSTOM_DOMAINS='[]'
 
@@ -280,28 +430,49 @@ in
                         --argjson custom_domains "$CUSTOM_DOMAINS" \
                         --argjson have_geoip "$HAVE_GEOIP" \
                         --argjson have_geosite "$HAVE_GEOSITE" \
+                        --argjson use_hysteria ${if cfg.hysteria2.enable then "true" else "false"} \
+                        --arg hy_port "${toString cfg.hysteria2.port}" \
+                        --arg hy_up "${toString cfg.hysteria2.upMbps}" \
+                        --arg hy_down "${toString cfg.hysteria2.downMbps}" \
+                        --arg hy_password "$HY_PASSWORD" \
+                        --arg hy_obfs "$HY_OBFS" \
                         '{
                             log: { level: "warn" },
                             inbounds: [
                                 { type: "mixed", tag: "mixed-in", listen: "127.0.0.1", listen_port: ($listen_port | tonumber) }
                             ],
-                            outbounds: [
-                                {
-                                    type: "vless",
-                                    tag: "reality-out",
-                                    server: $server,
-                                    server_port: ($server_port | tonumber),
-                                    uuid: $uuid,
-                                    flow: "xtls-rprx-vision",
-                                    tls: {
-                                        enabled: true,
-                                        server_name: $server_name,
-                                        utls: { enabled: true, fingerprint: "chrome" },
-                                        reality: { enabled: true, public_key: $public_key, short_id: $short_id }
+                            outbounds: (
+                                [
+                                    {
+                                        type: "vless",
+                                        tag: "reality-out",
+                                        server: $server,
+                                        server_port: ($server_port | tonumber),
+                                        uuid: $uuid,
+                                        flow: "xtls-rprx-vision",
+                                        tls: {
+                                            enabled: true,
+                                            server_name: $server_name,
+                                            utls: { enabled: true, fingerprint: "chrome" },
+                                            reality: { enabled: true, public_key: $public_key, short_id: $short_id }
+                                        }
                                     }
-                                },
-                                { type: "direct", tag: "direct" }
-                            ],
+                                ]
+                                + (if $use_hysteria then [
+                                    {
+                                        type: "hysteria2",
+                                        tag: "hysteria2-out",
+                                        server: $server,
+                                        server_port: ($hy_port | tonumber),
+                                        up_mbps: ($hy_up | tonumber),
+                                        down_mbps: ($hy_down | tonumber),
+                                        password: $hy_password,
+                                        obfs: { type: "salamander", password: $hy_obfs },
+                                        tls: { enabled: true, server_name: $server_name, insecure: true, alpn: [ "h3" ] }
+                                    }
+                                ] else [] end)
+                                + [ { type: "direct", tag: "direct" } ]
+                            ),
                             route: {
                                 rule_set: (
                                     (if $have_geosite then [{ tag: "category-ru", type: "local", format: "binary", path: ($ruleset_dir + "/geosite-category-ru.srs") }] else [] end)
@@ -314,7 +485,7 @@ in
                                     + (if $have_geoip then [{ rule_set: "geoip-ru", outbound: "direct" }] else [] end)
                                     + (if $have_geosite then [{ rule_set: "category-ru", outbound: "direct" }] else [] end)
                                 ),
-                                final: "reality-out",
+                                final: (if $use_hysteria then "hysteria2-out" else "reality-out" end),
                                 auto_detect_interface: true
                             }
                         }' > /run/sing-box-reality/config.json
@@ -383,6 +554,12 @@ in
             sops.secrets."reality/public_key".restartUnits = [ "sing-box-reality-config.service" "sing-box-reality.service" ];
             sops.secrets."reality/uuid".restartUnits = [ "sing-box-reality-config.service" "sing-box-reality.service" ];
             sops.secrets."reality/short_id".restartUnits = [ "sing-box-reality-config.service" "sing-box-reality.service" ];
+        })
+
+        # ---- Rebuild + restart the client when Hysteria2 secrets rotate ----
+        (mkIf (cfg.client.enable && cfg.hysteria2.enable) {
+            sops.secrets."reality/hysteria_password".restartUnits = [ "sing-box-reality-config.service" "sing-box-reality.service" ];
+            sops.secrets."reality/hysteria_obfs".restartUnits = [ "sing-box-reality-config.service" "sing-box-reality.service" ];
         })
     ];
 }

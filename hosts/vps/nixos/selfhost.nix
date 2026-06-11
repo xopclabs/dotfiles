@@ -42,6 +42,7 @@
         reality = {
             server.enable = true;
             maskSubdomain = "vaultwarden";
+            hysteria2.enable = true;
         };
 
         vaultwarden = {
