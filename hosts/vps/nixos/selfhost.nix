@@ -56,6 +56,18 @@
                     publicKey = "RxKN8Gt9RCmSzsKsscHoXmgjzr2h3RNNI1Q/a+mAuUw=";
                     allowedIPs = [ "10.13.13.3/32" ];
                 };
+                pavel-pc = {
+                    publicKey = "UJxCs19JHUg/oFNT0r/htvMRtm7YaHna4XSsIZJJDgs=";
+                    allowedIPs = [ "10.13.13.4/32" ];
+                };
+                mom = {
+                    publicKey = "ciuO1DyKt1wBNkIxEPWKyLlDLamXE1ozOx8DzTR5E20=";
+                    allowedIPs = [ "10.13.13.5/32" ];
+                };
+                dad = {
+                    publicKey = "AlZDosZZo7I/UAumgtE4PMcAkGn6XyHDKeQMIZ5/mw8=";
+                    allowedIPs = [ "10.13.13.6/32" ];
+                };
             };
         };
     };

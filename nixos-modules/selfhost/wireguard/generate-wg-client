@@ -1,18 +1,79 @@
 set -e
 
+DEFAULT_DNS='192.168.254.99, 9.9.9.9'
+DEFAULT_ALLOWED_IPS='0.0.0.0/0'
+DEFAULT_BASE_DIR="$HOME/wg"
+
+increment_ip() {
+    local ip="$1"
+    local IFS='.'
+    local o1 o2 o3 o4
+
+    read -r o1 o2 o3 o4 <<< "$ip"
+    o4=$((o4 + 1))
+    if [ "$o4" -gt 255 ]; then
+        echo "Error: Cannot increment IP beyond /24 subnet ($ip)" >&2
+        exit 1
+    fi
+    echo "$o1.$o2.$o3.$o4"
+}
+
+detect_existing_peer_ip() {
+    local nix_file="$1"
+    local peer_name="$2"
+
+    grep -A3 "^[[:space:]]*${peer_name}[[:space:]]*=[[:space:]]*{" "$nix_file" \
+        | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
+        | head -1
+}
+
+detect_next_ip() {
+    local nix_file="$1"
+    local max_ip server_ip
+
+    max_ip=$(
+        grep -oE 'allowedIPs = \[ "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' "$nix_file" \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
+            | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n \
+            | tail -1
+    )
+
+    if [ -n "$max_ip" ]; then
+        increment_ip "$max_ip"
+        return
+    fi
+
+    server_ip=$(
+        grep -oE 'serverIP = "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' "$nix_file" \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
+            | head -1
+    )
+
+    if [ -n "$server_ip" ]; then
+        increment_ip "$server_ip"
+        return
+    fi
+
+    echo "Error: Could not determine next IP from $nix_file" >&2
+    exit 1
+}
+
 # Help message
 show_help() {
-    echo "Usage: $0 -n CONFIG_NAME -b BASE_DIR -i IP -a ALLOWED_IPS -e ENDPOINT -s SECRETS_FILE"
+    echo "Usage: $0 -n CONFIG_NAME -e ENDPOINT [-b BASE_DIR] [-a ALLOWED_IPS] [-i IP] [-d DNS] [-s SECRETS_FILE] [-H HOSTNAME]"
     echo ""
     echo "Generate Wireguard keys and configuration file"
     echo ""
     echo "Arguments:"
     echo "  -n CONFIG_NAME   Name of the configuration/peer"
-    echo "  -b BASE_DIR      Base directory where to save the configuration"
-    echo "  -i IP            IP address for the client (without /32)"
-    echo "  -a ALLOWED_IPS   Comma-separated list of allowed IPs"
     echo "  -e ENDPOINT      Endpoint address with port (e.g., server.example.com:51820)"
-    echo "  -s SECRETS_FILE  Path to the sops-encrypted secrets.yaml file"
+    echo "  -b BASE_DIR      Base directory where to save the configuration; defaults to ~/wg"
+    echo "  -a ALLOWED_IPS   Comma-separated list of allowed IPs for the client config; defaults to 0.0.0.0/0"
+    echo "  -i IP            Client IP address (without /32); defaults to existing peer IP or next free IP in selfhost.nix"
+    echo "  -d DNS           Comma-separated list of DNS servers for the client config"
+    echo "  -s SECRETS_FILE  Path to the sops-encrypted secrets file;"
+    echo "                   defaults to \$NIXOS_CONFIG_DIR/secrets/hosts/\$HOSTNAME.yaml"
+    echo "  -H HOSTNAME      Host name for auto-detected paths; defaults to short system hostname"
     echo "  -h               Show this help message"
     exit 1
 }
@@ -27,7 +88,7 @@ if [ ! -f "$TEMPLATE_FILE" ]; then
 fi
 
 # Parse arguments
-while getopts "n:b:i:a:e:s:h" opt; do
+while getopts "n:b:i:a:e:s:d:H:h" opt; do
     case $opt in
         n) CONFIG_NAME="$OPTARG" ;;
         b) BASE_DIR="$OPTARG" ;;
@@ -35,15 +96,43 @@ while getopts "n:b:i:a:e:s:h" opt; do
         a) ALLOWED_IPS="$OPTARG" ;;
         e) ENDPOINT="$OPTARG" ;;
         s) SECRETS_FILE="$OPTARG" ;;
+        d) DNS="$OPTARG" ;;
+        H) HOSTNAME="$OPTARG" ;;
         h) show_help ;;
         *) show_help ;;
     esac
 done
 
 # Check required arguments
-if [ -z "$CONFIG_NAME" ] || [ -z "$BASE_DIR" ] || [ -z "$IP" ] || [ -z "$ALLOWED_IPS" ] || [ -z "$ENDPOINT" ] || [ -z "$SECRETS_FILE" ]; then
+if [ -z "$CONFIG_NAME" ] || [ -z "$ENDPOINT" ]; then
     echo "Error: Missing required arguments"
     show_help
+fi
+
+if [ -z "$NIXOS_CONFIG_DIR" ]; then
+    echo "Error: NIXOS_CONFIG_DIR must be set"
+    exit 1
+fi
+
+BASE_DIR="${BASE_DIR:-$DEFAULT_BASE_DIR}"
+ALLOWED_IPS="${ALLOWED_IPS:-$DEFAULT_ALLOWED_IPS}"
+HOSTNAME="${HOSTNAME:-$(hostname -s)}"
+SECRETS_FILE="${SECRETS_FILE:-$NIXOS_CONFIG_DIR/secrets/hosts/$HOSTNAME.yaml}"
+SELFHOST_NIX="$NIXOS_CONFIG_DIR/hosts/$HOSTNAME/nixos/selfhost.nix"
+DNS="${DNS:-$DEFAULT_DNS}"
+
+if [ -z "$IP" ]; then
+    if [ ! -f "$SELFHOST_NIX" ]; then
+        echo "Error: selfhost.nix not found at $SELFHOST_NIX; pass -i IP explicitly"
+        exit 1
+    fi
+    IP=$(detect_existing_peer_ip "$SELFHOST_NIX" "$CONFIG_NAME")
+    if [ -n "$IP" ]; then
+        echo "Using existing client IP for '$CONFIG_NAME': $IP"
+    else
+        IP=$(detect_next_ip "$SELFHOST_NIX")
+        echo "Auto-detected next client IP: $IP"
+    fi
 fi
 
 # Check if secrets file exists
@@ -98,6 +187,7 @@ sed -i "s|<public_key>|$SERVER_PUBLIC_KEY|g" "$CONFIG_FILE"
 sed -i "s|<preshared_key>|$PRESHARED_KEY|g" "$CONFIG_FILE"
 sed -i "s|<allowed_ips>|$ALLOWED_IPS|g" "$CONFIG_FILE"
 sed -i "s|<endpoint>|$ENDPOINT|g" "$CONFIG_FILE"
+sed -i "s|<dns>|$DNS|g" "$CONFIG_FILE"
 
 # Set proper permissions for the config file
 chmod 600 "$CONFIG_FILE"
@@ -115,11 +205,12 @@ qrrs - "$CONFIG_DIR/$CONFIG_NAME.png" < "$CONFIG_FILE"
 echo ""
 echo "Wireguard configuration has been generated successfully."
 echo "Public key: $PUBLIC_KEY"
+echo "Client IP: $IP/32"
 echo "QR-code path: $CONFIG_DIR/$CONFIG_NAME.png"
 echo ".conf path: $CONFIG_FILE"
 echo ""
 echo "Nix peer definition:"
 echo "$CONFIG_NAME = {"
 echo "    publicKey = \"$PUBLIC_KEY\";"
-echo "    allowedIPs = [ \"$ALLOWED_IPS\" ];"
+echo "    allowedIPs = [ \"$IP/32\" ];"
 echo "};"
