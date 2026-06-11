@@ -102,9 +102,10 @@ in
             type = types.attrsOf types.str;
             default = {
                 "vm.local" = "homelab";
+                "local" = "homelab";
                 "pi.local" = "pi";
                 "vps.local" = "vps";
-                "local" = "homelab";
+                "" = "vps";
             };
             example = {
                 "vm.local" = "homelab";
