@@ -6,6 +6,21 @@
         settings = {
             PermitRootLogin = "no";
             PasswordAuthentication = false;
+
+            PerSourcePenalties = "no";
+
+            ClientAliveInterval = 30;
+            ClientAliveCountMax = 3;
+        };
+    };
+
+    # Bots are blocked at the firewall before they can pile onto sshd.
+    services.fail2ban.jails.sshd = {
+        enabled = true;
+        settings = {
+            maxretry = 3;
+            findtime = "5m";
+            bantime = "24h";
         };
     };
     users.users.${config.metadata.user}.openssh.authorizedKeys.keys = [
