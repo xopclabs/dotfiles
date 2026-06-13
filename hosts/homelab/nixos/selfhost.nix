@@ -296,6 +296,10 @@
             enable = true;
             subdomain = "matrix.vm.local";
             elementSubdomain = "element.vm.local";
+            push = {
+                enable = true;
+                ntfySubdomain = "ntfy";
+            };
         };
 
         syncthing = {

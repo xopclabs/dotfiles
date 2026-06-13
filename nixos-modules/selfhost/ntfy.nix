@@ -50,11 +50,27 @@ in
                 '';
             };
         };
+
+        unifiedPush = {
+            enable = mkOption {
+                type = types.nullOr types.bool;
+                default = null;
+                description = ''
+                    Allow anonymous write-only access to UnifiedPush topics (up* prefix)
+                    so Matrix Synapse and other push gateways can publish notifications.
+                    Null auto-enables for public subdomains (not ending in .local).
+                '';
+            };
+        };
     };
 
     config = mkIf cfg.enable (let
         rateLimitEnabled = if cfg.rateLimit != null then cfg.rateLimit else isPublic;
         fail2banEnabled = if cfg.fail2ban.enable != null then cfg.fail2ban.enable else isPublic;
+        unifiedPushEnabled =
+            if cfg.unifiedPush.enable != null
+            then cfg.unifiedPush.enable
+            else isPublic;
     in {
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
@@ -95,6 +111,8 @@ in
                 auth-default-access = "deny-all";
                 enable-login = true;
                 enable-signup = false;
+            } // optionalAttrs unifiedPushEnabled {
+                auth-access = [ "*:up*:wo" ];
             } // optionalAttrs cfg.enableWebPush {
                 web-push-file = "/var/lib/ntfy-sh/webpush.db";
             };

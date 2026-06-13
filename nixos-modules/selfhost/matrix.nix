@@ -11,6 +11,9 @@ public_baseurl: "https://$MATRIX_SERVER_NAME"
 turn_uris:
   - "turn:$MATRIX_SERVER_NAME:${toString cfg.coturn.port}?transport=udp"
   - "turn:$MATRIX_SERVER_NAME:${toString cfg.coturn.port}?transport=tcp"
+'' + optionalString cfg.push.enable ''
+ip_range_whitelist:
+  - "$MATRIX_NTFY_GATEWAY_IP/32"
 '');
 
     elementConfigTemplate = pkgs.writeText "element-config.json.tpl" (builtins.toJSON {
@@ -93,6 +96,33 @@ in
                 type = types.bool;
                 default = true;
                 description = "Open firewall ports for TURN server";
+            };
+        };
+
+        push = {
+            enable = mkEnableOption ''
+                UnifiedPush notifications via a public ntfy push gateway.
+
+                Synapse sends push requests to the configured ntfy server (e.g. on a VPS)
+                so mobile clients receive notifications without VPN access to the homeserver.
+                Users must configure Element Android to use UnifiedPush with the same ntfy server.
+            '';
+
+            ntfySubdomain = mkOption {
+                type = types.str;
+                default = "ntfy";
+                description = ''
+                    Subdomain of the public ntfy push gateway (e.g. "ntfy" for ntfy.$DOMAIN).
+                '';
+            };
+
+            gatewayHost = mkOption {
+                type = types.str;
+                default = "vps";
+                description = ''
+                    Hostname label in the sops hosts file for the public ntfy server IP.
+                    Used for Synapse ip_range_whitelist.
+                '';
             };
         };
     };
@@ -200,6 +230,13 @@ in
                     (pkgs.writeShellScript "matrix-synapse-runtime-config" ''
                         set -euo pipefail
                         export MATRIX_SERVER_NAME="${cfg.subdomain}.$DOMAIN"
+                        ${optionalString cfg.push.enable ''
+                        export MATRIX_NTFY_GATEWAY_IP=$(${pkgs.gawk}/bin/awk -v name="${cfg.push.gatewayHost}" '$2 == name { print $1; exit }' ${config.sops.secrets.hosts.path})
+                        if [ -z "''${MATRIX_NTFY_GATEWAY_IP:-}" ]; then
+                            echo "matrix-synapse: no IP for hosts entry ${cfg.push.gatewayHost}" >&2
+                            exit 1
+                        fi
+                        ''}
                         ${pkgs.envsubst}/bin/envsubst -i "${synapseRuntimeConfigTemplate}" > /run/matrix-synapse/runtime-config.yaml
                     '')
                 ];
