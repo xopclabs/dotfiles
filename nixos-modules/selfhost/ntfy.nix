@@ -57,9 +57,17 @@ in
                 default = null;
                 description = ''
                     Configure ACLs for UnifiedPush / Matrix push topics (up* prefix).
-                    Synapse publishes anonymously (write-only); clients must be able to
-                    read their subscribed up* topic in the ntfy app.
                     Null auto-enables for public subdomains (not ending in .local).
+                '';
+            };
+
+            subscriberUsersSopsKey = mkOption {
+                type = types.str;
+                default = "ntfy/unified-push-subscribers";
+                description = ''
+                    Sops secret (one ntfy username per line) for logged-in UnifiedPush
+                    subscribers. Each user gets read-only access to up* topics.
+                    Stored in secrets/hosts/<hostname>.yaml (encrypted).
                 '';
             };
         };
@@ -72,9 +80,18 @@ in
             if cfg.unifiedPush.enable != null
             then cfg.unifiedPush.enable
             else isPublic;
+
+        subscriberUsersSecret =
+            if unifiedPushEnabled
+            then config.sops.secrets.${cfg.unifiedPush.subscriberUsersSopsKey}
+            else null;
     in {
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
+        };
+
+        sops.secrets.${cfg.unifiedPush.subscriberUsersSopsKey} = mkIf unifiedPushEnabled {
+            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
         };
 
         systemd.tmpfiles.rules = [
@@ -91,8 +108,18 @@ in
             };
             script = ''
                 DOMAIN_BASE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                AUTH_ACCESS='*:up*:rw'
+                ${optionalString unifiedPushEnabled ''
+                while IFS= read -r user || [ -n "$user" ]; do
+                    user=$(printf '%s' "$user" | ${pkgs.gnused}/bin/sed 's/[[:space:]]//g')
+                    [ -z "$user" ] && continue
+                    [ "''${user#\#}" != "$user" ] && continue
+                    AUTH_ACCESS="$AUTH_ACCESS,$user:up*:ro"
+                done < ${subscriberUsersSecret.path}
+                ''}
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
                 NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
+                NTFY_AUTH_ACCESS=$AUTH_ACCESS
                 EOF
             '';
         };
@@ -112,11 +139,6 @@ in
                 auth-default-access = "deny-all";
                 enable-login = true;
                 enable-signup = false;
-            } // optionalAttrs unifiedPushEnabled {
-                # wo: Synapse / push gateways publish without auth
-                # ro: ntfy app subscribers can receive on their up* topic
-                # (topic names are unguessable; security is deny-all for everything else)
-                auth-access = [ "*:up*:wo" "*:up*:ro" ];
             } // optionalAttrs cfg.enableWebPush {
                 web-push-file = "/var/lib/ntfy-sh/webpush.db";
             };
