@@ -44,6 +44,8 @@ in
                 listen-address = [ "127.0.0.1" ];
                 bind-dynamic = true;
 
+                no-negcache = true;
+
                 conf-dir = "/etc/dnsmasq.d/,*.conf";
 
                 no-hosts = true;
