@@ -66,7 +66,9 @@ in
                 default = "ntfy/unified-push-subscribers";
                 description = ''
                     Sops secret (one ntfy username per line) for logged-in UnifiedPush
-                    subscribers. Each user gets read-only access to up* topics.
+                    subscribers. Each user gets read-only access to up* topics via
+                    `ntfy access` after server start (CLI-created users are not valid in
+                    NTFY_AUTH_ACCESS). Users must exist (`ntfy user add`) before deploy.
                     Stored in secrets/hosts/<hostname>.yaml (encrypted).
                 '';
             };
@@ -108,19 +110,45 @@ in
             };
             script = ''
                 DOMAIN_BASE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
-                AUTH_ACCESS='*:up*:rw'
-                ${optionalString unifiedPushEnabled ''
+                ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
+                NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
+                NTFY_AUTH_ACCESS=*:up*:rw
+                EOF
+            '';
+        };
+
+        systemd.services.ntfy-unified-push-acl = mkIf unifiedPushEnabled {
+            description = "Apply per-user UnifiedPush read ACLs for CLI-created ntfy users";
+            after = [ "ntfy-sh.service" ];
+            requires = [ "ntfy-sh.service" ];
+            wantedBy = [ "multi-user.target" ];
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+            };
+            script = ''
+                AUTH_DB=/var/lib/ntfy-sh/auth.db
+                export NTFY_AUTH_FILE="$AUTH_DB"
+                [ -f "$AUTH_DB" ] || exit 0
                 while IFS= read -r user || [ -n "$user" ]; do
                     user=$(printf '%s' "$user" | ${pkgs.gnused}/bin/sed 's/[[:space:]]//g')
                     [ -z "$user" ] && continue
                     [ "''${user#\#}" != "$user" ] && continue
-                    AUTH_ACCESS="$AUTH_ACCESS,$user:up*:ro"
+                    case "$user" in
+                        *[!a-zA-Z0-9_.-]*)
+                            echo "ntfy-unified-push-acl: invalid username '$user', skipping" >&2
+                            continue
+                            ;;
+                    esac
+                    if ! ${pkgs.sqlite}/bin/sqlite3 "$AUTH_DB" \
+                        "SELECT 1 FROM user WHERE user = '$user' AND deleted IS NULL LIMIT 1;" \
+                        | ${pkgs.gnugrep}/bin/grep -q 1; then
+                        echo "ntfy-unified-push-acl: ntfy user '$user' not found, skipping" >&2
+                        continue
+                    fi
+                    ${pkgs.ntfy-sh}/bin/ntfy access "$user" 'up*' ro \
+                        || echo "ntfy-unified-push-acl: failed to set ACL for '$user'" >&2
                 done < ${subscriberUsersSecret.path}
-                ''}
-                ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
-                NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
-                NTFY_AUTH_ACCESS=$AUTH_ACCESS
-                EOF
             '';
         };
 
