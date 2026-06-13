@@ -56,8 +56,9 @@ in
                 type = types.nullOr types.bool;
                 default = null;
                 description = ''
-                    Allow anonymous write-only access to UnifiedPush topics (up* prefix)
-                    so Matrix Synapse and other push gateways can publish notifications.
+                    Configure ACLs for UnifiedPush / Matrix push topics (up* prefix).
+                    Synapse publishes anonymously (write-only); clients must be able to
+                    read their subscribed up* topic in the ntfy app.
                     Null auto-enables for public subdomains (not ending in .local).
                 '';
             };
@@ -112,7 +113,10 @@ in
                 enable-login = true;
                 enable-signup = false;
             } // optionalAttrs unifiedPushEnabled {
-                auth-access = [ "*:up*:wo" ];
+                # wo: Synapse / push gateways publish without auth
+                # ro: ntfy app subscribers can receive on their up* topic
+                # (topic names are unguessable; security is deny-all for everything else)
+                auth-access = [ "*:up*:wo" "*:up*:ro" ];
             } // optionalAttrs cfg.enableWebPush {
                 web-push-file = "/var/lib/ntfy-sh/webpush.db";
             };
