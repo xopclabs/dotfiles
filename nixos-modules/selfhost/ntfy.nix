@@ -56,17 +56,25 @@ in
                 type = types.bool;
                 default = false;
                 description = ''
-                    Apply per-topic ACLs for the Matrix ntfy reminder bot.
-                    Requires ntfy users to exist before deploy.
+                    Provision the Matrix reminder bot on ntfy (user, token, ACL) from sops.
+                    Secrets live under the matrix/ntfy-bot object in sops (see module README in
+                    hosts/homelab). No manual ntfy CLI steps required after sops is filled.
                 '';
             };
 
-            aclSopsKey = mkOption {
+            username = mkOption {
                 type = types.str;
-                default = "ntfy/matrix-bot-acl";
+                default = "matrix/ntfy-bot";
+                description = "ntfy username for the Matrix reminder bot publisher";
+            };
+
+            sopsKey = mkOption {
+                type = types.str;
+                default = "matrix/ntfy-bot";
                 description = ''
-                    Sops secret (one entry per line: "ntfy_user topic rw|ro").
-                    Stored in secrets/hosts/<hostname>.yaml.
+                    Sops object prefix for bot secrets. VPS uses matrix/ntfy-bot/password and
+                    matrix/ntfy-bot/acl from secrets/hosts/<hostname>.yaml; matrix/ntfy-bot/token
+                    from secrets/shared/selfhost.yaml.
                 '';
             };
         };
@@ -76,16 +84,33 @@ in
         rateLimitEnabled = if cfg.rateLimit != null then cfg.rateLimit else isPublic;
         fail2banEnabled = if cfg.fail2ban.enable != null then cfg.fail2ban.enable else isPublic;
         matrixBotEnabled = cfg.matrixBot.enable && isPublic;
+        mb = cfg.matrixBot.sopsKey;
+        passwordSecret =
+            if matrixBotEnabled
+            then config.sops.secrets."${mb}/password"
+            else null;
+        tokenSecret =
+            if matrixBotEnabled
+            then config.sops.secrets."${mb}/token"
+            else null;
         aclSecret =
             if matrixBotEnabled
-            then config.sops.secrets.${cfg.matrixBot.aclSopsKey}
+            then config.sops.secrets."${mb}/acl"
             else null;
     in {
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
         };
 
-        sops.secrets.${cfg.matrixBot.aclSopsKey} = mkIf matrixBotEnabled {
+        sops.secrets."${mb}/password" = mkIf matrixBotEnabled {
+            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+        };
+
+        sops.secrets."${mb}/token" = mkIf matrixBotEnabled {
+            sopsFile = ../../secrets/shared/selfhost.yaml;
+        };
+
+        sops.secrets."${mb}/acl" = mkIf matrixBotEnabled {
             sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
         };
 
@@ -106,6 +131,48 @@ in
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
                 NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
                 EOF
+                ${optionalString matrixBotEnabled ''
+                PASSWORD=$(${pkgs.coreutils}/bin/cat ${passwordSecret.path})
+                TOKEN=$(${pkgs.coreutils}/bin/tr -d '[:space:]' < ${tokenSecret.path})
+                case "$TOKEN" in
+                    tk_?????????????????????????????)
+                        ;;
+                    *)
+                        echo "ntfy-env: invalid ${mb}/token (need tk_ + 29 chars)" >&2
+                        exit 1
+                        ;;
+                esac
+                case "$PASSWORD" in
+                    ""|CHANGE_ME*|change_me*)
+                        echo "ntfy-env: set a real password in sops (${mb}/password)" >&2
+                        exit 1
+                        ;;
+                esac
+                HASH=$(
+                    printf '%s\n%s\n' "$PASSWORD" "$PASSWORD" \
+                        | ${pkgs.ntfy-sh}/bin/ntfy user hash \
+                        | ${pkgs.coreutils}/bin/tail -n1
+                )
+                ACL=$(${pkgs.gawk}/bin/gawk '
+                    /^[[:space:]]*#/ { next }
+                    /^[[:space:]]*$/ { next }
+                    {
+                        gsub(/^[[:space:]]+|[[:space:]]+$/, "");
+                        n = split($0, parts, /[[:space:]]+/);
+                        if (n >= 3) {
+                            entry = parts[1] ":" parts[2] ":" parts[3];
+                            if (out != "") out = out ",";
+                            out = out entry;
+                        }
+                    }
+                    END { print out }
+                ' ${aclSecret.path})
+                ${pkgs.coreutils}/bin/cat >> ${runtimeEnv} <<EOF
+                NTFY_AUTH_USERS=${cfg.matrixBot.username}:$HASH:user
+                NTFY_AUTH_TOKENS=${cfg.matrixBot.username}:$TOKEN:matrix-reminder-bot
+                NTFY_AUTH_ACCESS=$ACL
+                EOF
+                ''}
             '';
         };
 
@@ -132,47 +199,6 @@ in
         systemd.services.ntfy-sh = {
             after = [ "ntfy-env.service" ];
             requires = [ "ntfy-env.service" ];
-        };
-
-        systemd.services.ntfy-matrix-bot-acl = mkIf matrixBotEnabled {
-            description = "Apply ntfy ACLs for Matrix reminder bot topics";
-            after = [ "ntfy-sh.service" ];
-            requires = [ "ntfy-sh.service" ];
-            wantedBy = [ "multi-user.target" ];
-            serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-            };
-            script = ''
-                AUTH_DB=/var/lib/ntfy-sh/auth.db
-                export NTFY_AUTH_FILE="$AUTH_DB"
-                [ -f "$AUTH_DB" ] || exit 0
-                while IFS= read -r line || [ -n "$line" ]; do
-                    line=$(printf '%s' "$line" | ${pkgs.gnused}/bin/sed 's/[[:space:]]\+/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//')
-                    [ -z "$line" ] && continue
-                    [ "''${line#\#}" != "$line" ] && continue
-                    set -- $line
-                    user=$1
-                    topic=$2
-                    perm=$3
-                    [ -n "$user" ] && [ -n "$topic" ] && [ -n "$perm" ] || continue
-                    case "$perm" in
-                        rw|ro|wo) ;;
-                        *)
-                            echo "ntfy-matrix-bot-acl: invalid permission '$perm', skipping" >&2
-                            continue
-                            ;;
-                    esac
-                    if ! ${pkgs.sqlite}/bin/sqlite3 "$AUTH_DB" \
-                        "SELECT 1 FROM user WHERE user = '$user' AND deleted IS NULL LIMIT 1;" \
-                        | ${pkgs.gnugrep}/bin/grep -q 1; then
-                        echo "ntfy-matrix-bot-acl: ntfy user '$user' not found, skipping" >&2
-                        continue
-                    fi
-                    ${pkgs.ntfy-sh}/bin/ntfy access "$user" "$topic" "$perm" \
-                        || echo "ntfy-matrix-bot-acl: failed ACL $user $topic $perm" >&2
-                done < ${aclSecret.path}
-            '';
         };
 
         services.traefik.dynamicConfigOptions.http.middlewares = mkIf rateLimitEnabled {

@@ -32,17 +32,15 @@ in
         enable = mkEnableOption ''
             Matrix reminder bot that pushes room activity to public ntfy topics.
 
-            Requires a dedicated Matrix bot account, per-user ntfy topics on the VPS,
-            and YAML config in sops (matrix/ntfy-bot-config). See module comments
-            in hosts/homelab for onboarding steps.
+            Configure via the matrix/ntfy-bot object in sops (secrets/shared/selfhost.yaml).
         '';
 
-        configSopsKey = mkOption {
+        sopsKey = mkOption {
             type = types.str;
-            default = "matrix/ntfy-bot-config";
+            default = "matrix/ntfy-bot";
             description = ''
-                Sops secret path containing the bot YAML config (access token, rooms,
-                subscribers). Stored in secrets/shared/selfhost.yaml.
+                Sops object prefix. Uses matrix/ntfy-bot/config and matrix/ntfy-bot/token from
+                secrets/shared/selfhost.yaml.
             '';
         };
 
@@ -76,7 +74,9 @@ in
         };
     };
 
-    config = mkIf (matrixCfg.enable && cfg.enable) {
+    config = mkIf (matrixCfg.enable && cfg.enable) (let
+        mb = cfg.sopsKey;
+    in {
         nixpkgs.config.permittedInsecurePackages = [
             "olm-3.2.16"
         ];
@@ -85,7 +85,14 @@ in
             sopsFile = ../../../secrets/shared/selfhost.yaml;
         };
 
-        sops.secrets.${cfg.configSopsKey} = {
+        sops.secrets."${mb}/config" = {
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
+            owner = "matrix-ntfy-bot";
+            group = "matrix-ntfy-bot";
+            mode = "0400";
+        };
+
+        sops.secrets."${mb}/token" = {
             sopsFile = ../../../secrets/shared/selfhost.yaml;
             owner = "matrix-ntfy-bot";
             group = "matrix-ntfy-bot";
@@ -110,8 +117,10 @@ in
             };
             script = ''
                 DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
+                NTFY_TOKEN=$(${pkgs.coreutils}/bin/tr -d '[:space:]' < ${config.sops.secrets."${mb}/token".path})
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
                 NTFY_URL=https://${cfg.ntfySubdomain}.$DOMAIN
+                NTFY_TOKEN=$NTFY_TOKEN
                 EOF
                 chown matrix-ntfy-bot:matrix-ntfy-bot ${runtimeEnv}
                 chmod 400 ${runtimeEnv}
@@ -141,8 +150,9 @@ in
                     source ${runtimeEnv}
                     set +a
                     exec ${matrixNtfyBot}/bin/matrix-ntfy-bot \
-                        ${config.sops.secrets.${cfg.configSopsKey}.path} \
+                        ${config.sops.secrets."${mb}/config".path} \
                         --ntfy-url "$NTFY_URL" \
+                        --ntfy-token "$NTFY_TOKEN" \
                         --homeserver "http://127.0.0.1:${toString matrixCfg.synapsePort}" \
                         --store-path "${cfg.dataDir}" \
                         --icon-url "${cfg.iconUrl}" \
@@ -150,5 +160,5 @@ in
                 '';
             };
         };
-    };
+    });
 }

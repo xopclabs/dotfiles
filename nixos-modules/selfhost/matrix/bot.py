@@ -36,14 +36,19 @@ class BotState:
         self.encrypted_rooms: Set[str] = set()
 
 
-def load_config(path: Path) -> Dict[str, Any]:
+def load_config(path: Path, ntfy_token: Optional[str] = None) -> Dict[str, Any]:
     with path.open(encoding='utf-8') as handle:
         data = yaml.safe_load(handle)
     if not isinstance(data, dict):
         raise ValueError('config must be a YAML mapping')
-    for key in ('access_token', 'user_id', 'device_id', 'ntfy_token', 'rooms', 'subscribers'):
+    required = ('access_token', 'user_id', 'device_id', 'rooms', 'subscribers')
+    for key in required:
         if key not in data:
             raise ValueError(f'missing required config key: {key}')
+    if ntfy_token:
+        data['ntfy_token'] = ntfy_token.strip()
+    elif 'ntfy_token' not in data:
+        raise ValueError('missing required config key: ntfy_token (or pass --ntfy-token)')
     return data
 
 
@@ -270,7 +275,7 @@ def setup_client(
 
 
 async def run_bot(config_path: Path, runtime: Dict[str, Any]) -> None:
-    config = load_config(config_path)
+    config = load_config(config_path, runtime.get('ntfy_token'))
     state = BotState()
 
     for room in config['rooms']:
@@ -300,6 +305,11 @@ def main() -> None:
         help='Public ntfy base URL (e.g. https://ntfy.example.com)',
     )
     parser.add_argument(
+        '--ntfy-token',
+        default=None,
+        help='ntfy publish token (overrides ntfy_token in config YAML)',
+    )
+    parser.add_argument(
         '--homeserver',
         default='http://127.0.0.1:8098',
         help='Synapse client API URL reachable from this host',
@@ -325,6 +335,7 @@ def main() -> None:
 
     runtime = {
         'ntfy_url': args.ntfy_url,
+        'ntfy_token': args.ntfy_token,
         'homeserver': args.homeserver,
         'store_path': str(args.store_path),
         'icon_url': args.icon_url,
