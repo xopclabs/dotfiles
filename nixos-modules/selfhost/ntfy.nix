@@ -189,11 +189,11 @@ in
                 )
                 SUBSCRIBER_USERS=""
                 while IFS= read -r line || [ -n "$line" ]; do
-                    line=$(${pkgs.gnused}/bin/sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                    line=$(${pkgs.gnused}/bin/sed 's/^[[:space:]]*//;s/[[:space:]]*$//' <<< "$line")
                     [ -z "$line" ] && continue
                     case "$line" in \#*) continue ;; esac
-                    user=$(${pkgs.gnused}/bin/sed 's/:.*$//')
-                    pass=$(${pkgs.gnused}/bin/sed 's/^[^:]*://')
+                    user=$(${pkgs.gnused}/bin/sed 's/:.*$//' <<< "$line")
+                    pass=$(${pkgs.gnused}/bin/sed 's/^[^:]*://' <<< "$line")
                     if [ -z "$user" ] || [ -z "$pass" ]; then
                         echo "ntfy-env: invalid subscriber line (need user:password): $line" >&2
                         exit 1
