@@ -51,25 +51,22 @@ in
             };
         };
 
-        unifiedPush = {
+        matrixBot = {
             enable = mkOption {
-                type = types.nullOr types.bool;
-                default = null;
+                type = types.bool;
+                default = false;
                 description = ''
-                    Configure ACLs for UnifiedPush / Matrix push topics (up* prefix).
-                    Null auto-enables for public subdomains (not ending in .local).
+                    Apply per-topic ACLs for the Matrix ntfy reminder bot.
+                    Requires ntfy users to exist before deploy.
                 '';
             };
 
-            subscriberUsersSopsKey = mkOption {
+            aclSopsKey = mkOption {
                 type = types.str;
-                default = "ntfy/unified-push-subscribers";
+                default = "ntfy/matrix-bot-acl";
                 description = ''
-                    Sops secret (one ntfy username per line) for logged-in UnifiedPush
-                    subscribers. Each user gets read-only access to up* topics via
-                    `ntfy access` after server start (CLI-created users are not valid in
-                    NTFY_AUTH_ACCESS). Users must exist (`ntfy user add`) before deploy.
-                    Stored in secrets/hosts/<hostname>.yaml (encrypted).
+                    Sops secret (one entry per line: "ntfy_user topic rw|ro").
+                    Stored in secrets/hosts/<hostname>.yaml.
                 '';
             };
         };
@@ -78,21 +75,17 @@ in
     config = mkIf cfg.enable (let
         rateLimitEnabled = if cfg.rateLimit != null then cfg.rateLimit else isPublic;
         fail2banEnabled = if cfg.fail2ban.enable != null then cfg.fail2ban.enable else isPublic;
-        unifiedPushEnabled =
-            if cfg.unifiedPush.enable != null
-            then cfg.unifiedPush.enable
-            else isPublic;
-
-        subscriberUsersSecret =
-            if unifiedPushEnabled
-            then config.sops.secrets.${cfg.unifiedPush.subscriberUsersSopsKey}
+        matrixBotEnabled = cfg.matrixBot.enable && isPublic;
+        aclSecret =
+            if matrixBotEnabled
+            then config.sops.secrets.${cfg.matrixBot.aclSopsKey}
             else null;
     in {
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
         };
 
-        sops.secrets.${cfg.unifiedPush.subscriberUsersSopsKey} = mkIf unifiedPushEnabled {
+        sops.secrets.${cfg.matrixBot.aclSopsKey} = mkIf matrixBotEnabled {
             sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
         };
 
@@ -112,43 +105,7 @@ in
                 DOMAIN_BASE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
                 NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
-                NTFY_AUTH_ACCESS=*:up*:rw
                 EOF
-            '';
-        };
-
-        systemd.services.ntfy-unified-push-acl = mkIf unifiedPushEnabled {
-            description = "Apply per-user UnifiedPush read ACLs for CLI-created ntfy users";
-            after = [ "ntfy-sh.service" ];
-            requires = [ "ntfy-sh.service" ];
-            wantedBy = [ "multi-user.target" ];
-            serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-            };
-            script = ''
-                AUTH_DB=/var/lib/ntfy-sh/auth.db
-                export NTFY_AUTH_FILE="$AUTH_DB"
-                [ -f "$AUTH_DB" ] || exit 0
-                while IFS= read -r user || [ -n "$user" ]; do
-                    user=$(printf '%s' "$user" | ${pkgs.gnused}/bin/sed 's/[[:space:]]//g')
-                    [ -z "$user" ] && continue
-                    [ "''${user#\#}" != "$user" ] && continue
-                    case "$user" in
-                        *[!a-zA-Z0-9_.-]*)
-                            echo "ntfy-unified-push-acl: invalid username '$user', skipping" >&2
-                            continue
-                            ;;
-                    esac
-                    if ! ${pkgs.sqlite}/bin/sqlite3 "$AUTH_DB" \
-                        "SELECT 1 FROM user WHERE user = '$user' AND deleted IS NULL LIMIT 1;" \
-                        | ${pkgs.gnugrep}/bin/grep -q 1; then
-                        echo "ntfy-unified-push-acl: ntfy user '$user' not found, skipping" >&2
-                        continue
-                    fi
-                    ${pkgs.ntfy-sh}/bin/ntfy access "$user" 'up*' ro \
-                        || echo "ntfy-unified-push-acl: failed to set ACL for '$user'" >&2
-                done < ${subscriberUsersSecret.path}
             '';
         };
 
@@ -175,6 +132,47 @@ in
         systemd.services.ntfy-sh = {
             after = [ "ntfy-env.service" ];
             requires = [ "ntfy-env.service" ];
+        };
+
+        systemd.services.ntfy-matrix-bot-acl = mkIf matrixBotEnabled {
+            description = "Apply ntfy ACLs for Matrix reminder bot topics";
+            after = [ "ntfy-sh.service" ];
+            requires = [ "ntfy-sh.service" ];
+            wantedBy = [ "multi-user.target" ];
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+            };
+            script = ''
+                AUTH_DB=/var/lib/ntfy-sh/auth.db
+                export NTFY_AUTH_FILE="$AUTH_DB"
+                [ -f "$AUTH_DB" ] || exit 0
+                while IFS= read -r line || [ -n "$line" ]; do
+                    line=$(printf '%s' "$line" | ${pkgs.gnused}/bin/sed 's/[[:space:]]\+/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//')
+                    [ -z "$line" ] && continue
+                    [ "''${line#\#}" != "$line" ] && continue
+                    set -- $line
+                    user=$1
+                    topic=$2
+                    perm=$3
+                    [ -n "$user" ] && [ -n "$topic" ] && [ -n "$perm" ] || continue
+                    case "$perm" in
+                        rw|ro|wo) ;;
+                        *)
+                            echo "ntfy-matrix-bot-acl: invalid permission '$perm', skipping" >&2
+                            continue
+                            ;;
+                    esac
+                    if ! ${pkgs.sqlite}/bin/sqlite3 "$AUTH_DB" \
+                        "SELECT 1 FROM user WHERE user = '$user' AND deleted IS NULL LIMIT 1;" \
+                        | ${pkgs.gnugrep}/bin/grep -q 1; then
+                        echo "ntfy-matrix-bot-acl: ntfy user '$user' not found, skipping" >&2
+                        continue
+                    fi
+                    ${pkgs.ntfy-sh}/bin/ntfy access "$user" "$topic" "$perm" \
+                        || echo "ntfy-matrix-bot-acl: failed ACL $user $topic $perm" >&2
+                done < ${aclSecret.path}
+            '';
         };
 
         services.traefik.dynamicConfigOptions.http.middlewares = mkIf rateLimitEnabled {

@@ -51,6 +51,7 @@
         ntfy = {
             enable = true;
             subdomain = "ntfy";
+            matrixBot.enable = true;
         };
 
         borgbackup = {

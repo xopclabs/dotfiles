@@ -26,7 +26,7 @@ with lib;
         ./shadowing.nix
         ./tandoor-recipes.nix
         ./syncthing.nix
-        ./matrix.nix
+        ./matrix/matrix.nix
         ./reitti.nix
         ./ollama.nix
         ./vaultwarden.nix

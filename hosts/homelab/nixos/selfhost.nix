@@ -292,14 +292,17 @@
         };
 
         # Matrix messaging & voice/video calls
+        # ntfy-bot onboarding (once):
+        # 1. register_new_matrix_user → @ntfy-bot; invite to family rooms
+        # 2. VPS: ntfy user add matrix-bot; per-user secret topics
+        # 3. sops secrets/shared/selfhost.yaml → matrix/ntfy-bot-config
+        # 4. sops secrets/hosts/vps.yaml → ntfy/matrix-bot-acl (user topic rw|ro)
+        # 5. Family installs ntfy app, subscribes to their private topic
         matrix = {
             enable = true;
             subdomain = "matrix.vm.local";
             elementSubdomain = "element.vm.local";
-            push = {
-                enable = true;
-                ntfySubdomain = "ntfy";
-            };
+            ntfyBot.enable = true;
         };
 
         syncthing = {
