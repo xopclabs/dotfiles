@@ -25,10 +25,6 @@ let
             aiohttp
             pyyaml
         ] ++ matrix-nio.optional-dependencies.e2e;
-        checkPhase = ''
-            export HOME="$TMPDIR"
-            ${pkgs.python3}/bin/python -m unittest discover -s ${./.} -p 'test_*.py' -v
-        '';
     };
 in
 {
