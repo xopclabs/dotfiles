@@ -84,6 +84,24 @@ in
                     (ntfy.matrix-bot in the YAML file).
                 '';
             };
+
+            subscribersSopsKey = mkOption {
+                type = types.str;
+                default = "ntfy/subscribers";
+                description = ''
+                    Multiline sops secret on secrets/hosts/<hostname>.yaml with one
+                    username:password per line (family ntfy accounts for topic ACL).
+                '';
+            };
+
+            adminSubscribers = mkOption {
+                type = types.listOf types.str;
+                default = [ "pavel" ];
+                description = ''
+                    ntfy subscriber usernames provisioned with the admin role (full access,
+                    no per-topic ACL entries needed).
+                '';
+            };
         };
     };
 
@@ -105,6 +123,10 @@ in
             if matrixBotEnabled
             then config.sops.secrets."${hostMb}/acl"
             else null;
+        subscribersSecret =
+            if matrixBotEnabled
+            then config.sops.secrets."${cfg.matrixBot.subscribersSopsKey}"
+            else null;
     in {
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
@@ -119,6 +141,10 @@ in
         };
 
         sops.secrets."${hostMb}/acl" = mkIf matrixBotEnabled {
+            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+        };
+
+        sops.secrets."${cfg.matrixBot.subscribersSopsKey}" = mkIf matrixBotEnabled {
             sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
         };
 
@@ -161,6 +187,41 @@ in
                         | ${pkgs.ntfy-sh}/bin/ntfy user hash \
                         | ${pkgs.coreutils}/bin/tail -n1
                 )
+                SUBSCRIBER_USERS=""
+                while IFS= read -r line || [ -n "$line" ]; do
+                    line=$(${pkgs.gnused}/bin/sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                    [ -z "$line" ] && continue
+                    case "$line" in \#*) continue ;; esac
+                    user=$(${pkgs.gnused}/bin/sed 's/:.*$//')
+                    pass=$(${pkgs.gnused}/bin/sed 's/^[^:]*://')
+                    case "$user:$pass" in
+                        :*|*:)
+                            echo "ntfy-env: invalid subscriber line (need user:password): $line" >&2
+                            exit 1
+                            ;;
+                    esac
+                    case "$pass" in
+                        ""|CHANGE_ME*|change_me*)
+                            echo "ntfy-env: set a real password for subscriber $user in sops (${cfg.matrixBot.subscribersSopsKey})" >&2
+                            exit 1
+                            ;;
+                    esac
+                    sub_hash=$(
+                        printf '%s\n%s\n' "$pass" "$pass" \
+                            | ${pkgs.ntfy-sh}/bin/ntfy user hash \
+                            | ${pkgs.coreutils}/bin/tail -n1
+                    )
+                    role=user
+                    ${concatMapStringsSep "\n" (u: ''
+                      if [ "$user" = "${u}" ]; then role=admin; fi
+                    '') cfg.matrixBot.adminSubscribers}
+                    entry="$user:$sub_hash:$role"
+                    if [ -z "$SUBSCRIBER_USERS" ]; then
+                        SUBSCRIBER_USERS="$entry"
+                    else
+                        SUBSCRIBER_USERS="$SUBSCRIBER_USERS,$entry"
+                    fi
+                done < ${subscribersSecret.path}
                 ACL=$(${pkgs.gawk}/bin/gawk '
                     /^[[:space:]]*#/ { next }
                     /^[[:space:]]*$/ { next }
@@ -176,7 +237,13 @@ in
                     END { print out }
                 ' ${aclSecret.path})
                 ${pkgs.coreutils}/bin/cat >> ${runtimeEnv} <<EOF
-                NTFY_AUTH_USERS=${cfg.matrixBot.username}:$HASH:user
+                NTFY_AUTH_USERS=$(
+                    if [ -n "$SUBSCRIBER_USERS" ]; then
+                        echo "${cfg.matrixBot.username}:$HASH:user,$SUBSCRIBER_USERS"
+                    else
+                        echo "${cfg.matrixBot.username}:$HASH:user"
+                    fi
+                )
                 NTFY_AUTH_TOKENS=${cfg.matrixBot.username}:$TOKEN:matrix-reminder-bot
                 NTFY_AUTH_ACCESS=$ACL
                 EOF
