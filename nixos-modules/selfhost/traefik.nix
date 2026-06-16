@@ -23,7 +23,10 @@ let
         clientCert ? null,
         serversTransport ? null,
         publicAlias ? null,
-        publicCertDomains ? [ { main = "$DOMAIN"; sans = [ "*.$DOMAIN" ]; } ]
+        publicCertDomains ? [ { main = "$DOMAIN"; sans = [ "*.$DOMAIN" ]; } ],
+        pathPrefix ? null,
+        pathPrefixExtra ? [ ],
+        priority ? null,
     }: 
     let
         # Determine default middlewares based on subdomain pattern
@@ -40,14 +43,24 @@ let
             else if clientCert != null then clientCert
             else if insecureSkipVerify then "insecureTransport"
             else null;
+
+        pathRule =
+            if pathPrefix != null
+            then " && (" + concatStringsSep " || " (
+                [ "PathPrefix(`${pathPrefix}`)" ]
+                ++ map (prefix: "PathPrefix(`${prefix}`)") pathPrefixExtra
+            ) + ")"
+            else "";
     in {
         routers = {
             ${name} = {
-                rule = "Host(`${subdomain}.$DOMAIN`)";
+                rule = "Host(`${subdomain}.$DOMAIN`)" + pathRule;
                 inherit entryPoints;
                 middlewares = actualMiddlewares;
                 service = name;
                 tls = { inherit certResolver; };
+            } // optionalAttrs (priority != null) {
+                inherit priority;
             };
         } // optionalAttrs (publicAlias != null) {
             # Sibling router that exposes the same backend on a public hostname.
@@ -199,6 +212,30 @@ in
                             Certificate domains to request for the public alias router.
                             Defaults to a wildcard for `$DOMAIN`. Only used when
                             `publicAlias` is set.
+                        '';
+                    };
+                    pathPrefix = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        example = "/_matrix";
+                        description = ''
+                            When set, the router rule also requires this path prefix
+                            (combined with `pathPrefixExtra` via OR). Useful for
+                            exposing an API on the same host as a web UI.
+                        '';
+                    };
+                    pathPrefixExtra = mkOption {
+                        type = types.listOf types.str;
+                        default = [ ];
+                        example = [ "/.well-known/matrix" ];
+                        description = "Additional path prefixes OR-ed with `pathPrefix`.";
+                    };
+                    priority = mkOption {
+                        type = types.nullOr types.int;
+                        default = null;
+                        description = ''
+                            Traefik router priority. Higher values win over broader
+                            host-only routes on the same hostname.
                         '';
                     };
                 };

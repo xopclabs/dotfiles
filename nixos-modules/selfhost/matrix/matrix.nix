@@ -6,7 +6,7 @@ let
 
     synapseRuntimeConfigTemplate = pkgs.writeText "synapse-runtime-config.yaml.tpl" (''
 server_name: "$MATRIX_SERVER_NAME"
-public_baseurl: "https://$MATRIX_SERVER_NAME"
+public_baseurl: "https://$MATRIX_ELEMENT_BASE_URL"
 '' + optionalString cfg.coturn.enable ''
 turn_uris:
   - "turn:$MATRIX_SERVER_NAME:${toString cfg.coturn.port}?transport=udp"
@@ -16,7 +16,9 @@ turn_uris:
     elementConfigTemplate = pkgs.writeText "element-config.json.tpl" (builtins.toJSON {
         default_server_config = {
             "m.homeserver" = {
-                base_url = "https://$MATRIX_SERVER_NAME";
+                # Same origin as Element Web avoids browser private-network blocks on
+                # cross-host requests (element.vm.local -> matrix.vm.local).
+                base_url = "https://$MATRIX_ELEMENT_BASE_URL";
                 server_name = "$MATRIX_SERVER_NAME";
             };
         };
@@ -204,6 +206,7 @@ in
                     (pkgs.writeShellScript "matrix-synapse-runtime-config" ''
                         set -euo pipefail
                         export MATRIX_SERVER_NAME="${cfg.subdomain}.$DOMAIN"
+                        export MATRIX_ELEMENT_BASE_URL="${cfg.elementSubdomain}.$DOMAIN"
                         ${pkgs.envsubst}/bin/envsubst -i "${synapseRuntimeConfigTemplate}" > /run/matrix-synapse/runtime-config.yaml
                     '')
                 ];
@@ -215,6 +218,9 @@ in
                 listen = [{ addr = "127.0.0.1"; port = cfg.elementPort; }];
                 root = "${pkgs.element-web}";
                 locations."= /config.json".alias = "/run/element-web/config.json";
+                # Element also requests config.<hostname>.json; without this, tryFiles
+                # falls through to index.html and breaks startup.
+                locations."~ ^/config\\..+\\.json$".alias = "/run/element-web/config.json";
                 locations."/".tryFiles = "$uri $uri/ /index.html";
             };
 
@@ -232,6 +238,7 @@ in
                     ExecStart = pkgs.writeShellScript "element-web-config" ''
                         set -euo pipefail
                         export MATRIX_SERVER_NAME="${cfg.subdomain}.$DOMAIN"
+                        export MATRIX_ELEMENT_BASE_URL="${cfg.elementSubdomain}.$DOMAIN"
                         ${pkgs.envsubst}/bin/envsubst -i "${elementConfigTemplate}" > /run/element-web/config.json
                     '';
                 };
@@ -313,6 +320,14 @@ in
                     name = "element-web";
                     subdomain = cfg.elementSubdomain;
                     backendUrl = "http://127.0.0.1:${toString cfg.elementPort}";
+                }
+                {
+                    name = "element-matrix-api";
+                    subdomain = cfg.elementSubdomain;
+                    backendUrl = "http://127.0.0.1:${toString cfg.synapsePort}";
+                    pathPrefix = "/_matrix";
+                    pathPrefixExtra = [ "/.well-known/matrix" ];
+                    priority = 100;
                 }
             ];
         })
