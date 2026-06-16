@@ -64,17 +64,24 @@ in
 
             username = mkOption {
                 type = types.str;
-                default = "matrix/ntfy-bot";
+                default = "matrix-bot";
                 description = "ntfy username for the Matrix reminder bot publisher";
             };
 
-            sopsKey = mkOption {
+            sharedSopsKey = mkOption {
                 type = types.str;
                 default = "matrix/ntfy-bot";
                 description = ''
-                    Sops object prefix for bot secrets. VPS uses matrix/ntfy-bot/password and
-                    matrix/ntfy-bot/acl from secrets/hosts/<hostname>.yaml; matrix/ntfy-bot/token
-                    from secrets/shared/selfhost.yaml.
+                    Sops prefix on secrets/shared/selfhost.yaml for matrix/ntfy-bot/token.
+                '';
+            };
+
+            hostSopsKey = mkOption {
+                type = types.str;
+                default = "ntfy/matrix-bot";
+                description = ''
+                    Sops prefix on secrets/hosts/<hostname>.yaml for password and acl
+                    (ntfy.matrix-bot in the YAML file).
                 '';
             };
         };
@@ -84,33 +91,34 @@ in
         rateLimitEnabled = if cfg.rateLimit != null then cfg.rateLimit else isPublic;
         fail2banEnabled = if cfg.fail2ban.enable != null then cfg.fail2ban.enable else isPublic;
         matrixBotEnabled = cfg.matrixBot.enable && isPublic;
-        mb = cfg.matrixBot.sopsKey;
+        sharedMb = cfg.matrixBot.sharedSopsKey;
+        hostMb = cfg.matrixBot.hostSopsKey;
         passwordSecret =
             if matrixBotEnabled
-            then config.sops.secrets."${mb}/password"
+            then config.sops.secrets."${hostMb}/password"
             else null;
         tokenSecret =
             if matrixBotEnabled
-            then config.sops.secrets."${mb}/token"
+            then config.sops.secrets."${sharedMb}/token"
             else null;
         aclSecret =
             if matrixBotEnabled
-            then config.sops.secrets."${mb}/acl"
+            then config.sops.secrets."${hostMb}/acl"
             else null;
     in {
         sops.secrets.domain = {
             sopsFile = ../../secrets/shared/selfhost.yaml;
         };
 
-        sops.secrets."${mb}/password" = mkIf matrixBotEnabled {
+        sops.secrets."${hostMb}/password" = mkIf matrixBotEnabled {
             sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
         };
 
-        sops.secrets."${mb}/token" = mkIf matrixBotEnabled {
+        sops.secrets."${sharedMb}/token" = mkIf matrixBotEnabled {
             sopsFile = ../../secrets/shared/selfhost.yaml;
         };
 
-        sops.secrets."${mb}/acl" = mkIf matrixBotEnabled {
+        sops.secrets."${hostMb}/acl" = mkIf matrixBotEnabled {
             sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
         };
 
@@ -138,13 +146,13 @@ in
                     tk_?????????????????????????????)
                         ;;
                     *)
-                        echo "ntfy-env: invalid ${mb}/token (need tk_ + 29 chars)" >&2
+                        echo "ntfy-env: invalid ${sharedMb}/token (need tk_ + 29 chars)" >&2
                         exit 1
                         ;;
                 esac
                 case "$PASSWORD" in
                     ""|CHANGE_ME*|change_me*)
-                        echo "ntfy-env: set a real password in sops (${mb}/password)" >&2
+                        echo "ntfy-env: set a real password in sops (${hostMb}/password)" >&2
                         exit 1
                         ;;
                 esac
