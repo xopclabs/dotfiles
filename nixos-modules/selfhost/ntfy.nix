@@ -194,12 +194,10 @@ in
                     case "$line" in \#*) continue ;; esac
                     user=$(${pkgs.gnused}/bin/sed 's/:.*$//')
                     pass=$(${pkgs.gnused}/bin/sed 's/^[^:]*://')
-                    case "$user:$pass" in
-                        :*|*:)
-                            echo "ntfy-env: invalid subscriber line (need user:password): $line" >&2
-                            exit 1
-                            ;;
-                    esac
+                    if [ -z "$user" ] || [ -z "$pass" ]; then
+                        echo "ntfy-env: invalid subscriber line (need user:password): $line" >&2
+                        exit 1
+                    fi
                     case "$pass" in
                         ""|CHANGE_ME*|change_me*)
                             echo "ntfy-env: set a real password for subscriber $user in sops (${cfg.matrixBot.subscribersSopsKey})" >&2
