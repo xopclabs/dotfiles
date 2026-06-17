@@ -1,145 +1,151 @@
 [
     // ================================================================
-    // UNIVERSAL LEADER = F1
+    // UNIVERSAL LEADER = F4
     //
-    // One coherent rule, like Super in Hyprland: F1 then a key, and it
-    // fires the same in the editor (any vim mode), the terminal, and the
-    // AI chat textbox. No Esc-to-normal-mode required, no shell clashes.
+    // One coherent rule, like Super in Hyprland: F4 then a key.
+    // Works in the editor, terminal, and chat textbox (no Esc needed).
     //
     //   Direction (neio = left/down/up/right) -> focus panes
     //   d = close/kill            s/h = split (side/down, tmux-style)
     //   f = fuzzy open any file   / = search in files
-    //   b = sidebar   t = terminal   q = command palette
-    //   a = AI group  c = code   g = goto/git   r = run/debug   w = move
+    //   b = sidebar   t = terminal   q = command palette   z = maximize focused pane
+    //   a = AI group (a a toggle chat panel, a i insert selection)
+    //   c = code   g = goto/git   r = run/debug   w = move
     // ================================================================
     {
-        "command": "-workbench.action.showCommands",
-        "key": "f1"
-    },
-    {
         "command": "workbench.action.showCommands",
-        "key": "f1 q"
+        "key": "f4 q"
     },
-
-    // ---- Pane focus (works in every context) -----------------------
     {
         "command": "workbench.action.navigateLeft",
-        "key": "f1 n"
+        "key": "f4 n"
     },
     {
         "command": "workbench.action.navigateDown",
-        "key": "f1 e"
+        "key": "f4 e"
     },
     {
         "command": "workbench.action.navigateUp",
-        "key": "f1 i"
+        "key": "f4 i"
     },
     {
         "command": "workbench.action.navigateRight",
-        "key": "f1 o"
+        "key": "f4 o"
     },
-    // Guaranteed exits: leave chat to the left, leave terminal upward,
-    // even when the spatial navigate* command would no-op.
     {
         "command": "workbench.action.focusActiveEditorGroup",
-        "key": "f1 n",
+        "key": "f4 n",
         "when": "composerFocused || focusedView =~ /^workbench.panel.aichat.view/"
     },
     {
         "command": "workbench.action.focusActiveEditorGroup",
-        "key": "f1 i",
+        "key": "f4 i",
         "when": "terminalFocus"
     },
-
-    // ---- AI chat / agent (F1 a ...) --------------------------------
-    // Focus toggle: into chat, or back to the editor if already there.
     {
-        "command": "composer.focusComposer",
-        "key": "f1 a s",
-        "when": "!composerFocused && !(focusedView =~ /^workbench.panel.aichat.view/)"
+        "command": "workbench.action.maximizeChatSize",
+        "key": "f4 z",
+        "when": "composerFocused || chatInputHasFocus || focusedView =~ /^workbench.panel.aichat.view/"
     },
     {
-        "command": "workbench.action.focusActiveEditorGroup",
-        "key": "f1 a s",
-        "when": "composerFocused || focusedView =~ /^workbench.panel.aichat.view/"
+        "command": "workbench.action.toggleMaximizedPanel",
+        "key": "f4 z",
+        "when": "terminalFocus"
+    },
+    {
+        "command": "workbench.action.maximizeEditorHideSidebar",
+        "key": "f4 z",
+        "when": "!terminalFocus && !composerFocused && !chatInputHasFocus && !(focusedView =~ /^workbench.panel.aichat.view/) && (sideBarVisible || auxiliaryBarVisible)"
+    },
+    {
+        "args": {
+            "commands": [
+                "workbench.action.toggleSidebarVisibility",
+                "workbench.action.toggleAuxiliaryBar",
+                "workbench.action.evenEditorWidths"
+            ]
+        },
+        "command": "runCommands",
+        "key": "f4 z",
+        "when": "!terminalFocus && !composerFocused && !chatInputHasFocus && !(focusedView =~ /^workbench.panel.aichat.view/) && !sideBarVisible && !auxiliaryBarVisible"
+    },
+    {
+        "command": "composer.startComposerPrompt2",
+        "key": "f4 a a"
     },
     {
         "command": "composer.newAgentChat",
-        "key": "f1 a n"
+        "key": "f4 a n"
     },
     {
         "command": "aichat.newchataction",
-        "key": "f1 a q"
+        "key": "f4 a q"
     },
     {
         "command": "composer.startComposerPromptFromSelection",
-        "key": "f1 a a",
+        "key": "f4 a i",
         "when": "editorTextFocus"
     },
     {
         "command": "aipopup.action.modal.generate",
-        "key": "f1 a e",
+        "key": "f4 a e",
         "when": "editorTextFocus"
     },
     {
         "command": "composer.acceptComposerStep",
-        "key": "f1 a y"
+        "key": "f4 a y"
     },
     {
         "command": "composer.cancelComposerStep",
-        "key": "f1 a d"
+        "key": "f4 a d"
     },
-
-    // ---- Tabs / splits / editor movement ---------------------------
     {
         "command": "workbench.action.closeActiveEditor",
-        "key": "f1 d"
+        "key": "f4 d"
     },
     {
         "command": "workbench.action.previousEditorInGroup",
-        "key": "f1 comma"
+        "key": "f4 comma"
     },
     {
         "command": "workbench.action.nextEditorInGroup",
-        "key": "f1 dot"
+        "key": "f4 dot"
     },
     {
         "command": "workbench.action.splitEditor",
-        "key": "f1 s"
+        "key": "f4 s"
     },
     {
         "command": "workbench.action.splitEditorDown",
-        "key": "f1 h"
+        "key": "f4 h"
     },
     {
         "command": "workbench.action.moveEditorToLeftGroup",
-        "key": "f1 w n"
+        "key": "f4 w n"
     },
     {
         "command": "workbench.action.moveEditorToBelowGroup",
-        "key": "f1 w e"
+        "key": "f4 w e"
     },
     {
         "command": "workbench.action.moveEditorToAboveGroup",
-        "key": "f1 w i"
+        "key": "f4 w i"
     },
     {
         "command": "workbench.action.moveEditorToRightGroup",
-        "key": "f1 w o"
+        "key": "f4 w o"
     },
-
-    // ---- Files / search / workbench toggles ------------------------
     {
         "command": "workbench.action.quickOpen",
-        "key": "f1 f"
+        "key": "f4 f"
     },
     {
         "command": "workbench.action.findInFiles",
-        "key": "f1 slash"
+        "key": "f4 slash"
     },
     {
         "command": "workbench.action.terminal.toggleTerminal",
-        "key": "f1 t"
+        "key": "f4 t"
     },
     {
         "args": {
@@ -149,7 +155,7 @@
             ]
         },
         "command": "runCommands",
-        "key": "f1 b",
+        "key": "f4 b",
         "when": "!sideBarFocus"
     },
     {
@@ -160,78 +166,68 @@
             ]
         },
         "command": "runCommands",
-        "key": "f1 b",
+        "key": "f4 b",
         "when": "sideBarFocus"
     },
     {
         "command": "workbench.view.scm",
-        "key": "f1 g g"
+        "key": "f4 g g"
     },
-
-    // ---- Code (F1 c ...) -------------------------------------------
     {
         "command": "editor.action.codeAction",
-        "key": "f1 c a",
+        "key": "f4 c a",
         "when": "editorTextFocus"
     },
     {
         "command": "editor.action.rename",
-        "key": "f1 c r",
+        "key": "f4 c r",
         "when": "editorTextFocus"
     },
     {
         "command": "workbench.action.gotoSymbol",
-        "key": "f1 c s",
+        "key": "f4 c s",
         "when": "editorTextFocus"
     },
-
-    // ---- Goto (F1 g ...) -------------------------------------------
     {
         "command": "editor.action.revealDefinition",
-        "key": "f1 g d",
+        "key": "f4 g d",
         "when": "editorTextFocus"
     },
     {
         "command": "editor.action.goToReferences",
-        "key": "f1 g r",
+        "key": "f4 g r",
         "when": "editorTextFocus"
     },
-
-    // ---- Run / debug (F1 r ...) ------------------------------------
     {
         "command": "workbench.action.debug.selectandstart",
-        "key": "f1 r a",
+        "key": "f4 r a",
         "when": "debuggersAvailable"
     },
     {
         "command": "workbench.action.debug.stop",
-        "key": "f1 r t",
+        "key": "f4 r t",
         "when": "inDebugMode && !focusedSessionIsAttached"
     },
     {
         "command": "workbench.action.debug.stepOver",
-        "key": "f1 r o",
+        "key": "f4 r o",
         "when": "inDebugMode && debugState == 'stopped'"
     },
     {
         "command": "editor.debug.action.toggleBreakpoint",
-        "key": "f1 r b",
+        "key": "f4 r b",
         "when": "editorTextFocus"
     },
     {
         "command": "editor.debug.action.showDebugHover",
-        "key": "f1 r e",
+        "key": "f4 r e",
         "when": "editorTextFocus && inDebugMode && debugState == 'stopped'"
     },
     {
         "command": "workbench.action.debug.continue",
-        "key": "f1 r c",
+        "key": "f4 r c",
         "when": "inDebugMode && debugState == 'stopped'"
     },
-
-    // ================================================================
-    // Editor vim niceties (not leader-based)
-    // ================================================================
     {
         "command": "editor.action.moveLinesUpAction",
         "key": "shift-k",
@@ -247,14 +243,6 @@
         "key": "shift-k",
         "when": "vim.mode == 'Normal' && editorTextFocus"
     },
-
-    // ================================================================
-    // Vim-everywhere: home-row navigation in non-editor surfaces.
-    // Rule: e/i = down/up where you are NOT typing,
-    //       ctrl+e/ctrl+i where an input is focused.
-    // ================================================================
-
-    // Generic lists / trees (sidebar, search results, etc.)
     {
         "command": "list.focusDown",
         "key": "e",
@@ -275,8 +263,6 @@
         "key": "n",
         "when": "listFocus && !inputFocus"
     },
-
-    // Quick open / quick input (you ARE typing -> ctrl+e/ctrl+i)
     {
         "command": "workbench.action.quickOpenSelectNext",
         "key": "ctrl+e",
@@ -287,8 +273,6 @@
         "key": "ctrl+i",
         "when": "inQuickOpen"
     },
-
-    // References peek widget
     {
         "command": "goToNextReference",
         "key": "e",
@@ -299,8 +283,6 @@
         "key": "i",
         "when": "referenceSearchVisible && !inputFocus"
     },
-
-    // Notification toasts
     {
         "command": "notifications.focusNextToast",
         "key": "e",
@@ -316,10 +298,6 @@
         "key": "d",
         "when": "notificationFocus"
     },
-
-    // ================================================================
-    // File explorer (vim-like single-key operations)
-    // ================================================================
     {
         "command": "renameFile",
         "key": "r",

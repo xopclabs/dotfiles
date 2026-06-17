@@ -127,5 +127,6 @@
     "keyboard.dispatch": "keyCode",
     "window.commandCenter": true,
     "window.autoDetectColorScheme": false,
-    "cursor.composer.editorConversationDensity": "compact-ungrouped"
+    "cursor.composer.editorConversationDensity": "compact-ungrouped",
+    "workbench.statusBar.visible": false
 }
