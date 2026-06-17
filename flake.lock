@@ -937,6 +937,26 @@
         "type": "github"
       }
     },
+    "openspec": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780479100,
+        "narHash": "sha256-VZZ/ukjciXqiebwei2JizyOnxx0T3IeoowFWElKec4o=",
+        "owner": "Fission-AI",
+        "repo": "OpenSpec",
+        "rev": "1b06fddd59d8e592d5b5794a1970b22867e85b1f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Fission-AI",
+        "repo": "OpenSpec",
+        "type": "github"
+      }
+    },
     "plover": {
       "inputs": {
         "nixpkgs": "nixpkgs_6",
@@ -1061,6 +1081,7 @@
         "nixpkgs": "nixpkgs_3",
         "nixvim": "nixvim",
         "nur": "nur",
+        "openspec": "openspec",
         "plover": "plover",
         "prismlauncher": "prismlauncher",
         "shadowing": "shadowing",

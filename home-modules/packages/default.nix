@@ -7,5 +7,6 @@ in {
     imports = [
         ./common.nix
         ./optional.nix
+        ./dev.nix
     ];
 }

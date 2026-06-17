@@ -60,7 +60,10 @@
 
         desktop.other.xdg.enable = true;
 
-        packages.common.enable = true;
+        packages = {
+            common.enable = true;
+            dev.enable = true;
+        };
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
 }

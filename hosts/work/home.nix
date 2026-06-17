@@ -6,9 +6,6 @@
         sessionVariables = {
             NH_FLAKE = "$HOME/dotfiles";
         };
-        packages = with pkgs; [
-            uv
-        ];
     };
 
     # Make non-nix packages work

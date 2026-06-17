@@ -54,6 +54,9 @@
     
         autofirma.url = "github:nix-community/autofirma-nix";
         autofirma.inputs.nixpkgs.follows = "nixpkgs";
+
+        openspec.url = "github:Fission-AI/OpenSpec";
+        openspec.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
