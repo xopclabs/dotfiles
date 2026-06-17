@@ -1,44 +1,145 @@
 [
-    // Navigation around tabs, panes
+    // ================================================================
+    // UNIVERSAL LEADER = F1
+    //
+    // One coherent rule, like Super in Hyprland: F1 then a key, and it
+    // fires the same in the editor (any vim mode), the terminal, and the
+    // AI chat textbox. No Esc-to-normal-mode required, no shell clashes.
+    //
+    //   Direction (neio = left/down/up/right) -> focus panes
+    //   d = close/kill            s/h = split (side/down, tmux-style)
+    //   f = fuzzy open any file   / = search in files
+    //   b = sidebar   t = terminal   q = command palette
+    //   a = AI group  c = code   g = goto/git   r = run/debug   w = move
+    // ================================================================
+    {
+        "command": "-workbench.action.showCommands",
+        "key": "f1"
+    },
+    {
+        "command": "workbench.action.showCommands",
+        "key": "f1 q"
+    },
+
+    // ---- Pane focus (works in every context) -----------------------
     {
         "command": "workbench.action.navigateLeft",
-        "key": "space t n",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "key": "f1 n"
     },
     {
         "command": "workbench.action.navigateDown",
-        "key": "space t e",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "key": "f1 e"
+    },
+    {
+        "command": "workbench.action.navigateUp",
+        "key": "f1 i"
     },
     {
         "command": "workbench.action.navigateRight",
-        "key": "space t o",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "key": "f1 o"
     },
+    // Guaranteed exits: leave chat to the left, leave terminal upward,
+    // even when the spatial navigate* command would no-op.
+    {
+        "command": "workbench.action.focusActiveEditorGroup",
+        "key": "f1 n",
+        "when": "composerFocused || focusedView =~ /^workbench.panel.aichat.view/"
+    },
+    {
+        "command": "workbench.action.focusActiveEditorGroup",
+        "key": "f1 i",
+        "when": "terminalFocus"
+    },
+
+    // ---- AI chat / agent (F1 a ...) --------------------------------
+    // Focus toggle: into chat, or back to the editor if already there.
+    {
+        "command": "composer.focusComposer",
+        "key": "f1 a s",
+        "when": "!composerFocused && !(focusedView =~ /^workbench.panel.aichat.view/)"
+    },
+    {
+        "command": "workbench.action.focusActiveEditorGroup",
+        "key": "f1 a s",
+        "when": "composerFocused || focusedView =~ /^workbench.panel.aichat.view/"
+    },
+    {
+        "command": "composer.newAgentChat",
+        "key": "f1 a n"
+    },
+    {
+        "command": "aichat.newchataction",
+        "key": "f1 a q"
+    },
+    {
+        "command": "composer.startComposerPromptFromSelection",
+        "key": "f1 a a",
+        "when": "editorTextFocus"
+    },
+    {
+        "command": "aipopup.action.modal.generate",
+        "key": "f1 a e",
+        "when": "editorTextFocus"
+    },
+    {
+        "command": "composer.acceptComposerStep",
+        "key": "f1 a y"
+    },
+    {
+        "command": "composer.cancelComposerStep",
+        "key": "f1 a d"
+    },
+
+    // ---- Tabs / splits / editor movement ---------------------------
     {
         "command": "workbench.action.closeActiveEditor",
-        "key": "space t d",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "key": "f1 d"
     },
     {
-        "command": "workbench.action.closeOtherEditors",
-        "key": "space t o",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "command": "workbench.action.previousEditorInGroup",
+        "key": "f1 comma"
+    },
+    {
+        "command": "workbench.action.nextEditorInGroup",
+        "key": "f1 dot"
     },
     {
         "command": "workbench.action.splitEditor",
-        "key": "space t v",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "key": "f1 s"
     },
     {
         "command": "workbench.action.splitEditorDown",
-        "key": "space t h",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "key": "f1 h"
     },
     {
-        "command": "workbench.action.showAllEditors",
-        "key": "space t f",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "command": "workbench.action.moveEditorToLeftGroup",
+        "key": "f1 w n"
+    },
+    {
+        "command": "workbench.action.moveEditorToBelowGroup",
+        "key": "f1 w e"
+    },
+    {
+        "command": "workbench.action.moveEditorToAboveGroup",
+        "key": "f1 w i"
+    },
+    {
+        "command": "workbench.action.moveEditorToRightGroup",
+        "key": "f1 w o"
+    },
+
+    // ---- Files / search / workbench toggles ------------------------
+    {
+        "command": "workbench.action.quickOpen",
+        "key": "f1 f"
+    },
+    {
+        "command": "workbench.action.findInFiles",
+        "key": "f1 slash"
+    },
+    {
+        "command": "workbench.action.terminal.toggleTerminal",
+        "key": "f1 t"
     },
     {
         "args": {
@@ -48,8 +149,8 @@
             ]
         },
         "command": "runCommands",
-        "key": "space e",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus) && !sideBarFocus"
+        "key": "f1 b",
+        "when": "!sideBarFocus"
     },
     {
         "args": {
@@ -59,40 +160,78 @@
             ]
         },
         "command": "runCommands",
-        "key": "space e",
-        "when": "sideBarFocus && !inputFocus"
+        "key": "f1 b",
+        "when": "sideBarFocus"
     },
     {
-        "command": "workbench.action.toggleSidebarVisibility",
-        "key": "space e",
-        "when": "vim.mode == 'Normal' && editorTextFocus && foldersViewVisible"
-    },
-    
-    // Terminal
-    {
-        "command": "workbench.action.terminal.new",
-        "key": "ctrl+t n",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
-    },
-    {
-        "command": "workbench.action.terminal.focus",
-        "key": "ctrl+t s",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
-    },
-    {
-        "command": "workbench.action.terminal.toggleTerminal",
-        "key": "ctrl+t d",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus || terminalFocus)"
+        "command": "workbench.view.scm",
+        "key": "f1 g g"
     },
 
-    
-    
-    // Code actions
+    // ---- Code (F1 c ...) -------------------------------------------
     {
         "command": "editor.action.codeAction",
-        "key": "space c a",
-        "when": "vim.mode == 'Normal' && editorTextFocus"
+        "key": "f1 c a",
+        "when": "editorTextFocus"
     },
+    {
+        "command": "editor.action.rename",
+        "key": "f1 c r",
+        "when": "editorTextFocus"
+    },
+    {
+        "command": "workbench.action.gotoSymbol",
+        "key": "f1 c s",
+        "when": "editorTextFocus"
+    },
+
+    // ---- Goto (F1 g ...) -------------------------------------------
+    {
+        "command": "editor.action.revealDefinition",
+        "key": "f1 g d",
+        "when": "editorTextFocus"
+    },
+    {
+        "command": "editor.action.goToReferences",
+        "key": "f1 g r",
+        "when": "editorTextFocus"
+    },
+
+    // ---- Run / debug (F1 r ...) ------------------------------------
+    {
+        "command": "workbench.action.debug.selectandstart",
+        "key": "f1 r a",
+        "when": "debuggersAvailable"
+    },
+    {
+        "command": "workbench.action.debug.stop",
+        "key": "f1 r t",
+        "when": "inDebugMode && !focusedSessionIsAttached"
+    },
+    {
+        "command": "workbench.action.debug.stepOver",
+        "key": "f1 r o",
+        "when": "inDebugMode && debugState == 'stopped'"
+    },
+    {
+        "command": "editor.debug.action.toggleBreakpoint",
+        "key": "f1 r b",
+        "when": "editorTextFocus"
+    },
+    {
+        "command": "editor.debug.action.showDebugHover",
+        "key": "f1 r e",
+        "when": "editorTextFocus && inDebugMode && debugState == 'stopped'"
+    },
+    {
+        "command": "workbench.action.debug.continue",
+        "key": "f1 r c",
+        "when": "inDebugMode && debugState == 'stopped'"
+    },
+
+    // ================================================================
+    // Editor vim niceties (not leader-based)
+    // ================================================================
     {
         "command": "editor.action.moveLinesUpAction",
         "key": "shift-k",
@@ -108,44 +247,79 @@
         "key": "shift-k",
         "when": "vim.mode == 'Normal' && editorTextFocus"
     },
+
+    // ================================================================
+    // Vim-everywhere: home-row navigation in non-editor surfaces.
+    // Rule: e/i = down/up where you are NOT typing,
+    //       ctrl+e/ctrl+i where an input is focused.
+    // ================================================================
+
+    // Generic lists / trees (sidebar, search results, etc.)
     {
-        "command": "editor.action.rename",
-        "key": "space c r",
-        "when": "vim.mode == 'Normal' && editorTextFocus"
+        "command": "list.focusDown",
+        "key": "e",
+        "when": "listFocus && !inputFocus"
     },
     {
-        "command": "workbench.action.gotoSymbol",
-        "key": "space c s",
-        "when": "vim.mode == 'Normal' && editorTextFocus"
+        "command": "list.focusUp",
+        "key": "i",
+        "when": "listFocus && !inputFocus"
     },
     {
-        "command": "workbench.action.quickOpen",
-        "key": "space space",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "command": "list.expand",
+        "key": "o",
+        "when": "listFocus && !inputFocus"
     },
     {
-        "command": "editor.action.revealDefinition",
-        "key": "space g d",
-        "when": "vim.mode == 'Normal' && editorTextFocus"
+        "command": "list.collapse",
+        "key": "n",
+        "when": "listFocus && !inputFocus"
+    },
+
+    // Quick open / quick input (you ARE typing -> ctrl+e/ctrl+i)
+    {
+        "command": "workbench.action.quickOpenSelectNext",
+        "key": "ctrl+e",
+        "when": "inQuickOpen"
     },
     {
-        "command": "editor.action.goToReferences",
-        "key": "space g r",
-        "when": "vim.mode == 'Normal' && editorTextFocus"
+        "command": "workbench.action.quickOpenSelectPrevious",
+        "key": "ctrl+i",
+        "when": "inQuickOpen"
+    },
+
+    // References peek widget
+    {
+        "command": "goToNextReference",
+        "key": "e",
+        "when": "referenceSearchVisible && !inputFocus"
     },
     {
-        "args": {
-            "commands": [
-                "workbench.view.scm",
-                "workbench.scm.focus"
-            ]
-        },
-        "command": "runCommands",
-        "key": "space g g",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus)"
+        "command": "goToPreviousReference",
+        "key": "i",
+        "when": "referenceSearchVisible && !inputFocus"
     },
-    
-    // File explorer
+
+    // Notification toasts
+    {
+        "command": "notifications.focusNextToast",
+        "key": "e",
+        "when": "notificationFocus"
+    },
+    {
+        "command": "notifications.focusPreviousToast",
+        "key": "i",
+        "when": "notificationFocus"
+    },
+    {
+        "command": "notification.clear",
+        "key": "d",
+        "when": "notificationFocus"
+    },
+
+    // ================================================================
+    // File explorer (vim-like single-key operations)
+    // ================================================================
     {
         "command": "renameFile",
         "key": "r",
@@ -203,67 +377,13 @@
         "key": "enter",
         "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceIsRoot && explorerResourceIsFolder && !inputFocus"
     },
-    
-    // Debugger
-    {
-        "command": "workbench.action.debug.selectandstart",
-        "key": "space d a",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus) && debuggersAvailable"
-    },
-    {
-        "command": "workbench.action.debug.stop",
-        "key": "space d t",
-        "when": "vim.mode == 'Normal' && editorTextFocus && inDebugMode && !focusedSessionIsAttached"
-    },
-    {
-        "command": "workbench.action.debug.stepOver",
-        "key": "space d o",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus) && inDebugMode && debugState == 'stopped'"
-    },
-    {
-        "command": "editor.debug.action.toggleBreakpoint",
-        "key": "space d b",
-        "when": "vim.mode == 'Normal' && editorTextFocus"
-    },
-    {
-        "command": "editor.debug.action.showDebugHover",
-        "key": "space d e",
-        "when": "vim.mode == 'Normal' && editorTextFocus && inDebugMode && debugState == 'stopped'"
-    },
-    {
-        "command": "workbench.action.debug.continue",
-        "key": "space d c",
-        "when": "vim.mode == 'Normal' && (editorTextFocus || !inputFocus) && inDebugMode && debugState == 'stopped'"
-    },
-    
-    // AI chat
-    {
-        "command": "composer.newAgentChat",
-        "key": "space a n",
-        "when": "vim.mode == 'Normal' && editorTextFocus && !composerBarIsVisible"
-    },
-    {
-        "command": "aichat.insertselectionintochat",
-        "key": "space a a",
-        "when": "vim.mode == 'Normal' && editorTextFocus && !composerBarIsVisible"
-    },
-    {
-        "command": "aipopup.action.modal.generate",
-        "key": "space a e",
-        "when": "vim.mode == 'Normal' && editorTextFocus && !composerBarIsVisible"
-    },
-    {
-        "command": "aichat.newchataction",
-        "key": "space a q",
-        "when": "vim.mode == 'Normal' && editorTextFocus && !composerBarIsVisible"
-    },
+
+    // ================================================================
+    // Cursor default-binding cleanup (preserved from prior config)
+    // ================================================================
     {
         "command": "-aichat.newchataction",
-        "key": "ctrl+l",
-    },
-    {
-        "key": "ctrl+i",
-        "command": "-composer.startComposerPrompt"
+        "key": "ctrl+l"
     },
     {
         "key": "ctrl+shift+backspace",
@@ -279,35 +399,5 @@
         "key": "ctrl+shift+[Backslash]",
         "command": "-editor.action.commentLine",
         "when": "editorTextFocus && !editorReadonly"
-    },
-    {
-        "key": "ctrl+[IntlBackslash]",
-        "command": "-editor.action.accessibleViewAcceptInlineCompletion",
-        "when": "accessibleViewIsShown && accessibleViewCurrentProviderId == 'inlineCompletions'"
-    },
-    {
-        "key": "ctrl+[IntlBackslash]",
-        "command": "-cmdk.togglePromptBarModel",
-        "when": "editorHasPromptBar && editorPromptBarFocused"
-    },
-    {
-        "key": "ctrl+[IntlBackslash]",
-        "command": "-composer.openModelToggle",
-        "when": "composerFocused && !editorTextFocus"
-    },
-    {
-        "key": "ctrl+[IntlBackslash]",
-        "command": "-terminalSuggestToggleExplainMode",
-        "when": "terminalFocus && terminalHasBeenCreated && terminalIsOpen && terminalSuggestWidgetVisible || terminalFocus && terminalIsOpen && terminalProcessSupported && terminalSuggestWidgetVisible"
-    },
-    {
-        "key": "ctrl+[IntlBackslash]",
-        "command": "-toggleExplainMode",
-        "when": "suggestWidgetVisible"
-    },
-    {
-        "key": "ctrl+[IntlBackslash]",
-        "command": "-workbench.action.terminal.sendSequence",
-        "when": "terminalFocus"
-    },
+    }
 ]
