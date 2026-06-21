@@ -6,9 +6,10 @@
     // Works in the editor, terminal, and chat textbox (no Esc needed).
     //
     //   Direction (neio = left/down/up/right) -> focus panes
-    //   d = close/kill            s/h = split (side/down, tmux-style)
+    //   d = close/kill            h = split down   s s = split side (tmux-style)
     //   f = fuzzy open any file   / = search in files
-    //   b = sidebar   t = terminal   q = command palette   z = maximize focused pane
+    //   s = sidebar panels (s d files, s f find, s g scm, s r run)
+    //   b = sidebar toggle        t = terminal   q = command palette   z = maximize focused pane
     //   a = AI group (a a toggle chat panel, a i insert selection)
     //   c = code   g = goto/git   r = run/debug   w = move
     // ================================================================
@@ -71,7 +72,18 @@
     },
     {
         "command": "composer.startComposerPrompt2",
-        "key": "f4 a a"
+        "key": "f4 a a",
+        "when": "composerFocused || chatInputHasFocus || focusedView =~ /^workbench.panel.aichat.view/"
+    },
+    {
+        "command": "composer.focusComposer",
+        "key": "f4 a a",
+        "when": "terminalFocus && !(composerFocused || chatInputHasFocus || focusedView =~ /^workbench.panel.aichat.view/)"
+    },
+    {
+        "command": "composer.startComposerPrompt2",
+        "key": "f4 a a",
+        "when": "!terminalFocus && !(composerFocused || chatInputHasFocus || focusedView =~ /^workbench.panel.aichat.view/)"
     },
     {
         "command": "composer.newAgentChat",
@@ -113,11 +125,75 @@
     },
     {
         "command": "workbench.action.splitEditor",
-        "key": "f4 s"
+        "key": "f4 s s"
     },
     {
         "command": "workbench.action.splitEditorDown",
         "key": "f4 h"
+    },
+    {
+        "command": "workbench.view.explorer",
+        "key": "f4 s d",
+        "when": "!sideBarVisible || activeViewlet != 'workbench.view.explorer'"
+    },
+    {
+        "args": {
+            "commands": [
+                "workbench.action.toggleSidebarVisibility",
+                "workbench.action.focusActiveEditorGroup"
+            ]
+        },
+        "command": "runCommands",
+        "key": "f4 s d",
+        "when": "sideBarVisible && activeViewlet == 'workbench.view.explorer'"
+    },
+    {
+        "command": "workbench.view.search",
+        "key": "f4 s f",
+        "when": "!sideBarVisible || activeViewlet != 'workbench.view.search'"
+    },
+    {
+        "args": {
+            "commands": [
+                "workbench.action.toggleSidebarVisibility",
+                "workbench.action.focusActiveEditorGroup"
+            ]
+        },
+        "command": "runCommands",
+        "key": "f4 s f",
+        "when": "sideBarVisible && activeViewlet == 'workbench.view.search'"
+    },
+    {
+        "command": "workbench.view.scm",
+        "key": "f4 s g",
+        "when": "!sideBarVisible || activeViewlet != 'workbench.view.scm'"
+    },
+    {
+        "args": {
+            "commands": [
+                "workbench.action.toggleSidebarVisibility",
+                "workbench.action.focusActiveEditorGroup"
+            ]
+        },
+        "command": "runCommands",
+        "key": "f4 s g",
+        "when": "sideBarVisible && activeViewlet == 'workbench.view.scm'"
+    },
+    {
+        "command": "workbench.view.debug",
+        "key": "f4 s r",
+        "when": "!sideBarVisible || activeViewlet != 'workbench.view.debug'"
+    },
+    {
+        "args": {
+            "commands": [
+                "workbench.action.toggleSidebarVisibility",
+                "workbench.action.focusActiveEditorGroup"
+            ]
+        },
+        "command": "runCommands",
+        "key": "f4 s r",
+        "when": "sideBarVisible && activeViewlet == 'workbench.view.debug'"
     },
     {
         "command": "workbench.action.moveEditorToLeftGroup",
