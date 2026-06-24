@@ -88,7 +88,7 @@ in
             icon = "perimeter81";
             startupWMClass = "Perimeter81";
             comment = "Perimeter81 Linux Agent";
-            mimeTypes = [ "x-scheme-handler/perimeter81" ];
+            mimeTypes = [ "x-scheme-handler/harmonysase" "x-scheme-handler/perimeter81" ];
             categories = [ "Network" ];
         })];
     }
