@@ -105,6 +105,8 @@ in
                 "local" = "homelab";
                 "pi.local" = "pi";
                 "vps.local" = "vps";
+                "alpha" = "alpha";
+                "beta" = "beta";
                 "" = "vps";
             };
             example = {
@@ -112,6 +114,8 @@ in
                 "local" = "homelab";
                 "pi.local" = "pi";
                 "vps.local" = "vps";
+                "alpha" = "alpha";
+                "beta" = "beta";
                 "" = "vps";
             };
             description = ''

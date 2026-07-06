@@ -139,16 +139,6 @@
                 host = "127.0.0.1";
                 port = 10808;
             };
-            clients = {
-                vps = {
-                    address = "10.13.13.2/24";
-                    routeAllTraffic = false;
-                    peer = {
-                        publicKey = "FPVXWSxA7pu4YznVvoqTPdJilNYghEA6Z8bBj69GqQg=";
-                        allowedIPs = [ "0.0.0.0/0" ];
-                    };
-                };
-            };
         };
 
         # Dashboard

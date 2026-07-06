@@ -8,16 +8,9 @@
     config.desktop = {
         singbox = {
             enable = true;
-            outbounds = {
-                wg = {
-                    enable = true;
-                    bindInterface = "wg-vps";
-                    bindAddress = "10.13.13.2";
-                };
-                xray.subscriptions = {
-                    alpha = true;
-                    beta = true;
-                };
+            outbounds.xray.subscriptions = {
+                alpha = true;
+                beta = true;
             };
             proxychains = {
                 enable = true;

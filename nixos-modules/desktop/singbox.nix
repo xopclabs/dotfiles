@@ -196,9 +196,9 @@ in
 
                 ${optionalString cfg.outbounds.xray.subscriptions.beta ''
                 echo "Fetching subscription-beta"
-                if ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/singbox-sub-beta.json \
+                if ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /var/lib/sing-box/sub-beta.json \
                     "$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-beta".path})"; then
-                    ${convertSubscription "sub-beta" "/tmp/singbox-sub-beta.json"}
+                    ${convertSubscription "sub-beta" "/var/lib/sing-box/sub-beta.json"}
                 else
                     echo "WARNING: sing-box-update-config: curl failed for subscription-beta"
                 fi
@@ -206,9 +206,9 @@ in
 
                 ${optionalString cfg.outbounds.xray.subscriptions.alpha ''
                 echo "Fetching subscription-alpha"
-                if ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /tmp/singbox-sub-alpha.json \
+                if ${pkgs.curl}/bin/curl --connect-timeout 10 --max-time 15 -fLo /var/lib/sing-box/sub-alpha.json \
                     "$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."xray/subscription-alpha".path})"; then
-                    ${convertSubscription "sub-alpha" "/tmp/singbox-sub-alpha.json"}
+                    ${convertSubscription "sub-alpha" "/var/lib/sing-box/sub-alpha.json"}
                 else
                     echo "WARNING: sing-box-update-config: curl failed for subscription-alpha"
                 fi
