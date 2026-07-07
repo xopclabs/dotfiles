@@ -1,14 +1,15 @@
-{ writeShellScriptBin, iproute2, procps, systemd }:
+{ writeShellScriptBin, coreutils, iproute2, procps, systemd }:
 
 writeShellScriptBin "p81-reset" ''
     set -euo pipefail
     IP=${iproute2}/bin/ip
     PKILL=${procps}/bin/pkill
+    SLEEP=${coreutils}/bin/sleep
     SYSTEMCTL=${systemd}/bin/systemctl
 
     echo 'p81-reset: stopping perimeter81-helper-daemon...'
     "$SYSTEMCTL" stop perimeter81-helper-daemon || true
-    sleep 2
+    "$SLEEP" 2
 
     echo 'p81-reset: killing stray Perimeter81 child processes (if any)...'
     # Bubblewrap children may survive briefly; match paths seen in ps/cmdline
@@ -16,7 +17,7 @@ writeShellScriptBin "p81-reset" ''
         "$PKILL" -"$sig" -f '/opt/Perimeter81/binaries/openvpn' 2>/dev/null || true
         "$PKILL" -"$sig" -f 'Perimeter81.*openvpn' 2>/dev/null || true
         "$PKILL" -"$sig" -f 'p81daemonhelper' 2>/dev/null || true
-        sleep 0.3
+        "$SLEEP" 0.3
     done
 
     echo 'p81-reset: flushing routes and removing tun0 (if present)...'
@@ -27,6 +28,17 @@ writeShellScriptBin "p81-reset" ''
         "$IP" link set tun0 down 2>/dev/null || true
         "$IP" link delete tun0 2>/dev/null || true
     fi
+
+    echo 'p81-reset: removing stale IPC socket and leftover temp files...'
+    # The daemon creates /tmp/app.p81helper on startup; after a hard kill it is
+    # not unlinked.  Leaving it can cause the GUI to stay connected to a dead
+    # socket and report a phantom "connected" state while the new daemon listens
+    # on a different descriptor.
+    rm -f /tmp/app.p81helper
+
+    # Atomic-write temporaries (config.json.<pid>) that survive a SIGKILL can
+    # confuse the daemon's state machine on the next start.
+    rm -f /var/lib/p81/etc/xopc/config.json.[0-9]* 2>/dev/null || true
 
     echo 'p81-reset: starting perimeter81-helper-daemon...'
     "$SYSTEMCTL" start perimeter81-helper-daemon

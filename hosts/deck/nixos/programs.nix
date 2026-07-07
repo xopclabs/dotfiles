@@ -54,6 +54,8 @@
         p81 = {
             enable = true;
             splitDns.enable = true;
+            sleepResumeRecovery = "async-reset";
+            sleepResumeDelaySec = 30;
         };
         ereader_relay = {
             enable = true;

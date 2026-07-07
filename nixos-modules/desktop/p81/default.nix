@@ -96,7 +96,7 @@ in
             (mkIf (cfg.sleepResumeRecovery != "none") (let
                 postResumeRun = pkgs.writeShellScript "p81-postresume-run" ''
                     set -euo pipefail
-                    sleep ${toString cfg.sleepResumeDelaySec}
+                    ${pkgs.coreutils}/bin/sleep ${toString cfg.sleepResumeDelaySec}
                     ${if cfg.sleepResumeRecovery == "async-reset" then ''
                         exec ${p81-reset}/bin/p81-reset
                     '' else ''
