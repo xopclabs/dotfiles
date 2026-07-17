@@ -49,7 +49,7 @@
             fzf.enable = true;
 
             git.enable = true;
-            awscli.enable = true;
+            awscli.enable = false;
             btop.enable = true;
             nh.enable = true;
             tldr.enable = true;

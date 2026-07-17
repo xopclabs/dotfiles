@@ -47,6 +47,7 @@ in {
             devenv
             dust duf
             ncdu
+            openspec
         ];
     };
 }
