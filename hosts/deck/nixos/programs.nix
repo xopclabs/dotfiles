@@ -61,7 +61,11 @@
             enable = true;
             subdomain = "books.vm.local";
         };
-        
+
+        vanta = {
+            enable = true;
+        };
+
         yeetmouse = {
             enable = false; 
             sensitivity = 1.0;

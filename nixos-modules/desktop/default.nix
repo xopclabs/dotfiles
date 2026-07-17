@@ -13,6 +13,7 @@
         ./p81
         ./virtual_webcam.nix
         ./ereader-relay.nix
+        ./vanta.nix
     ];
 }
 

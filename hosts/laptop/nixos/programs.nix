@@ -50,5 +50,9 @@
             enable = true;
             subdomain = "books.vm.local";
         };
+
+        vanta = {
+            enable = true;
+        };
     };
 }

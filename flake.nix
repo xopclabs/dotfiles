@@ -54,6 +54,9 @@
     
         autofirma.url = "github:nix-community/autofirma-nix";
         autofirma.inputs.nixpkgs.follows = "nixpkgs";
+
+        nixos-vanta.url = "github:taho-inc/nixos-vanta";
+        nixos-vanta.inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # All outputs for the system (configs)
@@ -73,6 +76,7 @@
                         inputs.yeetmouse.nixosModules.default
                         inputs.jovian.nixosModules.default
                         inputs.shadowing.nixosModules.default
+                        inputs.nixos-vanta.nixosModules.default
                         {
                             nixpkgs.overlays = [
                                 inputs.nur.overlays.default

@@ -680,6 +680,26 @@
         "type": "github"
       }
     },
+    "nixos-vanta": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1781722160,
+        "narHash": "sha256-GxDxB9ULQGWKjoquWPwD035giT8Xee8Za8LZagabjmc=",
+        "owner": "taho-inc",
+        "repo": "nixos-vanta",
+        "rev": "c2a1a060bd0b4d32375e64b2c4b52ca2ef5c900b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taho-inc",
+        "repo": "nixos-vanta",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1778443072,
@@ -1058,6 +1078,7 @@
         "nix-colors": "nix-colors",
         "nix-minecraft": "nix-minecraft",
         "nix-vscode-extensions": "nix-vscode-extensions",
+        "nixos-vanta": "nixos-vanta",
         "nixpkgs": "nixpkgs_3",
         "nixvim": "nixvim",
         "nur": "nur",
