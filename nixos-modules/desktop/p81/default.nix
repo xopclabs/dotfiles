@@ -53,6 +53,15 @@ in
             "d /var/lib/p81 0755 root root -"
             "d /var/lib/p81/local 0755 root root -"
             "d /var/lib/p81/etc 0755 root root -"
+
+            # The vendor GUI hardcodes /opt/Perimeter81/perimeter81 when it writes its
+            # own ~/.config/autostart/perimeter81.desktop entry (e.g. "launch at login").
+            # That path only exists inside the FHS sandbox, not on the host, so the
+            # generated autostart entry (and any desktop shortcut the app writes itself)
+            # fails with "Exec binary does not exist". Backfill it with a symlink to our
+            # wrapped launcher so those vendor-written entries work unmodified.
+            "d /opt/Perimeter81 0755 root root -"
+            "L+ /opt/Perimeter81/perimeter81 - - - - ${perimeter81}/bin/perimeter81"
         ];
 
         systemd.services.perimeter81-helper-daemon = {
@@ -73,18 +82,41 @@ in
                     chmod 644 /var/lib/p81/resolv.conf
                 '';
                 ExecStart = "${perimeter81}/bin/p81-helper-daemon";
+                # The daemon's own "stop" subcommand has been observed to *never* return
+                # gracefully in practice (every stop on record hits the full timeout), so
+                # a long grace period only slows down restarts, reboots and suspend/resume
+                # recovery without ever paying off. Give it a short chance, then let
+                # systemd's normal KillMode=control-group finish the job.
                 ExecStop = pkgs.writeShellScript "p81-stop" ''
                     set +e
-                    ${pkgs.coreutils}/bin/timeout 35 ${perimeter81}/bin/p81-helper-daemon stop
+                    ${pkgs.coreutils}/bin/timeout 8 ${perimeter81}/bin/p81-helper-daemon stop
                     code=$?
                     if [ "$code" -eq 124 ]; then
-                        echo "p81-stop: graceful stop timed out after 35s" >&2
+                        echo "p81-stop: graceful stop timed out after 8s, systemd will force-kill the cgroup" >&2
                     fi
                     exit 0
                 '';
+                # Deterministic cleanup after every stop (manual, restart, or crash), not
+                # just via the manual `p81-reset` fallback. This is what previously left
+                # state behind across restarts/suspend cycles.
+                ExecStopPost = pkgs.writeShellScript "p81-stop-cleanup" ''
+                    set +e
+                    ${pkgs.coreutils}/bin/rm -f \
+                        /tmp/app.p81helper \
+                        /run/p81-native-helper-parent.socket \
+                        /run/p81-native-helper-child.socket \
+                        /var/run/p81-native-helper-parent.socket \
+                        /var/run/p81-native-helper-child.socket
+                    if ${pkgs.iproute2}/bin/ip link show tun0 &>/dev/null; then
+                        ${pkgs.iproute2}/bin/ip route flush dev tun0 2>/dev/null || true
+                        ${pkgs.iproute2}/bin/ip link delete tun0 2>/dev/null || true
+                    fi
+                    exit 0
+                '';
+                KillMode = "control-group";
                 Restart = "always";
                 RestartSec = "5";
-                TimeoutStopSec = "50";
+                TimeoutStopSec = "20";
                 SyslogIdentifier = "perimeter81helper";
                 User = "root";
                 Group = "root";

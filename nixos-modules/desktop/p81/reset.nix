@@ -29,12 +29,17 @@ writeShellScriptBin "p81-reset" ''
         "$IP" link delete tun0 2>/dev/null || true
     fi
 
-    echo 'p81-reset: removing stale IPC socket and leftover temp files...'
-    # The daemon creates /tmp/app.p81helper on startup; after a hard kill it is
-    # not unlinked.  Leaving it can cause the GUI to stay connected to a dead
-    # socket and report a phantom "connected" state while the new daemon listens
-    # on a different descriptor.
-    rm -f /tmp/app.p81helper
+    echo 'p81-reset: removing stale IPC sockets and leftover temp files...'
+    # The daemon creates /tmp/app.p81helper (and, on some versions, the native
+    # helper sockets below) on startup; after a hard kill these are not
+    # unlinked. Leaving them can cause the GUI to stay connected to a dead
+    # socket and report a phantom "connected" state while the new daemon
+    # listens on a different descriptor.
+    rm -f /tmp/app.p81helper \
+        /run/p81-native-helper-parent.socket \
+        /run/p81-native-helper-child.socket \
+        /var/run/p81-native-helper-parent.socket \
+        /var/run/p81-native-helper-child.socket
 
     # Atomic-write temporaries (config.json.<pid>) that survive a SIGKILL can
     # confuse the daemon's state machine on the next start.
