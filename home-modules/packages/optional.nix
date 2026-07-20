@@ -33,10 +33,11 @@ in {
             pkgs.python3
             pkgs.zoom-us
             pkgs.zotero
-	        pkgs.transmission_4-gtk
+	    pkgs.transmission_4-gtk
             pkgs.android-tools
             pkgs.feishin
             pkgs.rclone
+            pkgs.stremio-linux-shell
         ];
     };
 }
