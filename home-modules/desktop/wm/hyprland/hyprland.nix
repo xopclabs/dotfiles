@@ -251,6 +251,16 @@ in {
                     "float on, match:class ^(zoom)$, match:title ^(annotate_toolbar)$"
                     "no_initial_focus on, match:class ^(zoom)$, match:title ^(annotate_toolbar)$"
 
+                    # Zoom drawing overlay (covers the whole screen while annotating)
+                    "float on, match:class ^(zoom)$, match:title ^(Annotation - Zoom)$"
+                    "no_initial_focus on, match:class ^(zoom)$, match:title ^(Annotation - Zoom)$"
+                    # No native pointer passthrough in Hyprland; no_focus is the closest we get
+                    "no_focus on, match:class ^(zoom)$, match:title ^(Annotation - Zoom)$"
+
+                    # No blur/borders on any zoom popup (drawing overlay, toolbars, camera/share panels)
+                    "no_blur on, match:class ^(zoom)$"
+                    "border_size 0, match:class ^(zoom)$"
+
                     # XWayland stuff
                     "opacity 0.0 override 0.0 override, match:class ^(xwaylandvideobridge)$"
                     "no_anim on, match:class ^(xwaylandvideobridge)$"
