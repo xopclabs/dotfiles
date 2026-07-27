@@ -47,7 +47,10 @@
         vaultwarden = {
             enable = true;
             subdomain = "salt";
-            mtls.enable = true;
+            mtls = {
+	        enable = true;
+	        p12PassphraseSopsKey = "vaultwarden/mtls/p12-passphrase";
+            };
             backup = {
                 enable = true;
                 repo = "og0k9udz@og0k9udz.repo.borgbase.com:repo";
