@@ -213,7 +213,6 @@ in
                 name = "vaultwarden";
                 subdomain = cfg.subdomain;
                 inherit backendUrl;
-                wildcardCert = true;
                 middlewares =
                     if cfg.rateLimit
                     then [ "default-headers" "https-redirect" "vaultwarden-ratelimit" ]
@@ -223,7 +222,6 @@ in
             name = "vaultwarden-admin";
             subdomain = cfg.subdomain;
             inherit backendUrl;
-            wildcardCert = true;
             pathPrefix = "/admin";
             # Outranks the host-only vault router, which matches /admin too.
             priority = 100;

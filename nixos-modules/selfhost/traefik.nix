@@ -32,7 +32,7 @@ let
         serversTransport ? null,
         publicAlias ? null,
         publicCertDomains ? [ { main = "$DOMAIN"; sans = [ "*.$DOMAIN" ]; } ],
-        wildcardCert ? false,
+        wildcardCert ? null,
         pathPrefix ? null,
         pathPrefixExtra ? [ ],
         priority ? null,
@@ -45,6 +45,13 @@ let
             else [ "default-headers" "https-redirect" ];
         
         actualMiddlewares = if middlewares != null then middlewares else defaultMiddlewares;
+
+        # Transparency logs only matter for hostnames an attacker could reach, so
+        # public routes hide behind the wildcard and VPN-only ones need not.
+        useWildcardCert =
+            if wildcardCert != null
+            then wildcardCert
+            else !(requiresWhitelist subdomain);
         
         # Determine which serversTransport to use (explicit > clientCert > insecureSkipVerify)
         transport = 
@@ -68,7 +75,7 @@ let
                 middlewares = actualMiddlewares;
                 service = name;
                 tls = { inherit certResolver; }
-                    // optionalAttrs wildcardCert { domains = wildcardFor subdomain; };
+                    // optionalAttrs useWildcardCert { domains = wildcardFor subdomain; };
             } // optionalAttrs (priority != null) {
                 inherit priority;
             };
@@ -225,12 +232,13 @@ in
                         '';
                     };
                     wildcardCert = mkOption {
-                        type = types.bool;
-                        default = false;
+                        type = types.nullOr types.bool;
+                        default = null;
                         description = ''
                             Serve this route from a wildcard certificate for the subdomain's parent zone instead of ordering one for the exact hostname.
                             Let's Encrypt publishes every issued certificate to public Certificate Transparency logs, so a per-host cert makes the hostname permanently searchable.
                             CT logs are a common discovery vector for scanners hunting specific self-hosted software.
+                            Null auto-enables for public subdomains (not ending in .local), where that exposure actually matters.
                         '';
                     };
                     pathPrefix = mkOption {
