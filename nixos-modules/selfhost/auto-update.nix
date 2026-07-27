@@ -19,57 +19,60 @@ let
             directory = ${cfg.flake}/.git
     '';
 
+    binPath = makeBinPath [
+        pkgs.coreutils
+        pkgs.git
+        pkgs.util-linux
+        pkgs.systemd
+        pkgs.curl
+        config.nix.package
+        pkgs.nixos-rebuild
+    ];
+
     # A no-op stub keeps the update script free of conditionals when ntfy is off.
     notifyFn =
         if cfg.ntfy.enable
         then ''
             notify() {
-                ${pkgs.curl}/bin/curl -fsS \
-                    -H "Authorization: Bearer $(cat ${config.sops.secrets."${publisherTokenSopsKey}".path})" \
-                    -H "Title: $1" \
-                    -H "Priority: $2" \
-                    -H "Tags: $3" \
-                    --data-binary "$4" \
-                    "${cfg.ntfy.url}/${cfg.ntfy.topic}" > /dev/null \
-                    || echo "auto-update: ntfy publish failed" >&2
+                # Prefer loopback; if ntfy was briefly stopped during switch, retry
+                # a few times while it comes back.
+                local i=0
+                while [ "$i" -lt 12 ]; do
+                    if ${pkgs.curl}/bin/curl -fsS \
+                        -H "Authorization: Bearer $(cat ${config.sops.secrets."${publisherTokenSopsKey}".path})" \
+                        -H "Title: $1" \
+                        -H "Priority: $2" \
+                        -H "Tags: $3" \
+                        --data-binary "$4" \
+                        "${cfg.ntfy.url}/${cfg.ntfy.topic}" > /dev/null; then
+                        return 0
+                    fi
+                    i=$((i + 1))
+                    sleep 5
+                done
+                echo "auto-update: ntfy publish failed" >&2
             }
         ''
         else ''
             notify() { :; }
         '';
 
-    updateScript = pkgs.writeShellScript "nixos-auto-update" ''
+    # Runs outside nixos-auto-update.service so `nixos-rebuild switch` can stop
+    # that unit without killing the rebuild mid-activation.
+    rebuildScript = pkgs.writeShellScript "nixos-auto-update-rebuild" ''
         set -euo pipefail
-
-        export PATH="${makeBinPath [
-            pkgs.coreutils
-            pkgs.git
-            pkgs.util-linux
-            config.nix.package
-            pkgs.nixos-rebuild
-        ]}:$PATH"
+        export PATH="${binPath}:$PATH"
+        export HOME="${stateDir}"
 
         ${notifyFn}
 
         lock="${cfg.flake}/flake.lock"
         prev="${stateDir}/flake.lock.prev"
         log="${stateDir}/last-rebuild.log"
-
-        owner=$(stat -c '%u:%g' "$lock")
-        cp -p "$lock" "$prev"
-        before=$(sha256sum "$lock" | cut -d' ' -f1)
-
-        # Track whether the lock was mutated and whether we already notified.
-        # An EXIT trap covers OOM / SIGTERM, which otherwise leave a dirty lock
-        # and skip the failure notification.
-        updated=0
-        finished=0
-        changes=""
+        changes=$(cat "${stateDir}/pending-changes")
+        owner=$(cat "${stateDir}/lock-owner")
 
         revert_lock() {
-            if [ "$updated" != 1 ]; then
-                return 0
-            fi
             if [ "$(sha256sum "$lock" | cut -d' ' -f1)" = "$(sha256sum "$prev" | cut -d' ' -f1)" ]; then
                 return 0
             fi
@@ -78,33 +81,49 @@ let
             chown "$owner" "$lock" || true
         }
 
-        fail_notify() {
-            if [ "$finished" = 1 ]; then
-                return 0
-            fi
-            finished=1
-            revert_lock
-            log_tail=""
-            if [ -f "$log" ]; then
-                log_tail=$(tail -n 40 "$log" | head -c 3500)
-            fi
-            notify "${hostName}: auto-update rebuild FAILED" high rotating_light \
-                "''${changes:-lock was updated}
+        if nixos-rebuild switch \
+            --flake "${cfg.flake}#${hostName}" \
+            --max-jobs ${toString cfg.maxJobs} \
+            --cores ${toString cfg.cores} \
+            2>&1 | tee "$log"; then
+            notify "${hostName}: auto-update applied" default package \
+                "$changes
+
+flake.lock is now dirty. Verify, then commit it to bless this state."
+            exit 0
+        fi
+
+        revert_lock
+        log_tail=$(tail -n 40 "$log" | head -c 3500)
+        notify "${hostName}: auto-update rebuild FAILED" high rotating_light \
+            "$changes
 
 Reverted to the previous lock.
 
 --- last rebuild output ---
 $log_tail"
-        }
+        exit 1
+    '';
 
-        trap fail_notify EXIT
+    updateScript = pkgs.writeShellScript "nixos-auto-update" ''
+        set -euo pipefail
+
+        export PATH="${binPath}:$PATH"
+
+        ${notifyFn}
+
+        lock="${cfg.flake}/flake.lock"
+        prev="${stateDir}/flake.lock.prev"
+
+        owner=$(stat -c '%u:%g' "$lock")
+        cp -p "$lock" "$prev"
+        before=$(sha256sum "$lock" | cut -d' ' -f1)
 
         # Update as the clone's owner so flake.lock stays user-writable and
         # `git checkout flake.lock` keeps working without sudo.
         if ! changes=$(runuser -u ${cfg.user} -- \
             env HOME=${userHome} nix flake update ${concatStringsSep " " cfg.inputs} 2>&1); then
             echo "$changes" >&2
-            finished=1
             notify "${hostName}: flake update failed" high rotating_light "$changes"
             exit 1
         fi
@@ -112,27 +131,32 @@ $log_tail"
 
         if [ "$before" = "$(sha256sum "$lock" | cut -d' ' -f1)" ]; then
             echo "auto-update: inputs already current, nothing to do"
-            finished=1
             exit 0
         fi
-        updated=1
 
-        # Serialise the rebuild. Parallel eval/build is what pushes peak RSS
-        # past a small VPS's RAM+swap budget.
-        if ! nixos-rebuild switch \
-            --flake "${cfg.flake}#${hostName}" \
-            --max-jobs ${toString cfg.maxJobs} \
-            --cores ${toString cfg.cores} \
-            2>&1 | tee "$log"; then
-            fail_notify
+        printf '%s' "$changes" > "${stateDir}/pending-changes"
+        printf '%s' "$owner" > "${stateDir}/lock-owner"
+
+        # Hand the switch off to a transient unit. `nixos-rebuild switch` stops
+        # nixos-auto-update.service when that unit's definition changed (or is
+        # restarted), which would SIGTERM a rebuild running inside this cgroup.
+        if systemctl is-active --quiet nixos-auto-update-rebuild.service; then
+            echo "auto-update: rebuild already running" >&2
             exit 1
         fi
+        systemctl reset-failed nixos-auto-update-rebuild.service 2>/dev/null || true
 
-        finished=1
-        notify "${hostName}: auto-update applied" default package \
-            "$changes
+        systemd-run \
+            --collect \
+            --unit=nixos-auto-update-rebuild \
+            --property=Type=oneshot \
+            --property=WorkingDirectory=${cfg.flake} \
+            --property=Environment=HOME=${stateDir} \
+            --property=TimeoutStartSec=3h \
+            --property=OOMScoreAdjust=200 \
+            ${rebuildScript}
 
-flake.lock is now dirty. Verify, then commit it to bless this state."
+        echo "auto-update: rebuild handed off to nixos-auto-update-rebuild.service"
     '';
 in
 {
@@ -245,23 +269,16 @@ in
         ];
 
         systemd.services.nixos-auto-update = {
-            description = "Update flake inputs and rebuild from the local clone";
-            # Needs the network for both the input fetch and the binary cache.
+            description = "Update flake inputs and hand off a system rebuild";
             after = [ "network-online.target" ];
             wants = [ "network-online.target" ];
             serviceConfig = {
                 Type = "oneshot";
-                # Eval of a full NixOS+HM+nixvim system routinely needs multi-GB
-                # for tens of minutes; never let systemd time it out mid-build.
-                TimeoutStartSec = "3h";
+                # Only the flake update runs here; the rebuild is a transient unit.
+                TimeoutStartSec = "30min";
                 WorkingDirectory = cfg.flake;
                 ExecStart = updateScript;
-                # HOME must be writable for Nix's cache and is where libgit2 looks
-                # for the safe.directory exemption above.
                 Environment = [ "HOME=${stateDir}" ];
-                # Prefer reclaiming from this unit under memory pressure, but do
-                # not set MemoryMax — that would just OOM-kill us earlier.
-                OOMScoreAdjust = 200;
             };
         };
 
