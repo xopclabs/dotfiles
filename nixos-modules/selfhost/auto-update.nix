@@ -25,6 +25,7 @@ let
         pkgs.util-linux
         pkgs.systemd
         pkgs.curl
+        pkgs.jq
         config.nix.package
         pkgs.nixos-rebuild
     ];
@@ -57,6 +58,13 @@ let
             notify() { :; }
         '';
 
+    nixpkgsRevFn = ''
+        nixpkgs_rev() {
+            ${pkgs.jq}/bin/jq -r '.nodes.nixpkgs.locked.rev // empty' "${cfg.flake}/flake.lock" \
+                | ${pkgs.coreutils}/bin/head -c 12
+        }
+    '';
+
     # Runs outside nixos-auto-update.service so `nixos-rebuild switch` can stop
     # that unit without killing the rebuild mid-activation.
     rebuildScript = pkgs.writeShellScript "nixos-auto-update-rebuild" ''
@@ -65,11 +73,11 @@ let
         export HOME="${stateDir}"
 
         ${notifyFn}
+        ${nixpkgsRevFn}
 
         lock="${cfg.flake}/flake.lock"
         prev="${stateDir}/flake.lock.prev"
         log="${stateDir}/last-rebuild.log"
-        changes=$(cat "${stateDir}/pending-changes")
         owner=$(cat "${stateDir}/lock-owner")
 
         revert_lock() {
@@ -86,22 +94,15 @@ let
             --max-jobs ${toString cfg.maxJobs} \
             --cores ${toString cfg.cores} \
             2>&1 | tee "$log"; then
+            rev=$(nixpkgs_rev)
             notify "${hostName}: auto-update applied" default package \
-                "$changes
-
-flake.lock is now dirty. Verify, then commit it to bless this state."
+                "nixpkgs → ''${rev:-unknown}"
             exit 0
         fi
 
         revert_lock
-        log_tail=$(tail -n 40 "$log" | head -c 3500)
-        notify "${hostName}: auto-update rebuild FAILED" high rotating_light \
-            "$changes
-
-Reverted to the previous lock.
-
---- last rebuild output ---
-$log_tail"
+        log_tail=$(tail -n 30 "$log" | head -c 3500)
+        notify "${hostName}: auto-update rebuild FAILED" high rotating_light "$log_tail"
         exit 1
     '';
 
@@ -124,7 +125,8 @@ $log_tail"
         if ! changes=$(runuser -u ${cfg.user} -- \
             env HOME=${userHome} nix flake update ${concatStringsSep " " cfg.inputs} 2>&1); then
             echo "$changes" >&2
-            notify "${hostName}: flake update failed" high rotating_light "$changes"
+            notify "${hostName}: flake update failed" high rotating_light \
+                "$(printf '%s\n' "$changes" | tail -n 30 | head -c 3500)"
             exit 1
         fi
         echo "$changes"
@@ -134,7 +136,6 @@ $log_tail"
             exit 0
         fi
 
-        printf '%s' "$changes" > "${stateDir}/pending-changes"
         printf '%s' "$owner" > "${stateDir}/lock-owner"
 
         # Hand the switch off to a transient unit. `nixos-rebuild switch` stops
