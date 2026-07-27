@@ -11,6 +11,8 @@
             enable = true;
         };
 
+        autoUpdate.enable = true;
+
         traefik = {
             enable = true;
             dashboardSubdomain = "traefik.vps.local";
@@ -41,7 +43,7 @@
 
         vaultwarden = {
             enable = true;
-            subdomain = "vaultwarden";
+            subdomain = "salt";
             backup = {
                 enable = true;
                 repo = "og0k9udz@og0k9udz.repo.borgbase.com:repo";

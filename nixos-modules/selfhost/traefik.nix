@@ -8,6 +8,14 @@ let
     # Local subdomains (*.local) should be whitelisted, public ones should not
     requiresWhitelist = subdomain: 
         builtins.match ".*\\.local$" subdomain != null;
+
+    # A wildcard covers a single label, so a route's wildcard is its parent zone:
+    # "vault" -> "*.$DOMAIN", "vault.vps.local" -> "*.vps.local.$DOMAIN".
+    wildcardFor = subdomain:
+        let parent = concatStringsSep "." (tail (splitString "." subdomain));
+        in if parent == ""
+           then [ { main = "*.$DOMAIN"; sans = [ "$DOMAIN" ]; } ]
+           else [ { main = "*.${parent}.$DOMAIN"; sans = [ "${parent}.$DOMAIN" ]; } ];
     
     # Helper function to create a Traefik route with sensible defaults
     # Usage: mkRoute { name = "service-name"; subdomain = "subdomain.vm.local"; backendUrl = "http://ip:port"; }
@@ -24,6 +32,7 @@ let
         serversTransport ? null,
         publicAlias ? null,
         publicCertDomains ? [ { main = "$DOMAIN"; sans = [ "*.$DOMAIN" ]; } ],
+        wildcardCert ? false,
         pathPrefix ? null,
         pathPrefixExtra ? [ ],
         priority ? null,
@@ -58,7 +67,8 @@ let
                 inherit entryPoints;
                 middlewares = actualMiddlewares;
                 service = name;
-                tls = { inherit certResolver; };
+                tls = { inherit certResolver; }
+                    // optionalAttrs wildcardCert { domains = wildcardFor subdomain; };
             } // optionalAttrs (priority != null) {
                 inherit priority;
             };
@@ -212,6 +222,15 @@ in
                             Certificate domains to request for the public alias router.
                             Defaults to a wildcard for `$DOMAIN`. Only used when
                             `publicAlias` is set.
+                        '';
+                    };
+                    wildcardCert = mkOption {
+                        type = types.bool;
+                        default = false;
+                        description = ''
+                            Serve this route from a wildcard certificate for the subdomain's parent zone instead of ordering one for the exact hostname.
+                            Let's Encrypt publishes every issued certificate to public Certificate Transparency logs, so a per-host cert makes the hostname permanently searchable.
+                            CT logs are a common discovery vector for scanners hunting specific self-hosted software.
                         '';
                     };
                     pathPrefix = mkOption {

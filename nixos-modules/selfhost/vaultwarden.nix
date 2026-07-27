@@ -4,6 +4,7 @@ with lib;
 let
     cfg = config.homelab.vaultwarden;
     runtimeEnv = "/run/vaultwarden/env";
+    backendUrl = "http://127.0.0.1:${toString cfg.port}";
 in
 {
     options.homelab.vaultwarden = {
@@ -45,6 +46,27 @@ in
             type = types.bool;
             default = true;
             description = "Apply Traefik rate limiting to the Vaultwarden route";
+        };
+
+        admin = {
+            restrict = mkOption {
+                type = types.bool;
+                default = true;
+                description = ''
+                    Serve /admin from a dedicated Traefik router that only accepts `admin.allowedRanges`.
+                    The rest of the vault stays reachable from anywhere.
+                '';
+            };
+
+            allowedRanges = mkOption {
+                type = types.listOf types.str;
+                default = optional config.homelab.wireguard.enable config.homelab.wireguard.subnet;
+                example = [ "10.13.13.0/24" ];
+                description = ''
+                    Source ranges permitted to reach /admin.
+                    Defaults to the WireGuard subnet, so the panel is VPN-only.
+                '';
+            };
         };
 
         fail2ban = {
@@ -98,6 +120,16 @@ in
     };
 
     config = mkIf cfg.enable {
+        assertions = [
+            {
+                assertion = cfg.admin.restrict -> cfg.admin.allowedRanges != [ ];
+                message = ''
+                    homelab.vaultwarden.admin.restrict is enabled but admin.allowedRanges is empty, which Traefik rejects.
+                    Enable homelab.wireguard or set the ranges explicitly.
+                '';
+            }
+        ];
+
         sops.secrets = {
             domain = {
                 sopsFile = ../../secrets/shared/selfhost.yaml;
@@ -152,13 +184,18 @@ in
             requires = [ "vaultwarden-env.service" ];
         };
 
-        services.traefik.dynamicConfigOptions.http.middlewares = mkIf cfg.rateLimit {
-            vaultwarden-ratelimit.rateLimit = {
-                average = 10;
-                burst = 25;
-                period = "1m";
-            };
-        };
+        services.traefik.dynamicConfigOptions.http.middlewares = mkMerge [
+            (mkIf cfg.rateLimit {
+                vaultwarden-ratelimit.rateLimit = {
+                    average = 10;
+                    burst = 25;
+                    period = "1m";
+                };
+            })
+            (mkIf cfg.admin.restrict {
+                vaultwarden-admin-allowlist.ipAllowList.sourceRange = cfg.admin.allowedRanges;
+            })
+        ];
 
         homelab.borgbackup.jobs = mkIf (cfg.backup.enable && config.homelab.borgbackup.enable) {
             vaultwarden-borgbase = {
@@ -171,17 +208,28 @@ in
             };
         };
 
-        homelab.traefik.routes = mkIf config.homelab.traefik.enable [
+        homelab.traefik.routes = mkIf config.homelab.traefik.enable ([
             {
                 name = "vaultwarden";
                 subdomain = cfg.subdomain;
-                backendUrl = "http://127.0.0.1:${toString cfg.port}";
+                inherit backendUrl;
+                wildcardCert = true;
                 middlewares =
                     if cfg.rateLimit
                     then [ "default-headers" "https-redirect" "vaultwarden-ratelimit" ]
                     else null;
             }
-        ];
+        ] ++ optional cfg.admin.restrict {
+            name = "vaultwarden-admin";
+            subdomain = cfg.subdomain;
+            inherit backendUrl;
+            wildcardCert = true;
+            pathPrefix = "/admin";
+            # Outranks the host-only vault router, which matches /admin too.
+            priority = 100;
+            middlewares = [ "default-headers" "https-redirect" "vaultwarden-admin-allowlist" ]
+                ++ optional cfg.rateLimit "vaultwarden-ratelimit";
+        });
 
         homelab.fail2ban.jails = mkIf (cfg.fail2ban.enable && config.homelab.fail2ban.enable) [
             {

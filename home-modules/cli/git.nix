@@ -20,6 +20,9 @@ in {
             enable = true;
             settings = {
                 push.autoSetupRemote = true; 
+                # Never authenticate to GitHub over HTTPS, so no token can end up
+                # embedded in a remote URL.
+                url."git@github.com:".insteadOf = "https://github.com/";
                 user = {
                     name = name;
                     email = email;
