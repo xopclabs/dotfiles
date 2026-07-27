@@ -9,9 +9,6 @@
     ];
 
     config.modules = {
-        theming.stylix.enable = true;
-        desktop.other.gtk.enable = true;
-
         cli = {
             zsh.enable = true;
             tmux = {
@@ -30,7 +27,6 @@
             git.enable = true;
             gpg.enable = false;
             ssh.enable = true;
-            udiskie.enable = true;
             btop.enable = true;
             nh.enable = true;
             tldr.enable = true;
