@@ -9,7 +9,12 @@ let
     mtlsPublic = "${mtlsDir}/public";
     mtlsCa = "${mtlsDir}/ca.crt";
     mtlsP12 = "${mtlsPublic}/client.p12";
-    mtlsUsersFile = "/run/vaultwarden/mtls-users";
+    # Must live under mtlsDir so the traefik user can read it (group traefik).
+    mtlsUsersFile = "${mtlsDir}/users";
+    mtlsDownloadSubdomain =
+        if cfg.mtls.downloadSubdomain != null
+        then cfg.mtls.downloadSubdomain
+        else "${cfg.subdomain}-cert";
     vaultMiddlewares =
         [ "default-headers" "https-redirect" ]
         ++ optional cfg.rateLimit "vaultwarden-ratelimit";
@@ -79,8 +84,9 @@ in
 
         mtls = {
             enable = mkEnableOption ''
-                Require a client certificate (mTLS) for Vaultwarden, with a basic-auth
-                break-glass download at /mtls on the same hostname
+                Require a client certificate (mTLS) for Vaultwarden.
+                Break-glass .p12 download is on a separate subdomain (see downloadSubdomain)
+                because Traefik cannot mix mTLS and non-mTLS TLS options on the same Host.
             '';
 
             dataDir = mkOption {
@@ -95,17 +101,27 @@ in
                 description = "Local port for the static .p12 download server";
             };
 
+            downloadSubdomain = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = ''
+                    Public subdomain for the basic-auth .p12 download (no client cert).
+                    Defaults to `<subdomain>-cert` (e.g. salt-cert). Must be a different
+                    hostname than `subdomain` — Traefik TLS options are per-Host, not per-path.
+                '';
+            };
+
             usernameSopsKey = mkOption {
                 type = types.str;
                 default = "vaultwarden/mtls/username";
-                description = "Sops key on secrets/hosts/<hostname>.yaml for the /mtls basic-auth username.";
+                description = "Sops key on secrets/hosts/<hostname>.yaml for the cert-download basic-auth username.";
             };
 
             passwordHashSopsKey = mkOption {
                 type = types.str;
                 default = "vaultwarden/mtls/password-hash";
                 description = ''
-                    Sops key holding a salted password hash for /mtls basic-auth (htpasswd bcrypt).
+                    Sops key holding a salted password hash for cert-download basic-auth (htpasswd bcrypt).
                     Generate with: `htpasswd -nbB USER PASS` and store only the `$2y$...` part
                     (or the full `USER:$2y$...` line — the username field is ignored if present).
                 '';
@@ -185,6 +201,10 @@ in
             {
                 assertion = cfg.mtls.enable -> config.homelab.traefik.enable;
                 message = "homelab.vaultwarden.mtls.enable requires homelab.traefik.enable (mTLS is enforced at Traefik).";
+            }
+            {
+                assertion = cfg.mtls.enable -> mtlsDownloadSubdomain != cfg.subdomain;
+                message = "homelab.vaultwarden.mtls.downloadSubdomain must differ from subdomain (Traefik cannot mix mTLS TLS options on one Host).";
             }
         ];
 
@@ -385,7 +405,7 @@ in
                     (mkIf cfg.mtls.enable {
                         vaultwarden-mtls-auth.basicAuth = {
                             usersFile = mtlsUsersFile;
-                            realm = "Vaultwarden mTLS break-glass";
+                            realm = "Vaultwarden client certificate";
                         };
                         vaultwarden-mtls-path.replacePath.path = "/client.p12";
                         vaultwarden-mtls-download-headers.headers.customResponseHeaders = {
@@ -438,33 +458,20 @@ in
                 middlewares = vaultMiddlewares ++ [ "vaultwarden-admin-allowlist" ];
                 tlsOptions = if cfg.mtls.enable then "vaultwarden-mtls" else null;
             }
-            ++ optionals cfg.mtls.enable [
-                # Break-glass: no client cert, basic auth, serves the .p12.
-                {
-                    name = "vaultwarden-mtls-download";
-                    subdomain = cfg.subdomain;
-                    backendUrl = "http://127.0.0.1:${toString cfg.mtls.listenPort}";
-                    pathPrefix = "/mtls";
-                    priority = 200;
-                    middlewares = [
-                        "default-headers"
-                        "https-redirect"
-                        "vaultwarden-mtls-auth"
-                        "vaultwarden-mtls-path"
-                        "vaultwarden-mtls-download-headers"
-                    ];
-                }
-                # Lets Bitwarden clients discover the mutual-tls feature flag before
-                # they have a client certificate configured.
-                {
-                    name = "vaultwarden-config";
-                    subdomain = cfg.subdomain;
-                    inherit backendUrl;
-                    path = "/api/config";
-                    priority = 150;
-                    middlewares = vaultMiddlewares;
-                }
-            ]
+            ++ optional cfg.mtls.enable {
+                # Break-glass on a separate Host: Traefik TLS options are per-hostname,
+                # so path-based exceptions on `subdomain` would disable mTLS entirely.
+                name = "vaultwarden-mtls-download";
+                subdomain = mtlsDownloadSubdomain;
+                backendUrl = "http://127.0.0.1:${toString cfg.mtls.listenPort}";
+                middlewares = [
+                    "default-headers"
+                    "https-redirect"
+                    "vaultwarden-mtls-auth"
+                    "vaultwarden-mtls-path"
+                    "vaultwarden-mtls-download-headers"
+                ];
+            }
         );
 
         homelab.fail2ban.jails = mkIf (cfg.fail2ban.enable && config.homelab.fail2ban.enable) (
@@ -500,8 +507,7 @@ in
             ++ optional cfg.mtls.enable {
                 name = "vaultwarden-mtls-download";
                 traefik = {
-                    host = cfg.subdomain;
-                    pathPrefixes = [ "/mtls" ];
+                    host = mtlsDownloadSubdomain;
                     statusCodes = [ 401 ];
                 };
                 settings = {
