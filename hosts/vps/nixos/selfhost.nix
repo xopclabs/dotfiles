@@ -47,6 +47,7 @@
         vaultwarden = {
             enable = true;
             subdomain = "salt";
+            mtls.enable = true;
             backup = {
                 enable = true;
                 repo = "og0k9udz@og0k9udz.repo.borgbase.com:repo";

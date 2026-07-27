@@ -5,6 +5,14 @@ let
     cfg = config.homelab.vaultwarden;
     runtimeEnv = "/run/vaultwarden/env";
     backendUrl = "http://127.0.0.1:${toString cfg.port}";
+    mtlsDir = cfg.mtls.dataDir;
+    mtlsPublic = "${mtlsDir}/public";
+    mtlsCa = "${mtlsDir}/ca.crt";
+    mtlsP12 = "${mtlsPublic}/client.p12";
+    mtlsUsersFile = "/run/vaultwarden/mtls-users";
+    vaultMiddlewares =
+        [ "default-headers" "https-redirect" ]
+        ++ optional cfg.rateLimit "vaultwarden-ratelimit";
 in
 {
     options.homelab.vaultwarden = {
@@ -69,6 +77,52 @@ in
             };
         };
 
+        mtls = {
+            enable = mkEnableOption ''
+                Require a client certificate (mTLS) for Vaultwarden, with a basic-auth
+                break-glass download at /mtls on the same hostname
+            '';
+
+            dataDir = mkOption {
+                type = types.path;
+                default = "/var/lib/vaultwarden-mtls";
+                description = "Directory for the generated CA, client certificate, and downloadable .p12";
+            };
+
+            listenPort = mkOption {
+                type = types.port;
+                default = 8091;
+                description = "Local port for the static .p12 download server";
+            };
+
+            usernameSopsKey = mkOption {
+                type = types.str;
+                default = "vaultwarden/mtls/username";
+                description = "Sops key on secrets/hosts/<hostname>.yaml for the /mtls basic-auth username.";
+            };
+
+            passwordHashSopsKey = mkOption {
+                type = types.str;
+                default = "vaultwarden/mtls/password-hash";
+                description = ''
+                    Sops key holding a salted password hash for /mtls basic-auth (htpasswd bcrypt).
+                    Generate with: `htpasswd -nbB USER PASS` and store only the `$2y$...` part
+                    (or the full `USER:$2y$...` line — the username field is ignored if present).
+                '';
+            };
+
+            p12PassphraseSopsKey = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = ''
+                    Optional sops key for a PKCS#12 export passphrase (plaintext).
+                    `null` (default) or an empty secret value = passwordless .p12
+                    (leave blank on import). Set e.g. `"vaultwarden/mtls/p12-passphrase"`
+                    only if you want the private key encrypted inside the file.
+                '';
+            };
+        };
+
         fail2ban = {
             enable = mkOption {
                 type = types.bool;
@@ -128,6 +182,10 @@ in
                     Enable homelab.wireguard or set the ranges explicitly.
                 '';
             }
+            {
+                assertion = cfg.mtls.enable -> config.homelab.traefik.enable;
+                message = "homelab.vaultwarden.mtls.enable requires homelab.traefik.enable (mTLS is enforced at Traefik).";
+            }
         ];
 
         sops.secrets = {
@@ -137,10 +195,23 @@ in
             vaultwarden_env = {
                 sopsFile = ../../secrets/shared/selfhost.yaml;
             };
+            "${cfg.mtls.usernameSopsKey}" = mkIf cfg.mtls.enable {
+                sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            };
+            "${cfg.mtls.passwordHashSopsKey}" = mkIf cfg.mtls.enable {
+                sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            };
+        } // optionalAttrs (cfg.mtls.enable && cfg.mtls.p12PassphraseSopsKey != null) {
+            "${cfg.mtls.p12PassphraseSopsKey}" = {
+                sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            };
         };
 
         systemd.tmpfiles.rules = [
             "d /run/vaultwarden 0750 root root -"
+        ] ++ optionals cfg.mtls.enable [
+            "d ${mtlsDir} 0750 root traefik -"
+            "d ${mtlsPublic} 0755 root root -"
         ];
 
         systemd.services.vaultwarden-env = {
@@ -155,8 +226,122 @@ in
                 DOMAIN_BASE=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
                 DOMAIN=https://${cfg.subdomain}.$DOMAIN_BASE
+                ${optionalString cfg.mtls.enable "EXPERIMENTAL_CLIENT_FEATURE_FLAGS=mutual-tls"}
                 EOF
             '';
+        };
+
+        # Generate CA + client .p12 once; regenerate the .p12 when the passphrase changes.
+        systemd.services.vaultwarden-mtls-certs = mkIf cfg.mtls.enable {
+            description = "Generate Vaultwarden mTLS CA and client certificate";
+            wantedBy = [ "multi-user.target" ];
+            before = [ "traefik.service" "vaultwarden-mtls-download.service" ];
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+            };
+            path = [ pkgs.openssl pkgs.coreutils ];
+            script = ''
+                set -euo pipefail
+                USER=$(tr -d '\n' < ${config.sops.secrets."${cfg.mtls.usernameSopsKey}".path})
+                HASH=$(tr -d '\n' < ${config.sops.secrets."${cfg.mtls.passwordHashSopsKey}".path})
+                ${if cfg.mtls.p12PassphraseSopsKey == null then ''
+                P12_PASS=
+                '' else ''
+                P12_PASS=$(tr -d '\n' < ${config.sops.secrets."${cfg.mtls.p12PassphraseSopsKey}".path})
+                ''}
+
+                case "$USER" in
+                    ""|CHANGE_ME*|change_me*)
+                        echo "vaultwarden-mtls: set a real username in sops (${cfg.mtls.usernameSopsKey})" >&2
+                        exit 1
+                        ;;
+                esac
+                case "$HASH" in
+                    \$2[aby]\$*|\$apr1\$*|\$2y\$*)
+                        ;;
+                    *:\$2[aby]\$*|*:\$apr1\$*|*:\$2y\$*)
+                        # Full htpasswd line — keep only the hash.
+                        HASH=''${HASH#*:}
+                        ;;
+                    ""|CHANGE_ME*|change_me*)
+                        echo "vaultwarden-mtls: set a bcrypt htpasswd hash in sops (${cfg.mtls.passwordHashSopsKey})" >&2
+                        exit 1
+                        ;;
+                    *)
+                        echo "vaultwarden-mtls: ${cfg.mtls.passwordHashSopsKey} must be a salted htpasswd hash (e.g. \$2y\$...)" >&2
+                        exit 1
+                        ;;
+                esac
+                ${optionalString (cfg.mtls.p12PassphraseSopsKey != null) ''
+                case "$P12_PASS" in
+                    CHANGE_ME*|change_me*)
+                        echo "vaultwarden-mtls: replace placeholder PKCS#12 passphrase in sops (${cfg.mtls.p12PassphraseSopsKey})" >&2
+                        exit 1
+                        ;;
+                esac
+                ''}
+
+                umask 077
+                if [ ! -f ${mtlsDir}/ca.key ] || [ ! -f ${mtlsCa} ]; then
+                    openssl genrsa -out ${mtlsDir}/ca.key 4096
+                    openssl req -x509 -new -nodes \
+                        -key ${mtlsDir}/ca.key -sha256 -days 3650 \
+                        -out ${mtlsCa} \
+                        -subj "/CN=Vaultwarden mTLS CA"
+                    chmod 644 ${mtlsCa}
+                fi
+
+                PASS_HASH=$(printf '%s' "$P12_PASS" | sha256sum | cut -d' ' -f1)
+                NEED_P12=0
+                if [ ! -f ${mtlsP12} ]; then
+                    NEED_P12=1
+                elif [ ! -f ${mtlsDir}/p12.passhash ] || [ "$(cat ${mtlsDir}/p12.passhash)" != "$PASS_HASH" ]; then
+                    NEED_P12=1
+                fi
+
+                if [ "$NEED_P12" = 1 ]; then
+                    openssl genrsa -out ${mtlsDir}/client.key 2048
+                    openssl req -new -key ${mtlsDir}/client.key \
+                        -out ${mtlsDir}/client.csr \
+                        -subj "/CN=vaultwarden-client"
+                    openssl x509 -req -in ${mtlsDir}/client.csr \
+                        -CA ${mtlsCa} -CAkey ${mtlsDir}/ca.key -CAcreateserial \
+                        -out ${mtlsDir}/client.crt -days 3650 -sha256
+                    openssl pkcs12 -export \
+                        -out ${mtlsP12} \
+                        -inkey ${mtlsDir}/client.key \
+                        -in ${mtlsDir}/client.crt \
+                        -certfile ${mtlsCa} \
+                        -passout pass:"$P12_PASS" \
+                        -name "vaultwarden-client"
+                    chmod 644 ${mtlsP12}
+                    printf '%s\n' "$PASS_HASH" > ${mtlsDir}/p12.passhash
+                fi
+
+                # Traefik basicAuth users file from sops username + salted hash.
+                printf '%s:%s\n' "$USER" "$HASH" > ${mtlsUsersFile}
+                chmod 644 ${mtlsUsersFile}
+            '';
+        };
+
+        systemd.services.vaultwarden-mtls-download = mkIf cfg.mtls.enable {
+            description = "Serve Vaultwarden mTLS client certificate for /mtls";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "vaultwarden-mtls-certs.service" ];
+            requires = [ "vaultwarden-mtls-certs.service" ];
+            serviceConfig = {
+                Type = "simple";
+                ExecStart = ''
+                    ${pkgs.static-web-server}/bin/static-web-server \
+                        --host 127.0.0.1 \
+                        --port ${toString cfg.mtls.listenPort} \
+                        --root ${mtlsPublic} \
+                        --log-level warn
+                '';
+                Restart = "on-failure";
+                RestartSec = "2s";
+            };
         };
 
         services.vaultwarden = {
@@ -184,18 +369,44 @@ in
             requires = [ "vaultwarden-env.service" ];
         };
 
-        services.traefik.dynamicConfigOptions.http.middlewares = mkMerge [
-            (mkIf cfg.rateLimit {
-                vaultwarden-ratelimit.rateLimit = {
-                    average = 10;
-                    burst = 25;
-                    period = "1m";
+        services.traefik.dynamicConfigOptions = mkMerge [
+            {
+                http.middlewares = mkMerge [
+                    (mkIf cfg.rateLimit {
+                        vaultwarden-ratelimit.rateLimit = {
+                            average = 10;
+                            burst = 25;
+                            period = "1m";
+                        };
+                    })
+                    (mkIf cfg.admin.restrict {
+                        vaultwarden-admin-allowlist.ipAllowList.sourceRange = cfg.admin.allowedRanges;
+                    })
+                    (mkIf cfg.mtls.enable {
+                        vaultwarden-mtls-auth.basicAuth = {
+                            usersFile = mtlsUsersFile;
+                            realm = "Vaultwarden mTLS break-glass";
+                        };
+                        vaultwarden-mtls-path.replacePath.path = "/client.p12";
+                        vaultwarden-mtls-download-headers.headers.customResponseHeaders = {
+                            Content-Disposition = "attachment; filename=\"vaultwarden-client.p12\"";
+                        };
+                    })
+                ];
+            }
+            (mkIf cfg.mtls.enable {
+                tls.options.vaultwarden-mtls.clientAuth = {
+                    caFiles = [ mtlsCa ];
+                    clientAuthType = "RequireAndVerifyClientCert";
                 };
             })
-            (mkIf cfg.admin.restrict {
-                vaultwarden-admin-allowlist.ipAllowList.sourceRange = cfg.admin.allowedRanges;
-            })
         ];
+
+        # Cert generation must finish before Traefik loads the CA path.
+        systemd.services.traefik = mkIf cfg.mtls.enable {
+            after = [ "vaultwarden-mtls-certs.service" ];
+            requires = [ "vaultwarden-mtls-certs.service" ];
+        };
 
         homelab.borgbackup.jobs = mkIf (cfg.backup.enable && config.homelab.borgbackup.enable) {
             vaultwarden-borgbase = {
@@ -208,35 +419,90 @@ in
             };
         };
 
-        homelab.traefik.routes = mkIf config.homelab.traefik.enable ([
-            {
-                name = "vaultwarden";
+        homelab.traefik.routes = mkIf config.homelab.traefik.enable (
+            [
+                {
+                    name = "vaultwarden";
+                    subdomain = cfg.subdomain;
+                    inherit backendUrl;
+                    middlewares = vaultMiddlewares;
+                    tlsOptions = if cfg.mtls.enable then "vaultwarden-mtls" else null;
+                }
+            ]
+            ++ optional cfg.admin.restrict {
+                name = "vaultwarden-admin";
                 subdomain = cfg.subdomain;
                 inherit backendUrl;
-                middlewares =
-                    if cfg.rateLimit
-                    then [ "default-headers" "https-redirect" "vaultwarden-ratelimit" ]
-                    else null;
+                pathPrefix = "/admin";
+                priority = 100;
+                middlewares = vaultMiddlewares ++ [ "vaultwarden-admin-allowlist" ];
+                tlsOptions = if cfg.mtls.enable then "vaultwarden-mtls" else null;
             }
-        ] ++ optional cfg.admin.restrict {
-            name = "vaultwarden-admin";
-            subdomain = cfg.subdomain;
-            inherit backendUrl;
-            pathPrefix = "/admin";
-            # Outranks the host-only vault router, which matches /admin too.
-            priority = 100;
-            middlewares = [ "default-headers" "https-redirect" "vaultwarden-admin-allowlist" ]
-                ++ optional cfg.rateLimit "vaultwarden-ratelimit";
-        });
+            ++ optionals cfg.mtls.enable [
+                # Break-glass: no client cert, basic auth, serves the .p12.
+                {
+                    name = "vaultwarden-mtls-download";
+                    subdomain = cfg.subdomain;
+                    backendUrl = "http://127.0.0.1:${toString cfg.mtls.listenPort}";
+                    pathPrefix = "/mtls";
+                    priority = 200;
+                    middlewares = [
+                        "default-headers"
+                        "https-redirect"
+                        "vaultwarden-mtls-auth"
+                        "vaultwarden-mtls-path"
+                        "vaultwarden-mtls-download-headers"
+                    ];
+                }
+                # Lets Bitwarden clients discover the mutual-tls feature flag before
+                # they have a client certificate configured.
+                {
+                    name = "vaultwarden-config";
+                    subdomain = cfg.subdomain;
+                    inherit backendUrl;
+                    path = "/api/config";
+                    priority = 150;
+                    middlewares = vaultMiddlewares;
+                }
+            ]
+        );
 
-        homelab.fail2ban.jails = mkIf (cfg.fail2ban.enable && config.homelab.fail2ban.enable) [
-            {
-                name = "vaultwarden-login";
+        homelab.fail2ban.jails = mkIf (cfg.fail2ban.enable && config.homelab.fail2ban.enable) (
+            [
+                {
+                    name = "vaultwarden-login";
+                    traefik = {
+                        host = cfg.subdomain;
+                        paths = [ "/identity/connect/token" ];
+                        methods = [ "POST" ];
+                        statusCodes = [ 400 401 ];
+                    };
+                    settings = {
+                        maxretry = 5;
+                        findtime = "10m";
+                        bantime = "1h";
+                    };
+                }
+                {
+                    name = "vaultwarden-admin";
+                    traefik = {
+                        host = cfg.subdomain;
+                        pathPrefixes = [ "/admin" ];
+                        statusCodes = [ 401 403 ];
+                    };
+                    settings = {
+                        maxretry = 3;
+                        findtime = "10m";
+                        bantime = "24h";
+                    };
+                }
+            ]
+            ++ optional cfg.mtls.enable {
+                name = "vaultwarden-mtls-download";
                 traefik = {
                     host = cfg.subdomain;
-                    paths = [ "/identity/connect/token" ];
-                    methods = [ "POST" ];
-                    statusCodes = [ 400 401 ];
+                    pathPrefixes = [ "/mtls" ];
+                    statusCodes = [ 401 ];
                 };
                 settings = {
                     maxretry = 5;
@@ -244,19 +510,6 @@ in
                     bantime = "1h";
                 };
             }
-            {
-                name = "vaultwarden-admin";
-                traefik = {
-                    host = cfg.subdomain;
-                    pathPrefixes = [ "/admin" ];
-                    statusCodes = [ 401 403 ];
-                };
-                settings = {
-                    maxretry = 3;
-                    findtime = "10m";
-                    bantime = "24h";
-                };
-            }
-        ];
+        );
     };
 }

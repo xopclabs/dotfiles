@@ -35,7 +35,9 @@ let
         wildcardCert ? null,
         pathPrefix ? null,
         pathPrefixExtra ? [ ],
+        path ? null,
         priority ? null,
+        tlsOptions ? null,
     }: 
     let
         # Determine default middlewares based on subdomain pattern
@@ -61,7 +63,9 @@ let
             else null;
 
         pathRule =
-            if pathPrefix != null
+            if path != null
+            then " && Path(`${path}`)"
+            else if pathPrefix != null
             then " && (" + concatStringsSep " || " (
                 [ "PathPrefix(`${pathPrefix}`)" ]
                 ++ map (prefix: "PathPrefix(`${prefix}`)") pathPrefixExtra
@@ -75,7 +79,8 @@ let
                 middlewares = actualMiddlewares;
                 service = name;
                 tls = { inherit certResolver; }
-                    // optionalAttrs useWildcardCert { domains = wildcardFor subdomain; };
+                    // optionalAttrs useWildcardCert { domains = wildcardFor subdomain; }
+                    // optionalAttrs (tlsOptions != null) { options = tlsOptions; };
             } // optionalAttrs (priority != null) {
                 inherit priority;
             };
@@ -251,6 +256,14 @@ in
                             exposing an API on the same host as a web UI.
                         '';
                     };
+                    path = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        example = "/api/config";
+                        description = ''
+                            Exact path match (`Path(...)`). Takes precedence over `pathPrefix` when set.
+                        '';
+                    };
                     pathPrefixExtra = mkOption {
                         type = types.listOf types.str;
                         default = [ ];
@@ -263,6 +276,14 @@ in
                         description = ''
                             Traefik router priority. Higher values win over broader
                             host-only routes on the same hostname.
+                        '';
+                    };
+                    tlsOptions = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        example = "vaultwarden-mtls";
+                        description = ''
+                            Name of a `tls.options` entry to apply on this router (e.g. mTLS client auth).
                         '';
                     };
                 };
