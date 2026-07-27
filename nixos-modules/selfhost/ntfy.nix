@@ -103,6 +103,40 @@ in
                 '';
             };
         };
+
+        publishers = mkOption {
+            type = types.attrsOf (types.submodule ({ name, ... }: {
+                options = {
+                    topics = mkOption {
+                        type = types.listOf types.str;
+                        default = [ name ];
+                        description = "Topics this publisher may write to.";
+                    };
+
+                    label = mkOption {
+                        type = types.str;
+                        default = name;
+                        description = "Human-readable label shown against the token in ntfy.";
+                    };
+
+                    tokenSopsKey = mkOption {
+                        type = types.str;
+                        default = "ntfy/publishers/${name}/token";
+                        description = ''
+                            Key on secrets/hosts/<hostname>.yaml holding this publisher's access token.
+                            Generate a value with `ntfy token generate`.
+                        '';
+                    };
+                };
+            }));
+            default = {};
+            example = literalExpression ''{ auto-update.topics = [ "system" ]; }'';
+            description = ''
+                Token-only accounts for services that publish notifications, provisioned declaratively alongside the Matrix bot.
+                Each account is given a fresh random password on every restart that is never stored, so the token in sops is its only usable credential.
+                Publishers must live on the same host as ntfy, since their token secrets are declared here.
+            '';
+        };
     };
 
     config = mkIf cfg.enable (let
@@ -127,26 +161,23 @@ in
             if matrixBotEnabled
             then config.sops.secrets."${cfg.matrixBot.subscribersSopsKey}"
             else null;
+
+        publisherList = mapAttrsToList (name: p: p // { inherit name; }) cfg.publishers;
     in {
-        sops.secrets.domain = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
-        };
-
-        sops.secrets."${hostMb}/password" = mkIf matrixBotEnabled {
-            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
-        };
-
-        sops.secrets."${sharedMb}/token" = mkIf matrixBotEnabled {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
-        };
-
-        sops.secrets."${hostMb}/acl" = mkIf matrixBotEnabled {
-            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
-        };
-
-        sops.secrets."${cfg.matrixBot.subscribersSopsKey}" = mkIf matrixBotEnabled {
-            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
-        };
+        sops.secrets = mkMerge [
+            {
+                domain.sopsFile = ../../secrets/shared/selfhost.yaml;
+            }
+            (mkIf matrixBotEnabled {
+                "${hostMb}/password".sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                "${sharedMb}/token".sopsFile = ../../secrets/shared/selfhost.yaml;
+                "${hostMb}/acl".sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                "${cfg.matrixBot.subscribersSopsKey}".sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            })
+            (mapAttrs' (_: p: nameValuePair p.tokenSopsKey {
+                sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            }) cfg.publishers)
+        ];
 
         systemd.tmpfiles.rules = [
             "d /run/ntfy 0750 root root -"
@@ -165,6 +196,16 @@ in
                 ${pkgs.coreutils}/bin/cat > ${runtimeEnv} <<EOF
                 NTFY_BASE_URL=https://${cfg.subdomain}.$DOMAIN_BASE
                 EOF
+
+                # ntfy takes users, tokens and ACL as single comma-separated values,
+                # so every source has to be collected before the file is written.
+                AUTH_USERS=""
+                AUTH_TOKENS=""
+                AUTH_ACCESS=""
+
+                append() {
+                    if [ -z "$1" ]; then printf '%s' "$2"; else printf '%s,%s' "$1" "$2"; fi
+                }
                 ${optionalString matrixBotEnabled ''
                 PASSWORD=$(${pkgs.coreutils}/bin/cat ${passwordSecret.path})
                 TOKEN=$(${pkgs.coreutils}/bin/tr -d '[:space:]' < ${tokenSecret.path})
@@ -234,18 +275,46 @@ in
                     }
                     END { print out }
                 ' ${aclSecret.path})
-                ${pkgs.coreutils}/bin/cat >> ${runtimeEnv} <<EOF
-                NTFY_AUTH_USERS=$(
-                    if [ -n "$SUBSCRIBER_USERS" ]; then
-                        echo "${cfg.matrixBot.username}:$HASH:user,$SUBSCRIBER_USERS"
-                    else
-                        echo "${cfg.matrixBot.username}:$HASH:user"
-                    fi
-                )
-                NTFY_AUTH_TOKENS=${cfg.matrixBot.username}:$TOKEN:matrix-reminder-bot
-                NTFY_AUTH_ACCESS=$ACL
-                EOF
+                if [ -n "$SUBSCRIBER_USERS" ]; then
+                    AUTH_USERS="${cfg.matrixBot.username}:$HASH:user,$SUBSCRIBER_USERS"
+                else
+                    AUTH_USERS="${cfg.matrixBot.username}:$HASH:user"
+                fi
+                AUTH_TOKENS="${cfg.matrixBot.username}:$TOKEN:matrix-reminder-bot"
+                AUTH_ACCESS="$ACL"
                 ''}
+                ${concatMapStringsSep "\n" (p: ''
+                PUB_TOKEN=$(${pkgs.coreutils}/bin/tr -d '[:space:]' < ${config.sops.secrets."${p.tokenSopsKey}".path})
+                case "$PUB_TOKEN" in
+                    tk_?????????????????????????????)
+                        ;;
+                    *)
+                        echo "ntfy-env: invalid ${p.tokenSopsKey} (need tk_ + 29 chars)" >&2
+                        exit 1
+                        ;;
+                esac
+                # Token-only account: this password is regenerated every restart and
+                # never stored, so the token is the only credential that can be used.
+                PUB_PASSWORD=$(${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/base64)
+                PUB_HASH=$(
+                    printf '%s\n%s\n' "$PUB_PASSWORD" "$PUB_PASSWORD" \
+                        | ${pkgs.ntfy-sh}/bin/ntfy user hash \
+                        | ${pkgs.coreutils}/bin/tail -n1
+                )
+                AUTH_USERS=$(append "$AUTH_USERS" "${p.name}:$PUB_HASH:user")
+                AUTH_TOKENS=$(append "$AUTH_TOKENS" "${p.name}:$PUB_TOKEN:${p.label}")
+                ${concatMapStringsSep "\n" (topic: ''
+                AUTH_ACCESS=$(append "$AUTH_ACCESS" "${p.name}:${topic}:write-only")
+                '') p.topics}
+                '') publisherList}
+
+                if [ -n "$AUTH_USERS" ]; then
+                    ${pkgs.coreutils}/bin/cat >> ${runtimeEnv} <<EOF
+                NTFY_AUTH_USERS=$AUTH_USERS
+                NTFY_AUTH_TOKENS=$AUTH_TOKENS
+                NTFY_AUTH_ACCESS=$AUTH_ACCESS
+                EOF
+                fi
             '';
         };
 

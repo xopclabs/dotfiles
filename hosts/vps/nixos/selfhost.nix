@@ -11,7 +11,10 @@
             enable = true;
         };
 
-        autoUpdate.enable = true;
+        autoUpdate = {
+            enable = true;
+            ntfy.enable = true;
+        };
 
         traefik = {
             enable = true;

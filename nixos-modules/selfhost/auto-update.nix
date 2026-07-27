@@ -8,13 +8,15 @@ let
     userHome = config.users.users.${cfg.user}.home;
     stateDir = "/var/lib/nixos-auto-update";
 
+    publisherTokenSopsKey = config.homelab.ntfy.publishers.${cfg.ntfy.publisher}.tokenSopsKey;
+
     # A no-op stub keeps the update script free of conditionals when ntfy is off.
     notifyFn =
         if cfg.ntfy.enable
         then ''
             notify() {
                 ${pkgs.curl}/bin/curl -fsS \
-                    -H "Authorization: Bearer $(cat ${config.sops.secrets."${cfg.ntfy.tokenSopsKey}".path})" \
+                    -H "Authorization: Bearer $(cat ${config.sops.secrets."${publisherTokenSopsKey}".path})" \
                     -H "Title: $1" \
                     -H "Priority: $2" \
                     -H "Tags: $3" \
@@ -143,20 +145,30 @@ in
                 description = "ntfy topic to publish update results to.";
             };
 
-            tokenSopsKey = mkOption {
+            publisher = mkOption {
                 type = types.str;
-                default = "ntfy/system-token";
+                default = "auto-update";
                 description = ''
-                    Key on secrets/hosts/<hostname>.yaml holding an ntfy access token with write access to `topic`.
-                    A token is required because the public ntfy instance runs with auth-default-access = deny-all.
+                    Name of the `homelab.ntfy.publishers` entry to authenticate as.
+                    The entry is declared automatically, so only its token has to be added to sops.
                 '';
             };
         };
     };
 
     config = mkIf cfg.enable {
-        sops.secrets."${cfg.ntfy.tokenSopsKey}" = mkIf cfg.ntfy.enable {
-            sopsFile = ../../secrets/hosts/${hostName}.yaml;
+        assertions = [
+            {
+                assertion = cfg.ntfy.enable -> config.homelab.ntfy.enable;
+                message = ''
+                    homelab.autoUpdate.ntfy.enable requires homelab.ntfy on the same host, which owns the publisher token secret.
+                '';
+            }
+        ];
+
+        # ntfy declares the token secret and provisions the account from this.
+        homelab.ntfy.publishers = mkIf cfg.ntfy.enable {
+            ${cfg.ntfy.publisher}.topics = [ cfg.ntfy.topic ];
         };
 
         systemd.tmpfiles.rules = [
