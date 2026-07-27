@@ -10,6 +10,15 @@ let
 
     publisherTokenSopsKey = config.homelab.ntfy.publishers.${cfg.ntfy.publisher}.tokenSopsKey;
 
+    # libgit2 refuses to open a repository owned by another user, which the root
+    # rebuild always is. Scoping the exemption to this unit's HOME keeps it out of
+    # the system and interactive-root git config.
+    gitConfigFile = pkgs.writeText "nixos-auto-update-gitconfig" ''
+        [safe]
+            directory = ${cfg.flake}
+            directory = ${cfg.flake}/.git
+    '';
+
     # A no-op stub keeps the update script free of conditionals when ntfy is off.
     notifyFn =
         if cfg.ntfy.enable
@@ -44,16 +53,58 @@ let
 
         lock="${cfg.flake}/flake.lock"
         prev="${stateDir}/flake.lock.prev"
+        log="${stateDir}/last-rebuild.log"
 
         owner=$(stat -c '%u:%g' "$lock")
         cp -p "$lock" "$prev"
         before=$(sha256sum "$lock" | cut -d' ' -f1)
+
+        # Track whether the lock was mutated and whether we already notified.
+        # An EXIT trap covers OOM / SIGTERM, which otherwise leave a dirty lock
+        # and skip the failure notification.
+        updated=0
+        finished=0
+        changes=""
+
+        revert_lock() {
+            if [ "$updated" != 1 ]; then
+                return 0
+            fi
+            if [ "$(sha256sum "$lock" | cut -d' ' -f1)" = "$(sha256sum "$prev" | cut -d' ' -f1)" ]; then
+                return 0
+            fi
+            cp "$lock" "${stateDir}/flake.lock.failed" 2>/dev/null || true
+            cp -p "$prev" "$lock"
+            chown "$owner" "$lock" || true
+        }
+
+        fail_notify() {
+            if [ "$finished" = 1 ]; then
+                return 0
+            fi
+            finished=1
+            revert_lock
+            log_tail=""
+            if [ -f "$log" ]; then
+                log_tail=$(tail -n 40 "$log" | head -c 3500)
+            fi
+            notify "${hostName}: auto-update rebuild FAILED" high rotating_light \
+                "''${changes:-lock was updated}
+
+Reverted to the previous lock.
+
+--- last rebuild output ---
+$log_tail"
+        }
+
+        trap fail_notify EXIT
 
         # Update as the clone's owner so flake.lock stays user-writable and
         # `git checkout flake.lock` keeps working without sudo.
         if ! changes=$(runuser -u ${cfg.user} -- \
             env HOME=${userHome} nix flake update ${concatStringsSep " " cfg.inputs} 2>&1); then
             echo "$changes" >&2
+            finished=1
             notify "${hostName}: flake update failed" high rotating_light "$changes"
             exit 1
         fi
@@ -61,23 +112,23 @@ let
 
         if [ "$before" = "$(sha256sum "$lock" | cut -d' ' -f1)" ]; then
             echo "auto-update: inputs already current, nothing to do"
+            finished=1
             exit 0
         fi
+        updated=1
 
-        if ! nixos-rebuild switch --flake "${cfg.flake}#${hostName}" 2>&1 \
-            | tee "${stateDir}/last-rebuild.log"; then
-            # Leave the machine on a lock that is known to build. The rejected
-            # lock is kept outside the clone so git status stays meaningful.
-            cp "$lock" "${stateDir}/flake.lock.failed"
-            cp -p "$prev" "$lock"
-            chown "$owner" "$lock"
-            notify "${hostName}: auto-update rebuild FAILED" high rotating_light \
-                "Reverted to the previous lock.
-Rejected lock: ${stateDir}/flake.lock.failed
-Log: ${stateDir}/last-rebuild.log"
+        # Serialise the rebuild. Parallel eval/build is what pushes peak RSS
+        # past a small VPS's RAM+swap budget.
+        if ! nixos-rebuild switch \
+            --flake "${cfg.flake}#${hostName}" \
+            --max-jobs ${toString cfg.maxJobs} \
+            --cores ${toString cfg.cores} \
+            2>&1 | tee "$log"; then
+            fail_notify
             exit 1
         fi
 
+        finished=1
         notify "${hostName}: auto-update applied" default package \
             "$changes
 
@@ -106,13 +157,30 @@ in
 
         inputs = mkOption {
             type = types.listOf types.str;
-            default = [ "nixpkgs" ];
-            example = [ "nixpkgs" "home-manager" ];
+            # home-manager and nixvim track nixpkgs closely enough that bumping
+            # nixpkgs alone routinely breaks eval (infinite recursion in nixvim).
+            default = [ "nixpkgs" "home-manager" "nixvim" ];
+            example = [ "nixpkgs" "home-manager" "nixvim" ];
             description = ''
                 Flake inputs to update.
-                Defaults to nixpkgs alone, which carries the security-relevant packages while leaving churn-prone inputs pinned.
+                Defaults to nixpkgs plus the tightly-coupled home-manager and nixvim inputs.
                 An empty list updates every input, matching bare `nix flake update`.
             '';
+        };
+
+        maxJobs = mkOption {
+            type = types.ints.positive;
+            default = 1;
+            description = ''
+                `--max-jobs` passed to nixos-rebuild.
+                Keep at 1 on small VPS hosts; parallel jobs are the main driver of peak RSS.
+            '';
+        };
+
+        cores = mkOption {
+            type = types.ints.positive;
+            default = 1;
+            description = "`--cores` passed to nixos-rebuild (per-job parallelism).";
         };
 
         schedule = mkOption {
@@ -173,6 +241,7 @@ in
 
         systemd.tmpfiles.rules = [
             "d ${stateDir} 0700 root root -"
+            "L+ ${stateDir}/.gitconfig - - - - ${gitConfigFile}"
         ];
 
         systemd.services.nixos-auto-update = {
@@ -182,9 +251,17 @@ in
             wants = [ "network-online.target" ];
             serviceConfig = {
                 Type = "oneshot";
+                # Eval of a full NixOS+HM+nixvim system routinely needs multi-GB
+                # for tens of minutes; never let systemd time it out mid-build.
+                TimeoutStartSec = "3h";
                 WorkingDirectory = cfg.flake;
                 ExecStart = updateScript;
-                Environment = [ "HOME=/root" ];
+                # HOME must be writable for Nix's cache and is where libgit2 looks
+                # for the safe.directory exemption above.
+                Environment = [ "HOME=${stateDir}" ];
+                # Prefer reclaiming from this unit under memory pressure, but do
+                # not set MemoryMax — that would just OOM-kill us earlier.
+                OOMScoreAdjust = 200;
             };
         };
 

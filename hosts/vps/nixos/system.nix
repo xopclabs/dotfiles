@@ -36,6 +36,13 @@
         };
     };
 
+    # 512M disk swap is not enough for nixos-rebuild eval peaks (~3G).
+    # zram gives compressed swap in RAM without resizing the disko layout.
+    zramSwap = {
+        enable = true;
+        memoryPercent = 100;
+    };
+
     # Docker support
     virtualisation.docker = {
         enable = true;
