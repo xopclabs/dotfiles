@@ -217,13 +217,17 @@ in
             };
             "${cfg.mtls.usernameSopsKey}" = mkIf cfg.mtls.enable {
                 sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                restartUnits = [ "vaultwarden-mtls-certs.service" ];
             };
             "${cfg.mtls.passwordHashSopsKey}" = mkIf cfg.mtls.enable {
                 sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                restartUnits = [ "vaultwarden-mtls-certs.service" ];
             };
         } // optionalAttrs (cfg.mtls.enable && cfg.mtls.p12PassphraseSopsKey != null) {
             "${cfg.mtls.p12PassphraseSopsKey}" = {
                 sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                # Oneshot won't re-run on secret content changes otherwise — stale .p12 keeps the old passphrase.
+                restartUnits = [ "vaultwarden-mtls-certs.service" ];
             };
         };
 
@@ -328,12 +332,14 @@ in
                     openssl x509 -req -in ${mtlsDir}/client.csr \
                         -CA ${mtlsCa} -CAkey ${mtlsDir}/ca.key -CAcreateserial \
                         -out ${mtlsDir}/client.crt -days 3650 -sha256
+                    # env: avoids shell metacharacter breakage in pass:"..."
+                    export P12_PASS
                     openssl pkcs12 -export \
                         -out ${mtlsP12} \
                         -inkey ${mtlsDir}/client.key \
                         -in ${mtlsDir}/client.crt \
                         -certfile ${mtlsCa} \
-                        -passout pass:"$P12_PASS" \
+                        -passout env:P12_PASS \
                         -name "vaultwarden-client"
                     chmod 644 ${mtlsP12}
                     printf '%s\n' "$PASS_HASH" > ${mtlsDir}/p12.passhash
