@@ -16,7 +16,7 @@ in
             (lutris.override {
                 extraLibraries = pkgs: [
                     pkgs.nspr
-                    pkgs.xorg.libXdamage
+                    pkgs.libxdamage
                 ];
             })
         ];

@@ -30,7 +30,7 @@ let
             pango
             xorg.libXcomposite
             xorg.libXext
-            xorg.libXdamage
+            libxdamage
             xorg.libXfixes
             xorg.libxcb
             xorg.libxshmfence
