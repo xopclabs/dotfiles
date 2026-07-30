@@ -126,6 +126,16 @@ with lib;
                         type = types.str;
                         description = "Monitor position (e.g., '0,0')";
                     };
+                    connector = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                        description = "DRM connector name (e.g. eDP-1, DP-1). Required when touch is non-empty.";
+                    };
+                    touch = mkOption {
+                        type = types.listOf types.str;
+                        default = [];
+                        description = "Touch/tablet device names built into this panel (from hyprctl devices).";
+                    };
                 };
             };
         in {

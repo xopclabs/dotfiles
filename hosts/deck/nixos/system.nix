@@ -57,6 +57,10 @@
         # Sweep keyboard plover-HID non-root access.
         SUBSYSTEM=="hidraw", ATTRS{driver}=="hid-generic", MODE="0660", GROUP="input"
 
+        # SF13TO external touchscreen: ignore the absolute-mouse HID interface so
+        # the real multitouch node can deliver wl_touch (taps + one-finger scroll).
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP Mouse", ENV{LIBINPUT_IGNORE_DEVICE}="1"
+
         # Limit battery charge to 80%
         SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"
 

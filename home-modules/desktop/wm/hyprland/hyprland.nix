@@ -66,6 +66,27 @@ let
     
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
+
+    internalTransform = transformToNum (
+        if internalMon != null then (internalMon.transform or "0") else "0"
+    );
+
+    allMonitors =
+        lib.optional (internalMon != null) internalMon
+        ++ lib.attrValues hardwareCfg.monitors.external;
+
+    # Per-panel digitizers from metadata (touch/tablet -> DRM connector).
+    touchDeviceConfig = lib.concatMap (mon:
+        let
+            transform = toString (transformToNum (mon.transform or "0"));
+        in map (devName: ''
+            device {
+              name=${devName}
+              output=${mon.connector}
+              transform=${transform}
+            }
+        '') mon.touch
+    ) (lib.filter (m: m.touch != []) allMonitors);
 in {
     options.modules.desktop.wm.hyprland = {
         enable = lib.mkEnableOption "hyprland";
@@ -88,7 +109,11 @@ in {
     imports = [ ./scripts ];
 
     config = lib.mkIf cfg.enable {
-        
+        assertions = map (mon: {
+            assertion = mon.connector != null;
+            message = "metadata.hardware.monitors entry \"${mon.name}\" sets touch but has no connector (needed for Hyprland device output=).";
+        }) (lib.filter (m: m.touch != []) allMonitors);
+
         home.packages = [
             pkgs.xwayland pkgs.wlsunset pkgs.wl-clipboard 
             pkgs.libinput pkgs.jq
@@ -148,8 +173,9 @@ in {
                         natural_scroll = true;
                         scroll_factor = 0.5;
                     };
+                    # Match internal panel rotation for tablets when present.
                     tablet = {
-                        transform = 2;
+                        transform = internalTransform;
                     };
                     kb_layout = "us,ru";
                     kb_options = "grp:lalt_lshift_toggle,compose:ralt";
@@ -396,6 +422,9 @@ in {
                   sensitivity=-0.25
                   natural_scroll=true
                 }
+
+                # Digitizers from metadata.hardware.monitors.*.touch
+                ${lib.concatStrings touchDeviceConfig}
               '';
         };
         # UWSM environment configuration for Hyprland
