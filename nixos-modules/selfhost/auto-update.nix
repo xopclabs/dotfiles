@@ -59,9 +59,14 @@ let
         '';
 
     nixpkgsRevFn = ''
+        nixpkgs_rev_from() {
+            local lock=$1 node rev
+            node=$(${pkgs.jq}/bin/jq -r '.nodes.root.inputs.nixpkgs' "$lock")
+            rev=$(${pkgs.jq}/bin/jq -r --arg n "$node" '.nodes[$n].locked.rev // empty' "$lock")
+            printf '%s' "$rev" | ${pkgs.coreutils}/bin/head -c 12
+        }
         nixpkgs_rev() {
-            ${pkgs.jq}/bin/jq -r '.nodes.nixpkgs.locked.rev // empty' "${cfg.flake}/flake.lock" \
-                | ${pkgs.coreutils}/bin/head -c 12
+            nixpkgs_rev_from "${cfg.flake}/flake.lock"
         }
     '';
 
@@ -94,9 +99,16 @@ let
             --max-jobs ${toString cfg.maxJobs} \
             --cores ${toString cfg.cores} \
             2>&1 | tee "$log"; then
-            rev=$(nixpkgs_rev)
-            notify "${hostName}: auto-update applied" default package \
-                "nixpkgs → ''${rev:-unknown}"
+            before_rev=$(nixpkgs_rev_from "$prev")
+            after_rev=$(nixpkgs_rev)
+            if [ -z "$before_rev" ] && [ -z "$after_rev" ]; then
+                msg="nixpkgs rev unknown"
+            elif [ "$before_rev" = "$after_rev" ]; then
+                msg="nixpkgs up to date (''${after_rev:-unknown})"
+            else
+                msg="nixpkgs ''${before_rev:-?} → ''${after_rev:-?}"
+            fi
+            notify "${hostName}: auto-update applied" default package "$msg"
             exit 0
         fi
 
@@ -112,6 +124,7 @@ let
         export PATH="${binPath}:$PATH"
 
         ${notifyFn}
+        ${nixpkgsRevFn}
 
         lock="${cfg.flake}/flake.lock"
         prev="${stateDir}/flake.lock.prev"
@@ -132,6 +145,9 @@ let
         echo "$changes"
 
         if [ "$before" = "$(sha256sum "$lock" | cut -d' ' -f1)" ]; then
+            rev=$(nixpkgs_rev)
+            notify "${hostName}: auto-update" default package \
+                "nixpkgs up to date (''${rev:-unknown})"
             echo "auto-update: inputs already current, nothing to do"
             exit 0
         fi
