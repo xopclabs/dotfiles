@@ -79,7 +79,10 @@ in {
                     "media.autoplay.enabled" = false;
                     "media.peerconnection.enabled" = true;
                     "toolkit.zoomManager.zoomValues" = ".8,.90,.95,1,1.1,1.2";
-                    "privacy.firstparty.isolate" = true;
+                    "privacy.firstparty.isolate" = false;
+                    "browser.contentblocking.category" = "standard";
+                    "network.cookie.cookieBehavior" = 5;
+                    "network.cookie.cookieBehavior.pbmode" = 5;
                     "network.http.sendRefererHeader" = 0;
                 };
             };
