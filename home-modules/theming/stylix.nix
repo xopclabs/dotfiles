@@ -5,6 +5,10 @@ let cfg = config.modules.theming.stylix;
 in {
     options.modules.theming.stylix = { 
         enable = mkEnableOption "stylix";
+        autoEnable = mkOption {
+            type = types.bool;
+            default = true;
+        };
         colorScheme = mkOption {
             type = types.str;
             default = "${pkgs.base16-schemes}/share/themes/nord.yaml";
@@ -13,7 +17,7 @@ in {
     config = mkIf cfg.enable {
         stylix = {
             enable = true;
-            autoEnable = true;
+            autoEnable = cfg.autoEnable;
             enableReleaseChecks = false;
             fonts = {
                 sansSerif = {
