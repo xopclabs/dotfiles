@@ -89,6 +89,7 @@
                     webserver = false;
                 };
                 subdomain = "pihole.vm.local";
+                socksProxy = "socks5h://127.0.0.1:10808";
             };
             unbound.forwardUpstream = true;
         };
