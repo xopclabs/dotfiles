@@ -333,18 +333,9 @@ in
             ports = [ cfg.pihole.webPort ];
         };
 
-        # Keep pihole-ftl-setup from stalling boot for 20+ minutes.
-        # The upstream unit runs gravity and calls into pihole's config API on
-        # every start, which can hang on slow blocklist downloads (e.g. oisd)
-        # and currently also fails with a "type" param regression in the API.
-        # Cap its runtime and ensure failures don't gate other units — gravity
-        # will retry on its regular timer.
-        systemd.services.pihole-ftl-setup = {
-            serviceConfig = {
-                TimeoutStartSec = lib.mkForce "2min";
-                Restart = lib.mkForce "no";
-            };
-        };
+        # Upstream runs gravity (oisd, etc.) on every FTL start. That hangs long
+        # enough to fail `nh os switch`. Gravity still runs on its timer.
+        systemd.services.pihole-ftl-setup.enable = lib.mkForce false;
 
         # Disable systemd-resolved to avoid port conflicts
         services.resolved.enable = mkForce false;

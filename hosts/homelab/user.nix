@@ -10,7 +10,7 @@
 
     config.modules = {
         theming.stylix.enable = true;
-        desktop.other.gtk.enable = true;
+        desktop.other.gtk.enable = false;
 
         cli = {
             zsh.enable = true;
@@ -30,7 +30,6 @@
             git.enable = true;
             gpg.enable = false;
             ssh.enable = true;
-            udiskie.enable = true;
             btop.enable = true;
             nh.enable = true;
             tldr.enable = true;
@@ -50,4 +49,7 @@
         };
     };
     config.colorScheme = inputs.nix-colors.colorSchemes.nord;
+    # Headless: stylix autoEnable writes dconf, and HM activation fails without a session.
+    config.stylix.autoEnable = lib.mkForce false;
+    config.dconf.enable = lib.mkForce false;
 }

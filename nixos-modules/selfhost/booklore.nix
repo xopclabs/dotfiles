@@ -126,8 +126,8 @@ in
             description = "Create BookLore Docker network";
             wantedBy = [ "multi-user.target" ];
             before = [ "docker-booklore-mariadb.service" "docker-booklore.service" ];
-            after = [ "docker.service" ];
-            requires = [ "docker.service" ];
+            after = [ "docker.service" "docker.socket" ];
+            wants = [ "docker.service" ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -135,9 +135,6 @@ in
             script = ''
                 ${pkgs.docker}/bin/docker network inspect booklore-net >/dev/null 2>&1 || \
                     ${pkgs.docker}/bin/docker network create booklore-net
-            '';
-            preStop = ''
-                ${pkgs.docker}/bin/docker network rm booklore-net || true
             '';
         };
 

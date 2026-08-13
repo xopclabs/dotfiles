@@ -23,6 +23,12 @@
 
     hardware.nvidia-container-toolkit.enable = true;
 
+    # nixpkgs makes docker.service Require this generator. A driver/library
+    # mismatch (new userspace, old kernel module) fails the unit, which fails
+    # docker, which fails `nh os switch`, which then never commits the
+    # generation to GRUB — reboot cannot load the matching module.
+    systemd.services.nvidia-container-toolkit-cdi-generator.serviceConfig.SuccessExitStatus = [ 1 ];
+
     users.users.jellyfin.extraGroups = [ "render" "video" ];
 
     environment.systemPackages = with pkgs; [

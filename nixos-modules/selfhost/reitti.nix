@@ -12,19 +12,27 @@ let
             exit 1
         fi
 
+        IMPORTED_DIR="''${REITTI_WATCH_DIR}/imported"
+        mkdir -p "''${IMPORTED_DIR}"
+
         import_gpx() {
             local FILE="$1"
+            local RESPONSE
             echo "Importing ''${FILE}"
-            ${pkgs.curl}/bin/curl -s -X POST \
+            if ! RESPONSE=$(${pkgs.curl}/bin/curl -sS -X POST \
                 -H "X-API-TOKEN: ''${REITTI_TOKEN}" \
                 -F "file=@''${FILE}" \
-                "''${REITTI_ENDPOINT}/api/v1/gpx/import" | \
-                ${pkgs.jq}/bin/jq -r '
-                    if .success == true then
-                        "Points scheduled: \(.pointsScheduled)"
-                    else
-                        "Import failed: \(.message // "unknown error")"
-                    end'
+                "''${REITTI_ENDPOINT}/api/v1/gpx/import"); then
+                echo "Import request failed for ''${FILE}" >&2
+                return 1
+            fi
+            echo "''${RESPONSE}" | ${pkgs.jq}/bin/jq -r '
+                if .success == true then
+                    "Points scheduled: \(.pointsScheduled)"
+                else
+                    "Import failed: \(.message // "unknown error")"
+                end'
+            echo "''${RESPONSE}" | ${pkgs.jq}/bin/jq -e '.success == true' >/dev/null
         }
 
         process_file() {
@@ -33,10 +41,12 @@ let
             case "''${FILE}" in
                 *.zip)
                     echo "Unzipping ''${FILE}"
-                    (cd "''${REITTI_WATCH_DIR}" && ${pkgs.unzip}/bin/unzip -o "''${FILE}" >/dev/null && rm -f "''${FILE}")
+                    (cd "''${REITTI_WATCH_DIR}" && ${pkgs.unzip}/bin/unzip -o "''${FILE}" >/dev/null && mv -f "''${FILE}" "''${IMPORTED_DIR}/")
                     ;;
                 *.gpx)
-                    import_gpx "''${FILE}"
+                    if import_gpx "''${FILE}"; then
+                        mv -f "''${FILE}" "''${IMPORTED_DIR}/"
+                    fi
                     ;;
                 *)
                     echo "Ignoring ''${FILE} (not a GPX or ZIP file)"
@@ -44,13 +54,17 @@ let
             esac
         }
 
-        # Process any files already present in the directory at startup
-        echo "Scanning ''${REITTI_WATCH_DIR} for pre-existing files..."
-        for FILE in "''${REITTI_WATCH_DIR}"/*.gpx "''${REITTI_WATCH_DIR}"/*.zip; do
-            [[ -f "''${FILE}" ]] && process_file "''${FILE}"
+        echo "Waiting for Reitti at ''${REITTI_ENDPOINT}..."
+        until ${pkgs.curl}/bin/curl -sS -o /dev/null --connect-timeout 2 --max-time 2 "''${REITTI_ENDPOINT}/"; do
+            sleep 2
         done
 
-        # Watch for new files: close_write (normal write) and moved_to (SFTP atomic rename)
+        echo "Scanning ''${REITTI_WATCH_DIR} for pre-existing files..."
+        shopt -s nullglob
+        for FILE in "''${REITTI_WATCH_DIR}"/*.gpx "''${REITTI_WATCH_DIR}"/*.zip; do
+            process_file "''${FILE}"
+        done
+
         echo "Watching ''${REITTI_WATCH_DIR} for GPX/ZIP uploads..."
         ${pkgs.inotify-tools}/bin/inotifywait -m -e close_write -e moved_to "''${REITTI_WATCH_DIR}" --format '%w%f' |
         while read -r FILE; do
@@ -216,8 +230,8 @@ in
                 "docker-reitti-redis.service"
                 "docker-reitti.service"
             ];
-            after = [ "docker.service" ];
-            requires = [ "docker.service" ];
+            after = [ "docker.service" "docker.socket" ];
+            wants = [ "docker.service" ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -225,9 +239,6 @@ in
             script = ''
                 ${pkgs.docker}/bin/docker network inspect reitti-net >/dev/null 2>&1 || \
                     ${pkgs.docker}/bin/docker network create reitti-net
-            '';
-            preStop = ''
-                ${pkgs.docker}/bin/docker network rm reitti-net || true
             '';
         };
 
