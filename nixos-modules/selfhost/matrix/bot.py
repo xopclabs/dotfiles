@@ -1,10 +1,11 @@
 import argparse
 import asyncio
+import json
 import logging
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from urllib.parse import quote
 
 import aiohttp
@@ -23,6 +24,7 @@ logging.basicConfig(
 log = logging.getLogger('matrix-ntfy-bot')
 
 MESSAGE_PREVIEW_LEN = 120
+WG_HANDSHAKE_TIMEOUT_DEFAULT = 180
 
 
 class BotState:
@@ -113,6 +115,113 @@ def truncate(text: str, limit: int = MESSAGE_PREVIEW_LEN) -> str:
     return text[: limit - 1] + '…'
 
 
+def matrix_localpart(user_id: str) -> str:
+    if user_id.startswith('@') and ':' in user_id:
+        return user_id[1:].split(':', 1)[0]
+    return user_id
+
+
+def load_wg_peer_keys(path: Optional[Path]) -> Dict[str, str]:
+    if path is None:
+        return {}
+    with path.open(encoding='utf-8') as handle:
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise ValueError('wg peer keys must be a JSON object')
+    return {str(name): str(pubkey) for name, pubkey in data.items()}
+
+
+def parse_latest_handshakes(output: str) -> Dict[str, int]:
+    handshakes: Dict[str, int] = {}
+    for line in output.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        try:
+            handshakes[parts[0]] = int(parts[1])
+        except ValueError:
+            continue
+    return handshakes
+
+
+def peer_is_connected(
+    handshakes: Dict[str, int],
+    public_key: str,
+    now: float,
+    timeout_seconds: int,
+) -> bool:
+    timestamp = handshakes.get(public_key, 0)
+    if timestamp <= 0:
+        return False
+    return (now - timestamp) <= timeout_seconds
+
+
+def subscriber_wg_keys(
+    subscriber: Dict[str, Any],
+    peer_keys: Dict[str, str],
+) -> List[str]:
+    names = subscriber.get('wg_peers')
+    if names is None:
+        localpart = matrix_localpart(subscriber['matrix_user'])
+        names = [localpart] if localpart in peer_keys else []
+    keys: List[str] = []
+    for name in names:
+        key = peer_keys.get(name)
+        if key:
+            keys.append(key)
+        else:
+            log.warning(
+                'unknown wg peer %s for %s',
+                name,
+                subscriber['matrix_user'],
+            )
+    return keys
+
+
+def subscriber_on_vpn(
+    subscriber: Dict[str, Any],
+    peer_keys: Dict[str, str],
+    handshakes: Dict[str, int],
+    timeout_seconds: int,
+    now: Optional[float] = None,
+) -> bool:
+    if now is None:
+        now = time.time()
+    for key in subscriber_wg_keys(subscriber, peer_keys):
+        if peer_is_connected(handshakes, key, now, timeout_seconds):
+            return True
+    return False
+
+
+async def read_wg_handshakes(wg_bin: str, interface: str) -> Dict[str, int]:
+    if not interface:
+        return {}
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            wg_bin,
+            'show',
+            interface,
+            'latest-handshakes',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except FileNotFoundError:
+        log.warning('wg binary not found: %s', wg_bin)
+        return {}
+    stdout, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        log.warning(
+            'wg show %s latest-handshakes failed: %s',
+            interface,
+            stderr.decode(errors='replace').strip(),
+        )
+        return {}
+    return parse_latest_handshakes(stdout.decode(errors='replace'))
+
+
 async def send_ntfy(
     session: aiohttp.ClientSession,
     ntfy_url: str,
@@ -154,6 +263,14 @@ async def notify_recipients(
     room_id = room.room_id
     click = matrix_to_url(room_id)
     grace = int(runtime.get('typing_grace_seconds', 30))
+    peer_keys = runtime.get('wg_peer_keys') or {}
+    handshake_timeout = int(
+        runtime.get('wg_handshake_timeout', WG_HANDSHAKE_TIMEOUT_DEFAULT)
+    )
+    handshakes = await read_wg_handshakes(
+        runtime.get('wg_bin', 'wg'),
+        runtime.get('wg_interface', ''),
+    )
 
     async with aiohttp.ClientSession() as session:
         for subscriber in config['subscribers']:
@@ -165,6 +282,14 @@ async def notify_recipients(
                 continue
             if is_typing(state, room_id, matrix_user, grace):
                 log.debug('skip %s: typing in %s', matrix_user, room_id)
+                continue
+            if subscriber_on_vpn(
+                subscriber,
+                peer_keys,
+                handshakes,
+                handshake_timeout,
+            ):
+                log.info('skip %s: connected to wireguard', matrix_user)
                 continue
             await send_ntfy(
                 session=session,
@@ -331,6 +456,28 @@ def main() -> None:
         default=30,
         help='Skip notify if user typed in room within this many seconds',
     )
+    parser.add_argument(
+        '--wg-bin',
+        default='wg',
+        help='Path to the wg binary used to read latest handshakes',
+    )
+    parser.add_argument(
+        '--wg-interface',
+        default='',
+        help='WireGuard interface to check (empty disables the VPN skip)',
+    )
+    parser.add_argument(
+        '--wg-peer-keys',
+        type=Path,
+        default=None,
+        help='JSON object mapping WireGuard peer names to public keys',
+    )
+    parser.add_argument(
+        '--wg-handshake-timeout',
+        type=int,
+        default=WG_HANDSHAKE_TIMEOUT_DEFAULT,
+        help='Seconds since latest handshake to treat a peer as connected',
+    )
     args = parser.parse_args()
 
     runtime = {
@@ -340,6 +487,10 @@ def main() -> None:
         'store_path': str(args.store_path),
         'icon_url': args.icon_url,
         'typing_grace_seconds': args.typing_grace_seconds,
+        'wg_bin': args.wg_bin,
+        'wg_interface': args.wg_interface,
+        'wg_peer_keys': load_wg_peer_keys(args.wg_peer_keys),
+        'wg_handshake_timeout': args.wg_handshake_timeout,
     }
 
     try:

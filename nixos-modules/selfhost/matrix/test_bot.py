@@ -1,4 +1,5 @@
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from typing import Any, Dict
@@ -104,6 +105,134 @@ class RunBotTest(unittest.IsolatedAsyncioTestCase):
             await bot.run_bot(path, runtime)
 
         mock_client.sync_forever.assert_awaited_once_with(timeout=30000, full_state=True)
+
+
+PAVEL_PUBKEY = 'h/zTkj0tEVTYjJYZ3mvNLBblkKD9XMq7UpR03dlWSxo='
+PAVEL_PC_PUBKEY = 'dgkPzUZ+R3ODZWzY46DROU7VOOvuvndJucQlWEu0UV0='
+DAD_PUBKEY = 'oeVcaSF66inhr7nLpofaYeqUL3+rtH/tAaiK8HJn2nY='
+PEER_KEYS = {
+    'pavel': PAVEL_PUBKEY,
+    'pavel-pc': PAVEL_PC_PUBKEY,
+    'dad': DAD_PUBKEY,
+}
+PAVEL = {
+    'matrix_user': f'@pavel:matrix.{HS}',
+    'ntfy_topic': 'matrix-pavel',
+}
+
+
+class WgHandshakeTest(unittest.TestCase):
+    def test_parse_latest_handshakes(self) -> None:
+        output = (
+            f'{PAVEL_PUBKEY}\t1786626230\n'
+            f'{DAD_PUBKEY} 0\n'
+            'not-a-valid-line\n'
+        )
+        self.assertEqual(
+            bot.parse_latest_handshakes(output),
+            {PAVEL_PUBKEY: 1786626230, DAD_PUBKEY: 0},
+        )
+
+    def test_peer_is_connected_fresh_handshake(self) -> None:
+        now = 1_000_180.0
+        handshakes = {PAVEL_PUBKEY: 1_000_000}
+        self.assertTrue(
+            bot.peer_is_connected(handshakes, PAVEL_PUBKEY, now, 180)
+        )
+
+    def test_peer_is_connected_stale_or_missing(self) -> None:
+        now = 1_000_181.0
+        handshakes = {PAVEL_PUBKEY: 1_000_000, DAD_PUBKEY: 0}
+        self.assertFalse(
+            bot.peer_is_connected(handshakes, PAVEL_PUBKEY, now, 180)
+        )
+        self.assertFalse(
+            bot.peer_is_connected(handshakes, DAD_PUBKEY, now, 180)
+        )
+        self.assertFalse(
+            bot.peer_is_connected(handshakes, PAVEL_PC_PUBKEY, now, 180)
+        )
+
+    def test_matrix_localpart(self) -> None:
+        self.assertEqual(
+            bot.matrix_localpart(f'@pavel:matrix.{HS}'),
+            'pavel',
+        )
+
+    def test_subscriber_wg_keys_auto_localpart(self) -> None:
+        self.assertEqual(
+            bot.subscriber_wg_keys(PAVEL, PEER_KEYS),
+            [PAVEL_PUBKEY],
+        )
+
+    def test_subscriber_wg_keys_explicit_peers(self) -> None:
+        subscriber = dict(PAVEL, wg_peers=['pavel', 'pavel-pc'])
+        self.assertEqual(
+            bot.subscriber_wg_keys(subscriber, PEER_KEYS),
+            [PAVEL_PUBKEY, PAVEL_PC_PUBKEY],
+        )
+
+    def test_subscriber_on_vpn_matches_phone_not_desktop(self) -> None:
+        now = 1_000_000.0
+        phone_up = {PAVEL_PUBKEY: 999_900, PAVEL_PC_PUBKEY: 0}
+        desktop_only = {PAVEL_PUBKEY: 0, PAVEL_PC_PUBKEY: 999_900}
+        self.assertTrue(
+            bot.subscriber_on_vpn(PAVEL, PEER_KEYS, phone_up, 180, now)
+        )
+        self.assertFalse(
+            bot.subscriber_on_vpn(PAVEL, PEER_KEYS, desktop_only, 180, now)
+        )
+
+    def test_load_wg_peer_keys(self) -> None:
+        path = write_config('{"pavel": "abc=", "dad": "def="}\n')
+        self.assertEqual(
+            bot.load_wg_peer_keys(path),
+            {'pavel': 'abc=', 'dad': 'def='},
+        )
+        self.assertEqual(bot.load_wg_peer_keys(None), {})
+
+
+class NotifyVpnSkipTest(unittest.IsolatedAsyncioTestCase):
+    def _runtime(self) -> Dict[str, Any]:
+        return {
+            'ntfy_url': 'https://ntfy.example.com',
+            'typing_grace_seconds': 30,
+            'wg_bin': 'wg',
+            'wg_interface': 'wg0',
+            'wg_peer_keys': PEER_KEYS,
+            'wg_handshake_timeout': 180,
+            'icon_url': '',
+        }
+
+    async def _notify(self, handshakes: Dict[str, int]) -> AsyncMock:
+        config = bot.load_config(write_config(), SAMPLE_TOKEN)
+        config['subscribers'] = [PAVEL]
+        room = type('Room', (), {'room_id': f'!room:matrix.{HS}', 'read_receipts': {}})()
+        event = type('Event', (), {'event_id': '$e', 'server_timestamp': 1})()
+        send = AsyncMock()
+        with patch.object(bot, 'read_wg_handshakes', AsyncMock(return_value=handshakes)):
+            with patch.object(bot, 'send_ntfy', send):
+                await bot.notify_recipients(
+                    state=bot.BotState(),
+                    room=room,
+                    config=config,
+                    runtime=self._runtime(),
+                    sender=f'@dad:matrix.{HS}',
+                    event=event,
+                    title='t',
+                    message='m',
+                    priority='default',
+                )
+        return send
+
+    async def test_skips_when_on_vpn(self) -> None:
+        send = await self._notify({PAVEL_PUBKEY: int(time.time())})
+        send.assert_not_called()
+
+    async def test_sends_when_offline_vpn(self) -> None:
+        send = await self._notify({PAVEL_PUBKEY: 0})
+        send.assert_awaited_once()
+        self.assertEqual(send.await_args.kwargs['message'], 'm')
 
 
 if __name__ == '__main__':

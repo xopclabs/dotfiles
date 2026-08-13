@@ -20,11 +20,16 @@ let
             pyyaml
         ] ++ matrix-nio.optional-dependencies.e2e;
         doCheck = true;
-        checkInputs = with pkgs.python3Packages; [
+        nativeCheckInputs = with pkgs.python3Packages; [
             matrix-nio
             aiohttp
             pyyaml
         ] ++ matrix-nio.optional-dependencies.e2e;
+        checkPhase = ''
+            runHook preCheck
+            python -m unittest discover -s . -v
+            runHook postCheck
+        '';
     };
 in
 {
@@ -72,10 +77,42 @@ in
                 many seconds before the message.
             '';
         };
+
+        skipIfVpnConnected = mkOption {
+            type = types.bool;
+            default = true;
+            description = ''
+                Skip ntfy when the recipient currently has a live WireGuard handshake.
+
+                The Matrix localpart is matched to `homelab.wireguard.peers.<name>`
+                (e.g. `@pavel:...` → `pavel`, not `pavel-pc`). Override per subscriber
+                with `wg_peers` in the sops bot config.
+            '';
+        };
+
+        wgInterface = mkOption {
+            type = types.str;
+            default = "wg0";
+            description = "WireGuard interface whose latest handshakes are checked";
+        };
+
+        wgHandshakeTimeout = mkOption {
+            type = types.int;
+            default = 180;
+            description = ''
+                Seconds since the latest handshake to treat a peer as connected.
+                WireGuard expires sessions after 180s without a handshake.
+            '';
+        };
     };
 
     config = mkIf (matrixCfg.enable && cfg.enable) (let
         mb = cfg.sopsKey;
+        checkVpn =
+            cfg.skipIfVpnConnected && config.homelab.wireguard.enable;
+        wgPeerKeysFile = pkgs.writeText "wg-peer-keys.json" (builtins.toJSON (
+            mapAttrs (_: peer: peer.publicKey) config.homelab.wireguard.peers
+        ));
     in {
         nixpkgs.config.permittedInsecurePackages = [
             "olm-3.2.16"
@@ -156,8 +193,16 @@ in
                         --homeserver "http://127.0.0.1:${toString matrixCfg.synapsePort}" \
                         --store-path "${cfg.dataDir}" \
                         --icon-url "${cfg.iconUrl}" \
-                        --typing-grace-seconds ${toString cfg.typingGraceSeconds}
+                        --typing-grace-seconds ${toString cfg.typingGraceSeconds} \
+                        ${optionalString checkVpn "--wg-bin ${pkgs.wireguard-tools}/bin/wg"} \
+                        ${optionalString checkVpn "--wg-interface ${cfg.wgInterface}"} \
+                        ${optionalString checkVpn "--wg-peer-keys ${wgPeerKeysFile}"} \
+                        ${optionalString checkVpn "--wg-handshake-timeout ${toString cfg.wgHandshakeTimeout}"}
                 '';
+            } // optionalAttrs checkVpn {
+                # CAP_NET_ADMIN is required to read `wg show` handshakes.
+                AmbientCapabilities = [ "CAP_NET_ADMIN" ];
+                CapabilityBoundingSet = [ "CAP_NET_ADMIN" ];
             };
         };
     });
