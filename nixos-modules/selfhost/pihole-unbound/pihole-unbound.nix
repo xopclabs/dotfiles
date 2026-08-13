@@ -48,6 +48,13 @@ in
                 description = "Port for Pi-hole web interface";
             };
             
+            socksProxy = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                example = "socks5h://127.0.0.1:10808";
+                description = "SOCKS proxy for macvendor.db and gravity list downloads. Local FTL API calls bypass it.";
+            };
+
             lists = mkOption {
                 type = types.listOf (types.attrsOf types.str);
                 default = [
@@ -327,15 +334,37 @@ in
                 ''}"
             ];
         };
-        
+
+        # macvendor.db and gravity lists stall on this ISP without a proxy.
+        # Gravity migrations still read /etc/.pihole; the SQL lives in the nix store.
+        systemd.services.pihole-ftl-setup = {
+                serviceConfig = {
+                    BindReadOnlyPaths = [
+                        "${config.services.pihole-ftl.piholePackage}/share/pihole:/etc/.pihole"
+                    ];
+                    # nixpkgs addList treats "already present" as failure (exit 1).
+                    SuccessExitStatus = [ 1 ];
+                    TimeoutStartSec = "10min";
+                };
+        } // optionalAttrs (cfg.pihole.socksProxy != null) {
+            after = [ "sing-box.service" ];
+            wants = [ "sing-box.service" ];
+            environment = {
+                ALL_PROXY = cfg.pihole.socksProxy;
+                HTTP_PROXY = cfg.pihole.socksProxy;
+                HTTPS_PROXY = cfg.pihole.socksProxy;
+                all_proxy = cfg.pihole.socksProxy;
+                http_proxy = cfg.pihole.socksProxy;
+                https_proxy = cfg.pihole.socksProxy;
+                NO_PROXY = "127.0.0.1,localhost,::1";
+                no_proxy = "127.0.0.1,localhost,::1";
+            };
+        };
+
         services.pihole-web = {
             enable = true;
             ports = [ cfg.pihole.webPort ];
         };
-
-        # Upstream runs gravity (oisd, etc.) on every FTL start. That hangs long
-        # enough to fail `nh os switch`. Gravity still runs on its timer.
-        systemd.services.pihole-ftl-setup.enable = lib.mkForce false;
 
         # Disable systemd-resolved to avoid port conflicts
         services.resolved.enable = mkForce false;
