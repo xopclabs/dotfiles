@@ -16,6 +16,7 @@ let
             nativeBuildInputs = old.nativeBuildInputs ++ [ pkgs.pkg-config ];
         });
         additionalPrograms = [ pkgs.ffmpeg ];
+        jdks = [ pkgs.jdk8 pkgs.jdk17 pkgs.jdk21 pkgs.jdk25 ];
     };
 in {
     options.modules.other.minecraft = { enable = mkEnableOption "minecraft"; };
