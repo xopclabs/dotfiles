@@ -5,7 +5,11 @@ let
     cfg = config.desktop.p81;
     perimeter81-unwrapped = pkgs.callPackage ./package.nix {};
     perimeter81 = pkgs.callPackage ./fhsenv.nix { inherit perimeter81-unwrapped; };
-    p81-reset = pkgs.callPackage ./reset.nix {};
+    p81ctl = pkgs.callPackage ./ctl.nix {};
+    p81-reset = pkgs.callPackage ./reset.nix {
+        inherit p81ctl;
+        inherit (cfg) autoConnect connectTimeoutSec resetAttempts;
+    };
 in
 {
     imports = [ ./split-dns.nix ];
@@ -22,7 +26,8 @@ in
                 - `none`: do nothing automatically (use `sudo p81-reset` when stuck).
                 - `async-restart`: queue a delayed `systemctl restart` via `systemd-run`
                   (does not block resume; avoids the freezes caused by a synchronous
-                  restart inside system-sleep).
+                  restart inside system-sleep). With `autoConnect`, this escalates to
+                  `p81-reset` if the tunnel does not come back after the restart.
                 - `async-reset`: same timing but runs `p81-reset` (harder flush of tun0
                   and children) if a plain restart is not enough.
             '';
@@ -33,6 +38,45 @@ in
             description = ''
                 Seconds to wait after resume before running sleep resume recovery (Wi-Fi
                 and NetworkManager often need a moment before the helper can reconnect).
+            '';
+        };
+        autoConnect = mkOption {
+            type = types.bool;
+            default = true;
+            description = ''
+                Bring the tunnel back up automatically instead of leaving it to a manual
+                click in the GUI, both at the end of `p81-reset` and after sleep resume
+                recovery.
+
+                This drives the daemon's own control socket via `p81ctl`, so it works
+                with the GUI closed and without a display. It cannot help when the agent
+                is logged out, since obtaining a fresh token needs the browser flow.
+            '';
+        };
+        connectTimeoutSec = mkOption {
+            type = types.ints.positive;
+            default = 45;
+            description = ''
+                How long `autoConnect` keeps trying per reset. Waiting for the daemon to
+                boot, log in and reach its cloud channel is budgeted separately and does
+                not count against this.
+
+                This wants to be generous. A connect can be swallowed silently or refused
+                by the cloud with an error the agent never handles, and both clear up on
+                their own after a minute or so, so persistence works where a quick retry
+                does not.
+            '';
+        };
+        resetAttempts = mkOption {
+            type = types.ints.positive;
+            default = 2;
+            description = ''
+                How many times `p81-reset` resets the agent while trying to get the
+                tunnel up, before giving up and pointing at the GUI.
+
+                Resetting does not fix a refusal coming from the cloud; it only clears
+                local state and buys time. `p81ctl` already retries in place, so this is
+                a backstop rather than the main lever.
             '';
         };
         restartOnPhysicalLinkUp = mkOption {
@@ -47,7 +91,7 @@ in
     };
 
     config = mkIf cfg.enable {
-        environment.systemPackages = [ perimeter81 p81-reset ];
+        environment.systemPackages = [ perimeter81 p81-reset p81ctl ];
 
         systemd.tmpfiles.rules = [
             "d /var/lib/p81 0755 root root -"
@@ -82,20 +126,12 @@ in
                     chmod 644 /var/lib/p81/resolv.conf
                 '';
                 ExecStart = "${perimeter81}/bin/p81-helper-daemon";
-                # The daemon's own "stop" subcommand has been observed to *never* return
-                # gracefully in practice (every stop on record hits the full timeout), so
-                # a long grace period only slows down restarts, reboots and suspend/resume
-                # recovery without ever paying off. Give it a short chance, then let
-                # systemd's normal KillMode=control-group finish the job.
-                ExecStop = pkgs.writeShellScript "p81-stop" ''
-                    set +e
-                    ${pkgs.coreutils}/bin/timeout 8 ${perimeter81}/bin/p81-helper-daemon stop
-                    code=$?
-                    if [ "$code" -eq 124 ]; then
-                        echo "p81-stop: graceful stop timed out after 8s, systemd will force-kill the cgroup" >&2
-                    fi
-                    exit 0
-                '';
+                # No ExecStop on purpose. The daemon's own "stop" subcommand never
+                # returned gracefully (every stop on record burned the full 8s timeout),
+                # and worse, the binary starts a whole daemon unless it is given `ctl`:
+                # each stop booted a second agent that registered with the cloud and was
+                # then killed without closing its channel. Plain SIGTERM to the cgroup
+                # shuts the real daemon down immediately.
                 # Deterministic cleanup after every stop (manual, restart, or crash), not
                 # just via the manual `p81-reset` fallback. This is what previously left
                 # state behind across restarts/suspend cycles.
@@ -132,7 +168,15 @@ in
                     ${if cfg.sleepResumeRecovery == "async-reset" then ''
                         exec ${p81-reset}/bin/p81-reset
                     '' else ''
-                        exec ${pkgs.systemd}/bin/systemctl restart perimeter81-helper-daemon
+                        ${pkgs.systemd}/bin/systemctl restart perimeter81-helper-daemon
+                        ${optionalString cfg.autoConnect ''
+                            # A restart on its own is often not enough to get the
+                            # tunnel back; escalate to the full reset, which retries.
+                            if ! ${p81ctl}/bin/p81ctl connect \
+                                --timeout ${toString cfg.connectTimeoutSec}; then
+                                exec ${p81-reset}/bin/p81-reset
+                            fi
+                        ''}
                     ''}
                 '';
             in {
