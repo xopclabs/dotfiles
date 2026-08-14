@@ -61,7 +61,7 @@ let
 
     minecraftCli = pkgs.writeShellApplication {
         name = "minecraft";
-        runtimeInputs = [ pkgs.tmux pkgs.systemd pkgs.coreutils ];
+        runtimeInputs = [ pkgs.tmux pkgs.systemd pkgs.coreutils pkgs.gzip pkgs.less ];
         text = ''
             PATH="/run/wrappers/bin:$PATH"
 
@@ -73,6 +73,7 @@ let
                 echo "Usage: minecraft [-s server] attach"
                 echo "       minecraft [-s server] send <command...>"
                 echo "       minecraft [-s server] start|stop|restart|status"
+                echo "       minecraft [-s server] logs [-f]"
             }
 
             while [[ $# -gt 0 ]]; do
@@ -162,6 +163,37 @@ let
                 status)
                     exec systemctl --no-pager --full status "$unit"
                     ;;
+                logs)
+                    log_dir="/srv/minecraft/$server/logs"
+                    if [[ ! -d "$log_dir" ]]; then
+                        echo "minecraft: no log directory at $log_dir" >&2
+                        exit 1
+                    fi
+
+                    if [[ "''${1:-}" == "-f" ]]; then
+                        exec tail -F "$log_dir/latest.log"
+                    fi
+
+                    dump_logs() {
+                        shopt -s nullglob
+                        rotated=("$log_dir"/*.log.gz)
+                        shopt -u nullglob
+                        if [[ ''${#rotated[@]} -gt 0 ]]; then
+                            # Numeric sort so e.g. ...-2.log.gz sorts before ...-10.log.gz.
+                            mapfile -t rotated < <(printf '%s\n' "''${rotated[@]}" | sort -V)
+                            zcat -- "''${rotated[@]}"
+                        fi
+                        if [[ -f "$log_dir/latest.log" ]]; then
+                            cat -- "$log_dir/latest.log"
+                        fi
+                    }
+
+                    if [[ -t 1 ]]; then
+                        dump_logs | less
+                    else
+                        dump_logs
+                    fi
+                    ;;
                 *)
                     usage
                     exit 1
@@ -212,11 +244,6 @@ in
                     type = types.str;
                     default = "bluemap.vm.local";
                     description = "Subdomain for the BlueMap web UI";
-                };
-                address = mkOption {
-                    type = types.str;
-                    default = "127.0.0.1";
-                    description = "Address BlueMap's webserver binds to";
                 };
                 port = mkOption {
                     type = types.port;
@@ -308,6 +335,14 @@ in
                 files = {
                     "ops.json" = config.sops.secrets."minecraft/ops.json".path;
                     "whitelist.json" = config.sops.secrets."minecraft/whitelist.json".path;
+                    "config/voxyworldgenv2.json" = (pkgs.formats.json {}).generate "voxyworldgenv2.json" {
+                        enabled = true;
+                        generationRadius = 256;
+                        update_interval = 20;
+                        maxQueueSize = 100000;
+                        maxActiveTasks = 6;
+                        showF3MenuStats = true;
+                    };
                 } // optionalAttrs bluemapCfg.enable {
                     "config/bluemap/core.conf" = pkgs.writeText "bluemap-core.conf" ''
                         accept-download: true
@@ -322,7 +357,7 @@ in
                         enabled: true
                         webroot: "bluemap/web"
                         port: ${toString bluemapCfg.port}
-                        ip: "${bluemapCfg.address}"
+                        ip: "127.0.0.1"
                     '';
                 };
                 symlinks = {
@@ -416,7 +451,7 @@ in
             {
                 name = "bluemap";
                 subdomain = bluemapCfg.subdomain;
-                backendUrl = "http://${bluemapCfg.address}:${toString bluemapCfg.port}";
+                backendUrl = "http://127.0.0.1:${toString bluemapCfg.port}";
                 serversTransport = "defaultTransport";
             }
         ];
