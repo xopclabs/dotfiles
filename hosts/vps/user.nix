@@ -14,6 +14,7 @@
             tmux = {
                 enable = true;
                 statusPosition = "bottom";
+                prefixKey = "C-Space";
             };
             starship = {
                 enable = true;
