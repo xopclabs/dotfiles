@@ -45,5 +45,25 @@ in
                 configFile = config.sops.secrets."vpn/${name}".path;
             };
         }) cfg.peers;
+
+        # wg-quick up is not idempotent: nixos-rebuild fails if the link is already up (manual start, leftover after a failed preStop, etc.).
+        systemd.services = mapAttrs' (name: peer: {
+            name = "wg-quick-${name}";
+            value = {
+                restartIfChanged = false;
+                stopIfChanged = false;
+                serviceConfig.ExecStartPre =
+                    let
+                        conf = config.sops.secrets."vpn/${name}".path;
+                    in
+                    [
+                        (pkgs.writeShellScript "wg-quick-${name}-pre" ''
+                            ${pkgs.wireguard-tools}/bin/wg-quick down ${conf} \
+                                || ${pkgs.iproute2}/bin/ip link delete dev ${name} \
+                                || true
+                        '')
+                    ];
+            };
+        }) (filterAttrs (_: peer: peer.autostart) cfg.peers);
     };
 }

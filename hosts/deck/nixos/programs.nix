@@ -15,7 +15,7 @@
                 };
                 home_lan = {
                     enable = true;
-                    autostart = false;
+                    autostart = true;
                 };
                 home_pi = {
                     enable = true;
@@ -50,7 +50,7 @@
         lutris.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
-        virtual_webcam.enable = true;
+        virtual_webcam.enable = false;
         p81 = {
             enable = true;
             splitDns.enable = true;
