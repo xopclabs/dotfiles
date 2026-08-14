@@ -307,6 +307,10 @@
             enable = true;
             distantHorizons = {
                 enable = true;
+                bluemap = {
+                    enable = true;
+                    subdomain = "bluemap.vm.local";
+                };
                 backup = {
                     enable = true;
                     repo = "f176w76v@f176w76v.repo.borgbase.com:repo";

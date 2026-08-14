@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.homelab.minecraft;
+    bluemapCfg = cfg.distantHorizons.bluemap;
 
     fetchMod = { url, sha512 }: pkgs.fetchurl { inherit url sha512; };
 
@@ -90,6 +91,28 @@ in
                     description = "Borgbase repository URL for Distant Horizons backups";
                 };
             };
+            bluemap = {
+                enable = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Enable BlueMap web map for generated chunks";
+                };
+                subdomain = mkOption {
+                    type = types.str;
+                    default = "bluemap.vm.local";
+                    description = "Subdomain for the BlueMap web UI";
+                };
+                address = mkOption {
+                    type = types.str;
+                    default = "127.0.0.1";
+                    description = "Address BlueMap's webserver binds to";
+                };
+                port = mkOption {
+                    type = types.port;
+                    default = 8100;
+                    description = "Port for BlueMap's integrated webserver";
+                };
+            };
         };
 
         beta = {
@@ -173,10 +196,26 @@ in
                 files = {
                     "ops.json" = config.sops.secrets."minecraft/ops.json".path;
                     "whitelist.json" = config.sops.secrets."minecraft/whitelist.json".path;
+                } // optionalAttrs bluemapCfg.enable {
+                    "config/bluemap/core.conf" = pkgs.writeText "bluemap-core.conf" ''
+                        accept-download: true
+                        data: "bluemap"
+                        render-thread-count: 1
+                        render-thread-priority: 2
+                        update-cooldown: 60
+                        full-update-interval: 1440
+                        scan-for-mod-resources: true
+                    '';
+                    "config/bluemap/webserver.conf" = pkgs.writeText "bluemap-webserver.conf" ''
+                        enabled: true
+                        webroot: "bluemap/web"
+                        port: ${toString bluemapCfg.port}
+                        ip: "${bluemapCfg.address}"
+                    '';
                 };
                 symlinks = {
                     mods = pkgs.linkFarmFromDrvs "mods" (
-                        builtins.attrValues {
+                        builtins.attrValues ({
                             fabric-api = fetchMod {
                                 url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/vmQp7ixA/fabric-api-0.157.0%2B26.2.jar";
                                 sha512 = "sha512-Tr7EifKyzmIevrstG36XFLb9KI69tOKH12fN5XYSzx09HU9R2vfn7JVB+hRt9r3kl4q5iiljfO1tm8LzxCF2UA==";
@@ -229,7 +268,12 @@ in
                                 url = "https://cdn.modrinth.com/data/fNtGd1cx/versions/EsIPjK0A/VoxyServer-1.2.4-26.2.jar";
                                 sha512 = "sha512-rQdhyNdStsKuBcScxOLRdWltmi7oV8HU+jbvnlUpptN2N0h2BQo2NmbM1nnW6Zslk8sNgJSujUnw8e0C49BHew==";
                             };
-                        }
+                        } // optionalAttrs bluemapCfg.enable {
+                            bluemap = fetchMod {
+                                url = "https://cdn.modrinth.com/data/swbUV1cr/versions/VTvifNPN/bluemap-5.22-fabric.jar";
+                                sha512 = "sha512-7Fl99+l08fKLqhUyU3NEKWjJZDoVem0mJ81cNviEHDAj8sCAI9IDvPp+DlG85p1GI7pxK6u4Tac71A8ODH9NvQ==";
+                            };
+                        })
                     );
                 };
             };
@@ -255,6 +299,24 @@ in
                 };
             };
         };
+
+        homelab.traefik.routes = mkIf (cfg.distantHorizons.enable && bluemapCfg.enable && config.homelab.traefik.enable) [
+            {
+                name = "bluemap";
+                subdomain = bluemapCfg.subdomain;
+                backendUrl = "http://${bluemapCfg.address}:${toString bluemapCfg.port}";
+                serversTransport = "defaultTransport";
+            }
+        ];
+
+        homelab.glance.services = mkIf (cfg.distantHorizons.enable && bluemapCfg.enable && config.homelab.glance.enable) [
+            {
+                title = "BlueMap";
+                subdomain = bluemapCfg.subdomain;
+                icon = "mdi:map";
+                group = "Services";
+            }
+        ];
 
         # Borgbase backups for minecraft servers
         homelab.borgbackup.jobs = mkMerge [
