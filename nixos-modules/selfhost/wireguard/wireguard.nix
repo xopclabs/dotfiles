@@ -228,53 +228,46 @@ in
         # tun2socks service for routing traffic through SOCKS5 proxy
         systemd.services.tun2socks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
             description = "tun2socks SOCKS5 tunnel";
-            before = [ "wireguard-wg0.service" ];
+            # Table 100 pins 10.250.250.0/24 to wg0, so this must start after it.
+            after = [ "network-online.target" "wireguard-wg0.service" ];
+            requires = [ "wireguard-wg0.service" ];
             wantedBy = [ "multi-user.target" ];
             
             serviceConfig = {
-                Type = "forking";
+                Type = "simple";
                 Restart = "on-failure";
                 RestartSec = "5s";
             };
             
             script = ''
                 # Create TUN interface
-                ${pkgs.iproute2}/bin/ip tuntap add mode tun dev tun0
-                ${pkgs.iproute2}/bin/ip addr add 10.250.251.1/24 dev tun0
+                ${pkgs.iproute2}/bin/ip tuntap add mode tun dev tun0 2>/dev/null || true
+                ${pkgs.iproute2}/bin/ip addr replace 10.250.251.1/24 dev tun0
                 ${pkgs.iproute2}/bin/ip link set dev tun0 up
                 
                 # Setup routing for WireGuard traffic through tun0
                 ${pkgs.iproute2}/bin/ip rule add from ${cfg.subnet} table 100 priority 100 2>/dev/null || true
-                ${pkgs.iproute2}/bin/ip route add default dev tun0 table 100
+                ${pkgs.iproute2}/bin/ip route replace default dev tun0 table 100
 
                 # Peer-to-peer within the VPN subnet must stay on wg0. localNetworks
                 # includes 10.0.0.0/8, which would otherwise steal 10.250.250.x via ens18
                 # and break pings/sync between the server and remote clients.
-                ${pkgs.iproute2}/bin/ip route add ${cfg.subnet} dev wg0 table 100
+                ${pkgs.iproute2}/bin/ip route replace ${cfg.subnet} dev wg0 table 100
                 
                 # Add routes for local networks to bypass proxy (route to LAN interface, not wg0)
                 ${concatMapStringsSep "\n" (net: 
-                    "    ${pkgs.iproute2}/bin/ip route add ${net} dev ${cfg.externalInterface} table 100"
+                    "    ${pkgs.iproute2}/bin/ip route replace ${net} dev ${cfg.externalInterface} table 100"
                 ) cfg.localNetworks}
                 
-                # Start tun2socks in background
-                ${pkgs.tun2socks}/bin/tun2socks -device tun0 -proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port} &
-                echo $! > /run/tun2socks.pid
+                # tun2socks 2.7 uses pflag: `-device tun0` is `-d evice`, not tun0.
+                exec ${pkgs.tun2socks}/bin/tun2socks --device tun0 --proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port}
             '';
             
             postStop = ''
-                # Stop tun2socks
-                if [ -f /run/tun2socks.pid ]; then
-                    kill $(cat /run/tun2socks.pid) 2>/dev/null || true
-                    rm /run/tun2socks.pid
-                fi
-                
-                # Remove routing rules
                 ${pkgs.iproute2}/bin/ip rule del from ${cfg.subnet} table 100 2>/dev/null || true
                 ${pkgs.iproute2}/bin/ip route flush table 100 2>/dev/null || true
-                
-                # Remove TUN interface
                 ${pkgs.iproute2}/bin/ip link del tun0 2>/dev/null || true
+                ${pkgs.iproute2}/bin/ip link del evice 2>/dev/null || true
             '';
         };
 
