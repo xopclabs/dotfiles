@@ -58,6 +58,117 @@ let
             src = betaSrc;
         })
     );
+
+    minecraftCli = pkgs.writeShellApplication {
+        name = "minecraft";
+        runtimeInputs = [ pkgs.tmux pkgs.systemd pkgs.coreutils ];
+        text = ''
+            PATH="/run/wrappers/bin:$PATH"
+
+            run_dir="/run/minecraft"
+            server="distant-horizons"
+            unit="minecraft-server-$server"
+
+            usage() {
+                echo "Usage: minecraft [-s server] attach"
+                echo "       minecraft [-s server] send <command...>"
+                echo "       minecraft [-s server] start|stop|restart|status"
+            }
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -s|--server)
+                        server="$2"
+                        unit="minecraft-server-$server"
+                        shift 2
+                        ;;
+                    -h|--help)
+                        usage
+                        exit 0
+                        ;;
+                    *)
+                        break
+                        ;;
+                esac
+            done
+
+            if [[ $# -lt 1 ]]; then
+                usage
+                exit 1
+            fi
+
+            action="$1"
+            shift
+            socket="$run_dir/$server.sock"
+
+            require_socket() {
+                if [[ ! -S "$socket" && ! -e "$socket" ]]; then
+                    echo "minecraft: no console socket at $socket" >&2
+                    echo "Is the '$server' server running?" >&2
+                    exit 1
+                fi
+            }
+
+            capture_pane() {
+                tmux -S "$socket" capture-pane -p -J -S -
+            }
+
+            case "$action" in
+                attach)
+                    require_socket
+                    exec tmux -S "$socket" attach
+                    ;;
+                send)
+                    require_socket
+                    if [[ $# -lt 1 ]]; then
+                        echo "minecraft send: missing command" >&2
+                        exit 1
+                    fi
+                    before=$(capture_pane)
+                    tmux -S "$socket" send-keys -l -- "$*"
+                    tmux -S "$socket" send-keys Enter
+
+                    after="$before"
+                    stable=0
+                    i=0
+                    while [[ $i -lt 40 ]]; do
+                        sleep 0.2
+                        now=$(capture_pane)
+                        if [[ "$now" != "$after" ]]; then
+                            after="$now"
+                            stable=0
+                        else
+                            stable=$((stable + 1))
+                            if [[ "$after" != "$before" && $stable -ge 2 ]]; then
+                                break
+                            fi
+                        fi
+                        i=$((i + 1))
+                    done
+
+                    if [[ "$after" == "$before" ]]; then
+                        echo "minecraft send: no console output" >&2
+                        exit 0
+                    fi
+                    if [[ "$after" == "$before"* ]]; then
+                        printf '%s\n' "''${after#"$before"}"
+                    else
+                        printf '%s\n' "$after" | tail -n 40
+                    fi
+                    ;;
+                start|stop|restart)
+                    exec sudo systemctl "$action" "$unit"
+                    ;;
+                status)
+                    exec systemctl --no-pager --full status "$unit"
+                    ;;
+                *)
+                    usage
+                    exit 1
+                    ;;
+            esac
+        '';
+    };
 in
 {
     options.homelab.minecraft = {
@@ -148,6 +259,7 @@ in
         nixpkgs.overlays = [ inputs.nix-minecraft.overlay ];
 
         users.groups.minecraft.members = [ "homelab" ];
+        environment.systemPackages = [ minecraftCli ];
 
         sops.secrets."minecraft/ops.json" = {
             sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
