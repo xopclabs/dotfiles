@@ -9,7 +9,7 @@ with lib;
         ./postgres.nix
         ./traccar.nix
         ./nextcloud.nix
-        ./minecraft.nix
+        ./minecraft/minecraft.nix
         ./ddns.nix
         ./transmission.nix
         ./arr-stack/arr-stack.nix

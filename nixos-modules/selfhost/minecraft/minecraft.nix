@@ -6,6 +6,7 @@ let
     bluemapCfg = cfg.distantHorizons.bluemap;
 
     fetchMod = { url, sha512 }: pkgs.fetchurl { inherit url sha512; };
+    trmt = pkgs.callPackage ./trmt { };
 
     # Aikar-style G1 flags, without options Java 25 removed
     # (G1ConcRSHotCardLimit, G1ConcRefinementServiceIntervalMillis).
@@ -289,13 +290,13 @@ in
         environment.systemPackages = [ minecraftCli ];
 
         sops.secrets."minecraft/ops.json" = {
-            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "minecraft";
             group = "minecraft";
             mode = "0660";
         };
         sops.secrets."minecraft/whitelist.json" = {
-            sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+            sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
             owner = "minecraft";
             group = "minecraft";
             mode = "0660";
@@ -337,11 +338,18 @@ in
                     "whitelist.json" = config.sops.secrets."minecraft/whitelist.json".path;
                     "config/voxyworldgenv2.json" = (pkgs.formats.json {}).generate "voxyworldgenv2.json" {
                         enabled = true;
-                        generationRadius = 256;
-                        update_interval = 20;
+                        generationRadius = 512;
                         maxQueueSize = 100000;
-                        maxActiveTasks = 6;
+                        maxActiveTasks = 50;
+                        saveNormalChunk = true;
                         showF3MenuStats = true;
+                    };
+                    "config/do_a_barrel_roll-server.json" = (pkgs.formats.json {}).generate "do_a_barrel_roll-server.json" {
+                        allowThrusting = true;
+                        forceEnabled = false;
+                        forceInstalled = false;
+                        installedTimeout = 40;
+                        kineticDamage = "VANILLA";
                     };
                 } // optionalAttrs bluemapCfg.enable {
                     "config/bluemap/core.conf" = pkgs.writeText "bluemap-core.conf" ''
@@ -379,14 +387,6 @@ in
                                 url = "https://cdn.modrinth.com/data/VSNURh3q/versions/sOfMfJPD/c2me-fabric-mc26.2-0.4.2-alpha.0.41.jar";
                                 sha512 = "sha512-ZJp+hmu/7SCZwSIoxJr7dqhQwPCHumZAx+c8wiSquSGpKq/QeX8pEZrFJjLEEpkZJNfqy5ZKjAuGT/Nj8FeYAQ==";
                             };
-                            skin-restorer = fetchMod {
-                                url = "https://cdn.modrinth.com/data/ghrZDhGW/versions/aXzPUPsr/skinrestorer-2.10.0%2B26.1-fabric.jar";
-                                sha512 = "sha512-gujMop2ylOdkaOT/94COjkDohmxovrn7Z8gqnnyri3fc/0TKbzLuLdvmE5BKi45SleGJiApZDeAAIq7Iy6Qk8g==";
-                            };
-                            sortitout = fetchMod {
-                                url = "https://cdn.modrinth.com/data/jcOSOvm1/versions/pEmbfGPI/sort_it_out-fabric-1.5.0%2B26.2.x.jar";
-                                sha512 = "sha512-6DN0qq0QuUeYIjNmaAmsQk5R7MPR5Guv08UrmI5L60e+in0I2cw3nNZXFNvq4LoGvGhVJv82zaN9b9v5JODMkA==";
-                            };
                             architectury-api = fetchMod {
                                 url = "https://cdn.modrinth.com/data/lhGA9TYQ/versions/1yQC4VvP/architectury-fabric-21.0.7.jar";
                                 sha512 = "sha512-3v/K1zuPc9YR2OQ92tOzgOeJa6U+S082YKuHe5xLogVh5JiIixdFayuIGfuQLiBwdgYTzm/snh8QgpkAFOkt1A==";
@@ -403,6 +403,25 @@ in
                                 url = "https://cdn.modrinth.com/data/AANobbMI/versions/a9YZH3ip/sodium-fabric-0.9.2-alpha.4%2Bmc26.2.jar";
                                 sha512 = "sha512-LHpUhhbmqezJoKrrPxkr91vkJPqWXnrCSOlYU1MwzO6AWQJsw7q5/EgeCQVURtaEvAfFe8gvkfuWalLXFCvkcg==";
                             };
+                            cicada = fetchMod {
+                                url = "https://cdn.modrinth.com/data/IwCkru1D/versions/3hUl5ch8/cicada-lib-0.15.2%2B26.2.jar";
+                                sha512 = "sha512-nK/ihGEcury/Rl42iAncJe7S2hFNAuetzqLHe8MTNgT1723feRZXd/+EgoaiweJKp1nnhtYkrC5bKipa10g1TA==";
+                            };
+                            yacl = fetchMod {
+                                url = "https://cdn.modrinth.com/data/1eAoo2KR/versions/cnfPzuFU/yet_another_config_lib_v3-3.9.6%2B26.2-fabric.jar";
+                                sha512 = "sha512-s6WOSl71RkdWkoK4suljA4mzVo8KvsucFo2qqBVHfL+WHnneKAgcrFUbabgQ9WHwQ9Zp0QNK7IDxIVOlPf9T7w==";
+                            };
+
+                            skin-restorer = fetchMod {
+                                url = "https://cdn.modrinth.com/data/ghrZDhGW/versions/aXzPUPsr/skinrestorer-2.10.0%2B26.1-fabric.jar";
+                                sha512 = "sha512-gujMop2ylOdkaOT/94COjkDohmxovrn7Z8gqnnyri3fc/0TKbzLuLdvmE5BKi45SleGJiApZDeAAIq7Iy6Qk8g==";
+                            };
+
+                            sortitout = fetchMod {
+                                url = "https://cdn.modrinth.com/data/jcOSOvm1/versions/pEmbfGPI/sort_it_out-fabric-1.5.0%2B26.2.x.jar";
+                                sha512 = "sha512-6DN0qq0QuUeYIjNmaAmsQk5R7MPR5Guv08UrmI5L60e+in0I2cw3nNZXFNvq4LoGvGhVJv82zaN9b9v5JODMkA==";
+                            };
+
                             voxy = fetchMod {
                                 url = "https://cdn.modrinth.com/data/fxxUqruK/versions/zZX86mbc/voxy-0.2.18-beta.jar";
                                 sha512 = "sha512-JgXZJVzE5y5AHPjeKZrQHCGppIKNT40rbsT2PqWf0hxNKckiVcUJefhIzMtAV/C2h/s8nIf6TA3WL2hUDk2Euw==";
@@ -415,6 +434,20 @@ in
                                 url = "https://cdn.modrinth.com/data/fNtGd1cx/versions/EsIPjK0A/VoxyServer-1.2.4-26.2.jar";
                                 sha512 = "sha512-rQdhyNdStsKuBcScxOLRdWltmi7oV8HU+jbvnlUpptN2N0h2BQo2NmbM1nnW6Zslk8sNgJSujUnw8e0C49BHew==";
                             };
+
+                            doabarrelroll = fetchMod {
+                                url = "https://cdn.modrinth.com/data/6FtRfnLg/versions/ytqYgyYh/do_a_barrel_roll-fabric-3.8.4%2B26.2.jar";
+                                sha512 = "sha512-5xZzup7U0BQkLEABD4M3wSNlm1s0dcnrKQnqb1Xykk79MYxzuTge9upJNlrsg+rQYBJwyf5IhLSIDeXLVTdjwQ==";
+                            };
+
+
+                            chunky = fetchMod {
+                                url = "https://cdn.modrinth.com/data/fALzjamp/versions/4Eotm6ov/Chunky-Fabric-1.5.3.jar";
+                                sha512 = "sha512-uDv+eyGNCqYjKvl3rnQdwfgrEOUM0Su3WfZc9Ba4tivsy1Q+WH7wuWcKvgOBVmD44JG8aCNiTWXPBzAFcVc1Fg==";
+                            };
+
+                            # Built from source in ./trmt
+                            inherit trmt;
                         } // optionalAttrs bluemapCfg.enable {
                             bluemap = fetchMod {
                                 url = "https://cdn.modrinth.com/data/swbUV1cr/versions/VTvifNPN/bluemap-5.22-fabric.jar";
