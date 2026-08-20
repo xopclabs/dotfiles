@@ -19,10 +19,14 @@ in
             enable = true;
             package = pkgs.transmission_4;
             webHome = pkgs.flood-for-transmission;
-            
+            # Same group as radarr/sonarr so *arr can hardlink completed torrents.
+            group = "users";
+
             settings = {
                 download-dir = config.metadata.selfhost.storage.downloads.mainDir;
                 incomplete-dir-enabled = false;
+                # 002 → files 664, dirs 775 (decimal 2). Default 022 is 644 and blocks hardlinks.
+                umask = 2;
                 
                 rpc-enabled = true;
                 rpc-port = 9091;
@@ -32,6 +36,8 @@ in
                 rpc-authentication-required = true;
             };
         };
+
+        systemd.services.transmission.serviceConfig.UMask = lib.mkForce "0002";
         
         # Create necessary directories for downloads
         systemd.tmpfiles.rules = [
