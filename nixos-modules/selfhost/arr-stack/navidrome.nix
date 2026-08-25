@@ -60,7 +60,21 @@ in
                 Address = "127.0.0.1";
                 Port = cfg.port;
                 MusicFolder = toString cfg.musicDir;
+                # Per-track embedded art re-reads the FLAC at every song change (slow on RAIDZ HDDs).
+                EnableMediaFileCoverArt = false;
+                # Default 100MB fills quickly (~200 albums) and then evicts, forcing more FLAC reads.
+                ImageCacheSize = "500MB";
+                TranscodingCacheSize = "1GB";
             } cfg.settings;
+        };
+
+        services.traefik = mkIf config.homelab.traefik.enable {
+            dynamicConfigOptions = {
+                # Chromium (Feishin web player / browser) over HTTP/2 paced ~1MB/s on WG;
+                # libmpv on HTTP/1.1 pulled the same FLAC at ~10MB/s. ALPN is per-Host.
+                tls.options.http1only.alpnProtocols = [ "http/1.1" ];
+                http.services.navidrome.loadBalancer.responseForwarding.flushInterval = "-1";
+            };
         };
 
         systemd.services.navidrome = mkMerge [
@@ -79,6 +93,7 @@ in
                 name = "navidrome";
                 subdomain = cfg.subdomain;
                 backendUrl = "http://127.0.0.1:${toString cfg.port}";
+                tlsOptions = "http1only";
             }
         ];
 
