@@ -31,8 +31,9 @@
 
         nixvim.url = "github:nix-community/nixvim";
 
+        # Do not follow our nixpkgs: linux_jovian is built against Jovian's pin,
+        # which is what jovian.cachix.org (and Chaotic, when the pins line up) hash.
         jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
-        jovian.inputs.nixpkgs.follows = "nixpkgs";
 
         yeetmouse.url = "github:AndyFilter/YeetMouse?dir=nix";
         yeetmouse.inputs.nixpkgs.follows = "nixpkgs";
@@ -58,6 +59,17 @@
 
         nixos-vanta.url = "github:taho-inc/nixos-vanta";
         nixos-vanta.inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixConfig = {
+        extra-substituters = [
+            "https://jovian.cachix.org"
+            "https://chaotic-nyx.cachix.org"
+        ];
+        extra-trusted-public-keys = [
+            "jovian.cachix.org-1:8Vq4Txku6VZIRhYrHYki3Ab9XHJRoWmdYqMqj4rB/Uc="
+            "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+        ];
     };
 
     # All outputs for the system (configs)

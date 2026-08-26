@@ -2,21 +2,24 @@
 
 {
     nix = {
+        # Ryzen 9 3900X: 12c/24t, 48GB. Two slots for the same host (x86_64 +
+        # i686 via extra-platforms). Match the daemon (2 jobs × 12 cores).
+        # speedFactor vs the Deck (~4c): send big-parallel (kernel) here.
         buildMachines = [
             {
                 hostName = "homelab-builder";
                 system = "x86_64-linux";
                 protocol = "ssh-ng";
-                maxJobs = 4;
-                speedFactor = 2;
+                maxJobs = 2;
+                speedFactor = 8;
                 supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
             }
             {
                 hostName = "homelab-builder";
                 system = "i686-linux";
                 protocol = "ssh-ng";
-                maxJobs = 4;
-                speedFactor = 2;
+                maxJobs = 2;
+                speedFactor = 8;
                 supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
             }
         ];

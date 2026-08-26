@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 with lib;
 let
@@ -82,6 +82,23 @@ in
                 enable = true;
                 user = cfg.jovian.deckyLoader.user;
             };
+        };
+
+        # Kernel from Jovian's own nixpkgs pin, not ours. The module overlay
+        # otherwise rebuilds linux_jovian against host stdenv on every unstable bump.
+        boot.kernelPackages = mkIf cfg.jovian.enable (
+            mkForce inputs.jovian.legacyPackages.${pkgs.stdenv.hostPlatform.system}.linuxPackages_jovian
+        );
+
+        nix.settings = mkIf cfg.jovian.enable {
+            substituters = [
+                "https://jovian.cachix.org"
+                "https://chaotic-nyx.cachix.org"
+            ];
+            trusted-public-keys = [
+                "jovian.cachix.org-1:8Vq4Txku6VZIRhYrHYki3Ab9XHJRoWmdYqMqj4rB/Uc="
+                "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+            ];
         };
 
         # Extra gaming packages
