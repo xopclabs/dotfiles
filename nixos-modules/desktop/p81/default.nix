@@ -110,12 +110,13 @@ in
 
         systemd.services.perimeter81-helper-daemon = {
             description = "Perimeter81 Helper Daemon";
-            wants = [ "network.target" ];
+            wants = [ "network.target" "NetworkManager-wait-online.service" ];
             wantedBy = [ "multi-user.target" ];
             requires = [ "network-online.target" ];
             after = [
                 "NetworkManager.service"
-                "systemd-resolved.service"
+                "NetworkManager-wait-online.service"
+                "network-online.target"
             ];
 
             serviceConfig = {

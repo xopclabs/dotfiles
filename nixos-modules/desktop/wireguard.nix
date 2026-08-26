@@ -50,9 +50,15 @@ in
         systemd.services = mapAttrs' (name: peer: {
             name = "wg-quick-${name}";
             value = {
+                after = [ "NetworkManager-wait-online.service" "dnsmasq.service" ];
+                wants = [ "NetworkManager-wait-online.service" ];
                 restartIfChanged = false;
                 stopIfChanged = false;
-                serviceConfig.ExecStartPre =
+                serviceConfig = {
+                    Restart = "on-failure";
+                    RestartSec = "10s";
+                    StartLimitBurst = 6;
+                    ExecStartPre =
                     let
                         conf = config.sops.secrets."vpn/${name}".path;
                     in
@@ -63,6 +69,7 @@ in
                                 || true
                         '')
                     ];
+                };
             };
         }) (filterAttrs (_: peer: peer.autostart) cfg.peers);
     };

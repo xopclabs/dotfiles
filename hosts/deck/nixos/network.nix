@@ -1,12 +1,11 @@
 { config, pkgs, inputs, ... }:
 
 {
-    # Wifi
+    # Do not set networking.wireless.enable here. NetworkManager's module now sets it for its wpa_supplicant backend; an explicit false conflicts.
     networking = {
         networkmanager = {
             enable = true;
         };
-        wireless.enable = true;
     };
     sops.secrets."networkmanager/home" = {
         path = "/etc/NetworkManager/system-connections/home.nmconnection";

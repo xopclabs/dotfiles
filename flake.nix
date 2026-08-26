@@ -4,6 +4,7 @@
     # All inputs for the system
     inputs = {
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+        nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
         home-manager.url = "github:nix-community/home-manager";
         home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -80,24 +81,8 @@
                         {
                             nixpkgs.overlays = [
                                 inputs.nur.overlays.default
-                                # openldap test017-syncreplication-refresh is flaky under
-                                # nix sandbox timing constraints; skip checks to unblock
-                                # lutris which pulls openldap into its i686 FHS environment.
-                                # Must patch both the host (x86_64) and i686 package sets
-                                # because nixpkgs.overlays doesn't auto-propagate into
-                                # pkgsi686Linux.
-                                (final: prev: {
-                                    openldap = prev.openldap.overrideAttrs (_: { doCheck = false; });
-                                    pkgsi686Linux = prev.pkgsi686Linux.extend (
-                                        _: prev686: {
-                                            openldap = prev686.openldap.overrideAttrs (_: { doCheck = false; });
-                                        }
-                                    );
-                                })
-                                # nixpkgs unstable bumped python3Packages.jedi to 0.20,
-                                # but jedi-language-server 0.46.0 still pins jedi <0.20.
-                                # Relax the runtime dep check so the bundled LSP in the
-                                # vscode python extension keeps building.
+                                # nixpkgs unstable bumped python3Packages.jedi to 0.20, but jedi-language-server 0.46.0 still pins jedi <0.20.
+                                # Relax the runtime dep check so the bundled LSP in the vscode python extension keeps building.
                                 (final: prev: {
                                     vscode-extensions = prev.vscode-extensions // {
                                         ms-python = prev.vscode-extensions.ms-python // {

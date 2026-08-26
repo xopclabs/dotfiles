@@ -140,11 +140,6 @@ in {
             package = null;
             portalPackage = null;
             xwayland.enable = true;
-            systemd = {
-                enable = true;
-                variables = ["--all"];  # Export all variables to systemd
-            };
-
             settings = {
                 "$terminal" = "${config.modules.terminals.default} -e tm";
                 "$newterminal" = "${config.modules.terminals.default} -e tmux";
@@ -203,7 +198,6 @@ in {
                 };
 
                 env = [
-                    "WLR_DRM_NO_ATOMIC,1"
                     "XCURSOR_THEME,${cursorTheme}"
                     "XCURSOR_SIZE,${toString cursorSize}"
                 ];

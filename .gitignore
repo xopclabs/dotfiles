@@ -3,3 +3,6 @@ treestyletab.css
 __pycache__/
 *.py[cod]
 
+result
+*results*/
+
