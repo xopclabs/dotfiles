@@ -147,6 +147,11 @@ in
             restartUnits = [ "unbound.service" "pihole-ftl.service" ];
         };
 
+        sops.secrets.pihole_env = mkIf config.homelab.glance.enable {
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
+            restartUnits = [ "pihole-ftl.service" "glance.service" ];
+        };
+
         # Sops secret for custom hosts
         sops.secrets.hosts = {
             sopsFile = ../../../secrets/shared/selfhost.yaml;
@@ -307,8 +312,12 @@ in
 
         # "+" runs as root despite User=pihole; needed to read the domain sops secret
         # (owner unbound) and write /var/lib/pihole/local-zones.conf.
-        systemd.services.pihole-ftl = mkIf (cfg.localZones != { }) {
-            serviceConfig.ExecStartPre = mkBefore [
+        systemd.services.pihole-ftl = mkMerge [
+            (mkIf config.homelab.glance.enable {
+                serviceConfig.EnvironmentFile = config.sops.secrets.pihole_env.path;
+            })
+            (mkIf (cfg.localZones != { }) {
+                serviceConfig.ExecStartPre = mkBefore [
                 "+${pkgs.writeShellScript "pihole-ftl-local-zones" ''
                     set -euo pipefail
                     DOMAIN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.domain.path})
@@ -333,7 +342,8 @@ in
                     } > ${localZonesFile}
                 ''}"
             ];
-        };
+            })
+        ];
 
         # macvendor.db and gravity lists stall on this ISP without a proxy.
         # Gravity migrations still read /etc/.pihole; the SQL lives in the nix store.

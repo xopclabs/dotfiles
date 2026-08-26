@@ -5,18 +5,6 @@ let
     cfg = config.homelab.glance;
     piholeCfg = config.homelab.pihole_unbound;
 
-    # Build glance from dev branch with passwordless Pi-hole v6 support (PR #783)
-    glanceCustom = pkgs.glance.overrideAttrs (oldAttrs: rec {
-        version = "0.8.4-dev-if-you-are-reading-this-in-the-future-please-remove-this-override-they-probably-have-released-a-new-version";
-        src = pkgs.fetchFromGitHub {
-            owner = "glanceapp";
-            repo = "glance";
-            rev = "784bf5342570af94e62238c4f4a7b542d1853077";
-            hash = "sha256-vXdKSz89kSOb/gIwcq+vpRSYoHnKCWjQNodzLwsl/vs=";
-        };
-        vendorHash = "sha256-g5ZZneJ1g5rs3PJcNP+bi+SuRyZIXBPBjWiKt7wbe5I=";
-    });
-    
     # Group services by their group attribute
     groupedServices = groupBy (s: s.group) cfg.services;
     
@@ -47,6 +35,9 @@ let
     
     # Generate all monitor widgets in specified order
     monitorWidgets = map mkMonitorWidget orderedGroups;
+
+    glanceProxyEnvFile = "/run/glance-proxy.env";
+    baseNoProxy = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
 in
 {
     options.homelab.glance = {
@@ -210,8 +201,6 @@ in
 
         services.glance = {
             enable = true;
-            # TODO: Remove this override once it's released
-            package = glanceCustom;
             environmentFile = config.sops.secrets.glance.path;
             settings = {
                 server.port = cfg.port;
@@ -277,6 +266,7 @@ in
                                             type = "dns-stats";
                                             service = "pihole-v6";
                                             url = "https://${piholeCfg.pihole.subdomain}.\${DOMAIN}";
+                                            password = "\${PIHOLE_PASSWORD}";
                                         });
                                     }
                                 ] ++ (optional (cfg.bookmarks != []) {
@@ -307,16 +297,36 @@ in
             };
         };
 
-        # Add traefik secret for DOMAIN variable + proxy settings
+        # Monitor checks are https://*.$DOMAIN; CIDR-only NO_PROXY never matches those
+        # hostnames, so Go would send them through SOCKS5 (socks5h / remote DNS).
+        # EnvironmentFile= is re-read fresh before every Exec* step of a unit, so
+        # ExecStartPre can generate it here and ExecStart picks it up directly
+        # (systemd.exec(5)); no separate unit needed. "+" runs as root despite
+        # DynamicUser=true, since traefik/env is only readable by root.
         systemd.services.glance = {
-            serviceConfig.EnvironmentFile = mkIf config.homelab.traefik.enable [
-                config.sops.secrets."traefik/env".path
-            ];
-        } // optionalAttrs cfg.proxy {
-            environment = {
-                HTTP_PROXY = "socks5://127.0.0.1:10808";
-                HTTPS_PROXY = "socks5://127.0.0.1:10808";
-                NO_PROXY = "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,localhost";
+            serviceConfig = {
+                ExecStartPre = mkIf cfg.proxy [
+                    "+${pkgs.writeShellScript "glance-proxy-env" ''
+                        set -a
+                        ${optionalString config.homelab.traefik.enable ''
+                        source ${config.sops.secrets."traefik/env".path}
+                        ''}
+                        set +a
+
+                        ${pkgs.coreutils}/bin/cat > ${glanceProxyEnvFile} <<EOF
+HTTP_PROXY=socks5://127.0.0.1:10808
+HTTPS_PROXY=socks5://127.0.0.1:10808
+NO_PROXY=${baseNoProxy}''${DOMAIN:+,.$DOMAIN}
+EOF
+                    ''}"
+                ];
+                EnvironmentFile = mkMerge [
+                    (mkIf config.homelab.traefik.enable [
+                        config.sops.secrets."traefik/env".path
+                    ])
+                    (mkIf cfg.proxy [ "-${glanceProxyEnvFile}" ])
+                    (mkIf piholeCfg.enable [ config.sops.secrets.pihole_env.path ])
+                ];
             };
         };
 
