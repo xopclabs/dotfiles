@@ -140,6 +140,7 @@ in {
             package = null;
             portalPackage = null;
             xwayland.enable = true;
+            systemd.enable = false;
             settings = {
                 "$terminal" = "${config.modules.terminals.default} -e tm";
                 "$newterminal" = "${config.modules.terminals.default} -e tmux";
@@ -174,6 +175,10 @@ in {
                     };
                     kb_layout = "us,ru";
                     kb_options = "grp:lalt_lshift_toggle,compose:ralt";
+                };
+
+                debug = {
+                    disable_logs = false;
                 };
 
                 misc = {
