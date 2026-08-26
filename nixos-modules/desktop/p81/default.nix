@@ -16,6 +16,19 @@ in
 
     options.desktop.p81 = {
         enable = mkEnableOption "Perimeter81 corporate VPN support";
+        autostart = mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+                Start the helper daemon at boot. Off by default: the agent rewrites
+                DNS as soon as it starts, even with no tunnel, and the vendor binary
+                is not something you want racing NetworkManager on every boot.
+
+                Packages, `p81ctl`, and `p81-reset` stay available either way. Start
+                it when you actually need the VPN with
+                `systemctl start perimeter81-helper-daemon` (or the GUI).
+            '';
+        };
         sleepResumeRecovery = mkOption {
             type = types.enum [ "none" "async-restart" "async-reset" ];
             default = "async-restart";
@@ -111,7 +124,7 @@ in
         systemd.services.perimeter81-helper-daemon = {
             description = "Perimeter81 Helper Daemon";
             wants = [ "network.target" "NetworkManager-wait-online.service" ];
-            wantedBy = [ "multi-user.target" ];
+            wantedBy = mkIf cfg.autostart [ "multi-user.target" ];
             requires = [ "network-online.target" ];
             after = [
                 "NetworkManager.service"
@@ -166,6 +179,11 @@ in
                 postResumeRun = pkgs.writeShellScript "p81-postresume-run" ''
                     set -euo pipefail
                     ${pkgs.coreutils}/bin/sleep ${toString cfg.sleepResumeDelaySec}
+                    # Never start the agent just because the machine woke up. Skip
+                    # if it was never started; recover only if it already was.
+                    case "$(${pkgs.systemd}/bin/systemctl show -p ActiveState --value perimeter81-helper-daemon)" in
+                        inactive|dead) exit 0 ;;
+                    esac
                     ${if cfg.sleepResumeRecovery == "async-reset" then ''
                         exec ${p81-reset}/bin/p81-reset
                     '' else ''

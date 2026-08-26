@@ -53,6 +53,7 @@
         virtual_webcam.enable = false;
         p81 = {
             enable = true;
+            autostart = false;
             splitDns.enable = true;
             sleepResumeRecovery = "async-reset";
             sleepResumeDelaySec = 30;
