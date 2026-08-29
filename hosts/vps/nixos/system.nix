@@ -48,7 +48,7 @@
     environment.variables = {
         NIXOS_CONFIG = "$HOME/dotfiles/hosts/${config.metadata.hostName}/nixos/configuration.nix";
         NIXOS_CONFIG_DIR = "$HOME/dotfiles";
-        NH_FLAKE = "$HOME/dotfiles";
+        NH_FLAKE = "$HOME/dotfiles/hosts/vps";
         EDITOR = "nvim";
     };
 

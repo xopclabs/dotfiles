@@ -14,6 +14,7 @@
         autoUpdate = {
             enable = true;
             ntfy.enable = true;
+            rebuildFlake = "/home/${config.metadata.user}/dotfiles/hosts/vps";
         };
 
         traefik = {
@@ -61,6 +62,11 @@
             enable = true;
             subdomain = "ntfy";
             matrixBot.enable = true;
+        };
+
+        wallpaper-generator = {
+            enable = true;
+            subdomain = "wallpaper.vps.local";
         };
 
         borgbackup = {

@@ -95,7 +95,7 @@ let
         }
 
         if nixos-rebuild switch \
-            --flake "${cfg.flake}#${hostName}" \
+            --flake "${cfg.rebuildFlake}#${hostName}" \
             --max-jobs ${toString cfg.maxJobs} \
             --cores ${toString cfg.cores} \
             2>&1 | tee "$log"; then
@@ -167,7 +167,7 @@ let
             --collect \
             --unit=nixos-auto-update-rebuild \
             --property=Type=oneshot \
-            --property=WorkingDirectory=${cfg.flake} \
+            --property=WorkingDirectory=${cfg.rebuildFlake} \
             --property=Environment=HOME=${stateDir} \
             --property=TimeoutStartSec=3h \
             --property=OOMScoreAdjust=200 \
@@ -187,6 +187,17 @@ in
                 Path to the local clone to update and rebuild from.
                 Nothing is ever pulled or committed, so the working tree stays under your control.
                 A dirty flake.lock is therefore the marker for "running, but not yet blessed".
+            '';
+        };
+
+        rebuildFlake = mkOption {
+            type = types.str;
+            default = cfg.flake;
+            defaultText = literalExpression "config.homelab.autoUpdate.flake";
+            description = ''
+                Flake URI passed to `nixos-rebuild --flake`.
+                Defaults to `flake`.
+                Set this when the host configuration lives in a companion flake whose private inputs must not sit on the shared flake.
             '';
         };
 
