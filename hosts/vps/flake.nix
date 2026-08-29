@@ -3,7 +3,7 @@
 
     inputs = {
         dotfiles.url = "path:../..";
-        wallpaper-generator.url = "git+ssh://git@github.com/xopclabs/wallpaper-generator";
+        wallpaper-generator.url = "path:/home/vps/wallpaper-generator";
         wallpaper-generator.inputs.nixpkgs.follows = "dotfiles/nixpkgs";
     };
 

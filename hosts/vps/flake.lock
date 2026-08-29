@@ -1456,17 +1456,14 @@
         ]
       },
       "locked": {
-        "lastModified": 1788001340,
-        "narHash": "sha256-G/SfRCdbG+NdVALW8uLAPCPCb1J9AuYUOGmmvJaI+mE=",
-        "ref": "refs/heads/main",
-        "rev": "a429dea9d611a5e77ecc7c2a1ed63ba4aadab1bf",
-        "revCount": 15,
-        "type": "git",
-        "url": "ssh://git@github.com/xopclabs/wallpaper-generator"
+        "lastModified": 1788005809,
+        "narHash": "sha256-RYdAhGJ44Gt6/WcObfyPrpsogtz15heHf5yE55kFbjk=",
+        "path": "/home/vps/wallpaper-generator",
+        "type": "path"
       },
       "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/xopclabs/wallpaper-generator"
+        "path": "/home/vps/wallpaper-generator",
+        "type": "path"
       }
     },
     "xwayland-satellite-stable": {

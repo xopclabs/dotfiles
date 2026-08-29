@@ -66,7 +66,7 @@
 
         wallpaper-generator = {
             enable = true;
-            subdomain = "wallpaper.vps.local";
+            subdomain = "wallpaper";
         };
 
         borgbackup = {
