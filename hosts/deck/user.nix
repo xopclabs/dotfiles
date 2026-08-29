@@ -24,6 +24,7 @@
                         "[workspace 7 silent] steam"
                     ];
                 };
+                wallpaperRotate.enable = true;
                 hypridle = {
                     enable = true;
                     dpmsInternal.timeout = 3 * 60;

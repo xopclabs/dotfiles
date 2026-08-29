@@ -151,9 +151,11 @@ in {
                 monitor = monitorRules;
 
                 exec-once = [
-                    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+                    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE"
                     "hyprctl setcursor ${cursorTheme} ${toString cursorSize}"
+                ] ++ lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"
+                ++ [
                     "hypr-windowrule"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"

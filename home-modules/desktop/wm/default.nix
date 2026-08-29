@@ -11,6 +11,7 @@ in {
         ./kanshi.nix
         ./hypridle.nix
         ./scripts/scripts.nix
+        ./wallpaper-rotate
     ];
     
     options.modules.desktop.wm = {
