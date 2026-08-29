@@ -43,15 +43,27 @@ let
         then transformToNum hardwareCfg.monitors.internal.transform 
         else "0";
 
+    internalConnector = if hardwareCfg.monitors.internal.connector != null
+        then hardwareCfg.monitors.internal.connector
+        else "";
+
     internal-monitor = pkgs.writeShellScriptBin "internal-monitor" ''
+        export PATH=${lib.makeBinPath [
+            pkgs.jq
+            pkgs.hyprland
+            pkgs.systemd
+            pkgs.util-linux
+            pkgs.coreutils
+        ]}:$PATH
         ${builtins.replaceStrings 
-            ["@INTERNAL_MONITOR@" "@INTERNAL_MODE@" "@INTERNAL_SCALE@" "@INTERNAL_POSITION@" "@INTERNAL_TRANSFORM@"] 
+            ["@INTERNAL_MONITOR@" "@INTERNAL_MODE@" "@INTERNAL_SCALE@" "@INTERNAL_POSITION@" "@INTERNAL_TRANSFORM@" "@INTERNAL_CONNECTOR@"] 
             [
                 hardwareCfg.monitors.internal.name
                 hardwareCfg.monitors.internal.mode
                 (formatScale hardwareCfg.monitors.internal.scale)
                 hardwareCfg.monitors.internal.position
                 internalTransform
+                internalConnector
             ] 
             (builtins.readFile ./internal-monitor)
         }
@@ -65,5 +77,21 @@ in {
             internal-monitor
             pkgs.socat
         ];
+
+        systemd.user.services.internal-monitor-watch = {
+            Unit = {
+                Description = "Restore internal monitor preference and enable it when no external is connected";
+                After = [ "graphical-session.target" ];
+                PartOf = [ "graphical-session.target" ];
+            };
+            Service = {
+                ExecStart = "${internal-monitor}/bin/internal-monitor watch";
+                Restart = "always";
+                RestartSec = 1;
+            };
+            Install = {
+                WantedBy = [ "graphical-session.target" ];
+            };
+        };
     };
 }
