@@ -195,10 +195,10 @@ in {
 
                 general  = {
                     allow_tearing = true;
-                    layout = "master";
+                    layout = "scrolling";
                     resize_on_border = true;
-                    gaps_in = 9;
-                    gaps_out = "0,0,0,18";
+                    gaps_in = 6;
+                    gaps_out = "0,0,0,12";
                     border_size = 4;
                     # "col.active_border" = lib.mkForce "0xff${base0D}";
                     # "col.inactive_border" = lib.mkForce "0xff${base01}";
@@ -224,6 +224,18 @@ in {
 
                 master = {
                     mfact = 0.6;
+                };
+
+                scrolling = {
+                    fullscreen_on_one_column = true;
+                    column_width = 0.495;
+                    focus_fit_method = 1;
+                    follow_focus = true;
+                    follow_min_visible = 0.4;
+                    explicit_column_widths = "0.333, 0.5, 0.667, 1.0";
+                    wrap_focus = true;
+                    wrap_swapcol = true;
+                    direction = "right";
                 };
 
                 windowrule = [
@@ -333,6 +345,8 @@ in {
                     resizeactive = binding "$altMod" "resizeactive";
                     mvwindow = binding "$altMod" "movewindow";
                     mvtows = binding "$altMod" "movetoworkspace";
+                    layoutmsg = binding "$mod" "layoutmsg";
+                    shiftLayoutmsg = binding "$mod SHIFT" "layoutmsg";
                     workspaces = [
                         { key = "a"; n = "1"; } 
                         { key = "r"; n = "2"; }
@@ -371,6 +385,23 @@ in {
                     (mvwindow "e" "d")
                     (mvwindow "i" "u")
                     (mvwindow "o" "r")
+                    # layoutmsg focus wraps the tape instead of jumping monitors.
+                    # Same keys as movefocus, so only one pair can be active.
+                    # (layoutmsg "n" "focus l")
+                    # (layoutmsg "e" "focus d")
+                    # (layoutmsg "i" "focus u")
+                    # (layoutmsg "o" "focus r")
+
+                    # minus/equal are SYMB-only on Cradio; comma/period are on the base layer.
+                    # (layoutmsg "minus" "colresize -conf")
+                    # (layoutmsg "equal" "colresize +conf")
+                    (layoutmsg "comma" "colresize -conf")
+                    (layoutmsg "period" "colresize +conf")
+                    # M is on the Colemak home row; Shift is the right thumb.
+                    (layoutmsg "m" "consume_or_expel next")
+                    (shiftLayoutmsg "m" "consume_or_expel prev")
+                    (shiftLayoutmsg "comma" "swapcol l")
+                    (shiftLayoutmsg "period" "swapcol r")
                 ]
                 ++ (map (w: ws w.key w.n) workspaces)
                 ++ (map (w: mvtows w.key w.n) workspaces)
