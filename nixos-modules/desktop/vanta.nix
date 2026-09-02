@@ -29,6 +29,60 @@ let
             chown root:root "$conf"
         '';
     };
+
+    exposeProductUuid = pkgs.writeShellApplication {
+        name = "vanta-expose-product-uuid";
+        runtimeInputs = [ pkgs.coreutils pkgs.util-linux ];
+        text = ''
+            src=/sys/devices/virtual/dmi/id
+            dst=/run/vanta-dmi-id
+            store=/var/lib/vanta/product_uuid
+
+            if [ "$(findmnt -n -o SOURCE "$src" 2>/dev/null || true)" = "$dst" ]; then
+                exit 0
+            fi
+            if [ -e "$src/product_uuid" ]; then
+                exit 0
+            fi
+
+            mkdir -p "$dst" /var/lib/vanta
+            chmod 755 "$dst"
+
+            for f in "$src"/*; do
+                [ -f "$f" ] || continue
+                base=$(basename "$f")
+                case "$base" in
+                    uevent) continue ;;
+                esac
+                mode=$(stat -c '%a' "$f")
+                if cat "$f" > "$dst/$base" 2>/dev/null; then
+                    chmod "$mode" "$dst/$base"
+                else
+                    rm -f "$dst/$base"
+                fi
+            done
+
+            ${optionalString (cfg.productUuid != null) ''
+                printf '%s\n' ${escapeShellArg cfg.productUuid} > "$store"
+            ''}
+            ${optionalString (cfg.productUuid == null) ''
+                if [ ! -s "$store" ]; then
+                    mid=$(tr -d '[:space:]' < /etc/machine-id)
+                    if [ ''${#mid} -ne 32 ]; then
+                        echo "vanta-expose-product-uuid: /etc/machine-id is not 32 hex chars" >&2
+                        exit 1
+                    fi
+                    printf '%s-%s-%s-%s-%s\n' \
+                        "''${mid:0:8}" "''${mid:8:4}" "''${mid:12:4}" \
+                        "''${mid:16:4}" "''${mid:20:12}" > "$store"
+                fi
+            ''}
+            chmod 600 "$store"
+
+            install -m0400 "$store" "$dst/product_uuid"
+            mount --bind "$dst" "$src"
+        '';
+    };
 in
 {
     options.desktop.vanta = {
@@ -38,6 +92,11 @@ in
             type = types.enum [ "us" "eu" "aus" ];
             default = "us";
             description = "Vanta data region";
+        };
+
+        productUuid = mkOption {
+            type = types.nullOr types.str;
+            default = null;
         };
     };
 
@@ -62,8 +121,34 @@ in
             keyFile = config.sops.secrets."vanta/key".path;
         };
 
-        systemd.services.vanta.serviceConfig.ExecStartPre = mkBefore [
-            (getExe writeVantaConfig)
-        ];
+        systemd.services.vanta-dmi-uuid = {
+            description = "Expose a stable DMI product_uuid for Vanta";
+            wantedBy = [ "multi-user.target" ];
+            before = [ "vanta.service" ];
+            unitConfig.ConditionPathIsDirectory = "/sys/devices/virtual/dmi/id";
+            serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = getExe exposeProductUuid;
+                ExecStop = getExe (pkgs.writeShellApplication {
+                    name = "vanta-hide-product-uuid";
+                    runtimeInputs = [ pkgs.util-linux ];
+                    text = ''
+                        src=/sys/devices/virtual/dmi/id
+                        if [ "$(findmnt -n -o SOURCE "$src" 2>/dev/null || true)" = /run/vanta-dmi-id ]; then
+                            umount "$src"
+                        fi
+                    '';
+                });
+            };
+        };
+
+        systemd.services.vanta = {
+            after = [ "vanta-dmi-uuid.service" ];
+            wants = [ "vanta-dmi-uuid.service" ];
+            serviceConfig.ExecStartPre = mkBefore [
+                (getExe writeVantaConfig)
+            ];
+        };
     };
 }
