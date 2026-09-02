@@ -47,6 +47,9 @@
         niri.url = "github:epireyn/niri-flake";
         niri.inputs.nixpkgs.follows = "nixpkgs";
 
+        waybar.url = "github:Alexays/Waybar";
+        waybar.inputs.nixpkgs.follows = "nixpkgs";
+
         shadowing.url = "github:xopclabs/shadowing";
         shadowing.inputs.nixpkgs.follows = "nixpkgs";
 

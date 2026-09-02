@@ -25,7 +25,9 @@ in {
         home.packages = [ bar-restart wayland-quit ];
         programs.waybar = {
             enable = true;
-	        # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
+            package = (inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar).overrideAttrs (old: {
+                patches = (old.patches or []) ++ [ ./waybar-center-labels.patch ];
+            });
             settings = {
                 mainBar = let
                     drawer-config = {
@@ -36,7 +38,7 @@ in {
                 in (lib.optionalAttrs (cfg.showOnlyOn != null) { output = cfg.showOnlyOn; }) // {
                     layer = "top";
                     position = "left";
-                    width = 40;
+                    width = 42;
                     modules-left =
                         lib.optional config.modules.desktop.wm.hyprland.enable "hyprland/workspaces"
                         ++ lib.optional config.modules.desktop.wm.niri.enable "niri/workspaces";
@@ -113,6 +115,8 @@ in {
 
                     "niri/workspaces" = {
                         all-outputs = cfg.showOnlyOn != null;
+                        display-condition = "only-populated";
+                        hide-empty = true;
                         format = "<span line_height=\"1\">{icon}</span>\n<span line_height=\"0.75\">{windows}</span>";
                         format-window-separator = "\n";
                         format-icons = {
@@ -346,6 +350,12 @@ in {
                 -gtk-icon-shadow: none;
             }
 
+            /* GTK default button min-width is ~36px and widens a 40px vertical bar. */
+            button {
+                min-width: 0;
+                min-height: 0;
+            }
+
             /* The whole bar */
             #waybar {
                 background: @background;
@@ -452,6 +462,8 @@ in {
                 margin-bottom: 0px;
                 padding-top: 0.1rem;
                 padding-bottom: 0.1rem;
+                padding-left: 0;
+                padding-right: 0;
             }
 
             /* Each module in order of appearance */
@@ -459,6 +471,8 @@ in {
             #workspaces button {
                 padding-top: 0.1rem;
                 padding-bottom: 0.1rem;
+                padding-left: 0;
+                padding-right: 0;
                 color: @text;
                 margin: ${gap};
                 background-color: @workspaces-background;
@@ -471,15 +485,6 @@ in {
             }
             #workspaces button.urgent {
                 background-color: @warning;
-            }
-            #workspaces button.empty:not(.focused):not(.active) {
-                min-height: 0;
-                min-width: 0;
-                padding: 0;
-                margin: 0;
-                font-size: 0;
-                opacity: 0;
-                border: none;
             }
             #workspaces button:hover {
                 text-shadow: inherit;
@@ -504,13 +509,16 @@ in {
                 margin: ${gap};
             }
             
-            /* Group styling for tighter spacing */
+            /* Group styling for tighter spacing. Horizontal padding must stay 0:
+               this matches every nested box/revealer in a group, so left/right
+               padding accumulates per level and widens the vertical bar. */
             #group-status *, 
             #group-control *,
             #group-power * {
                 margin-top: ${element-spacing};
                 margin-bottom: ${element-spacing};
-                padding: ${inside-gap};
+                padding-left: 0;
+                padding-right: 0;
                 padding-top: ${element-padding-vertical};
                 padding-bottom: ${element-padding-vertical};
             }

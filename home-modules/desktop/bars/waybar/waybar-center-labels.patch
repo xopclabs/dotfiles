@@ -1,0 +1,35 @@
+Waybar packs some module labels into a horizontal GtkBox instead of putting
+them directly on the widget. On a vertical bar those labels end up flush
+left, because a horizontal box packs children at the start.
+
+Affects the niri workspace buttons and everything deriving from AIconLabel
+(all custom modules).
+
+--- a/src/modules/niri/workspace.cpp
++++ b/src/modules/niri/workspace.cpp
+@@ -20,8 +20,12 @@ Workspace::Workspace(const Json::Value& workspace_data, Workspaces& manager)
+       box_(Gtk::ORIENTATION_HORIZONTAL, 0),
+       taskbar_box_(Gtk::ORIENTATION_HORIZONTAL, 0) {
+   button_.add(box_);
+-  box_.pack_start(label_, false, false, 0);
+-  box_.pack_start(taskbar_box_, false, false, 0);
++  label_.set_xalign(0.5);
++  label_.set_yalign(0.5);
++  label_.set_justify(Gtk::JUSTIFY_CENTER);
++  label_.set_hexpand(true);
++  box_.set_center_widget(label_);
++  box_.pack_end(taskbar_box_, false, false, 0);
+ 
+   button_.set_relief(Gtk::RELIEF_NONE);
+   button_.get_style_context()->add_class("niri-workspace");
+--- a/src/AIconLabel.cpp
++++ b/src/AIconLabel.cpp
+@@ -55,6 +55,9 @@ AIconLabel::AIconLabel(const Json::Value& config, const std::string& name, const
+     box_.add(image_);
+   }
+ 
++  // Let the label claim the leftover space so its xalign centers the text.
++  label_.set_hexpand(true);
++
+   event_box_.add(box_);
+ }
