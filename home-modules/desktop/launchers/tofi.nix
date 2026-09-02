@@ -22,8 +22,11 @@ in {
                 multi-instance = false;
 
                 # Theme
-                anchor = "top-left";
-                width = 1920 - waybar-width;
+                # `top` anchors left+right so width 0 is assigned by the compositor.
+                # A hardcoded 1920px width matches the external and gets stretched
+                # on the 800px internal panel (niri scales the buffer to the output).
+                anchor = "top";
+                width = 0;
                 height = waybar-width;
                 horizontal = true;
                 # Padding
