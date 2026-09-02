@@ -50,6 +50,14 @@ let
     # Workspaces 1-5 on the first external; 6-10 on the internal panel.
     output_1_5 = if firstExternal != null then niriOutputName firstExternal else output_internal;
     output_6_10 = if output_internal != null then output_internal else output_1_5;
+
+    scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
+    resetScratch = pkgs.writeShellScript "reset-niri-scratch" ''
+        mkdir -p "$(dirname ${lib.escapeShellArg scratchPath})"
+        cat > ${lib.escapeShellArg scratchPath} <<'EOF'
+// Live niri overrides. Cleared on every home-manager switch.
+EOF
+    '';
 in {
     options.modules.desktop.wm.niri = {
         enable = lib.mkEnableOption "niri";
@@ -281,5 +289,17 @@ in {
                 clipboard.disable-primary = true;
             };
         };
+
+        # Scratch must be included last, but it's not possible with current niri-flake, so we're writing the config file manually.
+        xdg.configFile.niri-config.source = lib.mkForce (pkgs.writeText "niri-config.kdl" (
+            config.programs.niri.finalConfig
+            + "\ninclude \"${scratchPath}\"\n"
+        ));
+
+        # Mutable overlay sourced last; activation truncates it on every switch.
+        home.activation.niriScratch =
+            lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
+                run ${resetScratch}
+            '';
     };
 }
