@@ -1,44 +1,55 @@
-{ pkgs, lib, config, ... }:
+{ lib, config, ... }:
 
 with lib;
-let 
+let
     cfg = config.modules.desktop.bars.waybar;
+    windowRewrite = {
+        "title<.*YouTube.*>" = "󰗃";
+        "title<.*Dreaming Spanish.*>" = "";
+        "class<firefox>" = "󰈹";
+        "class<floorp>" = "󰈹";
+        "class<kitty>" = "";
+        "class<Vncviewer>" = "󰢹";
+        "class<Cursor>" = "󰨞";
+        "class<code(-url-handler)?>" = "󰨞";
+        "class<org\\.telegram\\.desktop>" = "";
+        "class<libreoffice-calc>" = "󰈛";
+        "class<Transmission>" = "";
+        "class<com\\.obsproject\\.studio>" = "";
+        "class<blueman>" = "";
+        "class<chromium-browser>" = "";
+        "class<Chromium-browser>" = "";
+        "class<yazi>" = "";
+        "class<ranger>" = "";
+        "class<(kitty|ranger)> title<ranger.*>" = "";
+        "class<(kitty|yazi)> title<yazi.*>" = "";
+        "class<mpv>" = "";
+        "class<rofi>" = "󱄅";
+        "class<firefox> title<.*Slack.*>" = "󰒱";
+        "class<Slack>" = "󰒱";
+        "class<Steam> title<.+>" = "󰓓";
+        "class<com\\.moonlight_stream\\.Moonlight>" = "󰊗";
+        "class<Spotify>" = "";
+        "title<.*discord.*>" = "󰙯";
+        "title<Plover>" = "󰼭";
+        "class<blender>" = "";
+        "class<org.pulseaudio.pavucontrol>" = "󰗅";
+    };
+    niriWindowRewrite = mapAttrs' (k: v: {
+        name = replaceStrings [ "class<" ] [ "app_id<" ] k;
+        value = v;
+    }) windowRewrite;
 in {
     config = mkIf cfg.enable {
         programs.waybar = {
-            settings.mainBar."hyprland/workspaces" = {
-                window-rewrite-default = "󱗜";
-                window-rewrite = {
-                    "title<.*YouTube.*>" = "󰗃";
-                    "title<.*Dreaming Spanish.*>" = "";
-                    "class<firefox>" = "󰈹";
-                    "class<floorp>" = "󰈹";
-                    "class<kitty>" = "";
-                    "class<Vncviewer>" = "󰢹";
-                    "class<Cursor>" = "󰨞";
-                    "class<code(-url-handler)?>" = "󰨞";
-                    "class<org\\.telegram\\.desktop>" = "";
-                    "class<libreoffice-calc>" = "󰈛";
-                    "class<Transmission>" = "";
-                    "class<com\\.obsproject\\.studio>" = "";
-                    "class<blueman>" = "";
-                    "class<chromium-browser>" = "";
-                    "class<Chromium-browser>" = "";
-                    "class<yazi>" = "";
-                    "class<ranger>" = "";
-                    "class<(kitty|ranger)> title<ranger.*>" = "";
-                    "class<(kitty|yazi)> title<yazi.*>" = "";
-                    "class<mpv>" = "";
-                    "class<rofi>" = "󱄅";
-                    "class<firefox> title<.*Slack.*>" = "󰒱";
-                    "class<Slack>" = "󰒱";
-                    "class<Steam> title<.+>" = "󰓓";
-                    "class<com\\.moonlight_stream\\.Moonlight>" = "󰊗";
-                    "class<Spotify>" = "";
-                    "title<.*discord.*>" = "󰙯";
-                    "title<Plover>" = "󰼭";
-                    "class<blender>" = "";
-                    "class<org.pulseaudio.pavucontrol>" = "󰗅";
+            settings.mainBar = {
+                "hyprland/workspaces" = {
+                    window-rewrite-default = "󱗜";
+                    window-rewrite = windowRewrite;
+                };
+                "niri/workspaces" = {
+                    window-rewrite-default = "󱗜";
+                    window-rewrite = niriWindowRewrite;
                 };
             };
         };

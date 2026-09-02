@@ -20,9 +20,9 @@
             wm = {
                 hyprland = {
                     enable = true;
-                    extraAutostart = [
-                        "[workspace 7 silent] steam"
-                    ];
+                };
+                niri = {
+                    enable = true;
                 };
                 wallpaperRotate.enable = true;
                 hypridle = {

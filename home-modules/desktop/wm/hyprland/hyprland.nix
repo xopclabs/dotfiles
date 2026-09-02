@@ -129,19 +129,6 @@ in {
             pkgs.awww
         ];
 
-        # Symlink wallpaper directory
-        home.file.".config/wallpaper" = {
-            recursive = true;
-            source = ../wallpaper;
-        };
-
-        home.pointerCursor = {
-            name = cursorTheme;
-            package = pkgs.openzone-cursors;
-            size = cursorSize;
-            gtk.enable = true;
-        };
-
         wayland.windowManager.hyprland = with config.colorScheme.palette; {
             enable = true;
             configType = "hyprlang";

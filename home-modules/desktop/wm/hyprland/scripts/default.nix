@@ -83,6 +83,7 @@ in {
                 Description = "Restore internal monitor preference and enable it when no external is connected";
                 After = [ "graphical-session.target" ];
                 PartOf = [ "graphical-session.target" ];
+                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
             };
             Service = {
                 ExecStart = "${internal-monitor}/bin/internal-monitor watch";

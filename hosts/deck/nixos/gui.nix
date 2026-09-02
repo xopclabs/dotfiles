@@ -51,10 +51,13 @@ in
             enable = true;
             extraPortals = with pkgs; [
                 xdg-desktop-portal-hyprland
+                xdg-desktop-portal-gnome
                 xdg-desktop-portal-gtk
             ];
             config = {
-                common.default = [ "hyprland" "gtk" ];
+                common.default = [ "gtk" ];
+                hyprland.default = [ "hyprland" "gtk" ];
+                niri.default = [ "gnome" "gtk" ];
             };
         };
     };
@@ -88,6 +91,7 @@ in
     environment.systemPackages = with pkgs; [ 
         kdePackages.qtstyleplugin-kvantum
         kdePackages.qt6ct
+        xwayland-satellite
     ];
 
     # Binary caches
@@ -96,14 +100,12 @@ in
             "https://jovian.cachix.org"
             "https://chaotic-nyx.cachix.org"
             "https://hyprland.cachix.org"
-            "https://niri.cachix.org"
             "https://nix-community.cachix.org"
         ];
         trusted-public-keys = [
             "jovian.cachix.org-1:8Vq4Txku6VZIRhYrHYki3Ab9XHJRoWmdYqMqj4rB/Uc="
             "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
             "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-            "niri.cachix.org-1:WQkK2e/7zfNzYjlxY9++Tw6KhxSxqc3k3+l0SBhsAbE="
             "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         ];
     };
@@ -113,5 +115,8 @@ in
         enable = true;
         withUWSM = true;
     };
+
+    # Niri as an alternate session (try via niri-session on a TTY after logging out of Hyprland)
+    programs.niri.enable = true;
 
 }

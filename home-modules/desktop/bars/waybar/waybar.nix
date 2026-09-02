@@ -4,6 +4,13 @@ with lib;
 let
     cfg = config.modules.desktop.bars.waybar;
     bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./bar-restart}'';
+    wayland-quit = pkgs.writeShellScriptBin "wayland-quit" ''
+        case "''${XDG_CURRENT_DESKTOP:-}" in
+            niri) niri msg action quit --skip-confirmation ;;
+            *) hyprctl dispatch exit ;;
+        esac
+        pkill tmux
+    '';
 in {
     options.modules.desktop.bars.waybar = {
         enable = mkEnableOption "waybar";
@@ -15,7 +22,7 @@ in {
     };
     imports = [ ./icons.nix ];
     config = mkIf cfg.enable {
-        home.packages = [ bar-restart ];
+        home.packages = [ bar-restart wayland-quit ];
         programs.waybar = {
             enable = true;
 	        # package = inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar;
@@ -30,9 +37,9 @@ in {
                     layer = "top";
                     position = "left";
                     width = 40;
-                    modules-left = [
-                        "hyprland/workspaces"
-                    ];
+                    modules-left =
+                        lib.optional config.modules.desktop.wm.hyprland.enable "hyprland/workspaces"
+                        ++ lib.optional config.modules.desktop.wm.niri.enable "niri/workspaces";
                     modules-right = [
                         "tray"
                         "group/group-status"
@@ -43,11 +50,13 @@ in {
 
                     "group/group-status" = {
                         orientation = "inherit";
-                        modules = [
-                            "hyprland/language"
-                            "network"
-                            "battery"
-                        ];
+                        modules =
+                            lib.optional config.modules.desktop.wm.hyprland.enable "hyprland/language"
+                            ++ lib.optional config.modules.desktop.wm.niri.enable "niri/language"
+                            ++ [
+                                "network"
+                                "battery"
+                            ];
                     };
 
                     "group/group-control" = {
@@ -102,10 +111,28 @@ in {
                         justify = "center";
                     };
 
+                    "niri/workspaces" = {
+                        all-outputs = cfg.showOnlyOn != null;
+                        format = "<span line_height=\"1\">{icon}</span>\n<span line_height=\"0.75\">{windows}</span>";
+                        format-window-separator = "\n";
+                        format-icons = {
+                            "1" = "󰯫"; "2" = "󰰞"; "3" = "󰰡"; "4" = "󰰤"; "5"  = "󰯽";
+                            "6" = "󰰛"; "7" = "󰰭"; "8" = "󰯺"; "9" = "󰰘"; "10" = "󰯮";
+                        };
+                        justify = "center";
+                    };
+
                     "hyprland/language" = {
                         format-en = "en";
                         format-ru = "ru";
                         on-click = "hyprctl switchxkblayout current next";
+                        tooltip = false;
+                    };
+
+                    "niri/language" = {
+                        format-en = "en";
+                        format-ru = "ru";
+                        on-click = "niri msg action switch-layout next";
                         tooltip = false;
                     };
 
@@ -166,7 +193,7 @@ in {
                     "custom/quit" = {
                         format = "󰗼";
                         tooltip = false;
-                        on-click = "hyprctl dispatch exit && pkill tmux";
+                        on-click = "wayland-quit";
                     };
 
                     "custom/lock" = {
@@ -444,6 +471,15 @@ in {
             }
             #workspaces button.urgent {
                 background-color: @warning;
+            }
+            #workspaces button.empty:not(.focused):not(.active) {
+                min-height: 0;
+                min-width: 0;
+                padding: 0;
+                margin: 0;
+                font-size: 0;
+                opacity: 0;
+                border: none;
             }
             #workspaces button:hover {
                 text-shadow: inherit;

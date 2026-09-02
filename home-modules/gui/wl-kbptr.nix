@@ -13,10 +13,15 @@ in {
             wlrctl
         ];
         
-        # Simple key binding for Hyprland
         wayland.windowManager.hyprland.settings.bind = mkIf config.modules.desktop.wm.hyprland.enable [
             "$mod, Backspace, exec, wl-kbptr -c ${config.xdg.configHome}/wl-kbptr/config"
         ];
+
+        programs.niri.settings.binds = mkIf config.modules.desktop.wm.niri.enable {
+            "Mod+BackSpace".action.spawn = [
+                "wl-kbptr" "-c" "${config.xdg.configHome}/wl-kbptr/config"
+            ];
+        };
 
         home.file."${config.xdg.configHome}/wl-kbptr/config".text = ''
             [general]

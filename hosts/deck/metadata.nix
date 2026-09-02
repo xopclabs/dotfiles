@@ -14,7 +14,7 @@
                 name = "Valve Corporation ANX7530 U 0x00000001";
                 mode = "800x1280@90";
                 scale = 1.0;
-                transform = "270";
+                transform = "0";
                 # to the right of external
                 position = "1920x140";
                 # below external

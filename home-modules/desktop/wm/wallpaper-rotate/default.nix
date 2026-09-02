@@ -95,6 +95,7 @@ in {
                 Description = "awww wallpaper daemon";
                 After = [ "graphical-session.target" ];
                 PartOf = [ "graphical-session.target" ];
+                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
             };
             Service = {
                 ExecStart = "${pkgs.awww}/bin/awww-daemon";
@@ -109,6 +110,7 @@ in {
                 Description = "Apply generated wallpapers to current outputs";
                 After = [ "graphical-session.target" "awww.service" "sops-nix.service" ];
                 Wants = [ "awww.service" ];
+                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
             };
             Service = {
                 Type = "oneshot";
@@ -134,6 +136,7 @@ in {
                 After = [ "graphical-session.target" "awww.service" "sops-nix.service" ];
                 Wants = [ "awww.service" ];
                 PartOf = [ "graphical-session.target" ];
+                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
             };
             Service = {
                 ExecStart = "${wallpaper-rotate}/bin/wallpaper-rotate watch";
