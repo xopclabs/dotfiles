@@ -46,10 +46,8 @@ let
     firstExternal = let
         exts = lib.attrValues hardwareCfg.monitors.external;
     in if exts == [] then null else builtins.head exts;
+    output_external = if firstExternal != null then niriOutputName firstExternal else output_internal;
     output_internal = if internalMon != null then niriOutputName internalMon else null;
-    # Workspaces 1-5 on the first external; 6-10 on the internal panel.
-    output_1_5 = if firstExternal != null then niriOutputName firstExternal else output_internal;
-    output_6_10 = if output_internal != null then output_internal else output_1_5;
 
     scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
     resetScratch = pkgs.writeShellScript "reset-niri-scratch" ''
@@ -87,10 +85,9 @@ in {
         programs.niri = with config.colorScheme.palette; {
             package = pkgs.niri;
             settings = {
-
                 layout = {
                     default-column-width = {
-                        proportion = 0.6;
+                        proportion = 0.5;
                     };
 
                     gaps = 18;
@@ -117,82 +114,68 @@ in {
                     shadow.enable = false;
                 };
 
-                spawn-at-startup = [
-                    { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
-                    { argv = [ "telegram-desktop" ]; }
-                    { argv = [ "slack" ]; }
-                ]
-                ++ lib.optional config.modules.desktop.bars.waybar.enable { argv = [ "waybar" ]; }
-                ++ lib.optional config.modules.cli.tmux.enable { argv = [ "tmux" "new" "-s" "main" ]; }
-                ++ lib.optional config.modules.other.plover.enable { argv = [ "plover" ]; }
-                ++ map (cmd: { sh = cmd; }) cfg.extraAutostart;
-
-                window-rules = [
-                    {
-                        matches = [ { app-id = "^org\\.telegram\\.desktop$"; } ];
-                        open-on-workspace = "8";
-                    }
-                    {
-                        matches = [ { app-id = "^slack$"; } ];
-                        open-on-workspace = "9";
-                    }
-
-                    {
-                        matches = [ { app-id = "^[Ss]team$"; at-startup = true; } ];
-                        open-on-workspace = "7";
-                    }
-                ];
-
                 binds = {
-                    "Ctrl+Shift+B".action.spawn-sh = "pkill waybar; waybar";
+                    # Focus monitors
+                    "Mod+A".action.focus-monitor-left = [];
+                    "Mod+T".action.focus-monitor-right = [];
+                    # Move columns to monitors
+                    "Mod+Ctrl+A".action.move-column-to-monitor-left = [];
+                    "Mod+Ctrl+T".action.move-column-to-monitor-right = [];
 
-                    "Mod+L".action.spawn-sh = "systemd-run --user $(${config.modules.desktop.launchers.default}-drun)";
+                    # Focus workspaces
+                    "Mod+R".action.focus-workspace-down = [];
+                    "Mod+S".action.focus-workspace-up = [];
+                    # Move columns to workspaces
+                    "Mod+Ctrl+R".action.move-column-to-workspace-down = [];
+                    "Mod+Ctrl+S".action.move-column-to-workspace-up = [];
 
-                    "Print".action.spawn = "screenshot";
-                    "Ctrl+Print".action.spawn = "annotate";
-                    "Ctrl+Shift+Print".action.spawn = "screenrecord";
-
-                    "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" ];
-                    "Mod+Ctrl+Space".action.spawn = [ config.modules.terminals.default "-e" "tmux" ];
-
-                    "Mod+H".action.spawn = config.modules.browsers.default;
-                    "Mod+J".action.spawn = "eq-preset";
-
-                    "Mod+D".action.close-window = [];
-                    "Mod+U".action.toggle-window-floating = [];
-                    "Mod+Z".action.fullscreen-window = [];
-                    "Ctrl+Alt+Delete".action.quit.skip-confirmation = true;
-
-                    "Mod+N".action.focus-column-left = [];
-                    "Mod+E".action.focus-window-down = [];
-                    "Mod+I".action.focus-window-up = [];
-                    "Mod+O".action.focus-column-right = [];
+                    # Focus columns or windows
+                    "Mod+N".action.focus-column-or-monitor-left = [];
+                    "Mod+E".action.focus-window-or-monitor-down = [];
+                    "Mod+I".action.focus-window-or-monitor-up = [];
+                    "Mod+O".action.focus-column-or-monitor-right = [];
+                    # Move columns or windows (prohibit moving to other monitors)
                     "Mod+Ctrl+N".action.move-column-left = [];
                     "Mod+Ctrl+E".action.move-window-down = [];
                     "Mod+Ctrl+I".action.move-window-up = [];
                     "Mod+Ctrl+O".action.move-column-right = [];
 
-                    "Mod+A".action.focus-workspace = "1";
-                    "Mod+R".action.focus-workspace = "2";
-                    "Mod+S".action.focus-workspace = "3";
-                    "Mod+T".action.focus-workspace = "4";
-                    "Mod+G".action.focus-workspace = "5";
-                    "Mod+Q".action.focus-workspace = "6";
-                    "Mod+W".action.focus-workspace = "7";
-                    "Mod+F".action.focus-workspace = "8";
-                    "Mod+P".action.focus-workspace = "9";
-                    "Mod+B".action.focus-workspace = "10";
-                    "Mod+Ctrl+A".action.move-column-to-workspace = "1";
-                    "Mod+Ctrl+R".action.move-column-to-workspace = "2";
-                    "Mod+Ctrl+S".action.move-column-to-workspace = "3";
-                    "Mod+Ctrl+T".action.move-column-to-workspace = "4";
-                    "Mod+Ctrl+G".action.move-column-to-workspace = "5";
-                    "Mod+Ctrl+Q".action.move-column-to-workspace = "6";
-                    "Mod+Ctrl+W".action.move-column-to-workspace = "7";
-                    "Mod+Ctrl+F".action.move-column-to-workspace = "8";
-                    "Mod+Ctrl+P".action.move-column-to-workspace = "9";
-                    "Mod+Ctrl+B".action.move-column-to-workspace = "10";
+                    # Resizing windows
+                    "Mod+WheelScrollUp".action.set-column-width = "+2.5%";
+                    "Mod+WheelScrollDown".action.set-column-width = "-2.5%";
+                    "Mod+P".action.switch-preset-column-width = [];
 
+                    # Expand to edges
+                    "Mod+X".action.maximize-window-to-edges = [];
+                    # Zoom / Center
+                    "Mod+Z".action.maximize-column = [];
+                    "Mod+C".action.center-column = [];
+
+                    # Close / float
+                    "Mod+D".action.close-window = [];
+                    "Mod+F".action.toggle-window-floating = [];
+
+                    # Overview
+                    "Mod+Q".action.toggle-overview = [];
+
+                    # Terminal
+                    "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" ];
+                    # Launcher
+                    "Mod+L".action.spawn-sh = "systemd-run --user $(${config.modules.desktop.launchers.default}-drun)";
+                    # Browser
+                    "Mod+H".action.spawn = config.modules.browsers.default;
+
+                    # Programs
+                    "Print".action.spawn = "screenshot";
+                    "Ctrl+Print".action.spawn = "annotate";
+                    "Ctrl+Shift+Print".action.spawn = "screenrecord";
+                    "Mod+J".action.spawn = "eq-preset";
+
+                    # Auxiliary
+                    "Ctrl+Alt+Delete".action.quit.skip-confirmation = true;
+                    "Ctrl+Shift+B".action.spawn-sh = "pkill waybar; waybar";
+
+                    # Media
                     "XF86MonBrightnessUp".action.spawn = [ "brightnessctl" "s" "+5%" ];
                     "XF86MonBrightnessDown".action.spawn = [ "brightnessctl" "s" "5%-" ];
                     "XF86KbdBrightnessUp".action.spawn = [ "brightnessctl" "-d" "*kbd*" "s" "+1" ];
@@ -253,6 +236,16 @@ in {
                     touch.map-to-output = lib.mkIf (output_internal != null) output_internal;
                 };
 
+                spawn-at-startup = [
+                    { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
+                    { argv = [ "slack" ]; }
+                    { argv = [ "telegram-desktop" ]; }
+                ]
+                ++ lib.optional config.modules.desktop.bars.waybar.enable { argv = [ "waybar" ]; }
+                ++ lib.optional config.modules.cli.tmux.enable { argv = [ "tmux" "new" "-s" "main" ]; }
+                ++ lib.optional config.modules.other.plover.enable { argv = [ "plover" ]; }
+                ++ map (cmd: { sh = cmd; }) cfg.extraAutostart;
+
                 outputs = lib.optionalAttrs (internalMon != null) {
                         ${output_internal} = mkOutput internalMon;
                     } // lib.mapAttrs' (_: ext: {
@@ -261,17 +254,24 @@ in {
                     }) hardwareCfg.monitors.external;
 
                 workspaces = {
-                    "01" = { name = "1"; open-on-output = output_1_5; };
-                    "02" = { name = "2"; open-on-output = output_1_5; };
-                    "03" = { name = "3"; open-on-output = output_1_5; };
-                    "04" = { name = "4"; open-on-output = output_1_5; };
-                    "05" = { name = "5"; open-on-output = output_1_5; };
-                    "06" = { name = "6"; open-on-output = output_6_10; };
-                    "07" = { name = "7"; open-on-output = output_6_10; };
-                    "08" = { name = "8"; open-on-output = output_6_10; };
-                    "09" = { name = "9"; open-on-output = output_6_10; };
-                    "10" = { name = "10"; open-on-output = output_6_10; };
+                    "messaging" = { name = "messaging"; open-on-output = output_internal; };
                 };
+
+                window-rules = [
+                    {
+                        matches = [ { app-id = "^org\\.telegram\\.desktop$"; at-startup = true; } ];
+                        open-on-workspace = "messaging";
+                    }
+                    {
+                        matches = [ { app-id = "^slack$"; at-startup = true; } ];
+                        open-on-workspace = "messaging";
+                    }
+
+                    {
+                        matches = [ { app-id = "^[Ss]team$"; at-startup = true; } ];
+                        open-on-output = output_external;
+                    }
+                ];
 
                 cursor = {
                     theme = cursorTheme;
