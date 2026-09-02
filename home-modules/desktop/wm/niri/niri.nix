@@ -81,24 +81,32 @@ in {
             settings = {
 
                 layout = {
-                    gaps = 6;
-                    struts = {
-                        left = 12;
-                        top = -6;
-                        bottom = -6;
+                    default-column-width = {
+                        proportion = 0.6;
                     };
-                    default-column-width.proportion = 0.5;
 
-                    focus-ring.enable = false;
-
-                    shadow.enable = false;
+                    gaps = 18;
+                    struts = {
+                        right = 64;
+                        top = -18;
+                        bottom = -18;
+                    };
 
                     border = {
                         enable = true;
                         width = 4;
                         active.color = "#${base0D}";
                         inactive.color = "#${base01}";
+                        urgent.color = "#${base08}";
                     };
+                    focus-ring.enable = false;
+
+                    insert-hint = {
+                        enable = true;
+                        display.color ="#${base0D}80";
+                    };
+
+                    shadow.enable = false;
                 };
 
                 spawn-at-startup = [
@@ -113,10 +121,6 @@ in {
 
                 window-rules = [
                     {
-                        open-maximized = false;
-                        open-maximized-to-edges = false;
-                    }
-                    {
                         matches = [ { app-id = "^org\\.telegram\\.desktop$"; } ];
                         open-on-workspace = "8";
                     }
@@ -124,61 +128,10 @@ in {
                         matches = [ { app-id = "^slack$"; } ];
                         open-on-workspace = "9";
                     }
+
                     {
                         matches = [ { app-id = "^[Ss]team$"; at-startup = true; } ];
                         open-on-workspace = "7";
-                    }
-                    {
-                        matches = [ { title = "^Picture-in-Picture$"; } ];
-                        open-floating = true;
-                    }
-                    {
-                        matches = [ { title = "^Plover: .*"; } ];
-                        open-floating = true;
-                    }
-                    {
-                        matches = [ { title = "^Plover: Paper Tape$"; } ];
-                        min-width = 250;
-                        min-height = 400;
-                        max-width = 300;
-                        max-height = 800;
-                    }
-                    {
-                        matches = [ { title = "^Plover: Lookup$"; } ];
-                        min-width = 300;
-                        min-height = 300;
-                        max-width = 600;
-                        max-height = 600;
-                    }
-                    {
-                        matches = [ {
-                            app-id = "^org\\.telegram\\.desktop$";
-                            title = "^Media viewer$";
-                        } ];
-                        open-floating = true;
-                        max-width = 1600;
-                        max-height = 900;
-                    }
-                    {
-                        matches = [ { title = "Sharing Indicator"; } ];
-                        open-floating = true;
-                        open-focused = false;
-                    }
-                    {
-                        matches = [
-                            { title = "^as_toolbar$"; }
-                            { title = "^zoom_linux_float_video_window$"; }
-                            { app-id = "^zoom$"; title = "^menu window$"; }
-                            { app-id = "^zoom$"; title = "^sub menu window$"; }
-                            { app-id = "^zoom$"; title = "^annotate_toolbar$"; }
-                            { app-id = "^zoom$"; title = "^Annotation - Zoom$"; }
-                        ];
-                        open-floating = true;
-                        open-focused = false;
-                    }
-                    {
-                        matches = [ { app-id = "^zoom$"; } ];
-                        border.enable = false;
                     }
                 ];
 
@@ -260,26 +213,34 @@ in {
                 switch-events.lid-close.action.spawn = [ "systemctl" "suspend" ];
 
                 input = {
+                    focus-follows-mouse = { 
+                        enable = true; 
+                        max-scroll-amount = "25%";
+                    };
+
                     keyboard.xkb = {
                         layout = "us,ru";
                         options = "grp:lalt_lshift_toggle,compose:ralt";
                     };
+
                     touchpad = {
                         tap = true;
                         natural-scroll = false;
                         scroll-factor = 0.5;
                     };
+
                     mouse = {
                         accel-profile = "flat";
                         accel-speed = -0.25;
                         natural-scroll = true;
                     };
+
                     trackball = {
                         accel-profile = "flat";
                         accel-speed = -0.25;
                         natural-scroll = true;
                     };
-                    focus-follows-mouse.enable = true;
+
                     tablet.map-to-output = lib.mkIf (output_internal != null) output_internal;
                     touch.map-to-output = lib.mkIf (output_internal != null) output_internal;
                 };
