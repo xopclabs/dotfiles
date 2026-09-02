@@ -67,6 +67,14 @@ let
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
 
+    scratchPath = "${config.xdg.configHome}/hypr/scratch.conf";
+    resetScratch = pkgs.writeShellScript "reset-hyprland-scratch" ''
+        mkdir -p "$(dirname ${lib.escapeShellArg scratchPath})"
+        cat > ${lib.escapeShellArg scratchPath} <<'EOF'
+# Live Hyprland overrides. Cleared on every home-manager switch.
+EOF
+    '';
+
     internalTransform = transformToNum (
         if internalMon != null then (internalMon.transform or "0") else "0"
     );
@@ -211,14 +219,17 @@ in {
 
                 decoration = {
                     rounding = 0;
+                    blur.enabled = false;
                     shadow.enabled = false;
                 };
 
                 animations  = {
                     enabled = true;
                     animation = [
-                        "windows,1,2,default,slide"
-                        "workspaces,1,3,default,slide"
+                        "windows,1,4,default,slide"
+                        "workspaces,1,6,default,slidevert"
+                        "fade,0"
+                        "fadeDpms,30"
                     ];
                 };
 
@@ -426,8 +437,17 @@ in {
 
                 # Digitizers from metadata.hardware.monitors.*.touch
                 ${lib.concatStrings touchDeviceConfig}
+
+                source = ${scratchPath}
               '';
         };
+
+        # Mutable overlay sourced last; activation truncates it on every switch.
+        home.activation.hyprlandScratch =
+            lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
+                run ${resetScratch}
+            '';
+
         # UWSM environment configuration for Hyprland
         xdg.configFile."uwsm/env".source = "${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh";
 
