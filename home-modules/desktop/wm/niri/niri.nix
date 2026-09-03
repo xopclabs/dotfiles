@@ -86,17 +86,15 @@ in {
             package = pkgs.niri;
             settings = {
                 layout = {
-                    empty-workspace-above-first = true;
-
                     default-column-width = {
                         proportion = 0.5;
                     };
 
                     preset-column-widths = [
-                        { proportion = 0.25; }
-                        { proportion = 0.4; }
-                        { proportion = 0.6; }
-                        { proportion = 0.9; }
+                        { proportion = 0.65; }
+                        { proportion = 0.33; }
+                        { proportion = 0.85; }
+                        { proportion = 0.20; }
                     ];
 
                     gaps = 16;
