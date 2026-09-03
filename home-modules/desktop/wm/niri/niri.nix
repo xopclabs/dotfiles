@@ -86,9 +86,18 @@ in {
             package = pkgs.niri;
             settings = {
                 layout = {
+                    empty-workspace-above-first = true;
+
                     default-column-width = {
                         proportion = 0.5;
                     };
+
+                    preset-column-widths = [
+                        { proportion = 0.25; }
+                        { proportion = 0.4; }
+                        { proportion = 0.6; }
+                        { proportion = 0.9; }
+                    ];
 
                     gaps = 16;
                     struts = {
@@ -157,10 +166,10 @@ in {
                     "Mod+Ctrl+WheelScrollDown".action.set-column-width = "-2.5%";
                     "Mod+P".action.switch-preset-column-width = [];
 
-                    # Expand to edges
-                    "Mod+X".action.maximize-window-to-edges = [];
-                    # Zoom / Center
-                    "Mod+Z".action.maximize-column = [];
+                    # Zoom on the window
+                    "Mod+Z".action.maximize-window-to-edges = [];
+                    # Expand / center
+                    "Mod+X".action.maximize-column = [];
                     "Mod+C".action.center-column = [];
 
                     # Close / float
@@ -257,7 +266,7 @@ in {
                     { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
                 ++ [
                     { argv = [ "slack" ]; }
-                    { argv = [ "telegram-desktop" ]; }
+                    { argv = [ "Telegram" ]; }
                 ]
                 ++ lib.optional config.modules.desktop.bars.waybar.enable { argv = [ "waybar" ]; }
                 ++ lib.optional config.modules.cli.tmux.enable { argv = [ "tmux" "new" "-s" "main" ]; }
@@ -276,15 +285,35 @@ in {
                 };
 
                 window-rules = [
+                    # Window size preferences
+                    # Maximized windows
                     {
-                        matches = [ { app-id = "^org\\.telegram\\.desktop$"; at-startup = true; } ];
-                        open-on-workspace = "messaging";
+                        matches = [ 
+                            { app-id = "^[Ss]lack$"; } 
+                            { app-id = "^[Ss]team$"; } 
+                            { app-id = "^[Cc]ursor$";}
+                            { app-id = "^[Ff]irefox$"; } 
+                        ];
+                        open-maximized = true;
                     }
+                    # Bigger windows
                     {
-                        matches = [ { app-id = "^slack$"; at-startup = true; } ];
-                        open-on-workspace = "messaging";
+                        matches = [ 
+                            { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; } 
+                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "Zoom Workplace - .+"; } 
+                        ];
+                        default-column-width = { proportion = 0.75; };
                     }
 
+                    # Workspace pinning
+                    {
+                        matches = [ 
+                            { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; at-startup = true; } 
+                            { app-id = "^[Ss]lack$"; at-startup = true; } 
+                        ];
+                        open-on-workspace = "messaging";
+                        open-focused = false;
+                    }
                     {
                         matches = [ { app-id = "^[Ss]team$"; at-startup = true; } ];
                         open-on-output = output_external;
