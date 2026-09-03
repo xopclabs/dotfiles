@@ -90,12 +90,14 @@ in {
                         proportion = 0.5;
                     };
 
-                    gaps = 18;
+                    gaps = 16;
                     struts = {
-                        right = 64;
-                        top = -18;
-                        bottom = -18;
+                        left = 24;
+                        right = 24;
+                        top = -16;
+                        bottom = -16;
                     };
+                    always-center-single-column = true;
 
                     border = {
                         enable = true;
@@ -112,6 +114,10 @@ in {
                     };
 
                     shadow.enable = false;
+                };
+
+                overview = {
+                    zoom = 0.35;
                 };
 
                 binds = {
@@ -154,6 +160,10 @@ in {
                     # Close / float
                     "Mod+D".action.close-window = [];
                     "Mod+F".action.toggle-window-floating = [];
+
+                    # Tabbing 
+                    "Mod+W".action.toggle-column-tabbed-display = [];
+                    "Mod+Tab".action.consume-or-expel-window-left = [];
 
                     # Overview
                     "Mod+Q".action.toggle-overview = [];
@@ -301,5 +311,5 @@ in {
             lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
                 run ${resetScratch}
             '';
-    };
+g   };
 }
