@@ -270,5 +270,153 @@ in {
                     margin-left: -5px;
                 }
         '';
+        home.file."${config.metadata.repositoryRelPath}/home-modules/browsers/firefox/theme/vimium.css".text = with config.colorScheme.palette; ''
+                :root {
+                    --vimium-hint-bg: #${base08}CC;
+                    --vimium-hint-border: #${base00};
+                    --vimium-hint-fg: #${base00};
+                    --vimium-hint-match: #${base06};
+                    --vimium-surface: #${base00};
+                    --vimium-surface-2: #${base01};
+                    --vimium-surface-3: #${base02};
+                    --vimium-border: #${base03};
+                    --vimium-fg: #${base05};
+                    --vimium-title: #${base06};
+                    --vimium-muted: #${base04};
+                    --vimium-url: #${base0D};
+                    --vimium-accent: #${base08};
+                    --vimium-font: Ubuntu, 'Ubuntu Sans', sans-serif;
+                    --vimium-mono: 'Mononoki Nerd Font', 'Mononoki Nerd Font Mono', monospace;
+
+                    --vimium-background-color: #${base00};
+                    --vimium-background-text-color: #${base05};
+                    --vimium-foreground-color: #${base01};
+                    --vimium-foreground-text-color: #${base06};
+                    --vimium-link-color: #${base0D};
+                }
+
+                .vimium-reset,
+                .vimiumReset {
+                    font-family: var(--vimium-font) !important;
+                }
+
+                div.internal-vimium-hint-marker,
+                div > .vimiumHintMarker {
+                    background: var(--vimium-hint-bg) !important;
+                    border: 2px solid var(--vimium-hint-border) !important;
+                    border-radius: 3px !important;
+                    box-shadow: none !important;
+                    padding: 2px 6px !important;
+                }
+
+                div.internal-vimium-hint-marker span,
+                div > .vimiumHintMarker span {
+                    color: var(--vimium-hint-fg) !important;
+                    font-family: var(--vimium-mono) !important;
+                    font-size: 16px !important;
+                    font-weight: 700 !important;
+                    letter-spacing: 0.02em !important;
+                    text-shadow: none !important;
+                }
+
+                div.internal-vimium-hint-marker > .matchingCharacter,
+                div > .vimiumHintMarker > .matchingCharacter {
+                    color: var(--vimium-hint-match) !important;
+                }
+
+                #vimiumHUD,
+                div.vimiumHUD {
+                    background: var(--vimium-surface-2) !important;
+                    border: 1px solid var(--vimium-border) !important;
+                    border-radius: 6px !important;
+                    box-shadow: none !important;
+                    color: var(--vimium-title) !important;
+                    font-family: var(--vimium-font) !important;
+                }
+
+                #vimiumHUD .vimiumHUDSearchArea,
+                div.vimiumHUD .vimiumHUDSearchArea {
+                    background: var(--vimium-surface-3) !important;
+                    color: var(--vimium-title) !important;
+                }
+
+                #vomnibar {
+                    background: var(--vimium-surface) !important;
+                    border: 1px solid var(--vimium-border) !important;
+                    border-radius: 8px !important;
+                    box-shadow: none !important;
+                    color: var(--vimium-fg) !important;
+                    font-family: var(--vimium-font) !important;
+                }
+
+                #vomnibar,
+                #vomnibar * {
+                    font-family: var(--vimium-font) !important;
+                }
+
+                #vomnibar-search-area,
+                #vomnibar .vomnibarSearchArea {
+                    background: var(--vimium-surface-2) !important;
+                    border-bottom: 1px solid var(--vimium-border) !important;
+                    color: var(--vimium-title) !important;
+                }
+
+                #vomnibar input {
+                    background: var(--vimium-surface-2) !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    color: var(--vimium-title) !important;
+                    font-family: var(--vimium-font) !important;
+                }
+
+                #vomnibar input::selection {
+                    background-color: var(--vimium-surface-3) !important;
+                    color: var(--vimium-title) !important;
+                }
+
+                #vomnibar ul {
+                    background: var(--vimium-surface) !important;
+                    border-top: 1px solid var(--vimium-border) !important;
+                }
+
+                #vomnibar li {
+                    border-bottom: 1px solid var(--vimium-border) !important;
+                    color: var(--vimium-fg) !important;
+                }
+
+                #vomnibar li.selected,
+                #vomnibar li.vomnibarSelected {
+                    background-color: var(--vimium-surface-3) !important;
+                }
+
+                #vomnibar li .source,
+                #vomnibar li .vomnibarSource {
+                    color: var(--vimium-muted) !important;
+                    opacity: 0.75 !important;
+                }
+
+                #vomnibar li em,
+                #vomnibar li .title,
+                #vomnibar li .vomnibarTitle {
+                    color: var(--vimium-title) !important;
+                }
+
+                #vomnibar li .url,
+                #vomnibar li .vomnibarUrl,
+                #vomnibar li a,
+                #vomnibar li a:link,
+                #vomnibar li a:visited {
+                    color: var(--vimium-url) !important;
+                }
+
+                #vomnibar li .match,
+                #vomnibar li .vomnibarMatch,
+                #vomnibar li em .match,
+                #vomnibar li .title .match,
+                #vomnibar li .vomnibarTitle .vomnibarMatch {
+                    color: var(--vimium-accent) !important;
+                    font-weight: 700 !important;
+                }
+        '';
     };
 }
