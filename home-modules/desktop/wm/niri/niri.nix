@@ -146,9 +146,15 @@ in {
                     "Mod+Ctrl+I".action.move-window-up = [];
                     "Mod+Ctrl+O".action.move-column-right = [];
 
+                    # Scroll wheel focusing
+                    "Mod+WheelScrollUp" = { cooldown-ms=50; action.focus-column-right = []; };
+                    "Mod+WheelScrollDown" = { cooldown-ms=50; action.focus-column-left = []; };
+                    "Mod+Alt+WheelScrollUp" = { cooldown-ms=75; action.focus-workspace-up = []; };
+                    "Mod+Alt+WheelScrollDown" = { cooldown-ms=75; action.focus-workspace-down = []; };
+
                     # Resizing windows
-                    "Mod+WheelScrollUp".action.set-column-width = "+2.5%";
-                    "Mod+WheelScrollDown".action.set-column-width = "-2.5%";
+                    "Mod+Ctrl+WheelScrollUp".action.set-column-width = "+2.5%";
+                    "Mod+Ctrl+WheelScrollDown".action.set-column-width = "-2.5%";
                     "Mod+P".action.switch-preset-column-width = [];
 
                     # Expand to edges
@@ -162,11 +168,11 @@ in {
                     "Mod+F".action.toggle-window-floating = [];
 
                     # Tabbing 
-                    "Mod+W".action.toggle-column-tabbed-display = [];
-                    "Mod+Tab".action.consume-or-expel-window-left = [];
+                    "Mod+Q".action.toggle-column-tabbed-display = [];
+                    "Mod+W".action.consume-or-expel-window-left = [];
 
                     # Overview
-                    "Mod+Q".action.toggle-overview = [];
+                    "Mod+Tab".action.toggle-overview = [];
 
                     # Terminal
                     "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" ];
@@ -216,7 +222,7 @@ in {
                 input = {
                     focus-follows-mouse = { 
                         enable = true; 
-                        max-scroll-amount = "25%";
+                        max-scroll-amount = "10%";
                     };
 
                     keyboard.xkb = {
@@ -311,5 +317,5 @@ in {
             lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
                 run ${resetScratch}
             '';
-g   };
+    };
 }
