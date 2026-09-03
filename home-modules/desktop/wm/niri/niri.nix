@@ -289,6 +289,54 @@ in {
                         matches = [ { app-id = "^[Ss]team$"; at-startup = true; } ];
                         open-on-output = output_external;
                     }
+
+                    # Worst software on Earth's rules
+                    # Catch-all rule to float all Zoom windows, to override downstream
+                    {
+                        matches = [ { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; } ];
+                        excludes = [
+                            { title = "^Zoom Workplace - "; }
+                            { title = "^Meeting$"; }
+                            { title = "^Meeting chat$"; }
+                            { title = "^(.+)'s Zoom Meeting$"; }
+                        ];
+                        open-floating = true;
+                        open-focused = false;
+                    }
+                    # Do not float workspace, meeting and chat
+                    {
+                        matches = [
+                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Meeting$"; }
+                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Meeting chat$"; }
+                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Zoom Workplace - "; }
+                        ];
+                        open-floating = false;
+                    }
+                    # Pre-join mic/camera dialog is special and needs manual placing
+                    {
+                        matches = [ { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^(.+)'s Zoom Meeting$"; } ];
+                        open-floating = true;
+                        open-focused = true;
+                        default-floating-position = {
+                            x = 0;
+                            y = 100;
+                            relative-to = "top";
+                        };
+                    }
+                    # Toolbars/popups are at the top
+                    {
+                        matches = [ { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^(as_toolbar|annotate_toolbar|as_preview)$"; } ];
+                        open-floating = true;
+                        open-focused = false;
+                        default-column-width = {};
+                        default-window-height = { fixed = 86; };
+                        default-floating-position = {
+                            x = 0;
+                            y = 0;
+                            relative-to = "top";
+                        };
+                        border.enable = false;
+                    }
                 ];
 
                 cursor = {
