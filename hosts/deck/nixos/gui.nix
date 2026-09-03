@@ -110,13 +110,8 @@ in
         ];
     };
 
-    # Enable Hyprland with UWSM for proper session management
-    programs.hyprland = {
-        enable = true;
-        withUWSM = true;
-    };
-
-    # Niri as an alternate session (try via niri-session on a TTY after logging out of Hyprland)
+    # Niri is the desktop session (Switch to Desktop from Game Mode)
     programs.niri.enable = true;
+    programs.hyprland.enable = false;
 
 }

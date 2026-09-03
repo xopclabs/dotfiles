@@ -114,8 +114,6 @@ in {
             description = "Extra keybindings appended to hyprland settings.bind.";
         };
     };
-    imports = [ ./scripts ];
-
     config = lib.mkIf cfg.enable {
         assertions = map (mon: {
             assertion = mon.connector != null;
@@ -151,7 +149,6 @@ in {
                 ] ++ lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"
                 ++ [
-                    "hypr-windowrule"
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"
                 ] ++ lib.optional config.modules.desktop.bars.waybar.enable "waybar"

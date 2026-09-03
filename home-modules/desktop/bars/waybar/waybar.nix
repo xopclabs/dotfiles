@@ -221,7 +221,7 @@ in {
                     "custom/keyboard" = {
                         format = "󰌌";
                         tooltip = false;
-                        on-click = "toggle-keyboard";
+                        on-click = "keyboard-disable";
                     };
 
                     "custom/power" = {

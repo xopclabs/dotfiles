@@ -19,7 +19,7 @@ in
 
             desktopSession = mkOption {
                 type = types.str;
-                default = "hyprland-uwsm";
+                default = "niri";
                 description = "Desktop session to use";
             };
 

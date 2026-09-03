@@ -7,7 +7,10 @@ let
     internal = hardwareCfg.monitors.internal;
 
     monitorsJson = builtins.toJSON {
-        internal = if internal != null then internal.name else null;
+        internal = if internal != null then {
+            name = internal.name;
+            connector = internal.connector;
+        } else null;
     };
 
     fallback = "${config.home.homeDirectory}/.config/wallpaper/nord.png";
@@ -27,27 +30,22 @@ in {
             default = "nord";
             description = "Palette name sent in every POST /grid body.";
         };
-
-        rerollBind = mkOption {
-            type = types.nullOr types.str;
-            default = "$mod SHIFT, W";
-            description = "Hyprland bind prefix for reroll (null to skip).";
-        };
     };
 
     config = mkIf cfg.enable (let
         wallpaper-rotate = pkgs.writeShellScriptBin "wallpaper-rotate" ''
-            export PATH=${lib.makeBinPath [
-                pkgs.coreutils
-                pkgs.curl
-                pkgs.findutils
-                pkgs.gnugrep
-                pkgs.hyprland
-                pkgs.jq
-                pkgs.socat
-                pkgs.util-linux
-                pkgs.awww
-            ]}:$PATH
+            export PATH=${lib.makeBinPath (
+                [
+                    pkgs.awww
+                    pkgs.coreutils
+                    pkgs.curl
+                    pkgs.gnugrep
+                    pkgs.jq
+                    pkgs.util-linux
+                ]
+                ++ lib.optional config.modules.desktop.wm.hyprland.enable pkgs.hyprland
+                ++ lib.optional config.modules.desktop.wm.niri.enable pkgs.niri
+            )}:$PATH
             ${builtins.replaceStrings
                 [
                     "@HOST@"
@@ -71,8 +69,8 @@ in {
     in {
         assertions = [
             {
-                assertion = config.modules.desktop.wm.hyprland.enable;
-                message = "modules.desktop.wm.wallpaperRotate requires Hyprland (logical size and output events).";
+                assertion = config.modules.desktop.wm.hyprland.enable || config.modules.desktop.wm.niri.enable;
+                message = "modules.desktop.wm.wallpaperRotate requires Hyprland or niri.";
             }
         ];
 
@@ -84,18 +82,12 @@ in {
 
         home.packages = [ wallpaper-rotate ];
 
-        wayland.windowManager.hyprland.settings.bind = mkIf (
-            config.modules.desktop.wm.hyprland.enable && cfg.rerollBind != null
-        ) [
-            "${cfg.rerollBind}, exec, ${wallpaper-rotate}/bin/wallpaper-rotate reroll"
-        ];
-
         systemd.user.services.awww = {
             Unit = {
                 Description = "awww wallpaper daemon";
                 After = [ "graphical-session.target" ];
                 PartOf = [ "graphical-session.target" ];
-                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
+                ConditionEnvironment = "WAYLAND_DISPLAY";
             };
             Service = {
                 ExecStart = "${pkgs.awww}/bin/awww-daemon";
@@ -110,7 +102,7 @@ in {
                 Description = "Apply generated wallpapers to current outputs";
                 After = [ "graphical-session.target" "awww.service" "sops-nix.service" ];
                 Wants = [ "awww.service" ];
-                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
+                ConditionEnvironment = "WAYLAND_DISPLAY";
             };
             Service = {
                 Type = "oneshot";
@@ -132,11 +124,11 @@ in {
 
         systemd.user.services.wallpaper-rotate-watch = {
             Unit = {
-                Description = "Re-apply generated wallpapers when Hyprland adds an output";
+                Description = "Re-apply generated wallpapers when an output is added or resized";
                 After = [ "graphical-session.target" "awww.service" "sops-nix.service" ];
                 Wants = [ "awww.service" ];
                 PartOf = [ "graphical-session.target" ];
-                ConditionEnvironment = "XDG_CURRENT_DESKTOP=Hyprland";
+                ConditionEnvironment = "WAYLAND_DISPLAY";
             };
             Service = {
                 ExecStart = "${wallpaper-rotate}/bin/wallpaper-rotate watch";

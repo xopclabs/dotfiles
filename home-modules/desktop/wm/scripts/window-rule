@@ -1,0 +1,64 @@
+set -euo pipefail
+# shellcheck source=/dev/null
+source '@LIB@'
+
+apply_hypr() {
+    local hex_id="$1" title="$2" current_workspace
+    if [[ "$title" == "Extension: (Bitwarden Password Manager) - Bitwarden — Mozilla Firefox" ]]; then
+        log "Bitwarden: float/pin/resize at cursor"
+        hyprctl --batch "\
+            dispatch setfloating address:0x${hex_id}; \
+            dispatch pin address:0x${hex_id}; \
+            dispatch resizeactive exact 20% 50%; \
+            dispatch moveactive exact $(hyprctl cursorpos | tr -d ','); \
+        "
+    elif [[ "$title" =~ ^Composer\ -\ .*\ -\ Cursor$ ]]; then
+        current_workspace=$(hyprctl activeworkspace -j | jq -r '.id')
+        log "Composer: workspace 5, return to $current_workspace"
+        hyprctl --batch "\
+            dispatch movetoworkspace 5,address:0x${hex_id}; \
+            dispatch workspace $current_workspace; \
+        "
+    fi
+}
+
+apply_niri() {
+    local id="$1" title="$2"
+    if [[ "$title" == "Extension: (Bitwarden Password Manager) - Bitwarden — Mozilla Firefox" ]]; then
+        log "Bitwarden: float/resize/center"
+        niri msg action move-window-to-floating --id "$id"
+        niri msg action set-window-width --id "$id" "20%"
+        niri msg action set-window-height --id "$id" "50%"
+        niri msg action center-window --id "$id"
+    elif [[ "$title" =~ ^Composer\ -\ .*\ -\ Cursor$ ]]; then
+        log "Composer: workspace 5 without following"
+        niri msg action move-window-to-workspace --window-id "$id" --focus false 5
+    fi
+}
+
+d=$(require_desktop) || exit 1
+case "$d" in
+    hyprland)
+        sock="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.socket2.sock"
+        log "listening on $sock"
+        socat -U - UNIX-CONNECT:"$sock" | while IFS= read -r line; do
+            case "$line" in
+                windowtitlev2\>*)
+                    rest="${line#windowtitlev2>>}"
+                    hex_id="${rest%%,*}"
+                    title="${rest#*,}"
+                    apply_hypr "$hex_id" "$title" || true
+                    ;;
+            esac
+        done
+        ;;
+    niri)
+        log "listening on event-stream"
+        niri msg --json event-stream | while IFS= read -r line; do
+            id=$(jq -r '.WindowOpenedOrChanged.window.id // empty' <<<"$line")
+            [[ -n "$id" ]] || continue
+            title=$(jq -r '.WindowOpenedOrChanged.window.title // empty' <<<"$line")
+            apply_niri "$id" "$title" || true
+        done
+        ;;
+esac

@@ -1,0 +1,205 @@
+INTERNAL_NAME='@INTERNAL_NAME@'
+INTERNAL_MODE='@INTERNAL_MODE@'
+INTERNAL_SCALE='@INTERNAL_SCALE@'
+INTERNAL_POSITION='@INTERNAL_POSITION@'
+INTERNAL_TRANSFORM='@INTERNAL_TRANSFORM@'
+INTERNAL_CONNECTOR='@INTERNAL_CONNECTOR@'
+
+declare -A MONITOR_DESC=(
+    ["internal"]="$INTERNAL_NAME"
+    @EXTERNAL_MONITORS@
+)
+declare -A MONITOR_CONNECTOR=(
+    ["internal"]="$INTERNAL_CONNECTOR"
+    @EXTERNAL_CONNECTORS@
+)
+
+desktop() {
+    case "${XDG_CURRENT_DESKTOP:-}" in
+        niri*) printf 'niri\n' ;;
+        Hyprland|hyprland) printf 'hyprland\n' ;;
+        *)
+            if [[ -n "${NIRI_SOCKET:-}" ]]; then
+                printf 'niri\n'
+            elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+                printf 'hyprland\n'
+            else
+                printf 'unknown\n'
+            fi
+            ;;
+    esac
+}
+
+require_desktop() {
+    local d
+    d=$(desktop)
+    if [[ "$d" == "unknown" ]]; then
+        echo "$0: no compositor (XDG_CURRENT_DESKTOP, NIRI_SOCKET, or HYPRLAND_INSTANCE_SIGNATURE)" >&2
+        return 1
+    fi
+    printf '%s\n' "$d"
+}
+
+# Normalized rows: name description enabled x y width height
+outputs_tsv() {
+    local json
+    case "$(desktop)" in
+        hyprland)
+            json=$(hyprctl monitors all -j 2>/dev/null) || json='[]'
+            printf '%s\n' "$json" | jq -r '
+                .[]
+                | select(.name != "FALLBACK")
+                | [
+                    .name,
+                    .description,
+                    (if .disabled == true then "0" else "1" end),
+                    (.x // 0),
+                    (.y // 0),
+                    (.width // 0),
+                    (.height // 0)
+                  ]
+                | @tsv
+            ' || true
+            ;;
+        niri)
+            json=$(niri msg --json outputs 2>/dev/null) || json='{}'
+            printf '%s\n' "$json" | jq -r '
+                to_entries[].value
+                | [
+                    .name,
+                    ([.make, .model, .serial] | map(select(. != null and . != "")) | join(" ")),
+                    (if .logical == null then "0" else "1" end),
+                    (.logical.x // 0),
+                    (.logical.y // 0),
+                    (.logical.width // 0),
+                    (.logical.height // 0)
+                  ]
+                | @tsv
+            ' || true
+            ;;
+    esac
+    return 0
+}
+
+output_matches() {
+    local name="$1" desc="$2" want_desc="$3" want_conn="$4"
+    [[ -n "$want_conn" && "$name" == "$want_conn" ]] && return 0
+    [[ -n "$want_desc" && "$desc" == "$want_desc" ]] && return 0
+    return 1
+}
+
+resolve_output() {
+    local key want_desc want_conn name desc enabled x y width height
+    key="$1"
+    want_desc="${MONITOR_DESC[$key]:-}"
+    want_conn="${MONITOR_CONNECTOR[$key]:-}"
+    while IFS=$'\t' read -r name desc enabled x y width height; do
+        [[ -n "$name" ]] || continue
+        if output_matches "$name" "$desc" "$want_desc" "$want_conn"; then
+            printf '%s\n' "$name"
+            return 0
+        fi
+    done < <(outputs_tsv)
+    if [[ -n "$want_conn" ]]; then
+        printf '%s\n' "$want_conn"
+        return 0
+    fi
+    return 1
+}
+
+output_enabled() {
+    local target="$1" name desc enabled
+    while IFS=$'\t' read -r name desc enabled _ _ _ _; do
+        if [[ "$name" == "$target" ]]; then
+            [[ "$enabled" == "1" ]]
+            return
+        fi
+    done < <(outputs_tsv)
+    return 1
+}
+
+output_xy() {
+    local target="$1" name x y
+    while IFS=$'\t' read -r name _ _ x y _ _; do
+        if [[ "$name" == "$target" ]]; then
+            printf '%sx%s\n' "$x" "$y"
+            return 0
+        fi
+    done < <(outputs_tsv)
+    return 1
+}
+
+other_enabled_output() {
+    local internal_name="$1" name desc enabled
+    while IFS=$'\t' read -r name desc enabled _ _ _ _; do
+        [[ "$enabled" == "1" ]] || continue
+        [[ "$name" != "$internal_name" ]] || continue
+        printf '%s\n' "$name"
+        return 0
+    done < <(outputs_tsv)
+    return 1
+}
+
+ext_keys() {
+    local k
+    for k in "${!MONITOR_DESC[@]}"; do
+        [[ "$k" == ext-* ]] && printf '%s\n' "$k"
+    done
+}
+
+hypr_transform_num() {
+    case "$INTERNAL_TRANSFORM" in
+        normal|0) printf '0\n' ;;
+        90) printf '1\n' ;;
+        180) printf '2\n' ;;
+        270) printf '3\n' ;;
+        flipped) printf '4\n' ;;
+        flipped-90) printf '5\n' ;;
+        flipped-180) printf '6\n' ;;
+        flipped-270) printf '7\n' ;;
+        *) printf '0\n' ;;
+    esac
+}
+
+niri_transform() {
+    case "$INTERNAL_TRANSFORM" in
+        0) printf 'normal\n' ;;
+        *) printf '%s\n' "$INTERNAL_TRANSFORM" ;;
+    esac
+}
+
+pos_xy() {
+    local p="${1//,/x}"
+    printf '%s %s\n' "${p%%x*}" "${p##*x}"
+}
+
+drm_has_external() {
+    local f base conn
+    shopt -s nullglob
+    for f in /sys/class/drm/card*-*/status; do
+        base=$(basename "$(dirname "$f")")
+        conn="${base#card*-}"
+        case "$conn" in
+            eDP-*|Writeback-*|DSI-*) continue ;;
+        esac
+        if [[ $(<"$f") == "connected" ]]; then
+            shopt -u nullglob
+            return 0
+        fi
+    done
+    shopt -u nullglob
+    return 1
+}
+
+restart_bar() {
+    command -v waybar >/dev/null 2>&1 || return 0
+    case "$(desktop)" in
+        hyprland) hyprctl dispatch exec "pkill waybar; waybar" >/dev/null 2>&1 || true ;;
+        niri) niri msg action spawn-sh "pkill waybar; waybar" >/dev/null 2>&1 || true ;;
+        *) pkill waybar >/dev/null 2>&1 || true; waybar >/dev/null 2>&1 & ;;
+    esac
+}
+
+log() {
+    echo "[$(basename "$0")] $(date '+%Y-%m-%d %H:%M:%S') - $*" >&2
+}

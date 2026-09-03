@@ -18,12 +18,8 @@
             };
             launchers.tofi.enable = true;
             wm = {
-                hyprland = {
-                    enable = true;
-                };
-                niri = {
-                    enable = true;
-                };
+                hyprland.enable = false;
+                niri.enable = true;
                 wallpaperRotate.enable = true;
                 hypridle = {
                     enable = true;

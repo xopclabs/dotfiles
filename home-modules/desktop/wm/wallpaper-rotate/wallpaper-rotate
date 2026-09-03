@@ -27,7 +27,7 @@ Usage: wallpaper-rotate [apply]
 apply     Fetch (if needed) and set today's wallpaper on every connected output.
 reroll    Bump the reroll counter and apply. Default: every connected monitor.
           --monitor internal|external bumps that role even if it is disconnected.
-watch     Apply once, then re-apply when Hyprland adds an output.
+watch     Apply once, then re-apply when an output is added or resized.
 EOF
 }
 
@@ -149,21 +149,66 @@ wait_for_awww() {
     return 1
 }
 
-# Connected Hyprland outputs mapped to metadata roles. Columns: name role width height
+desktop() {
+    case "${XDG_CURRENT_DESKTOP:-}" in
+        niri*) printf 'niri\n' ;;
+        Hyprland|hyprland) printf 'hyprland\n' ;;
+        *)
+            if [[ -n "${NIRI_SOCKET:-}" ]]; then
+                printf 'niri\n'
+            elif [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+                printf 'hyprland\n'
+            else
+                printf 'unknown\n'
+            fi
+            ;;
+    esac
+}
+
+internal_role_jq() {
+    # $map.internal is {name, connector} or null.
+    printf '%s' '(
+        if $map.internal == null then "external"
+        elif ($map.internal.connector != null and .name == $map.internal.connector)
+            or (.description == $map.internal.name)
+            then "internal"
+        else "external"
+        end
+    )'
+}
+
+# Connected outputs mapped to metadata roles. Columns: name role width height
 list_outputs() {
     local json
-    json=$(hyprctl monitors -j 2>/dev/null) || json='[]'
-    printf '%s\n' "$json" | jq -r --argjson map "$MONITORS_JSON" '
-        .[]
-        | select(.disabled != true and .name != "FALLBACK")
-        | . as $m
-        | (
-            if $map.internal != null and $m.description == $map.internal then "internal"
-            else "external"
-            end
-          ) as $role
-        | "\($m.name)\t\($role)\t\($m.width)\t\($m.height)"
-    '
+    case "$(desktop)" in
+        hyprland)
+            json=$(hyprctl monitors -j 2>/dev/null) || json='[]'
+            printf '%s\n' "$json" | jq -r --argjson map "$MONITORS_JSON" '
+                .[]
+                | select(.disabled != true and .name != "FALLBACK")
+                | . as $m
+                | $m
+                | '"$(internal_role_jq)"' as $role
+                | "\($m.name)\t\($role)\t\($m.width)\t\($m.height)"
+            '
+            ;;
+        niri)
+            json=$(niri msg --json outputs 2>/dev/null) || json='{}'
+            printf '%s\n' "$json" | jq -r --argjson map "$MONITORS_JSON" '
+                to_entries[].value
+                | select(.logical != null)
+                | . as $m
+                | ([.make, .model, .serial] | map(select(. != null and . != "")) | join(" ")) as $desc
+                | ($m + {description: $desc})
+                | '"$(internal_role_jq)"' as $role
+                | "\($m.name)\t\($role)\t\($m.logical.width)\t\($m.logical.height)"
+            '
+            ;;
+        *)
+            echo "wallpaper-rotate: unknown compositor" >&2
+            return 1
+            ;;
+    esac
 }
 
 connected_roles() {
@@ -254,46 +299,15 @@ do_reroll() {
     apply_all
 }
 
-hypr_socket() {
-    local base="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr"
-    local sig="${HYPRLAND_INSTANCE_SIGNATURE:-}"
-    if [[ -n "$sig" && -S "$base/$sig/.socket2.sock" ]]; then
-        printf '%s\n' "$base/$sig/.socket2.sock"
-        return 0
-    fi
-    local sock
-    sock=$(find "$base" -maxdepth 2 -name '.socket2.sock' -type s 2>/dev/null | head -n 1 || true)
-    if [[ -n "$sock" ]]; then
-        printf '%s\n' "$sock"
-        return 0
-    fi
-    return 1
-}
-
-wait_for_socket() {
-    local i sock
-    for i in $(seq 1 100); do
-        if sock=$(hypr_socket); then
-            printf '%s\n' "$sock"
-            return 0
-        fi
-        sleep 0.2
-    done
-    echo "wallpaper-rotate: Hyprland event socket not found" >&2
-    return 1
-}
-
 do_watch() {
-    local sock
-    sock=$(wait_for_socket) || exit 1
-    with_lock apply_all || true
-    socat -u "UNIX-CONNECT:$sock" - | while IFS= read -r line; do
-        case "$line" in
-            monitoradded*)
-                sleep 0.4
-                with_lock apply_all || true
-                ;;
-        esac
+    local prev="" cur
+    while true; do
+        cur=$(list_outputs 2>/dev/null | sort | tr '\n' '|') || cur=""
+        if [[ "$cur" != "$prev" ]]; then
+            with_lock apply_all || true
+            prev=$cur
+        fi
+        sleep 1
     done
 }
 

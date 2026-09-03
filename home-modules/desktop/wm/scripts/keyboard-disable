@@ -1,0 +1,128 @@
+set -euo pipefail
+# shellcheck source=/dev/null
+source '@LIB@'
+
+BUILTIN_KB_HYPR='at-translated-set-2-keyboard'
+BUILTIN_KB_EVDEV='AT Translated Set 2 keyboard'
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/keyboard-disable"
+PREF="$STATE_DIR/disabled"
+GRAB_PID="$STATE_DIR/grab.pid"
+
+kb_wanted_off() {
+    [[ -f "$PREF" ]]
+}
+
+set_kb_pref() {
+    mkdir -p "$STATE_DIR"
+    if [[ "$1" == "off" ]]; then
+        : > "$PREF"
+    else
+        rm -f "$PREF"
+    fi
+}
+
+find_evdev() {
+    local f name
+    shopt -s nullglob
+    for f in /sys/class/input/event*/device/name; do
+        name=$(<"$f")
+        if [[ "$name" == "$BUILTIN_KB_EVDEV" ]]; then
+            shopt -u nullglob
+            printf '/dev/input/%s\n' "$(basename "$(dirname "$(dirname "$f")")")"
+            return 0
+        fi
+    done
+    shopt -u nullglob
+    return 1
+}
+
+kb_grab_running() {
+    local pid
+    [[ -f "$GRAB_PID" ]] || return 1
+    pid=$(<"$GRAB_PID")
+    [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+stop_kb_grab() {
+    local pid
+    if [[ -f "$GRAB_PID" ]]; then
+        pid=$(<"$GRAB_PID")
+        [[ -n "$pid" ]] && kill "$pid" 2>/dev/null || true
+        rm -f "$GRAB_PID"
+    fi
+}
+
+start_kb_grab() {
+    local dev pid
+    mkdir -p "$STATE_DIR"
+    stop_kb_grab
+    dev=$(find_evdev) || {
+        echo "keyboard-disable: built-in keyboard '$BUILTIN_KB_EVDEV' not found" >&2
+        return 1
+    }
+    evtest --grab "$dev" >/dev/null 2>&1 &
+    pid=$!
+    echo "$pid" > "$GRAB_PID"
+    disown "$pid" 2>/dev/null || true
+    sleep 0.1
+    if ! kill -0 "$pid" 2>/dev/null; then
+        rm -f "$GRAB_PID"
+        echo "keyboard-disable: could not grab $dev (need write access to the evdev node)" >&2
+        return 1
+    fi
+}
+
+set_keyboard() {
+    local want="$1"
+    set_kb_pref "$want"
+    case "$(desktop)" in
+        hyprland)
+            if [[ "$want" == "off" ]]; then
+                hyprctl keyword "device[$BUILTIN_KB_HYPR]:enabled" false
+            else
+                hyprctl keyword "device[$BUILTIN_KB_HYPR]:enabled" true
+            fi
+            ;;
+        niri)
+            # niri has no per-device IPC; grab the evdev node instead.
+            if [[ "$want" == "off" ]]; then
+                start_kb_grab
+            else
+                stop_kb_grab
+            fi
+            ;;
+    esac
+}
+
+require_desktop >/dev/null || exit 1
+action="${1:-toggle}"
+case "$action" in
+    on) set_keyboard on ;;
+    off) set_keyboard off ;;
+    toggle)
+        if kb_wanted_off; then
+            set_keyboard on
+        else
+            set_keyboard off
+        fi
+        ;;
+    status)
+        echo "Preference: $(if kb_wanted_off; then echo off; else echo on; fi)"
+        case "$(desktop)" in
+            niri)
+                if kb_grab_running; then
+                    echo "Grab: running pid $(<"$GRAB_PID")"
+                else
+                    echo "Grab: not running"
+                fi
+                ;;
+        esac
+        ;;
+    -h|--help)
+        echo "Usage: keyboard-disable [on|off|toggle|status]"
+        ;;
+    *)
+        echo "Usage: keyboard-disable [on|off|toggle|status]" >&2
+        exit 1
+        ;;
+esac

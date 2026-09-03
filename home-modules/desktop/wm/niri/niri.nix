@@ -176,6 +176,7 @@ in {
 
                     # Terminal
                     "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" ];
+                    "Mod+Ctrl+Space".action.spawn = [ config.modules.terminals.default "-e" "tmux" ];
                     # Launcher
                     "Mod+L".action.spawn-sh = "systemd-run --user $(${config.modules.desktop.launchers.default}-drun)";
                     # Browser
@@ -252,8 +253,9 @@ in {
                     touch.map-to-output = lib.mkIf (output_internal != null) output_internal;
                 };
 
-                spawn-at-startup = [
+                spawn-at-startup = lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
+                ++ [
                     { argv = [ "slack" ]; }
                     { argv = [ "telegram-desktop" ]; }
                 ]

@@ -1,0 +1,192 @@
+set -euo pipefail
+# shellcheck source=/dev/null
+source '@LIB@'
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/internal-monitor"
+PREF="$STATE_DIR/preference"
+WATCH_LOCK="$STATE_DIR/watch.lock"
+
+wanted_position() {
+    if drm_has_external; then
+        printf '%s\n' "$INTERNAL_POSITION"
+    else
+        printf '0x0\n'
+    fi
+}
+
+get_preference() {
+    if [[ -f "$PREF" && $(<"$PREF") == "off" ]]; then
+        printf 'off\n'
+    else
+        printf 'on\n'
+    fi
+}
+
+set_preference() {
+    mkdir -p "$STATE_DIR"
+    printf '%s\n' "$1" > "$PREF"
+}
+
+should_force_on() {
+    if ! drm_has_external; then
+        return 0
+    fi
+    local name
+    name=$(resolve_output internal) || return 0
+    if other_enabled_output "$name" >/dev/null; then
+        return 1
+    fi
+    return 0
+}
+
+enable_hypr() {
+    local name="$1" position="$2" t cmd
+    t=$(hypr_transform_num)
+    cmd="$name,$INTERNAL_MODE,$position,$INTERNAL_SCALE"
+    if [[ "$t" != "0" ]]; then
+        cmd="$cmd,transform,$t"
+    fi
+    hyprctl keyword monitor "$cmd"
+}
+
+enable_niri() {
+    local name="$1" position="$2" xy
+    xy=$(pos_xy "$position")
+    niri msg output "$name" on
+    niri msg output "$name" mode "$INTERNAL_MODE" || true
+    niri msg output "$name" scale "$INTERNAL_SCALE" || true
+    niri msg output "$name" transform "$(niri_transform)" || true
+    # shellcheck disable=SC2086
+    niri msg output "$name" position set $xy
+}
+
+enable_internal() {
+    local name position xy
+    name=$(resolve_output internal) || {
+        echo "internal-monitor: not found" >&2
+        return 1
+    }
+    position=$(wanted_position)
+    xy=$(output_xy "$name" || true)
+    if output_enabled "$name" && [[ "$xy" == "$position" ]]; then
+        return 0
+    fi
+    echo "Enabling internal monitor: $name at $position"
+    case "$(desktop)" in
+        hyprland) enable_hypr "$name" "$position" ;;
+        niri) enable_niri "$name" "$position" ;;
+    esac
+    sleep 0.2
+    if output_enabled "$name" && [[ "$(output_xy "$name")" == "$position" ]]; then
+        restart_bar
+        return 0
+    fi
+    return 1
+}
+
+disable_internal() {
+    local name other
+    name=$(resolve_output internal) || {
+        echo "internal-monitor: not found" >&2
+        return 1
+    }
+    if should_force_on; then
+        echo "Internal monitor stays on (no other monitor). Will disable when an external is attached."
+        return 0
+    fi
+    echo "Disabling internal monitor: $name"
+    case "$(desktop)" in
+        hyprland)
+            other=$(other_enabled_output "$name" || true)
+            if [[ -n "$other" ]]; then
+                hyprctl workspaces -j | jq -r --arg mon "$name" '.[] | select(.monitor == $mon) | .id' | while read -r ws; do
+                    [[ -n "$ws" ]] && hyprctl dispatch moveworkspacetomonitor "$ws" "$other" >/dev/null || true
+                done
+                hyprctl dispatch focusmonitor "$other" >/dev/null || true
+            fi
+            hyprctl keyword monitor "$name,disable"
+            ;;
+        niri)
+            niri msg output "$name" off
+            ;;
+    esac
+    restart_bar
+}
+
+apply_internal() {
+    local name
+    if should_force_on; then
+        enable_internal || true
+        return 0
+    fi
+    if [[ "$(get_preference)" == "off" ]]; then
+        name=$(resolve_output internal) || return 0
+        if output_enabled "$name"; then
+            disable_internal || true
+        fi
+    else
+        enable_internal || true
+    fi
+}
+
+watch_internal() {
+    mkdir -p "$STATE_DIR"
+    exec 9>"$WATCH_LOCK"
+    flock -n 9 || exit 0
+    trap 'kill $(jobs -p) 2>/dev/null || true' EXIT
+    apply_internal || true
+    udevadm monitor --udev --subsystem-match=drm | while read -r _; do
+        apply_internal || true
+    done &
+    while true; do
+        sleep 1
+        apply_internal || true
+    done
+}
+
+require_desktop >/dev/null || exit 1
+action="${1:-toggle}"
+case "$action" in
+    on)
+        set_preference on
+        enable_internal
+        ;;
+    off)
+        set_preference off
+        disable_internal
+        ;;
+    toggle)
+        name=$(resolve_output internal) || {
+            echo "internal-monitor: not found" >&2
+            exit 1
+        }
+        if output_enabled "$name"; then
+            set_preference off
+            disable_internal
+        else
+            set_preference on
+            enable_internal
+        fi
+        ;;
+    apply) apply_internal ;;
+    watch) watch_internal ;;
+    status)
+        echo "Preference: $(get_preference)"
+        if name=$(resolve_output internal); then
+            if output_enabled "$name"; then
+                echo "Monitor: ENABLED at $(output_xy "$name")"
+            else
+                echo "Monitor: DISABLED"
+            fi
+        else
+            echo "Monitor: NOT FOUND"
+        fi
+        ;;
+    -h|--help)
+        echo "Usage: internal-monitor [on|off|toggle|status|apply|watch]"
+        ;;
+    *)
+        echo "Usage: internal-monitor [on|off|toggle|status|apply|watch]" >&2
+        exit 1
+        ;;
+esac

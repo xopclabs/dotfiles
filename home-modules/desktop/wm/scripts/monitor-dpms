@@ -1,0 +1,79 @@
+set -euo pipefail
+# shellcheck source=/dev/null
+source '@LIB@'
+
+dpms_hypr() {
+    local name="$1" action="$2"
+    log "hyprland $action $name"
+    hyprctl dispatch dpms "$action" "$name"
+}
+
+dpms_niri() {
+    local action="$1"
+    # niri has no per-output DPMS; this blanks or wakes every powered output.
+    case "$action" in
+        off)
+            log "niri power-off-monitors (global)"
+            niri msg action power-off-monitors
+            ;;
+        on)
+            log "niri power-on-monitors (global)"
+            niri msg action power-on-monitors
+            ;;
+        toggle)
+            log "niri toggle -> power-off-monitors (no per-output toggle)"
+            niri msg action power-off-monitors
+            ;;
+        *)
+            echo "monitor-dpms: action must be on, off, or toggle" >&2
+            return 1
+            ;;
+    esac
+}
+
+target="${1:-}"
+action="${2:-}"
+if [[ "$target" == "-h" || "$target" == "--help" || -z "$target" || -z "$action" ]]; then
+    echo "Usage: monitor-dpms [internal|external|ext-<key>] [on|off|toggle]"
+    echo "Mapped monitors:"
+    for key in "${!MONITOR_DESC[@]}"; do
+        echo "  $key -> ${MONITOR_DESC[$key]} (${MONITOR_CONNECTOR[$key]:-no connector})"
+    done
+    exit 0
+fi
+if [[ ! "$action" =~ ^(on|off|toggle)$ ]]; then
+    echo "monitor-dpms: action must be on, off, or toggle" >&2
+    exit 1
+fi
+
+d=$(require_desktop) || exit 1
+if [[ "$d" == "niri" ]]; then
+    dpms_niri "$action"
+    exit 0
+fi
+
+if [[ "$target" == "external" ]]; then
+    found=false
+    while IFS= read -r key; do
+        [[ -n "$key" ]] || continue
+        name=$(resolve_output "$key") || continue
+        output_enabled "$name" || continue
+        dpms_hypr "$name" "$action"
+        found=true
+    done < <(ext_keys)
+    if [[ "$found" != "true" ]]; then
+        echo "monitor-dpms: no connected external monitors" >&2
+        exit 0
+    fi
+    exit 0
+fi
+
+if [[ ! -v "MONITOR_DESC[$target]" ]]; then
+    echo "monitor-dpms: unknown monitor '$target'" >&2
+    exit 1
+fi
+name=$(resolve_output "$target") || {
+    echo "monitor-dpms: monitor '$target' not found" >&2
+    exit 1
+}
+dpms_hypr "$name" "$action"

@@ -33,7 +33,7 @@
             jovian = {
                 enable = true;
                 autoStart = true;
-                desktopSession = "hyprland-uwsm";
+                desktopSession = "niri";
                 deckyLoader = {
                     enable = false;
                     user = "xopc";

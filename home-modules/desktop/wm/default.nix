@@ -3,7 +3,7 @@
 with lib;
 let
     cfg = config.modules.desktop.wm;
-    wmPriorities = [ "hyprland" "niri" ];
+    wmPriorities = [ "niri" "hyprland" ];
 in {
     imports = [
         ./hyprland/hyprland.nix
