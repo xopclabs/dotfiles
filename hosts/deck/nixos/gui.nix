@@ -114,4 +114,13 @@ in
     programs.niri.enable = true;
     programs.hyprland.enable = false;
 
+    # Map each touchscreen to its panel via udev WL_OUTPUT (see system.nix).
+    nixpkgs.overlays = [
+        (final: prev: {
+            niri = prev.niri.overrideAttrs (old: {
+                patches = (old.patches or []) ++ [ ./niri-libinput-wl-output.patch ];
+            });
+        })
+    ];
+
 }

@@ -1,0 +1,18 @@
+--- a/src/input/backend_ext.rs
++++ b/src/input/backend_ext.rs
+@@ -24,9 +24,12 @@
+ }
+ 
+ impl NiriInputDevice for libinput::Device {
+-    fn output(&self, _state: &State) -> Option<Output> {
+-        // FIXME: Allow specifying the output per-device?
+-        None
++    fn output(&self, state: &State) -> Option<Output> {
++        // Honor udev WL_OUTPUT (libinput output_name) so each touchscreen
++        // can map to its own monitor. Unmapped devices fall back to
++        // input.touch.map-to-output / input.tablet.map-to-output.
++        self.output_name()
++            .and_then(|name| state.niri.output_by_name_match(name.as_ref()).cloned())
+     }
+ }
+ 

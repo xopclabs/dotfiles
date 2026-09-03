@@ -61,6 +61,12 @@
         # the real multitouch node can deliver wl_touch (taps + one-finger scroll).
         ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP Mouse", ENV{LIBINPUT_IGNORE_DEVICE}="1"
 
+        # Per-panel digitizers -> DRM connectors. Niri reads WL_OUTPUT via libinput
+        # (stock niri ignores it unless patched; see niri-libinput-wl-output.patch).
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="FTS3528:00 2808:1015", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.internal.connector}"
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="FTS3528:00 2808:1015 UNKNOWN", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.internal.connector}"
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.external.oled.connector}"
+
         # Limit battery charge to 80%
         SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"
 
