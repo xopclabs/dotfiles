@@ -118,7 +118,7 @@ in
     nixpkgs.overlays = [
         (final: prev: {
             niri = prev.niri.overrideAttrs (old: {
-                patches = (old.patches or []) ++ [ ./niri-libinput-wl-output.patch ];
+                patches = (old.patches or []) ++ (import ../../../patches { inherit lib; }).niri;
             });
         })
     ];

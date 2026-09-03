@@ -1,0 +1,24 @@
+Niri maps every libinput touch/tablet device to one fallback output
+(input.touch.map-to-output / input.tablet.map-to-output). Dual touchscreens
+therefore both land on the same monitor.
+
+This makes Device::output() honor udev WL_OUTPUT (libinput's output_name)
+so each digitizer can target its own DRM connector. Devices without
+WL_OUTPUT still use the config fallback.
+
+Deck udev rules live in hosts/deck/nixos/system.nix.
+
+--- a/src/input/backend_ext.rs
++++ b/src/input/backend_ext.rs
+@@ -24,8 +24,8 @@
+ }
+ 
+ impl NiriInputDevice for libinput::Device {
+-    fn output(&self, _state: &State) -> Option<Output> {
+-        // FIXME: Allow specifying the output per-device?
+-        None
++    fn output(&self, state: &State) -> Option<Output> {
++        self.output_name()
++            .and_then(|name| state.niri.output_by_name_match(name.as_ref()).cloned())
+     }
+ }

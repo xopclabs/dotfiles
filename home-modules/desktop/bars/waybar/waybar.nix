@@ -26,7 +26,7 @@ in {
         programs.waybar = {
             enable = true;
             package = (inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar).overrideAttrs (old: {
-                patches = (old.patches or []) ++ [ ./waybar-center-labels.patch ];
+                patches = (old.patches or []) ++ (import ../../../../patches { inherit lib; }).waybar;
             });
             settings = {
                 mainBar = let

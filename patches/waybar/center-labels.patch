@@ -2,12 +2,15 @@ Waybar packs some module labels into a horizontal GtkBox instead of putting
 them directly on the widget. On a vertical bar those labels end up flush
 left, because a horizontal box packs children at the start.
 
+niri/workspace.cpp: center the workspace number with set_center_widget.
+AIconLabel.cpp: hexpand the label so xalign can center custom-module text.
+
 Affects the niri workspace buttons and everything deriving from AIconLabel
 (all custom modules).
 
 --- a/src/modules/niri/workspace.cpp
 +++ b/src/modules/niri/workspace.cpp
-@@ -20,8 +20,12 @@ Workspace::Workspace(const Json::Value& workspace_data, Workspaces& manager)
+@@ -18,8 +18,12 @@
        box_(Gtk::ORIENTATION_HORIZONTAL, 0),
        taskbar_box_(Gtk::ORIENTATION_HORIZONTAL, 0) {
    button_.add(box_);
@@ -24,12 +27,11 @@ Affects the niri workspace buttons and everything deriving from AIconLabel
    button_.get_style_context()->add_class("niri-workspace");
 --- a/src/AIconLabel.cpp
 +++ b/src/AIconLabel.cpp
-@@ -55,6 +55,9 @@ AIconLabel::AIconLabel(const Json::Value& config, const std::string& name, const
+@@ -58,6 +58,7 @@
      box_.add(image_);
    }
  
-+  // Let the label claim the leftover space so its xalign centers the text.
 +  label_.set_hexpand(true);
-+
    event_box_.add(box_);
  }
+ 
