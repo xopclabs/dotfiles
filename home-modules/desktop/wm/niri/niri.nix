@@ -129,10 +129,13 @@ in {
 
                 layer-rules = [
                     {
-                        matches = [
-                            { namespace = "^awww-daemon_backdrop$"; }
+                        matches = [ { namespace = "^awww-daemon_backdrop$"; }
                         ];
                         place-within-backdrop = true;
+                    }
+                    {
+                        matches = [ { namespace = "^notifications$"; } ];
+                        block-out-from = "screencast";
                     }
                 ];
 
@@ -203,6 +206,11 @@ in {
                     "Ctrl+Print".action.spawn = "annotate";
                     "Ctrl+Shift+Print".action.spawn = "screenrecord";
                     "Mod+J".action.spawn = "eq-preset";
+
+                    # Dynamic screencast
+                    "Mod+Alt+B".action.set-dynamic-cast-monitor = [];
+                    "Mod+Ctrl+B".action.set-dynamic-cast-window = [];
+                    "Mod+Alt+C".action.clear-dynamic-cast-target = [];
 
                     # Auxiliary
                     "Ctrl+Alt+Delete".action.quit.skip-confirmation = true;
@@ -372,6 +380,37 @@ in {
                             relative-to = "top";
                         };
                         border.enable = false;
+                    }
+
+                    # Screencast block-outs
+                    {
+                        matches = [
+                            { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; }
+                            { app-id = "^[Ss]team$"; }
+                        ];
+                        block-out-from = "screencast";
+                    }
+                    {
+                        matches = [
+                            {
+                                app-id = "^[Ff]irefox$";
+                                title = "(?i)(gmail|youtube|bitwarden|reddit)";
+                            }
+                        ];
+                        block-out-from = "screencast";
+                    }
+
+                    # Screencast indicator style
+                    {
+                        matches = [ { is-window-cast-target = true; } ];
+                        border = {
+                            active.color = "#${base08}";
+                            inactive.color = "#${base08}80";
+                        };
+                        tab-indicator = {
+                            active.color = "#${base08}";
+                            inactive.color = "#${base08}80";
+                        };
                     }
                 ];
 
