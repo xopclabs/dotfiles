@@ -30,6 +30,26 @@ in {
             default = "nord";
             description = "Palette name sent in every POST /grid body.";
         };
+
+        backdrop = {
+            enable = mkOption {
+                type = types.bool;
+                default = config.modules.desktop.wm.niri.enable;
+                description = "Generate blurred and vignetted backdrop for overview.";
+            };
+
+            blur = mkOption {
+                type = types.str;
+                default = "0x8";
+                description = "ImageMagick blur geometry (e.g. 0x3, 0x4, or empty/0 to disable).";
+            };
+
+            vignette = mkOption {
+                type = types.str;
+                default = "0.5";
+                description = "Vignette darkness opacity (0.0 to 1.0, or empty/0 to disable).";
+            };
+        };
     };
 
     config = mkIf cfg.enable (let
@@ -45,6 +65,7 @@ in {
                 ]
                 ++ lib.optional config.modules.desktop.wm.hyprland.enable pkgs.hyprland
                 ++ lib.optional config.modules.desktop.wm.niri.enable pkgs.niri
+                ++ lib.optional config.modules.desktop.wm.niri.enable pkgs.imagemagick
             )}:$PATH
             ${builtins.replaceStrings
                 [
@@ -54,6 +75,9 @@ in {
                     "@SUBDOMAIN@"
                     "@PALETTE@"
                     "@FALLBACK@"
+                    "@BACKDROP_ENABLE@"
+                    "@BACKDROP_BLUR@"
+                    "@BACKDROP_VIGNETTE@"
                 ]
                 [
                     config.metadata.hostName
@@ -62,6 +86,9 @@ in {
                     cfg.subdomain
                     cfg.palette
                     fallback
+                    (if (cfg.backdrop.enable && config.modules.desktop.wm.niri.enable) then "1" else "0")
+                    cfg.backdrop.blur
+                    cfg.backdrop.vignette
                 ]
                 (builtins.readFile ./wallpaper-rotate)
             }
@@ -97,11 +124,28 @@ in {
             Install.WantedBy = [ "graphical-session.target" ];
         };
 
+        systemd.user.services.awww-backdrop = mkIf (cfg.backdrop.enable && config.modules.desktop.wm.niri.enable) {
+            Unit = {
+                Description = "awww wallpaper daemon for overview backdrop";
+                After = [ "graphical-session.target" ];
+                PartOf = [ "graphical-session.target" ];
+                ConditionEnvironment = "WAYLAND_DISPLAY";
+            };
+            Service = {
+                ExecStart = "${pkgs.awww}/bin/awww-daemon --namespace _backdrop";
+                Restart = "on-failure";
+                RestartSec = 1;
+            };
+            Install.WantedBy = [ "niri.service" ];
+        };
+
         systemd.user.services.wallpaper-rotate = {
             Unit = {
                 Description = "Apply generated wallpapers to current outputs";
-                After = [ "graphical-session.target" "awww.service" "sops-nix.service" ];
-                Wants = [ "awww.service" ];
+                After = [ "graphical-session.target" "awww.service" "sops-nix.service" ]
+                    ++ lib.optional (cfg.backdrop.enable && config.modules.desktop.wm.niri.enable) "awww-backdrop.service";
+                Wants = [ "awww.service" ]
+                    ++ lib.optional (cfg.backdrop.enable && config.modules.desktop.wm.niri.enable) "awww-backdrop.service";
                 ConditionEnvironment = "WAYLAND_DISPLAY";
             };
             Service = {
@@ -125,8 +169,10 @@ in {
         systemd.user.services.wallpaper-rotate-watch = {
             Unit = {
                 Description = "Re-apply generated wallpapers when an output is added or resized";
-                After = [ "graphical-session.target" "awww.service" "sops-nix.service" ];
-                Wants = [ "awww.service" ];
+                After = [ "graphical-session.target" "awww.service" "sops-nix.service" ]
+                    ++ lib.optional (cfg.backdrop.enable && config.modules.desktop.wm.niri.enable) "awww-backdrop.service";
+                Wants = [ "awww.service" ]
+                    ++ lib.optional (cfg.backdrop.enable && config.modules.desktop.wm.niri.enable) "awww-backdrop.service";
                 PartOf = [ "graphical-session.target" ];
                 ConditionEnvironment = "WAYLAND_DISPLAY";
             };

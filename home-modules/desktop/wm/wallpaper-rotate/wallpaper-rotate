@@ -11,6 +11,9 @@ DOMAIN_FILE='@DOMAIN_FILE@'
 SUBDOMAIN='@SUBDOMAIN@'
 PALETTE='@PALETTE@'
 FALLBACK='@FALLBACK@'
+BACKDROP_ENABLE='@BACKDROP_ENABLE@'
+BACKDROP_BLUR='@BACKDROP_BLUR@'
+BACKDROP_VIGNETTE='@BACKDROP_VIGNETTE@'
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/wallpaper-rotate"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper-rotate"
@@ -88,6 +91,40 @@ cache_path() {
     printf '%s/%s_%sx%s.png\n' "$CACHE_DIR" "$slug" "$width" "$height"
 }
 
+backdrop_cache_path() {
+    local seed="$1" width="$2" height="$3"
+    local slug
+    slug=${seed//\//_}
+    printf '%s/%s_%sx%s_backdrop.png\n' "$CACHE_DIR" "$slug" "$width" "$height"
+}
+
+ensure_backdrop_png() {
+    local src="$1" seed="$2" width="$3" height="$4"
+    local dest tmp
+    dest=$(backdrop_cache_path "$seed" "$width" "$height")
+    if is_png "$dest"; then
+        printf '%s\n' "$dest"
+        return 0
+    fi
+
+    local -a args=("$src")
+    if [[ -n "$BACKDROP_BLUR" && "$BACKDROP_BLUR" != "0" ]]; then
+        args+=(-blur "$BACKDROP_BLUR")
+    fi
+    if [[ -n "$BACKDROP_VIGNETTE" && "$BACKDROP_VIGNETTE" != "0" && "$BACKDROP_VIGNETTE" != "0.0" ]]; then
+        args+=(\( -size "${width}x${height}" "radial-gradient:transparent-rgba(0,0,0,${BACKDROP_VIGNETTE})" \) -composite)
+    fi
+
+    tmp=$(mktemp "$CACHE_DIR/backdrop.XXXXXX")
+    if magick "${args[@]}" -resize "${width}x${height}" "$tmp"; then
+        mv "$tmp" "$dest"
+        printf '%s\n' "$dest"
+        return 0
+    fi
+    rm -f "$tmp"
+    return 1
+}
+
 is_png() {
     local f="$1" magic
     [[ -s "$f" ]] || return 1
@@ -146,6 +183,18 @@ wait_for_awww() {
         sleep 0.2
     done
     echo "wallpaper-rotate: awww daemon is not ready" >&2
+    return 1
+}
+
+wait_for_awww_backdrop() {
+    local i
+    for i in $(seq 1 50); do
+        if awww query --namespace _backdrop >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.2
+    done
+    echo "wallpaper-rotate: awww backdrop daemon is not ready" >&2
     return 1
 }
 
@@ -216,8 +265,15 @@ connected_roles() {
 }
 
 set_output() {
-    local name="$1" png="$2"
+    local name="$1" png="$2" role="${3:-}" width="${4:-}" height="${5:-}"
     awww img --outputs "$name" "$png"
+    if [[ "$BACKDROP_ENABLE" == "1" && "$(desktop)" == "niri" && -n "$role" && -n "$width" && -n "$height" ]]; then
+        local seed bdest
+        seed=$(seed_for "$role")
+        if bdest=$(ensure_backdrop_png "$png" "$seed" "$width" "$height"); then
+            awww img --namespace _backdrop --outputs "$name" "$bdest" --transition-type none || true
+        fi
+    fi
 }
 
 ensure_png() {
@@ -245,6 +301,9 @@ apply_all() {
     ensure_dirs
     ensure_date
     wait_for_awww || return 1
+    if [[ "$BACKDROP_ENABLE" == "1" && "$(desktop)" == "niri" ]]; then
+        wait_for_awww_backdrop || echo "wallpaper-rotate: continuing without backdrop daemon" >&2
+    fi
     local line name role width height png
     local any=0
     while IFS=$'\t' read -r name role width height; do
@@ -254,7 +313,7 @@ apply_all() {
             continue
         fi
         if png=$(ensure_png "$role" "$width" "$height"); then
-            set_output "$name" "$png"
+            set_output "$name" "$png" "$role" "$width" "$height"
             echo "wallpaper-rotate: $name ($role) <- $png"
             any=1
         fi
@@ -327,6 +386,7 @@ do_status() {
         echo "  $name  role=$role  ${width}x${height}"
         echo "    seed=$seed"
         echo "    cache=$(cache_path "$seed" "$width" "$height")"
+        echo "    backdrop=$(backdrop_cache_path "$seed" "$width" "$height")"
     done < <(list_outputs)
 }
 

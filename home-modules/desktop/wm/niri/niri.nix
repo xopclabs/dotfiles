@@ -127,6 +127,15 @@ in {
                     zoom = 0.35;
                 };
 
+                layer-rules = [
+                    {
+                        matches = [
+                            { namespace = "^awww-daemon_backdrop$"; }
+                        ];
+                        place-within-backdrop = true;
+                    }
+                ];
+
                 binds = {
                     # Focus monitors
                     "Mod+A".action.focus-monitor-left = [];
