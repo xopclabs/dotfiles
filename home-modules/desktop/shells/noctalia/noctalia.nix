@@ -240,6 +240,7 @@ PY
                                     id = "power";
                                     members = [ "session" "gamescope" "keyboard" ];
                                     accordion = true;
+                                    accordion_direction = "start";
                                     padding = 6.0;
                                 })
                             ];
