@@ -3,10 +3,11 @@
 with lib;
 let
     cfg = config.modules.desktop.bars;
-    barPriorities = [ "waybar" ];
+    barPriorities = [ "noctalia" "waybar" ];
 in {
     imports = [
         ./waybar/waybar.nix
+        ./noctalia/noctalia.nix
     ];
     
     options.modules.desktop.bars = {
@@ -22,5 +23,9 @@ in {
             inherit cfg;
             priorities = barPriorities;
         };
+        assertions = [{
+            assertion = !(cfg.waybar.enable && cfg.noctalia.enable);
+            message = "Only one of modules.desktop.bars.waybar and modules.desktop.bars.noctalia can be enabled";
+        }];
     };
 }

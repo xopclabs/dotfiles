@@ -192,6 +192,14 @@ drm_has_external() {
 }
 
 restart_bar() {
+    if command -v noctalia >/dev/null 2>&1 && pgrep -x noctalia >/dev/null 2>&1; then
+        case "$(desktop)" in
+            hyprland) hyprctl dispatch exec "pkill -x noctalia; noctalia" >/dev/null 2>&1 || true ;;
+            niri) niri msg action spawn-sh "pkill -x noctalia; noctalia" >/dev/null 2>&1 || true ;;
+            *) pkill -x noctalia >/dev/null 2>&1 || true; noctalia >/dev/null 2>&1 & ;;
+        esac
+        return 0
+    fi
     command -v waybar >/dev/null 2>&1 || return 0
     case "$(desktop)" in
         hyprland) hyprctl dispatch exec "pkill waybar; waybar" >/dev/null 2>&1 || true ;;

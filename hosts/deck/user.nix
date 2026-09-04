@@ -12,8 +12,11 @@
     config.modules = {
         desktop = {
             bars = {
-                waybar = {
+                noctalia = {
                     enable = true;
+                };
+                waybar = {
+                    enable = false;
                 };
             };
             launchers.tofi.enable = true;

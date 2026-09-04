@@ -1,6 +1,11 @@
 {
     description = "NixOS configuration";
 
+    nixConfig = {
+        extra-substituters = [ "https://noctalia.cachix.org" ];
+        extra-trusted-public-keys = [ "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=" ];
+    };
+
     # All inputs for the system
     inputs = {
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -49,6 +54,8 @@
 
         waybar.url = "github:Alexays/Waybar";
         waybar.inputs.nixpkgs.follows = "nixpkgs";
+
+        noctalia.url = "github:noctalia-dev/noctalia/cachix";
 
         shadowing.url = "github:xopclabs/shadowing";
         shadowing.inputs.nixpkgs.follows = "nixpkgs";

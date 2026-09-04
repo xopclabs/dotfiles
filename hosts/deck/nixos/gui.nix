@@ -97,12 +97,14 @@ in
     # Binary caches
     nix.settings = {
         substituters = [
+            "https://noctalia.cachix.org"
             "https://jovian.cachix.org"
             "https://chaotic-nyx.cachix.org"
             "https://hyprland.cachix.org"
             "https://nix-community.cachix.org"
         ];
         trusted-public-keys = [
+            "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
             "jovian.cachix.org-1:8Vq4Txku6VZIRhYrHYki3Ab9XHJRoWmdYqMqj4rB/Uc="
             "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
             "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="

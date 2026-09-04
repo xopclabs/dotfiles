@@ -152,6 +152,7 @@ in {
                     "[workspace 8 silent] telegram-desktop"
                     "[workspace 9 silent] slack"
                 ] ++ lib.optional config.modules.desktop.bars.waybar.enable "waybar"
+                  ++ lib.optional config.modules.desktop.bars.noctalia.enable "noctalia"
                   ++ lib.optional config.modules.cli.tmux.enable "tmux new -s main"
                   ++ lib.optional config.modules.other.plover.enable "plover"
                   ++ [
@@ -298,6 +299,8 @@ in {
                     "no_anim on, match:namespace selection"
                     # Launcher under waybar
                     "order -1, match:namespace launcher"
+                ] ++ lib.optionals config.modules.desktop.bars.noctalia.enable [
+                    "no_anim on, match:namespace noctalia-(.*)"
                 ];
                 workspace = externalWorkspaceRules ++ [
                     "6, monitor:${monitor_internal}, default:true"
@@ -341,7 +344,7 @@ in {
                         { key = "b"; n = "10"; }
                     ];
                 in [
-                    "CTRL SHIFT, B,  exec, pkill waybar; waybar"
+                    (if config.modules.desktop.bars.noctalia.enable then "CTRL SHIFT, B,  exec, pkill -x noctalia; noctalia" else "CTRL SHIFT, B,  exec, pkill waybar; waybar")
                     "$mod, L, exec,  systemd-run --user $(${config.modules.desktop.launchers.default}-drun)"
                     ", Print, exec, screenshot"
                     "CTRL, Print, exec, annotate"

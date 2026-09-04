@@ -13,7 +13,8 @@ in {
             enable = true;
             settings = with config.colorScheme.palette; let
                 padding = 8; 
-                waybar-width = 42;
+                bar-width = if (config.modules.desktop.bars.waybar.enable
+                    || config.modules.desktop.bars.noctalia.enable) then 42 else 0;
             in {
                 drun-launch = true;
                 history = true;
@@ -27,7 +28,7 @@ in {
                 # on the 800px internal panel (niri scales the buffer to the output).
                 anchor = "top";
                 width = 0;
-                height = waybar-width;
+                height = 42;
                 horizontal = true;
                 # Padding
                 padding-top = padding;
@@ -36,7 +37,7 @@ in {
                 padding-right = 0;
                 margin-top = 0;
                 margin-bottom = 0;
-                margin-left = waybar-width;
+                margin-left = bar-width;
                 margin-right = 0;
                 # Fonts
                 font = "monospace";
