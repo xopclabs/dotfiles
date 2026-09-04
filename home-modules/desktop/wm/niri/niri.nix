@@ -137,7 +137,7 @@ in {
                         matches = [ { namespace = "^notifications$"; } ];
                         block-out-from = "screencast";
                     }
-                ] ++ lib.optionals config.modules.desktop.bars.noctalia.enable [
+                ] ++ lib.optionals config.modules.desktop.shells.noctalia.enable [
                     {
                         matches = [ { namespace = "^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$"; } ];
                         background-effect = {
@@ -211,7 +211,7 @@ in {
                     "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" ];
                     "Mod+Ctrl+Space".action.spawn = [ config.modules.terminals.default "-e" "tmux" ];
                     # Launcher
-                    "Mod+L".action.spawn-sh = "systemd-run --user $(${config.modules.desktop.launchers.default}-drun)";
+                    "Mod+L".action.spawn = "launcher-drun";
                     # Browser
                     "Mod+H".action.spawn = config.modules.browsers.default;
 
@@ -228,13 +228,7 @@ in {
 
                     # Auxiliary
                     "Ctrl+Alt+Delete".action.quit.skip-confirmation = true;
-                    "Ctrl+Shift+B".action.spawn-sh =
-                        if config.modules.desktop.bars.noctalia.enable then
-                            "noctalia-restart"
-                        else if config.modules.desktop.bars.waybar.enable then
-                            "pkill waybar; waybar"
-                        else
-                            "true";
+                    "Ctrl+Shift+B".action.spawn = "bar-restart";
 
                     # Media
                     "XF86MonBrightnessUp".action.spawn = [ "brightnessctl" "s" "+5%" ];
@@ -260,7 +254,7 @@ in {
                     "XF86Tools".action.switch-layout = "0";
                     "XF86Launch5".action.switch-layout = "1";
                     "XF86PowerOff".action.spawn = [ "systemctl" "suspend" ];
-                } // lib.optionalAttrs config.modules.desktop.bars.noctalia.enable {
+                } // lib.optionalAttrs config.modules.desktop.shells.noctalia.enable {
                     "Mod+Comma".action.spawn-sh = "noctalia msg settings-toggle";
                 } // cfg.extraBinds;
 
@@ -306,7 +300,7 @@ in {
                     { argv = [ "Telegram" ]; }
                 ]
                 ++ lib.optional config.modules.desktop.bars.waybar.enable { argv = [ "waybar" ]; }
-                ++ lib.optional config.modules.desktop.bars.noctalia.enable { argv = [ "noctalia" ]; }
+                ++ lib.optional config.modules.desktop.shells.noctalia.enable { argv = [ "noctalia" ]; }
                 ++ lib.optional config.modules.cli.tmux.enable { argv = [ "tmux" "new" "-s" "main" ]; }
                 ++ lib.optional config.modules.other.plover.enable { argv = [ "plover" ]; }
                 ++ map (cmd: { sh = cmd; }) cfg.extraAutostart;
@@ -449,7 +443,7 @@ in {
                     size = cursorSize;
                 };
 
-                debug = lib.optionalAttrs config.modules.desktop.bars.noctalia.enable {
+                debug = lib.optionalAttrs config.modules.desktop.shells.noctalia.enable {
                     honor-xdg-activation-with-invalid-serial = [];
                 };
 

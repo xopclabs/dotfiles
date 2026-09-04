@@ -13,8 +13,7 @@ in {
             enable = true;
             settings = with config.colorScheme.palette; let
                 padding = 8; 
-                bar-width = if (config.modules.desktop.bars.waybar.enable
-                    || config.modules.desktop.bars.noctalia.enable) then 42 else 0;
+                bar-width = if (config.modules.desktop.bars.default != null) then 42 else 0;
             in {
                 drun-launch = true;
                 history = true;

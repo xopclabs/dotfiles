@@ -11,10 +11,7 @@
     
     config.modules = {
         desktop = {
-            bars = {
-                noctalia.enable = true;
-            };
-            launchers.tofi.enable = true;
+            shells.noctalia.enable = true;
             wm = {
                 hyprland.enable = false;
                 niri.enable = true;

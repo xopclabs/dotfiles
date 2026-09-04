@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.modules.desktop.bars.noctalia;
+    cfg = config.modules.desktop.shells.noctalia;
     palette = config.colorScheme.palette;
     groupStyle = {
         fill = "#${palette.base01}";
@@ -15,14 +15,27 @@ let
         enabled = true;
     };
     iconScale = 1.25;
-    icons = import ../app-icons.nix { inherit lib; };
+    icons = import ../../bars/app-icons.nix { inherit lib; };
 in {
     imports = [
         inputs.noctalia.homeModules.default
     ];
 
-    options.modules.desktop.bars.noctalia = {
+    options.modules.desktop.shells.noctalia = {
         enable = mkEnableOption "noctalia shell";
+
+        components = {
+            bar = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Noctalia's bar component";
+            };
+            launcher = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Enable Noctalia's launcher component";
+            };
+        };
 
         package = mkOption {
             type = types.nullOr types.package;
@@ -178,7 +191,7 @@ PY
                     bar = {
                         order = [ "main" ];
                         main = {
-                            enabled = cfg.showOnlyOn == null;
+                            enabled = cfg.components.bar && (cfg.showOnlyOn == null);
                             position = "left";
                             thickness = 42;
                             layer = "top";
@@ -233,7 +246,7 @@ PY
                         } // optionalAttrs (cfg.showOnlyOn != null) {
                             monitor.only = {
                                 match = cfg.showOnlyOn;
-                                enabled = true;
+                                enabled = cfg.components.bar;
                             };
                         };
                     };

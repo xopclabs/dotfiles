@@ -3,7 +3,6 @@
 with lib;
 let
     cfg = config.modules.desktop.bars.waybar;
-    bar-restart = pkgs.writeShellScriptBin "bar-restart" ''${builtins.readFile ./bar-restart}'';
     wayland-quit = pkgs.writeShellScriptBin "wayland-quit" ''
         case "''${XDG_CURRENT_DESKTOP:-}" in
             niri) niri msg action quit --skip-confirmation ;;
@@ -22,7 +21,7 @@ in {
     };
     imports = [ ./icons.nix ];
     config = mkIf cfg.enable {
-        home.packages = [ bar-restart wayland-quit ];
+        home.packages = [ wayland-quit ];
         programs.waybar = {
             enable = true;
             package = (inputs.waybar.packages.${pkgs.stdenv.hostPlatform.system}.waybar).overrideAttrs (old: {

@@ -7,6 +7,7 @@ in {
     imports = [
         ./wm
         ./bars
+        ./shells
         ./launchers
         ./other
     ];

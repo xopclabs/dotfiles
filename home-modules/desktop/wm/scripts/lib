@@ -192,20 +192,14 @@ drm_has_external() {
 }
 
 restart_bar() {
-    if command -v noctalia-restart >/dev/null 2>&1; then
+    if command -v bar-restart >/dev/null 2>&1; then
         case "$(desktop)" in
-            hyprland) hyprctl dispatch exec noctalia-restart >/dev/null 2>&1 || true ;;
-            niri) niri msg action spawn-sh noctalia-restart >/dev/null 2>&1 || true ;;
-            *) noctalia-restart >/dev/null 2>&1 & ;;
+            hyprland) hyprctl dispatch exec bar-restart >/dev/null 2>&1 || true ;;
+            niri) niri msg action spawn-sh bar-restart >/dev/null 2>&1 || true ;;
+            *) bar-restart >/dev/null 2>&1 & ;;
         esac
         return 0
     fi
-    command -v waybar >/dev/null 2>&1 || return 0
-    case "$(desktop)" in
-        hyprland) hyprctl dispatch exec "pkill waybar; waybar" >/dev/null 2>&1 || true ;;
-        niri) niri msg action spawn-sh "pkill waybar; waybar" >/dev/null 2>&1 || true ;;
-        *) pkill waybar >/dev/null 2>&1 || true; waybar >/dev/null 2>&1 & ;;
-    esac
 }
 
 log() {
