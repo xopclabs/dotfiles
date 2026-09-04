@@ -229,8 +229,12 @@ in {
                     # Auxiliary
                     "Ctrl+Alt+Delete".action.quit.skip-confirmation = true;
                     "Ctrl+Shift+B".action.spawn-sh =
-                        if config.modules.desktop.bars.noctalia.enable then "pkill -x noctalia; noctalia"
-                        else "pkill waybar; waybar";
+                        if config.modules.desktop.bars.noctalia.enable then
+                            "noctalia-restart"
+                        else if config.modules.desktop.bars.waybar.enable then
+                            "pkill waybar; waybar"
+                        else
+                            "true";
 
                     # Media
                     "XF86MonBrightnessUp".action.spawn = [ "brightnessctl" "s" "+5%" ];

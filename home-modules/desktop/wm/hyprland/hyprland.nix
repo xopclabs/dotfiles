@@ -344,7 +344,14 @@ in {
                         { key = "b"; n = "10"; }
                     ];
                 in [
-                    (if config.modules.desktop.bars.noctalia.enable then "CTRL SHIFT, B,  exec, pkill -x noctalia; noctalia" else "CTRL SHIFT, B,  exec, pkill waybar; waybar")
+                    "CTRL SHIFT, B,  exec, ${
+                        if config.modules.desktop.bars.noctalia.enable then
+                            "noctalia-restart"
+                        else if config.modules.desktop.bars.waybar.enable then
+                            "pkill waybar; waybar"
+                        else
+                            "true"
+                    }"
                     "$mod, L, exec,  systemd-run --user $(${config.modules.desktop.launchers.default}-drun)"
                     ", Print, exec, screenshot"
                     "CTRL, Print, exec, annotate"

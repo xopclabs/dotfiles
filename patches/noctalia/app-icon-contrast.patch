@@ -1,0 +1,167 @@
+Drop the 28% luminance floor and histogram pad on colorized app icons.
+Add a mild S-curve and app_icon_curve gamma.
+
+--- a/assets/translations/en.json
++++ b/assets/translations/en.json
+@@ -1611,6 +1611,10 @@
+           "description": "Recolor application icons across the shell to match the active palette",
+           "label": "Colorize App Icons"
+         },
++        "app-icon-curve": {
++          "description": "Gamma applied to colorized icon luminance. Values below 1 lift midtones; above 1 darken them",
++          "label": "App Icon Curve"
++        },
+         "builtin-palette": {
+           "description": "Choose a palette from the bundled catalog",
+           "label": "Built-In Palette"
+--- a/example.toml
++++ b/example.toml
+@@ -24,6 +24,7 @@
+ show_location         = true         # hide weather location text in shell UI when false
+ # app_icon_colorize   = false        # recolor application icons across the shell
+ # app_icon_color      = "on_surface" # ColorSpec role or #hex when colorize is enabled
++# app_icon_curve      = 0.5          # gamma for colorized icons; <1 lifts midtones
+ clipboard_enabled     = true         # false disables clipboard panel, history, and compositor clipboard hooks
+ clipboard_history_max_entries = 100 # unpinned history cap (10–10000); pinned entries are extra
+ # A Wayland selection is served by the app that owns it, so it dies when that app exits.
+--- a/src/config/config_types.h
++++ b/src/config/config_types.h
+@@ -1095,6 +1095,7 @@
+   bool showLocation = true;
+   bool appIconColorize = false;
+   std::optional<ColorSpec> appIconColor;
++  float appIconCurve = 0.5F;
+   bool launchAppsAsSystemdServices = false;
+   std::string launchAppsCustomCommand;
+   /// When false, disables Wayland clipboard integration (history panel, data-control binding, Input paste/copy hooks).
+--- a/src/config/schema/config_schema.cpp
++++ b/src/config/schema/config_schema.cpp
+@@ -1569,6 +1569,7 @@
+         field(&ShellConfig::showLocation, "show_location"),
+         field(&ShellConfig::appIconColorize, "app_icon_colorize"),
+         colorSpecField(&ShellConfig::appIconColor, "app_icon_color", /*alwaysEmit=*/false),
++        field(&ShellConfig::appIconCurve, "app_icon_curve", kAppIconCurveRange),
+         field(&ShellConfig::launchAppsAsSystemdServices, "launch_apps_as_systemd_services"),
+         field(&ShellConfig::launchAppsCustomCommand, "launch_apps_custom_command"),
+         field(&ShellConfig::clipboardEnabled, "clipboard_enabled"),
+--- a/src/config/schema/ranges.h
++++ b/src/config/schema/ranges.h
+@@ -16,6 +16,7 @@
+ 
+   // Shell.
+   inline constexpr Range<float> kAnimationSpeedRange{0.1F, 4.0F, 0.05F};
++  inline constexpr Range<float> kAppIconCurveRange{0.2F, 4.0F, 0.05F};
+   inline constexpr Range<float> kCornerRadiusScaleRange{0.0F, 2.0F, 0.05F};
+   inline constexpr Range<std::int64_t> kControlCenterWidthRange{600, 1200, 10};
+   inline constexpr Range<std::int64_t> kScreenCornersSizeRange{1, 100, 1};
+--- a/src/shell/settings/settings_registry.cpp
++++ b/src/shell/settings/settings_registry.cpp
+@@ -569,13 +569,21 @@
+       colorizeShell.appIconColorize = true;
+       const ColorSpec pickerColor =
+           cfg.shell.appIconColor.value_or(*effectiveShellAppIconColorizationTint(colorizeShell));
+-      auto e = makeEntry(
++      auto colorEntry = makeEntry(
+           SettingsSection::Appearance, "interface", tr("settings.schema.appearance.app-icon-color.label"),
+           tr("settings.schema.appearance.app-icon-color.description"), {"shell", "app_icon_color"},
+           colorSpecPicker(pickerColor), "color role dock tray application icons"
+       );
+-      e.visibleWhen = colorizeOn;
+-      entries.push_back(std::move(e));
++      colorEntry.visibleWhen = colorizeOn;
++      entries.push_back(std::move(colorEntry));
++      auto curveEntry = makeEntry(
++          SettingsSection::Appearance, "interface", tr("settings.schema.appearance.app-icon-curve.label"),
++          tr("settings.schema.appearance.app-icon-curve.description"), {"shell", "app_icon_curve"},
++          sliderFor(cfg.shell.appIconCurve, noctalia::config::schema::kAppIconCurveRange, false),
++          "gamma tone curve grayscale"
++      );
++      curveEntry.visibleWhen = colorizeOn;
++      entries.push_back(std::move(curveEntry));
+     }
+     entries.push_back(makeEntry(
+         SettingsSection::Appearance, "accessibility", tr("settings.schema.appearance.ui-scale.label"),
+--- a/src/ui/app_icon_colorization.cpp
++++ b/src/ui/app_icon_colorization.cpp
+@@ -11,15 +11,18 @@
+ namespace {
+ 
+   struct AppIconBakeTuning {
+-    float minDisplayLevel = 0.28F;
++    float minDisplayLevel = 0.0F;
+     float minContrastSpan = 0.12F;
++    float contrast = 1.35F;
+   };
+ 
++  ShellAppIconColorizationSettings g_bakeSettings;
++
+   [[nodiscard]] AppIconBakeTuning bakeTuningForTheme() noexcept {
+     if (isResolvedLightTheme()) {
+-      return AppIconBakeTuning{.minDisplayLevel = 0.32F, .minContrastSpan = 0.12F};
++      return AppIconBakeTuning{.minDisplayLevel = 0.08F, .minContrastSpan = 0.12F, .contrast = 1.35F};
+     }
+-    return AppIconBakeTuning{.minDisplayLevel = 0.28F, .minContrastSpan = 0.12F};
++    return AppIconBakeTuning{.minDisplayLevel = 0.0F, .minContrastSpan = 0.12F, .contrast = 1.35F};
+   }
+ 
+   [[nodiscard]] ColorSpec defaultAppIconColorizationTint() noexcept {
+@@ -34,10 +37,24 @@
+     return static_cast<std::uint8_t>(std::lround(std::clamp(level, 0.0F, 1.0F) * 255.0F));
+   }
+ 
++  [[nodiscard]] float applyGamma(float level, float curve) noexcept {
++    const float gamma = std::max(curve, 0.01F);
++    level = std::clamp(level, 0.0F, 1.0F);
++    if (std::abs(gamma - 1.0F) < 1e-4F) {
++      return level;
++    }
++    return std::pow(level, gamma);
++  }
++
+ } // namespace
+ 
+ ShellAppIconColorizationSettings shellAppIconColorizationSettings(const ShellConfig& shell) noexcept {
+-  return ShellAppIconColorizationSettings{.enabled = shell.appIconColorize, .color = shell.appIconColor};
++  g_bakeSettings = ShellAppIconColorizationSettings{
++      .enabled = shell.appIconColorize,
++      .color = shell.appIconColor,
++      .curve = shell.appIconCurve,
++  };
++  return g_bakeSettings;
+ }
+ 
+ Signal<>& shellAppIconColorizationChanged() noexcept {
+@@ -104,10 +121,8 @@
+ 
+   const float rawSpan = maxLum - minLum;
+   const bool stretch = rawSpan >= tuning.minContrastSpan;
+-  const float span = std::max(rawSpan, 1e-3F);
+-  const float pad = span * 0.04F;
+-  const float minMapped = std::max(0.0F, minLum - pad);
+-  const float mappedSpan = std::max(maxLum + pad - minMapped, 1e-3F);
++  const float minMapped = minLum;
++  const float mappedSpan = std::max(maxLum - minMapped, 1e-3F);
+ 
+   for (std::size_t i = 0; i < pixelCount; ++i) {
+     const std::size_t offset = i * 4U;
+@@ -125,6 +140,10 @@
+     if (invertInk) {
+       level = 1.0F - level;
+     }
++    if (tuning.contrast != 1.0F) {
++      level = std::clamp((level - 0.5F) * tuning.contrast + 0.5F, 0.0F, 1.0F);
++    }
++    level = applyGamma(level, g_bakeSettings.curve);
+     const float displayLevel = tuning.minDisplayLevel + (1.0F - tuning.minDisplayLevel) * level;
+     rgba[offset] = toGrayByte(tint.r * displayLevel);
+     rgba[offset + 1U] = toGrayByte(tint.g * displayLevel);
+--- a/src/ui/app_icon_colorization.h
++++ b/src/ui/app_icon_colorization.h
+@@ -17,6 +17,7 @@
+ struct ShellAppIconColorizationSettings {
+   bool enabled = false;
+   std::optional<ColorSpec> color;
++  float curve = 0.5F;
+ 
+   bool operator==(const ShellAppIconColorizationSettings&) const = default;
+ };

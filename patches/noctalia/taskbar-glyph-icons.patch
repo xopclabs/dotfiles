@@ -1,0 +1,282 @@
+Taskbar glyph icons: icon_source, icon_glyphs, icon_unmapped, icon_glyph_default.
+
+diff --git a/assets/translations/en.json b/assets/translations/en.json
+index f84f004..912b4ec 100644
+--- a/assets/translations/en.json
++++ b/assets/translations/en.json
+@@ -3779,6 +3779,10 @@
+         "hidden": "Hidden",
+         "icon-and-text": "Icon and Text",
+         "icon-only": "Icon Only",
++        "app-icons": "App Icons",
++        "glyphs": "Glyphs",
++        "placeholder-glyph": "Placeholder Glyph",
++        "tinted-icons": "Tinted App Icons",
+         "icons": "Icons",
+         "id": "ID",
+         "input": "Input",
+@@ -4081,10 +4085,26 @@
+           "description": "Overrides the widget color for icons only; fixed hex colors are also supported",
+           "label": "Icon Color"
+         },
++        "icon-glyph-default": {
++          "description": "Tabler glyph used when an app has no mapping and unmapped apps use a placeholder",
++          "label": "Default Icon Glyph"
++        },
++        "icon-glyphs": {
++          "description": "Map app ids to Tabler names (brand-firefox) or nerd-font characters. Keys may also be title:youtube",
++          "label": "App Icon Glyphs"
++        },
+         "icon-scale": {
+           "description": "Scale of taskbar application icons relative to their default size",
+           "label": "Icon Scale"
+         },
++        "icon-source": {
++          "description": "App bitmaps, or mapped Tabler glyphs",
++          "label": "Taskbar Icons"
++        },
++        "icon-unmapped": {
++          "description": "When an app has no glyph mapping, use a placeholder glyph or the colorized app bitmap",
++          "label": "Unmapped Apps"
++        },
+         "icon-size": {
+           "description": "Icon size in pixels",
+           "label": "Icon Size"
+diff --git a/src/shell/bar/widgets/taskbar_widget.cpp b/src/shell/bar/widgets/taskbar_widget.cpp
+index 8a843d7..4e694f0 100644
+--- a/src/shell/bar/widgets/taskbar_widget.cpp
++++ b/src/shell/bar/widgets/taskbar_widget.cpp
+@@ -20,9 +20,11 @@
+ #include "ui/builders.h"
+ #include "ui/controls/context_menu.h"
+ #include "ui/controls/context_menu_popup.h"
++#include "ui/controls/flex.h"
+ #include "ui/palette.h"
+ #include "ui/style.h"
+ #include "util/string_utils.h"
++#include "render/text/glyph_registry.h"
+ #include "wayland/wayland_seat.h"
+ #include "wayland/wayland_toplevels.h"
+ #include "xdg-shell-client-protocol.h"
+@@ -46,6 +48,18 @@ namespace {
+   // Lifts the dragged tile above the rest of the strip while it follows the pointer.
+   constexpr std::int32_t kDragTileZIndex = 200;
+ 
++  [[nodiscard]] bool isTablerIconName(std::string_view name) {
++    if (name.empty()) {
++      return false;
++    }
++    for (const unsigned char c : name) {
++      if (!(std::islower(c) || std::isdigit(c) || c == '-' || c == '_')) {
++        return false;
++      }
++    }
++    return GlyphRegistry::contains(name);
++  }
++
+   // Integer centering; optional odd spare pixel on the end side (right/bottom).
+   [[nodiscard]] float centeredOffset(float extent, float content, float inset = 0.0F, bool oddSpareOnEnd = true) {
+     const float inner = std::max(0.0F, extent - inset * 2.0F);
+@@ -1127,7 +1141,9 @@ void TaskbarWidget::buildTaskButtons(Renderer& renderer) {
+         }
+     );
+ 
+-    if (!task.iconPath.empty()) {
++    if (m_configOptions.iconSource == TaskbarIconSource::Glyphs) {
++      appendTaskIcon(*content, renderer, task, iconSize);
++    } else if (!task.iconPath.empty()) {
+       auto image = ui::image({
+           .fit = ImageFit::Contain,
+           .width = iconSize,
+@@ -3240,6 +3256,84 @@ void TaskbarWidget::buildDesktopIconIndex() {
+   m_desktopEntriesVersion = desktopEntriesVersion();
+ }
+ 
++std::string TaskbarWidget::resolveIconGlyph(const TaskModel& task) const {
++  const auto& map = m_configOptions.iconGlyphs;
++  if (!task.title.empty()) {
++    const std::string titleLower = toLower(task.title);
++    for (const auto& [key, glyph] : map) {
++      if (key.starts_with("title:") && key.size() > 6) {
++        const std::string needle = toLower(key.substr(6));
++        if (!needle.empty() && titleLower.find(needle) != std::string::npos) {
++          return glyph;
++        }
++      }
++    }
++  }
++  const auto lookup = [&](const std::string& key) -> std::string {
++    if (key.empty()) {
++      return {};
++    }
++    const auto it = map.find(key);
++    return it != map.end() ? it->second : std::string{};
++  };
++  if (const std::string glyph = lookup(task.appIdLower); !glyph.empty()) {
++    return glyph;
++  }
++  if (const std::string glyph = lookup(task.idLower); !glyph.empty()) {
++    return glyph;
++  }
++  if (const std::string glyph = lookup(task.startupWmClassLower); !glyph.empty()) {
++    return glyph;
++  }
++  if (const std::string glyph = lookup(toLower(task.desktopEntryId)); !glyph.empty()) {
++    return glyph;
++  }
++  return {};
++}
++
++void TaskbarWidget::appendTaskIcon(Flex& content, Renderer& renderer, const TaskModel& task, float iconSize) {
++  const ColorSpec color =
++      m_configService.config().shell.appIconColor.value_or(colorSpecFromRole(ColorRole::OnSurface));
++  const std::string mapped = resolveIconGlyph(task);
++  if (mapped.empty() && m_configOptions.iconUnmapped == TaskbarIconUnmapped::App && !task.iconPath.empty()) {
++    auto image = ui::image({
++        .fit = ImageFit::Contain,
++        .width = iconSize,
++        .height = iconSize,
++    });
++    image->setAppIconColorization(color);
++    image->setSourceFile(renderer, task.iconPath, static_cast<int>(std::round(iconSize)), true);
++    if (image->hasImage()) {
++      content.addChild(std::move(image));
++      return;
++    }
++  }
++  const std::string name = !mapped.empty() ? mapped : m_configOptions.iconGlyphDefault;
++  if (isTablerIconName(name)) {
++    auto glyph = ui::glyph({
++        .glyph = name,
++        .glyphSize = iconSize,
++        .color = color,
++    });
++    glyph->measure(renderer);
++    content.addChild(std::move(glyph));
++    return;
++  }
++  auto label = ui::label({
++      .text = name,
++      .fontSize = iconSize,
++      .fontFamily = labelFontFamily(),
++      .color = color,
++      .width = iconSize,
++      .height = iconSize,
++      .maxLines = 1,
++      .textAlign = TextAlign::Center,
++      .baselineMode = LabelBaselineMode::InkCentered,
++  });
++  label->measure(renderer);
++  content.addChild(std::move(label));
++}
++
+ std::string TaskbarWidget::resolveIconPath(const std::string& appId, const std::string& iconNameOrPath) {
+   const int iconTargetSize =
+       std::max(1, static_cast<int>(std::round(Style::baseGlyphSize * m_configOptions.iconScale * m_contentScale)));
+diff --git a/src/shell/bar/widgets/taskbar_widget.h b/src/shell/bar/widgets/taskbar_widget.h
+index 035a223..446b225 100644
+--- a/src/shell/bar/widgets/taskbar_widget.h
++++ b/src/shell/bar/widgets/taskbar_widget.h
+@@ -37,6 +37,16 @@ enum class WorkspaceGroupContent {
+   Dots,
+ };
+ 
++enum class TaskbarIconSource {
++  App,
++  Glyphs,
++};
++
++enum class TaskbarIconUnmapped {
++  Glyph,
++  App,
++};
++
+ struct TaskbarWidgetOptions {
+   bool groupByWorkspace = false;
+   bool showAllOutputs = false;
+@@ -64,6 +74,10 @@ struct TaskbarWidgetOptions {
+   bool showWindowTitle = false;
+   int windowTitleMaxWidth = 100;
+   int taskbarMaxWidth = 8192;
++  TaskbarIconSource iconSource = TaskbarIconSource::App;
++  std::unordered_map<std::string, std::string> iconGlyphs;
++  std::string iconGlyphDefault = "apps";
++  TaskbarIconUnmapped iconUnmapped = TaskbarIconUnmapped::Glyph;
+ };
+ 
+ struct TaskbarWidgetContext {
+@@ -189,6 +203,8 @@ private:
+   );
+   void buildDesktopIconIndex();
+   [[nodiscard]] std::string resolveIconPath(const std::string& appId, const std::string& iconNameOrPath);
++  [[nodiscard]] std::string resolveIconGlyph(const TaskModel& task) const;
++  void appendTaskIcon(Flex& content, Renderer& renderer, const TaskModel& task, float iconSize);
+   void openTaskContextMenu(const TaskModel& task, InputArea& area);
+   void activateAdjacentWorkspace(int direction);
+   void activateAdjacentTask(int direction);
+   void activateAdjacentWorkspace(int direction);
+   void activateAdjacentTask(int direction);
+diff --git a/src/shell/bar/widgets/taskbar_widget_definition.cpp b/src/shell/bar/widgets/taskbar_widget_definition.cpp
+index 370a121..3e56d27 100644
+--- a/src/shell/bar/widgets/taskbar_widget_definition.cpp
++++ b/src/shell/bar/widgets/taskbar_widget_definition.cpp
+@@ -75,6 +75,59 @@ const noctalia::bar::WidgetDefinition<TaskbarWidgetOptions>& taskbarWidgetDefini
+                       .step = 0.05,
+                       .presentation = presentation("taskbar.windows"),
+                   }),
++                  field<&Options::iconSource>(
++                      {
++                          .key = "icon_source",
++                          .choices =
++                              {
++                                  {
++                                      .value = TaskbarIconSource::App,
++                                      .configValue = "app",
++                                      .labelKey = "settings.widgets.options.app-icons",
++                                  },
++                                  {
++                                      .value = TaskbarIconSource::Glyphs,
++                                      .configValue = "glyphs",
++                                      .labelKey = "settings.widgets.options.glyphs",
++                                  },
++                              },
++                          .presentation = presentation("taskbar.windows"),
++                      }
++                  ),
++                  field<&Options::iconUnmapped>(
++                      {
++                          .key = "icon_unmapped",
++                          .choices =
++                              {
++                                  {
++                                      .value = TaskbarIconUnmapped::Glyph,
++                                      .configValue = "glyph",
++                                      .labelKey = "settings.widgets.options.placeholder-glyph",
++                                  },
++                                  {
++                                      .value = TaskbarIconUnmapped::App,
++                                      .configValue = "app",
++                                      .labelKey = "settings.widgets.options.tinted-icons",
++                                  },
++                              },
++                          .presentation = presentation("taskbar.windows", matches("icon_source", {"glyphs"})),
++                      }
++                  ),
++                  field<&Options::iconGlyphs>({
++                      .key = "icon_glyphs",
++                      .presentation = presentation(
++                          "taskbar.windows", matches("icon_source", {"glyphs"}), false,
++                          "settings.widgets.settings.icon-glyphs.description"
++                      ),
++                  }),
++                  field<&Options::iconGlyphDefault>({
++                      .key = "icon_glyph_default",
++                      .control = settings::WidgetControlKind::Glyph,
++                      .presentation = presentation(
++                          "taskbar.windows", matches("icon_source", {"glyphs"}), false,
++                          "settings.widgets.settings.icon-glyph-default.description"
++                      ),
++                  }),
+                   field<&Options::itemSpacing>({
+                       .key = "item_spacing",
+                       .minValue = 0.0,

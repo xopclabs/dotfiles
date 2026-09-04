@@ -1,0 +1,51 @@
+Fill workspace group capsules from occupied/focused colors and pad them to bar capsule thickness.
+
+--- a/src/shell/bar/widgets/taskbar_widget.cpp
++++ b/src/shell/bar/widgets/taskbar_widget.cpp
+@@ -1544,10 +1544,7 @@
+       }
+ 
+       const bool emptyWorkspace = tasks.empty();
+-      const auto surfaceFill = colorSpecFromRole(ColorRole::SurfaceVariant, ws.workspace.active ? 0.52F : 0.18F);
+-      const auto borderColor = colorSpecFromRole(ColorRole::Primary, ws.workspace.active ? 0.65F : 0.16F);
+-
+-      const float crossSize = std::round(tileSize + groupPad * 2.0F);
++      const auto surfaceFill = workspaceFillColor(ws.workspace);
+ 
+       float groupPadTop = groupPad;
+       float groupPadRight = groupPad;
+@@ -1581,6 +1578,23 @@
+           groupPadBottom = std::min(groupPadBottom, maxCrossPad);
+         }
+       }
++      if (m_workspaceGroupCapsule && barCross > 0.0F && capsuleThickness > 0.0F) {
++        float targetCross = std::max(1.0F, std::round(barCross * capsuleThickness));
++        if (groupedCrossInner > 0.0F) {
++          targetCross = std::min(targetCross, groupedCrossInner);
++        }
++        if (m_vertical) {
++          const float extra = std::max(0.0F, targetCross - tileWidthWithTitle);
++          groupPadLeft = std::floor(extra * 0.5F);
++          groupPadRight = extra - groupPadLeft;
++        } else {
++          const float extra = std::max(0.0F, targetCross - tileSize);
++          groupPadTop = std::floor(extra * 0.5F);
++          groupPadBottom = extra - groupPadTop;
++        }
++      }
++      const float crossSize = m_vertical ? std::round(tileWidthWithTitle + groupPadLeft + groupPadRight)
++                                         : std::round(tileSize + groupPadTop + groupPadBottom);
+ 
+       auto group = ui::flex(
+           m_vertical ? FlexDirection::Vertical : FlexDirection::Horizontal,
+@@ -1590,8 +1604,8 @@
+               .gap = groupGap,
+               .fill = m_workspaceGroupCapsule ? surfaceFill : clearColorSpec(),
+               .radius = m_workspaceGroupCapsule ? resolvedBarCapsuleRadius(crossSize, crossSize) : 0.0F,
+-              .border = m_workspaceGroupCapsule ? borderColor : clearColorSpec(),
+-              .borderWidth = m_workspaceGroupCapsule ? Style::borderWidth * m_contentScale : 0.0F,
++              .border = clearColorSpec(),
++              .borderWidth = 0.0F,
+           }
+       );
+       group->setPadding(groupPadTop, groupPadRight, groupPadBottom, groupPadLeft);

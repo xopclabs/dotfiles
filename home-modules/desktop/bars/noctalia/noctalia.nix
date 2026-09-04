@@ -15,6 +15,7 @@ let
         enabled = true;
     };
     iconScale = 1.25;
+    icons = import ../app-icons.nix { inherit lib; };
 in {
     imports = [
         inputs.noctalia.homeModules.default
@@ -25,7 +26,9 @@ in {
 
         package = mkOption {
             type = types.nullOr types.package;
-            default = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default or pkgs.noctalia;
+            default = (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default or pkgs.noctalia).overrideAttrs (old: {
+                patches = (old.patches or []) ++ (import ../../../../patches { inherit lib; }).noctalia;
+            });
             description = "The noctalia package to use.";
         };
 
@@ -43,6 +46,53 @@ in {
     };
 
     config = mkIf cfg.enable {
+        home.packages = [
+            (pkgs.writeShellScriptBin "noctalia-restart" ''
+                # Nix wrapper process name is .noctalia-wrapp, not noctalia.
+                pkill -x .noctalia-wrapp >/dev/null 2>&1 || true
+                pkill -x noctalia >/dev/null 2>&1 || true
+                pkill -f '/bin/\.noctalia-wrapped' >/dev/null 2>&1 || true
+                i=0
+                while [ "$i" -lt 40 ]; do
+                    if ! pgrep -x .noctalia-wrapp >/dev/null 2>&1 \
+                        && ! pgrep -x noctalia >/dev/null 2>&1; then
+                        break
+                    fi
+                    i=$((i + 1))
+                    sleep 0.05
+                done
+                exec noctalia -d
+            '')
+        ];
+
+        # GUI settings.toml overlays Nix. Drop these keys so this module wins.
+        home.activation.noctaliaDropTaskbarOverlay =
+            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                settings="${config.xdg.stateHome}/noctalia/settings.toml"
+                if [ -f "$settings" ]; then
+                    ${pkgs.python3}/bin/python3 - "$settings" <<'PY'
+import re
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+text = path.read_text()
+for header in ('[widget.taskbar]', '[widget.workspaces]'):
+    text = re.sub(
+        r'(?ms)^' + re.escape(header) + r'\n.*?(?=^\[|\Z)',
+        "",
+        text,
+    )
+for key in (
+    'app_icon_colorize',
+    'app_icon_color',
+    'app_icon_curve',
+):
+    text = re.sub(r'(?m)^' + re.escape(key) + r' = .*\n', "", text)
+path.write_text(text)
+PY
+                fi
+            '';
+
         programs.noctalia = {
             enable = true;
             inherit (cfg) package;
@@ -90,8 +140,9 @@ in {
 
                     shell = {
                         font_family = lib.mkForce "Mononoki Nerd Font";
-                        app_icon_colorize = true;
-                        app_icon_color = "secondary";
+                        app_icon_colorize = false;
+                        app_icon_color = "#FFFFFF";
+                        app_icon_curve = 0.5;
                         corner_radius_scale = 0.25;
                         niri_overview_type_to_launch_enabled = true;
                         screen_time_enabled = true;
@@ -151,7 +202,7 @@ in {
                             capsule_fill = "#${palette.base01}";
                             capsule_opacity = 1.0;
 
-                            start = [ "launcher" "workspaces" ];
+                            start = [ "launcher" "taskbar" ];
                             center = [];
                             end = [
                                 "tray"
@@ -193,21 +244,31 @@ in {
                             scale = iconScale;
                         };
 
-                        workspaces = {
-                            style = "regular";
-                            show_labels = false;
-                            show_icons = true;
-                            hide_when_empty = false;
+                        taskbar = {
+                            group_by_workspace = true;
+                            workspace_group_content = "icons";
+                            group_single_icon_per_app = false;
+                            show_workspace_label = false;
+                            workspace_label_placement = "inside";
+                            minimal = true;
+                            workspace_group_capsule = true;
+                            hide_empty_workspaces = true;
+                            only_active_workspace = false;
                             show_all_outputs = cfg.showOnlyOn != null;
-                            scale = 2.15;
-                            active_pill_size = 2.0;
-                            inactive_pill_size = 0.5;
+                            show_active_indicator = false;
+                            icon_scale = 1.0;
+                            icon_source = "glyphs";
+                            icon_glyph_default = icons.defaultTabler;
+                            icon_glyphs = icons.tablerByAppId;
+                            icon_unmapped = "app";
                             capsule = false;
                             capsule_radius = 0.0;
-                            focused_color = "#${palette.base0C}";
-                            occupied_color = "#${palette.base0D}";
-                            empty_color = "#${palette.base03}";
+                            focused_color = "#${palette.base0F}";
+                            occupied_color = "#${palette.base01}";
+                            empty_color = "#${palette.base01}";
                             urgent_color = "#${palette.base08}";
+                            active_opacity = 1.0;
+                            inactive_opacity = 1.0;
                         };
 
                         tray = {
