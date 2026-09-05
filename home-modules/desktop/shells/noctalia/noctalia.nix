@@ -16,6 +16,86 @@ let
     };
     iconScale = 1.25;
     icons = import ../../bars/app-icons.nix { inherit lib; };
+    hx = name: "#${palette.${name}}";
+    # Tofi's selection blue (base0F / nord10) is the shell accent.
+    # Noctalia's custom-palette loader aliases hover to tertiary (mHover is
+    # dropped), so tertiary is the polar-night grey used for launcher and
+    # control-center hover. Secondary keeps builtin Nord frost cyan.
+    nordTerminal = {
+        background = hx "base00";
+        foreground = hx "base05";
+        cursor = hx "base05";
+        cursorText = hx "base00";
+        selectionBg = hx "base02";
+        selectionFg = hx "base05";
+        normal = {
+            black = hx "base00";
+            red = hx "base08";
+            green = hx "base0B";
+            yellow = hx "base0A";
+            blue = hx "base0D";
+            magenta = hx "base0E";
+            cyan = hx "base0C";
+            white = hx "base05";
+        };
+        bright = {
+            black = hx "base03";
+            red = hx "base08";
+            green = hx "base0B";
+            yellow = hx "base0A";
+            blue = hx "base0D";
+            magenta = hx "base0E";
+            cyan = hx "base07";
+            white = hx "base06";
+        };
+    };
+    nordPalette = {
+        dark = {
+            mPrimary = hx "base0F";
+            mOnPrimary = hx "base06";
+            mSecondary = hx "base0C";
+            mOnSecondary = hx "base00";
+            mTertiary = hx "base03";
+            mOnTertiary = hx "base06";
+            mError = hx "base08";
+            mOnError = hx "base00";
+            mSurface = hx "base00";
+            mOnSurface = hx "base06";
+            mSurfaceVariant = hx "base01";
+            mOnSurfaceVariant = hx "base04";
+            mOutline = hx "base03";
+            mShadow = hx "base00";
+            mHover = hx "base03";
+            mOnHover = hx "base06";
+            terminal = nordTerminal;
+        };
+        light = {
+            mPrimary = hx "base0F";
+            mOnPrimary = hx "base06";
+            mSecondary = hx "base0C";
+            mOnSecondary = hx "base06";
+            mTertiary = hx "base04";
+            mOnTertiary = hx "base00";
+            mError = hx "base08";
+            mOnError = hx "base06";
+            mSurface = hx "base06";
+            mOnSurface = hx "base00";
+            mSurfaceVariant = hx "base05";
+            mOnSurfaceVariant = hx "base03";
+            mOutline = hx "base04";
+            mShadow = hx "base04";
+            mHover = hx "base04";
+            mOnHover = hx "base00";
+            terminal = nordTerminal // {
+                background = hx "base06";
+                foreground = hx "base00";
+                cursor = hx "base00";
+                cursorText = hx "base06";
+                selectionBg = hx "base04";
+                selectionFg = hx "base00";
+            };
+        };
+    };
 in {
     imports = [
         inputs.noctalia.homeModules.default
@@ -87,6 +167,7 @@ in {
         programs.noctalia = {
             enable = true;
             inherit (cfg) package;
+            customPalettes.nord = nordPalette;
             settings = lib.mkMerge [
                 {
                     wallpaper.enabled = false;
@@ -117,12 +198,13 @@ in {
 
                     control_center.hidden_tabs = [ "media" ];
 
-                    # Stylix maps polarity "either" to light and forces a custom
-                    # palette. The GUI export uses builtin Nord in dark mode.
+                    # Custom palette from the systemwide base16 Nord scheme.
+                    # Stylix's noctalia target is disabled so it cannot force
+                    # light mode or its own hover/primary mapping.
                     theme = {
                         mode = lib.mkForce "dark";
-                        source = lib.mkForce "builtin";
-                        builtin = lib.mkForce "Nord";
+                        source = lib.mkForce "custom";
+                        custom_palette = lib.mkForce "nord";
                         templates = {
                             enable_community_templates = false;
                             community_ids = [ "telegram" ];

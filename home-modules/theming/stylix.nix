@@ -1,4 +1,4 @@
-{ pkgs, lib, config, inputs, ... }:
+{ pkgs, lib, config, options, inputs, ... }:
 
 with lib;
 let cfg = config.modules.theming.stylix;
@@ -44,6 +44,10 @@ in {
                 kitty.enable = false;
                 btop.enable = false;
 		        firefox.profileNames = [ "${config.home.username}" ];
+            } // optionalAttrs (options.stylix.targets ? noctalia) {
+                noctalia.enable = false;
+            } // optionalAttrs (options.stylix.targets ? noctalia-shell) {
+                noctalia-shell.enable = false;
             };
         };
     };

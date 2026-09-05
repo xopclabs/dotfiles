@@ -9,6 +9,7 @@ HEADERS: List[str] = [
     '[widget.workspaces]',
     '[control_center]',
     '[shell.mpris]',
+    '[theme]',
 ]
 
 KEYS: List[str] = [
