@@ -1,0 +1,666 @@
+diff --color -ruN a/src/shell/control_center/tabs/home_tab.cpp b/src/shell/control_center/tabs/home_tab.cpp
+--- a/src/shell/control_center/tabs/home_tab.cpp	2026-09-05 04:46:32.711225728 +0200
++++ b/src/shell/control_center/tabs/home_tab.cpp	2026-09-05 04:47:12.753866161 +0200
+@@ -22,9 +22,11 @@
+ #include "shell/profile/avatar_path.h"
+ #include "shell/wallpaper/wallpaper.h"
+ #include "system/distro_info.h"
++#include "system/system_monitor_service.h"
+ #include "system/weather_service.h"
+ #include "time/time_format.h"
+ #include "ui/builders.h"
++#include "ui/controls/graph.h"
+ #include "ui/controls/grid_view.h"
+ #include "ui/dialogs/file_dialog.h"
+ 
+@@ -158,12 +160,82 @@
+     avatar->setBorder(colorSpecFromRole(ColorRole::Primary), borderWidth);
+   }
+ 
++  constexpr float kGraphLineWidth = 0.75F;
++  constexpr float kGraphFillOpacity = 0.15F;
++  constexpr float kGraphCardPadTop = Style::spaceSm;
++  constexpr float kGraphCardPadV = Style::spaceSm;
++  constexpr float kGraphCardPadH = Style::spaceMd;
++
++  Flex* makeHeaderRow(Flex& parent, const std::string& title, float scale) {
++    Flex* ptr = nullptr;
++    auto row = ui::row(
++        {.out = &ptr, .align = FlexAlign::Center, .gap = Style::spaceSm * scale},
++        ui::label({
++            .text = title,
++            .fontSize = Style::fontSizeTitle * scale,
++            .fontWeight = FontWeight::Bold,
++            .color = colorSpecFromRole(ColorRole::OnSurface),
++            .flexGrow = 1.0F,
++        })
++    );
++    parent.addChild(std::move(row));
++    return ptr;
++  }
++
++  Flex* makeIconLabel(Flex& parent, const char* glyphName, float scale, Glyph** outIcon = nullptr) {
++    Flex* ptr = nullptr;
++    auto group = ui::row(
++        {.out = &ptr, .align = FlexAlign::Center, .gap = Style::spaceXs * scale},
++        ui::glyph({
++            .out = outIcon,
++            .glyph = glyphName,
++            .glyphSize = Style::fontSizeCaption * scale,
++            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
++        })
++    );
++    parent.addChild(std::move(group));
++    return ptr;
++  }
++
++  Label* makeValueLabel(Flex& parent, float scale) {
++    Label* ptr = nullptr;
++    parent.addChild(
++        ui::label({
++            .out = &ptr,
++            .fontSize = Style::fontSizeCaption * scale,
++            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
++        })
++    );
++    return ptr;
++  }
++
++  Flex* makeLegendRow(Flex& parent, float scale) {
++    Flex* ptr = nullptr;
++    auto row = ui::row({
++        .out = &ptr,
++        .align = FlexAlign::Center,
++        .justify = FlexJustify::Center,
++        .gap = Style::spaceMd * scale,
++    });
++    parent.addChild(std::move(row));
++    return ptr;
++  }
++
++  Graph* addGraph(Flex& parent) {
++    auto graph = std::make_unique<Graph>();
++    graph->setFillOpacity(kGraphFillOpacity);
++    auto* ptr = graph.get();
++    parent.addChild(std::move(graph));
++    return ptr;
++  }
++
+ } // namespace
+ 
+ HomeTab::HomeTab(const ControlCenterServices& services)
+     : m_mpris(services.mpris), m_httpClient(services.httpClient), m_weather(services.weather),
+       m_config(services.config), m_accounts(services.accounts), m_wallpaper(services.wallpaper),
+       m_thumbnails(services.thumbnails), m_asyncTextures(services.asyncTextures),
++      m_sysmon(services.sysmon),
+       m_services(services.shortcutServices()) {
+   if (m_thumbnails != nullptr) {
+     m_thumbnailPendingSub = m_thumbnails->subscribePendingUpload([this]() {
+@@ -190,6 +262,9 @@
+ }
+ 
+ HomeTab::~HomeTab() {
++  if (m_sysmon != nullptr) {
++    m_sysmon->releaseCpuTemp();
++  }
+   if (m_thumbnails != nullptr && !m_loadedWallpaperPath.empty()) {
+     m_thumbnails->release(m_loadedWallpaperPath, m_loadedWallpaperSize);
+   }
+@@ -197,7 +272,6 @@
+ 
+ std::unique_ptr<Flex> HomeTab::create() {
+   const float scale = contentScale();
+-  const std::string displayName = sessionDisplayName();
+ 
+   auto tab = ui::column({
+       .out = &m_rootLayout,
+@@ -205,165 +279,44 @@
+       .gap = Style::spaceMd * scale,
+   });
+ 
+-  // --- User card ---
+-  auto userCard = ui::column({
+-      .out = &m_userCard,
+-      .justify = FlexJustify::Center,
++  // --- CPU card ---
++  auto cpuCard = ui::column({
++      .out = &m_cpuCard,
++      .justify = FlexJustify::Start,
++      .gap = Style::spaceXs * scale,
+       .fillHeight = true,
+       .flexGrow = 1.0F,
+-      .configure = [scale, opacity = panelCardOpacity()](Flex& card) { applyHomeCardStyle(card, scale, opacity); },
++      .configure = [scale, opacity = panelCardOpacity()](Flex& card) {
++        applyHomeCardStyle(card, scale, opacity);
++        // applyHomeCardStyle sets gap to spaceSm; graph cards need the tighter gap so the
++        // legend is not pushed into the rounded bottom edge.
++        card.setGap(Style::spaceXs * scale);
++        card.setPadding(
++            kGraphCardPadTop * scale, kGraphCardPadH * scale, kGraphCardPadV * scale, kGraphCardPadH * scale
++        );
++      },
+   });
+ 
+-  {
+-    const float wallpaperRadius = std::max(0.0F, Style::scaledRadiusXl(scale) - Style::borderWidth);
+-    userCard->addChild(
+-        ui::image({
+-            .out = &m_wallpaperPlaceholder,
+-            .fit = ImageFit::Cover,
+-            .radius = wallpaperRadius,
+-            .participatesInLayout = false,
+-            .configure = [](Image& image) { image.setZIndex(-2); },
+-        })
+-    );
++  makeHeaderRow(*cpuCard, i18n::tr("control-center.system.titles.cpu"), scale);
++  m_cpuGraph = addGraph(*cpuCard);
++  if (m_cpuGraph != nullptr) {
++    m_cpuGraph->setFlexGrow(1.0F);
++  }
++  auto* legend = makeLegendRow(*cpuCard, scale);
++  m_cpuLegend = legend;
++  auto* cpuPctGroup = makeIconLabel(*legend, "cpu-usage", scale, &m_cpuPctIcon);
++  m_cpuPctLabel = makeValueLabel(*cpuPctGroup, scale);
++  auto* cpuTempGroup = makeIconLabel(*legend, "cpu-temperature", scale, &m_cpuTempIcon);
++  m_cpuTempLabel = makeValueLabel(*cpuTempGroup, scale);
++  auto* cpuFreqGroup = makeIconLabel(*legend, "performance", scale, &m_cpuFreqIcon);
++  m_cpuFreqLabel = makeValueLabel(*cpuFreqGroup, scale);
++
++  const auto openSystemTab = []() { openControlCenterTab("system"); };
++  m_cpuCardKeyboardArea =
++      addCardOverlay(*m_cpuCard, openSystemTab, {.keyboardFocus = true, .pointerHitTest = false});
++  m_cpuCardArea = addCardOverlay(*m_cpuCard, openSystemTab, {.keyboardFocus = false, .pointerHitTest = true});
+ 
+-    userCard->addChild(
+-        ui::image({
+-            .out = &m_wallpaperBg,
+-            .fit = ImageFit::Cover,
+-            .radius = wallpaperRadius,
+-            .participatesInLayout = false,
+-            .configure = [](Image& image) {
+-              image.setZIndex(-1);
+-              image.setOpacity(0.0F);
+-            },
+-        })
+-    );
+-  }
+-
+-  const float avatarSize = homeAvatarSize(scale);
+-  const auto openAvatarPicker = [this]() {
+-    if (m_config == nullptr) {
+-      return;
+-    }
+-
+-    FileDialogOptions options;
+-    options.mode = FileDialogMode::Open;
+-    options.defaultViewMode = FileDialogViewMode::Grid;
+-    options.title = i18n::tr("control-center.home.select-avatar");
+-    options.extensions = DirectoryScanner::imageExtensionFilter(false);
+-    options.startDirectory = avatarStartDirectory(m_accounts, m_config);
+-
+-    (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> pickedPath) {
+-      if (!pickedPath.has_value() || m_config == nullptr) {
+-        return;
+-      }
+-      const auto applyResult = shell::applyAvatarPath(m_accounts, m_config, pickedPath->string());
+-      if (applyResult.success()) {
+-        DeferredCall::callLater([]() {
+-          PanelManager::instance().refresh();
+-          PanelManager::instance().requestRedraw();
+-        });
+-        return;
+-      }
+-      notify::error(
+-          "Noctalia", i18n::tr("control-center.home.avatar-error-title"),
+-          i18n::tr(shell::avatarApplyErrorTranslationKey(applyResult.error))
+-      );
+-    });
+-  };
+-
+-  auto avatarArea = ui::inputArea({});
+-  avatarArea->setSize(avatarSize, avatarSize);
+-  avatarArea->setHitShape(InputArea::HitShape::Circle);
+-  avatarArea->setFocusable(true);
+-  avatarArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+-  avatarArea->setOnClick([openAvatarPicker](const InputArea::PointerData&) { openAvatarPicker(); });
+-  avatarArea->setOnKeyDown([openAvatarPicker](const InputArea::KeyData& key) {
+-    if (key.pressed && KeybindMatcher::matches(KeybindAction::Validate, key.sym, key.modifiers)) {
+-      openAvatarPicker();
+-    }
+-  });
+-  m_userAvatarArea = avatarArea.get();
+-  avatarArea->addChild(
+-      ui::image({
+-          .out = &m_userAvatar,
+-          .fit = ImageFit::Cover,
+-          .radius = avatarSize * 0.5F,
+-          .padding = 1.0F * scale,
+-          .width = avatarSize,
+-          .height = avatarSize,
+-          .configure = [](Image& image) {
+-            image.setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * 3.0F);
+-            image.setHitTestVisible(false);
+-            image.setAsyncReadyCallback([]() { PanelManager::instance().refresh(); });
+-          },
+-      })
+-  );
+-  const auto syncAvatarChrome = [this]() {
+-    const bool highlighted =
+-        m_userAvatarArea != nullptr && (m_userAvatarArea->focused() || m_userAvatarArea->hovered());
+-    applyAvatarChrome(m_userAvatar, highlighted);
+-    PanelManager::instance().requestRedraw();
+-  };
+-  avatarArea->setOnEnter([syncAvatarChrome](const InputArea::PointerData&) { syncAvatarChrome(); });
+-  avatarArea->setOnLeave([syncAvatarChrome]() { syncAvatarChrome(); });
+-  avatarArea->setOnFocusGain(syncAvatarChrome);
+-  avatarArea->setOnFocusLoss(syncAvatarChrome);
+-  const auto configureUserDetailLabel = [scale](Label& label) {
+-    label.setShadow(colorSpecFromRole(ColorRole::Shadow, 0.36F), 0.0F, 1.0F * scale);
+-  };
+-  auto userRow = ui::row(
+-      {.align = FlexAlign::Center, .gap = Style::spaceMd * scale}, std::move(avatarArea),
+-      ui::column(
+-          {.out = &m_userMain,
+-           .align = FlexAlign::Stretch,
+-           .justify = FlexJustify::Center,
+-           .gap = Style::spaceXs * 0.5F * scale,
+-           .minHeight = avatarSize,
+-           .width = 0.0F,
+-           .height = avatarSize,
+-           .flexGrow = 1.0F},
+-          ui::label({
+-              .text = displayName,
+-              .fontSize = Style::fontSizeTitle * 1.12F * scale,
+-              .fontWeight = FontWeight::Bold,
+-              .color = colorSpecFromRole(ColorRole::OnSurface),
+-              .configure = [scale](
+-                               Label& label
+-                           ) { label.setShadow(colorSpecFromRole(ColorRole::Shadow, 0.42F), 0.0F, 1.0F * scale); },
+-          }),
+-          ui::label({
+-              .out = &m_userHost,
+-              .text = userHostLine(),
+-              .fontSize = Style::fontSizeCaption * scale,
+-              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+-              .configure = configureUserDetailLabel,
+-          }),
+-          ui::label({
+-              .out = &m_userUptime,
+-              .text = "…",
+-              .fontSize = Style::fontSizeCaption * scale,
+-              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+-              .configure = configureUserDetailLabel,
+-          }),
+-          ui::label({
+-              .out = &m_userVersion,
+-              .text = noctaliaVersionLine(),
+-              .fontSize = Style::fontSizeCaption * scale,
+-              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+-              .configure = configureUserDetailLabel,
+-          })
+-      )
+-  );
+-  userCard->addChild(std::move(userRow));
+-
+-  // Wallpaper panel: full-card keyboard target; carved pointer target leaves the avatar clickable.
+-  const auto openWallpaperPanel = []() { PanelManager::instance().togglePanel("wallpaper"); };
+-  m_userCardKeyboardArea =
+-      addCardOverlay(*m_userCard, openWallpaperPanel, {.keyboardFocus = true, .pointerHitTest = false});
+-  m_userCardArea = addCardOverlay(*m_userCard, openWallpaperPanel, {.keyboardFocus = false, .pointerHitTest = true});
+-
+-  tab->addChild(std::move(userCard));
++  tab->addChild(std::move(cpuCard));
+ 
+   auto bottomRow = ui::row({
+       .out = &m_bottomRow,
+@@ -905,6 +858,21 @@
+     // Keep the final tree consistent even if an unusual layout combination hits the pass cap.
+     m_rootLayout->layout(renderer);
+   }
++
++  if (m_cpuGraph != nullptr && m_cpuCard != nullptr) {
++    const float scale = contentScale();
++    const float graphW = std::max(0.0F, m_cpuCard->width() - m_cpuCard->paddingLeft() - m_cpuCard->paddingRight());
++    const float usedAbove = m_cpuGraph->y() - m_cpuCard->y();
++    float usedBelow = m_cpuCard->paddingBottom();
++    if (m_cpuLegend != nullptr && m_cpuLegend->height() > 0.0F) {
++      usedBelow += m_cpuLegend->height() + m_cpuCard->gap();
++    }
++    const float graphH = std::max(0.0F, m_cpuCard->height() - usedAbove - usedBelow);
++    m_cpuGraph->setSize(graphW, graphH);
++    m_cpuGraph->setLineWidth(kGraphLineWidth * scale);
++    m_rootLayout->layout(renderer);
++  }
++
+   layoutWallpaperBackground(renderer);
+   layoutCardOverlays();
+   if (m_weatherGlyph != nullptr) {
+@@ -978,21 +946,8 @@
+   };
+   cover(m_mediaCard, m_mediaCardArea);
+   cover(m_dateTimeCard, m_dateTimeCardArea);
+-  cover(m_userCard, m_userCardKeyboardArea);
+-
+-  // The pointer overlay must not swallow the avatar's own click, so start it just past the
+-  // avatar's right edge; the avatar (a nested InputArea) keeps the carved-out left region.
+-  if (m_userCard != nullptr && m_userCardArea != nullptr) {
+-    float left = 0.0F;
+-    if (m_userAvatar != nullptr) {
+-      float ax = 0.0F, ay = 0.0F, cx = 0.0F, cy = 0.0F;
+-      Node::absolutePosition(m_userAvatar, ax, ay);
+-      Node::absolutePosition(m_userCard, cx, cy);
+-      left = std::max(0.0F, (ax - cx) + m_userAvatar->width() + Style::spaceMd * contentScale());
+-    }
+-    m_userCardArea->setPosition(left, 0.0F);
+-    m_userCardArea->setSize(std::max(0.0F, m_userCard->width() - left), m_userCard->height());
+-  }
++  cover(m_cpuCard, m_cpuCardKeyboardArea);
++  cover(m_cpuCard, m_cpuCardArea);
+ }
+ 
+ bool HomeTab::resizeMediaArtToCard() {
+@@ -1236,12 +1191,39 @@
+   sync(renderer);
+ }
+ 
+-void HomeTab::onFrameTick(float /*deltaMs*/) {}
++void HomeTab::onFrameTick(float /*deltaMs*/) {
++  if (!m_active || m_sysmon == nullptr || !m_sysmon->isRunning()) {
++    m_redrawLimiter.reset();
++    return;
++  }
++
++  if (!m_redrawLimiter.shouldStep([]() { PanelManager::instance().requestRedraw(); })) {
++    return;
++  }
++
++  const auto latestSampleAt = m_sysmon->latest().sampledAt;
++  if (latestSampleAt != std::chrono::steady_clock::time_point{} && latestSampleAt != m_lastSampleAt) {
++    PanelManager::instance().requestUpdateOnly();
++  }
++
++  m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
++  if (m_cpuGraph != nullptr) {
++    m_cpuGraph->setScroll(m_scrollProgress);
++  }
++}
+ 
+ void HomeTab::setActive(bool active) {
+   const bool becameActive = active && !m_active;
+   m_active = active;
++  if (m_sysmon != nullptr) {
++    if (active) {
++      m_sysmon->retainCpuTemp();
++    } else {
++      m_sysmon->releaseCpuTemp();
++    }
++  }
+   if (!active) {
++    m_redrawLimiter.reset();
+     m_progressTimer.stop();
+     m_clockTimer.stop();
+     m_nextRealtimeUpdateAt = {};
+@@ -1294,6 +1276,20 @@
+   m_dateTimeCard = nullptr;
+   m_mediaCard = nullptr;
+   m_mediaText = nullptr;
++  m_cpuCard = nullptr;
++  m_cpuGraph = nullptr;
++  m_cpuLegend = nullptr;
++  m_cpuPctLabel = nullptr;
++  m_cpuTempLabel = nullptr;
++  m_cpuFreqLabel = nullptr;
++  m_cpuPctIcon = nullptr;
++  m_cpuTempIcon = nullptr;
++  m_cpuFreqIcon = nullptr;
++  m_cpuCardKeyboardArea = nullptr;
++  m_cpuCardArea = nullptr;
++  m_graphInitialized = false;
++  m_lastSampleAt = {};
++  m_scrollProgress = 1.0F;
+   m_userCard = nullptr;
+   m_userMain = nullptr;
+   m_userAvatar = nullptr;
+@@ -1368,6 +1364,24 @@
+   if (m_weatherLine != nullptr) {
+     m_weatherLine->setFontSize(Style::fontSizeCaption * s);
+   }
++  if (m_cpuPctLabel != nullptr) {
++    m_cpuPctLabel->setFontSize(Style::fontSizeCaption * s);
++  }
++  if (m_cpuTempLabel != nullptr) {
++    m_cpuTempLabel->setFontSize(Style::fontSizeCaption * s);
++  }
++  if (m_cpuFreqLabel != nullptr) {
++    m_cpuFreqLabel->setFontSize(Style::fontSizeCaption * s);
++  }
++  if (m_cpuPctIcon != nullptr) {
++    m_cpuPctIcon->setGlyphSize(Style::fontSizeCaption * s);
++  }
++  if (m_cpuTempIcon != nullptr) {
++    m_cpuTempIcon->setGlyphSize(Style::fontSizeCaption * s);
++  }
++  if (m_cpuFreqIcon != nullptr) {
++    m_cpuFreqIcon->setGlyphSize(Style::fontSizeCaption * s);
++  }
+   for (Label* label : {m_userHost, m_userUptime, m_userVersion}) {
+     if (label != nullptr) {
+       label->setFontSize(Style::fontSizeCaption * s);
+@@ -1409,36 +1423,107 @@
+     m_dateLabel->setText(formatShellDate(m_config));
+   }
+ 
+-  syncWallpaperBackground(renderer);
++  if (m_sysmon != nullptr && m_active) {
++    const bool monitorRunning = m_sysmon->isRunning();
++    if (m_cpuGraph != nullptr) {
++      m_cpuGraph->setColor(colorSpecFromRole(ColorRole::Primary));
++      m_cpuGraph->setColor2(colorSpecFromRole(ColorRole::Error));
++    }
++    if (m_cpuPctIcon != nullptr) {
++      m_cpuPctIcon->setColor(colorSpecFromRole(ColorRole::Primary));
++    }
++    if (m_cpuPctLabel != nullptr) {
++      m_cpuPctLabel->setColor(colorSpecFromRole(ColorRole::Primary));
++    }
++    if (m_cpuTempIcon != nullptr) {
++      m_cpuTempIcon->setColor(colorSpecFromRole(ColorRole::Error));
++    }
++    if (m_cpuTempLabel != nullptr) {
++      m_cpuTempLabel->setColor(colorSpecFromRole(ColorRole::Error));
++    }
++    if (m_cpuFreqIcon != nullptr) {
++      m_cpuFreqIcon->setColor(colorSpecFromRole(ColorRole::Secondary));
++    }
++    if (m_cpuFreqLabel != nullptr) {
++      m_cpuFreqLabel->setColor(colorSpecFromRole(ColorRole::Secondary));
++    }
++
++    if (monitorRunning) {
++      const auto hist = m_sysmon->history();
++      if (hist.size() >= 4) {
++        const auto latestSampleAt = hist.back().sampledAt;
++        const bool newData = latestSampleAt != m_lastSampleAt;
++        if (newData || !m_graphInitialized) {
++          const auto n = hist.size();
++          std::vector<float> usage(n);
++          std::vector<float> cpuTemp(n);
++          for (std::size_t i = 0; i < n; ++i) {
++            const auto& s = hist[i];
++            usage[i] = static_cast<float>(std::clamp(s.cpuUsagePercent / 100.0, 0.0, 1.0));
++            if (s.cpuTempC.has_value()) {
++              const double t = *s.cpuTempC;
++              m_cpuTempMin = std::min(m_cpuTempMin, t);
++              m_cpuTempMax = std::max(m_cpuTempMax, t);
++              const double range = m_cpuTempMax - m_cpuTempMin;
++              cpuTemp[i] = range > 0.0 ? static_cast<float>(std::clamp((t - m_cpuTempMin) / range, 0.0, 1.0)) : 0.5F;
++            }
++          }
++          if (m_cpuGraph != nullptr) {
++            m_cpuGraph->setValues(std::move(usage));
++            m_cpuGraph->setValues2(std::move(cpuTemp));
++            m_cpuGraph->sync(renderer);
++          }
++          m_graphInitialized = true;
++          m_lastSampleAt = latestSampleAt;
++        }
++        m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
++        if (m_cpuGraph != nullptr) {
++          m_cpuGraph->setScroll(m_scrollProgress);
++        }
++        if (m_scrollProgress < 1.0F) {
++          PanelManager::instance().requestRedraw();
++        }
++      }
+ 
+-  if (m_userAvatar != nullptr && m_config != nullptr && m_asyncTextures != nullptr) {
+-    const std::string displayPath = shell::avatarDisplayPath(m_accounts, m_config->config());
+-    if (displayPath.empty()) {
+-      m_userAvatar->clear(renderer);
++      const auto stats = m_sysmon->latest();
++      if (m_cpuPctLabel != nullptr) {
++        m_cpuPctLabel->setText(std::format("{:.0F}%", stats.cpuUsagePercent));
++      }
++      if (m_cpuTempLabel != nullptr) {
++        if (stats.cpuTempC.has_value()) {
++          m_cpuTempLabel->setText(std::format("{:.0F}°C", *stats.cpuTempC));
++        } else {
++          m_cpuTempLabel->setText("--");
++        }
++      }
++      if (m_cpuFreqLabel != nullptr) {
++        if (stats.cpuFreqAvailable) {
++          m_cpuFreqLabel->setText(std::format("{:.1F} GHz", stats.cpuFreqMhz / 1000.0));
++        } else {
++          m_cpuFreqLabel->setText("--");
++        }
++      }
+     } else {
+-      warnOnOversizedAvatarSource(displayPath);
+-      // Decode at the avatar's final on-screen size with no mipmaps: layout grows the
+-      // avatar to match the user text block, and trilinear mipmap sampling softens an
+-      // image displayed near 1:1. Both made the avatar look blurry. The decode runs on
+-      // the async cache workers so a large source never stalls the panel open.
+-      const int avatarSize = static_cast<int>(std::round(m_userAvatar->width()));
+-      (void)m_userAvatar->setSourceFileAsync(renderer, *m_asyncTextures, displayPath, avatarSize, false);
++      if (m_cpuGraph != nullptr) {
++        m_cpuGraph->setValues({});
++        m_cpuGraph->setValues2({});
++        m_cpuGraph->sync(renderer);
++      }
++      m_graphInitialized = false;
++      m_lastSampleAt = {};
++      m_scrollProgress = 1.0F;
++      if (m_cpuPctLabel != nullptr) {
++        m_cpuPctLabel->setText("--");
++      }
++      if (m_cpuTempLabel != nullptr) {
++        m_cpuTempLabel->setText("--");
++      }
++      if (m_cpuFreqLabel != nullptr) {
++        m_cpuFreqLabel->setText("--");
++      }
+     }
+   }
+ 
+-  if (m_userHost != nullptr) {
+-    m_userHost->setText(userHostLine());
+-  }
+-  if (m_userUptime != nullptr) {
+-    const auto uptime = systemUptime();
+-    const std::string uptimeText =
+-        uptime.has_value() ? formatDuration(*uptime) : i18n::tr("control-center.home.unknown");
+-    m_userUptime->setText(i18n::tr("control-center.home.uptime", "uptime", uptimeText));
+-  }
+-  if (m_userVersion != nullptr) {
+-    m_userVersion->setText(noctaliaVersionLine());
+-  }
+-
+   if (m_weatherGlyph != nullptr && m_weatherLine != nullptr) {
+     if (m_weather == nullptr || !m_weather->enabled()) {
+       m_weatherGlyph->setGlyph("weather-cloud-off");
+@@ -1654,3 +1739,19 @@
+     }
+   }
+ }
++
++float HomeTab::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const {
++  if (sampledAt == std::chrono::steady_clock::time_point{}) {
++    return 1.0F;
++  }
++
++  const auto sampleInterval = m_sysmon != nullptr ? m_sysmon->historySampleInterval()
++                                                  : std::chrono::steady_clock::duration{std::chrono::seconds(1)};
++  if (sampleInterval.count() <= 0) {
++    return 1.0F;
++  }
++
++  const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
++  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), sampleInterval);
++  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(sampleInterval).count();
++}
+diff --color -ruN a/src/shell/control_center/tabs/home_tab.h b/src/shell/control_center/tabs/home_tab.h
+--- a/src/shell/control_center/tabs/home_tab.h	2026-09-05 04:46:32.711225728 +0200
++++ b/src/shell/control_center/tabs/home_tab.h	2026-09-05 04:46:32.730226032 +0200
+@@ -1,6 +1,7 @@
+ #pragma once
+ 
+ #include "config/config_types.h"
++#include "core/frame_rate_limiter.h"
+ #include "core/timer_manager.h"
+ #include "render/core/thumbnail_service.h"
+ #include "shell/control_center/control_center_services.h"
+@@ -24,11 +25,13 @@
+ class ConfigService;
+ class DependencyService;
+ class Glyph;
++class Graph;
+ class GridView;
+ class Image;
+ class InputArea;
+ class Label;
+ class Shortcut;
++class SystemMonitorService;
+ class Wallpaper;
+ class ClipboardService;
+ namespace scripting {
+@@ -84,6 +87,7 @@
+   void syncHeaderActions();
+   bool resizeMediaArtToCard();
+   void onPanelCardOpacityChanged(float opacity) override;
++  float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) const;
+ 
+   MprisService* m_mpris = nullptr;
+   HttpClient* m_httpClient = nullptr;
+@@ -93,6 +97,7 @@
+   Wallpaper* m_wallpaper = nullptr;
+   ThumbnailService* m_thumbnails = nullptr;
+   AsyncTextureCache* m_asyncTextures = nullptr;
++  SystemMonitorService* m_sysmon = nullptr;
+   ShortcutServices m_services;
+   bool m_active = false;
+ 
+@@ -101,6 +106,23 @@
+   Flex* m_dateTimeCard = nullptr;
+   Flex* m_mediaCard = nullptr;
+   Flex* m_mediaText = nullptr;
++  Flex* m_cpuCard = nullptr;
++  Graph* m_cpuGraph = nullptr;
++  Flex* m_cpuLegend = nullptr;
++  Label* m_cpuPctLabel = nullptr;
++  Label* m_cpuTempLabel = nullptr;
++  Label* m_cpuFreqLabel = nullptr;
++  Glyph* m_cpuPctIcon = nullptr;
++  Glyph* m_cpuTempIcon = nullptr;
++  Glyph* m_cpuFreqIcon = nullptr;
++  InputArea* m_cpuCardKeyboardArea = nullptr;
++  InputArea* m_cpuCardArea = nullptr;
++  bool m_graphInitialized = false;
++  std::chrono::steady_clock::time_point m_lastSampleAt{};
++  float m_scrollProgress = 1.0F;
++  double m_cpuTempMin = 100.0;
++  double m_cpuTempMax = 0.0;
++  FrameRateLimiter m_redrawLimiter{std::chrono::milliseconds{33}};
+   Flex* m_userCard = nullptr;
+   Flex* m_userMain = nullptr;
+   InputArea* m_userAvatarArea = nullptr;

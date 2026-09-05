@@ -63,10 +63,6 @@
         lrcget-cli.url = "github:xopclabs/lrcget-cli/nix-flake-testbranch";
         lrcget-cli.inputs.nixpkgs.follows = "nixpkgs";
 
-        kew.url = "github:ravachol/kew";
-        kew.inputs.nixpkgs.follows = "nixpkgs";
-
-    
         autofirma.url = "github:nix-community/autofirma-nix";
         autofirma.inputs.nixpkgs.follows = "nixpkgs";
 

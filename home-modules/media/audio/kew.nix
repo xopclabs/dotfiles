@@ -7,7 +7,7 @@ in {
     options.modules.media.audio.kew = { enable = mkEnableOption "kew"; };
     config = mkIf cfg.enable {
         home.packages = [
-            inputs.kew.packages.${pkgs.stdenv.hostPlatform.system}.default
+            pkgs.kew
         ];
     };
 }

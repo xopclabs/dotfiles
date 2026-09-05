@@ -61,6 +61,12 @@ in {
     config = mkIf cfg.enable {
         home.packages = [
             (pkgs.writeShellScriptBin "noctalia-restart" ''
+                # Drop GUI overrides so Nix-declared config takes precedence
+                settings="''${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
+                if [ -f "$settings" ]; then
+                    ${pkgs.python3}/bin/python3 ${./drop-overrides.py} "$settings"
+                fi
+
                 # Nix wrapper process name is .noctalia-wrapp, not noctalia.
                 pkill -x .noctalia-wrapp >/dev/null 2>&1 || true
                 pkill -x noctalia >/dev/null 2>&1 || true
@@ -77,34 +83,6 @@ in {
                 exec noctalia -d
             '')
         ];
-
-        # GUI settings.toml overlays Nix. Drop these keys so this module wins.
-        home.activation.noctaliaDropTaskbarOverlay =
-            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                settings="${config.xdg.stateHome}/noctalia/settings.toml"
-                if [ -f "$settings" ]; then
-                    ${pkgs.python3}/bin/python3 - "$settings" <<'PY'
-import re
-import sys
-from pathlib import Path
-path = Path(sys.argv[1])
-text = path.read_text()
-for header in ('[widget.taskbar]', '[widget.workspaces]'):
-    text = re.sub(
-        r'(?ms)^' + re.escape(header) + r'\n.*?(?=^\[|\Z)',
-        "",
-        text,
-    )
-for key in (
-    'app_icon_colorize',
-    'app_icon_color',
-    'app_icon_curve',
-):
-    text = re.sub(r'(?m)^' + re.escape(key) + r' = .*\n', "", text)
-path.write_text(text)
-PY
-                fi
-            '';
 
         programs.noctalia = {
             enable = true;
@@ -152,6 +130,23 @@ PY
                     };
 
                     shell = {
+                        mpris.blacklist = [
+                            "firefox"
+                            "chromium"
+                            "chrome"
+                            "brave"
+                            "zen"
+                            "vivaldi"
+                            "opera"
+                            "edge"
+                            "floorp"
+                            "librewolf"
+                            "tor-browser"
+                            "epiphany"
+                            "ladybird"
+                            "thorium"
+                            "waterfox"
+                        ];
                         font_family = lib.mkForce "Mononoki Nerd Font";
                         app_icon_colorize = false;
                         app_icon_color = "#FFFFFF";

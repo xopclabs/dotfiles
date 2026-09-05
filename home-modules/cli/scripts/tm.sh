@@ -2,23 +2,21 @@
 
 # Parse arguments
 suffix=""
-while getopts "p:" opt; do
+use_workspace=false
+while getopts "p:w" opt; do
     case $opt in
         p)
             suffix="-${OPTARG}"
             ;;
+        w)
+            use_workspace=true
+            ;;
         *)
-            echo "Usage: tm [-p suffix]"
+            echo "Usage: tm [-w] [-p suffix]"
             exit 1
             ;;
     esac
 done
-
-# Check if we're already in a tmux session
-if [ -n "$TMUX" ]; then
-    $(tmux list-keys | grep sessionx.sh | awk '{print $NF}')
-    exit 0
-fi
 
 get_wm() {
     local desktop_lower
@@ -128,10 +126,14 @@ get_workspace() {
     esac
 }
 
-# Define session name based on active workspace
-ws=$(get_workspace)
-if [ -n "$ws" ]; then
-    session_name="${ws}${suffix}"
+# Define session name
+if [ "$use_workspace" = true ]; then
+    ws=$(get_workspace)
+    if [ -n "$ws" ]; then
+        session_name="${ws}${suffix}"
+    else
+        session_name="main${suffix}"
+    fi
 else
     session_name="main${suffix}"
 fi
@@ -139,6 +141,20 @@ fi
 sessionx_cmd() {
     tmux list-keys | grep sessionx.sh | awk '{print $NF}'
 }
+
+# Check if we're already in a tmux session
+if [ -n "$TMUX" ]; then
+    if [ "$use_workspace" = true ]; then
+        if ! tmux has-session -t "$session_name" 2>/dev/null; then
+            tmux new-session -d -s "$session_name"
+        fi
+        tmux switch-client -t "$session_name"
+        exit 0
+    else
+        $(sessionx_cmd)
+        exit 0
+    fi
+fi
 
 # Find an unattached linked session in the same group as $session_name
 # (excludes the base session itself)
@@ -172,29 +188,44 @@ attach_or_link() {
     fi
 }
 
-if tmux has-session 2>/dev/null; then
-    if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
-        tmux attach-session
-    else
-        unique_groups=$(tmux list-sessions -F '#{session_group}' | sort -u | wc -l)
-        target_clients=$(tmux display-message -t "$session_name" -p '#{session_attached}' 2>/dev/null)
-
-        if ! tmux has-session -t "$session_name" 2>/dev/null; then
-            if [ "$unique_groups" -gt 1 ]; then
-                tmux new-session -s "$session_name" \; run-shell "$(sessionx_cmd)"
-            else
-                tmux new-session -s "$session_name"
-            fi
-        elif [ "${target_clients:-0}" -eq 0 ] && [ "$unique_groups" -le 1 ]; then
-            tmux attach-session -t "$session_name"
-        elif [ "${target_clients:-0}" -eq 0 ] && [ "$unique_groups" -gt 1 ]; then
-            tmux attach-session -t "$session_name" \; run-shell "$(sessionx_cmd)"
-        elif [ "$unique_groups" -gt 1 ]; then
-            attach_or_link \; run-shell "$(sessionx_cmd)"
+if [ "$use_workspace" = true ]; then
+    if tmux has-session 2>/dev/null; then
+        if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
+            tmux attach-session -t "$session_name" 2>/dev/null || tmux new-session -s "$session_name"
         else
-            attach_or_link
+            target_clients=$(tmux display-message -t "$session_name" -p '#{session_attached}' 2>/dev/null)
+            if ! tmux has-session -t "$session_name" 2>/dev/null; then
+                tmux new-session -s "$session_name"
+            elif [ "${target_clients:-0}" -eq 0 ]; then
+                tmux attach-session -t "$session_name"
+            else
+                attach_or_link
+            fi
         fi
+    else
+        tmux new-session -s "$session_name"
     fi
 else
-    tmux new-session -s "$session_name"
+    if tmux has-session 2>/dev/null; then
+        if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
+            tmux attach-session
+        else
+            unique_groups=$(tmux list-sessions -F '#{?session_group,#{session_group},#{session_name}}' | sort -u | wc -l)
+            main_clients=$(tmux display-message -t "$session_name" -p '#{session_attached}' 2>/dev/null)
+
+            if ! tmux has-session -t "$session_name" 2>/dev/null; then
+                tmux new-session -s "$session_name" \; run-shell "$(sessionx_cmd)"
+            elif [ "${main_clients:-0}" -eq 0 ] && [ "$unique_groups" -le 1 ]; then
+                tmux attach-session -t "$session_name"
+            elif [ "${main_clients:-0}" -eq 0 ] && [ "$unique_groups" -gt 1 ]; then
+                tmux attach-session -t "$session_name" \; run-shell "$(sessionx_cmd)"
+            elif [ "$unique_groups" -gt 1 ]; then
+                attach_or_link \; run-shell "$(sessionx_cmd)"
+            else
+                attach_or_link
+            fi
+        fi
+    else
+        tmux new-session -s "$session_name"
+    fi
 fi

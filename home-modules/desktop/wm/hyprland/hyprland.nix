@@ -135,7 +135,7 @@ in {
             xwayland.enable = true;
             systemd.enable = false;
             settings = {
-                "$terminal" = "${config.modules.terminals.default} -e tm";
+                "$terminal" = "${config.modules.terminals.default} -e tm -w";
                 "$newterminal" = "${config.modules.terminals.default} -e tmux";
                 "$mod" = "SUPER";
                 "$altMod" = "SUPER_CTRL";
