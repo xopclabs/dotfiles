@@ -37,7 +37,7 @@ Personal NixOS configuration flake for managing multiple hosts: desktops, a home
 │   ├── editors/           # IDEs
 │   ├── terminals/         # Terminal emulators
 │   ├── file_managers/     # File Managers: CLI or GUI
-│   ├── players/           # Media Players
+│   ├── media/             # Media Players
 │   ├── packages/          # Common and optional package sets
 │   └── theming/           # Stylix theme management
 │

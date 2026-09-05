@@ -99,10 +99,8 @@ in {
             pkgs.zotero
 	        pkgs.transmission_4-gtk
             pkgs.android-tools
-            pkgs.feishin
             pkgs.rclone
             pkgs.stremio-linux-shell
-            pkgs.kew
         ];
 
         home.activation.zoomWaylandConf =

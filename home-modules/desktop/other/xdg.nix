@@ -19,7 +19,7 @@ in {
         };
         video-player = mkOption {
             type = types.str;
-            default = utils.safeRefStr config.modules.players.video.default (x: "${x}.desktop") "mpv.desktop";
+            default = utils.safeRefStr config.modules.media.video.default (x: "${x}.desktop") "mpv.desktop";
         };
     };
     config = mkIf cfg.enable {

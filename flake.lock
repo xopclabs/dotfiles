@@ -474,6 +474,43 @@
         "type": "github"
       }
     },
+    "kew": {
+      "inputs": {
+        "kew-src": "kew-src",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788567725,
+        "narHash": "sha256-0kAHorBf8Q0U7G1TunF0cUJyhEG0nedajAAp1cWAKyE=",
+        "owner": "ravachol",
+        "repo": "kew",
+        "rev": "57663bf37d589275dc441d7de3713f013427fc1f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ravachol",
+        "repo": "kew",
+        "type": "github"
+      }
+    },
+    "kew-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788567725,
+        "narHash": "sha256-0kAHorBf8Q0U7G1TunF0cUJyhEG0nedajAAp1cWAKyE=",
+        "owner": "ravachol",
+        "repo": "kew",
+        "rev": "57663bf37d589275dc441d7de3713f013427fc1f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ravachol",
+        "repo": "kew",
+        "type": "github"
+      }
+    },
     "libnbtplusplus": {
       "flake": false,
       "locked": {
@@ -1153,6 +1190,7 @@
         "firefox-nordic": "firefox-nordic",
         "home-manager": "home-manager_2",
         "jovian": "jovian",
+        "kew": "kew",
         "lrcget-cli": "lrcget-cli",
         "niri": "niri",
         "nix-colors": "nix-colors",

@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.modules.players.video;
+    cfg = config.modules.media.video;
     videoPlayersPriorities = [ "mpv" "vlc" ];
 in {
     imports = [
@@ -10,7 +10,7 @@ in {
         ./vlc.nix
     ];
     
-    options.modules.players.video = {
+    options.modules.media.video = {
         default = mkOption {
             type = types.nullOr (types.enum videoPlayersPriorities);
             default = null;
@@ -19,7 +19,7 @@ in {
     };
     
     config = {
-        modules.players.video.default = utils.selectDefault {
+        modules.media.video.default = utils.selectDefault {
             inherit cfg;
             priorities = videoPlayersPriorities;
         };

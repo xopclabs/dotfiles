@@ -88,9 +88,13 @@
             chromium.enable = true;
         };
 
-        players = {
+        media = {
             video.mpv.enable = true;
             video.vlc.enable = true;
+            audio = {
+                feishin.enable = true;
+                kew.enable = true;
+            };
         };
 
         packages = {

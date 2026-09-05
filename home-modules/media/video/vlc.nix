@@ -2,9 +2,9 @@
 
 with lib;
 let 
-    cfg = config.modules.players.video.vlc;
+    cfg = config.modules.media.video.vlc;
 in {
-    options.modules.players.video.vlc = { enable = mkEnableOption "vlc"; };
+    options.modules.media.video.vlc = { enable = mkEnableOption "vlc"; };
     config = mkIf cfg.enable {
         home.packages = with pkgs; [
             vlc

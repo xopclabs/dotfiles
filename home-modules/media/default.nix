@@ -2,9 +2,10 @@
 
 with lib;
 let
-    cfg = config.modules.players;
+    cfg = config.modules.media;
 in {
     imports = [
         ./video
+        ./audio
     ];
 }

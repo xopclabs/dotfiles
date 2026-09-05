@@ -31,7 +31,7 @@ in
         ./terminals
         ./gui
         ./desktop
-        ./players
+        ./media
         ./packages
         ./theming
         ./other
