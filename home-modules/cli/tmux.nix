@@ -32,6 +32,9 @@ let
             echo "${theme}" > $target/catppuccin-dynamic.tmuxtheme
         '';
     };
+    tmux-clean-empty = pkgs.writeShellScriptBin "tmux-clean-empty" ''
+        ${builtins.readFile ./scripts/tmux-clean-empty.sh}
+    '';
 in {
     options.modules.cli.tmux = { 
         enable = mkEnableOption "tmux";
@@ -51,6 +54,7 @@ in {
         home.packages = with pkgs; [
             tmux
             tmuxinator
+            tmux-clean-empty
         ];
 
         programs.tmux = {
@@ -144,6 +148,12 @@ in {
                 bind-key -n C-l if-shell "$is_vim" "send-keys C-l"  "send-keys C-l"
                 bind h split-window -v -c "#{pane_current_path}"
                 bind s split-window -h -c "#{pane_current_path}"
+
+                # Environment
+                set-option -ga update-environment " NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK I3SOCK WAYLAND_DISPLAY DISPLAY DBUS_SESSION_BUS_ADDRESS"
+
+                # Auto-close untouched sessions when detached
+                set-hook -g client-detached 'run-shell "${tmux-clean-empty}/bin/tmux-clean-empty \"#{session_name}\""'
             '';
         };
 
