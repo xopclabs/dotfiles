@@ -1,0 +1,134 @@
+Make OSD slider and icon colors for volume and brightness follow bar widget colors.
+
+--- a/src/shell/osd/osd_overlay.cpp
++++ b/src/shell/osd/osd_overlay.cpp
+@@ -149,6 +149,91 @@
+ 
+   [[nodiscard]] float innerGap(float s) { return (Style::spaceSm + Style::spaceXs * 0.5F) * s; }
+ 
++  struct WidgetColors {
++    std::optional<ColorSpec> color;
++    std::optional<ColorSpec> iconColor;
++  };
++
++  [[nodiscard]] WidgetColors resolveWidgetColorsForOsd(
++      const Config& config, std::string_view widgetType, bool muted
++  ) {
++    WidgetColors out;
++    const WidgetConfig* targetWc = nullptr;
++    std::string targetName;
++
++    if (auto it = config.widgets.find(std::string(widgetType)); it != config.widgets.end()) {
++      targetWc = &it->second;
++      targetName = it->first;
++    } else {
++      for (const auto& [name, wc] : config.widgets) {
++        if (wc.type == widgetType) {
++          targetWc = &wc;
++          targetName = name;
++          break;
++        }
++      }
++    }
++    if (targetName.empty()) {
++      targetName = std::string(widgetType);
++    }
++
++    if (muted && targetWc != nullptr) {
++      if (auto muteColor = targetWc->getOptionalColorSpec("mute_color", "widget.mute_color"); muteColor.has_value()) {
++        out.color = muteColor;
++        out.iconColor = muteColor;
++        return out;
++      }
++    }
++
++    if (targetWc != nullptr) {
++      out.color = targetWc->getOptionalColorSpec("color", "widget.color");
++      out.iconColor = targetWc->getOptionalColorSpec("icon_color", "widget.icon_color");
++    }
++
++    if (out.color.has_value() && !out.iconColor.has_value()) {
++      out.iconColor = out.color;
++    } else if (out.iconColor.has_value() && !out.color.has_value()) {
++      out.color = out.iconColor;
++    }
++
++    if (out.color.has_value()) {
++      return out;
++    }
++
++    for (const auto& bar : config.bars) {
++      if (!bar.enabled) {
++        continue;
++      }
++      for (const auto& group : bar.widgetCapsuleGroups) {
++        if (std::ranges::find(group.members, targetName) != group.members.end()) {
++          if (group.foreground.has_value()) {
++            out.color = group.foreground;
++            out.iconColor = group.foreground;
++            return out;
++          }
++        }
++      }
++      if (bar.widgetColor.has_value()) {
++        out.color = bar.widgetColor;
++      }
++      if (bar.widgetIconColor.has_value()) {
++        out.iconColor = bar.widgetIconColor;
++      } else if (bar.widgetColor.has_value()) {
++        out.iconColor = bar.widgetColor;
++      }
++      if (out.color.has_value()) {
++        return out;
++      }
++      if (bar.widgetCapsuleForeground.has_value()) {
++        out.color = bar.widgetCapsuleForeground;
++        out.iconColor = bar.widgetCapsuleForeground;
++        return out;
++      }
++    }
++
++    return out;
++  }
++
+   [[nodiscard]] float osdCardRadius(float cw, float ch, float layoutScale) {
+     const float maxR = std::min(cw, ch) * 0.5F;
+     return std::min(maxR, Style::scaledRadiusXl(layoutScale));
+@@ -727,10 +812,35 @@
+   const ColorRole accentRole = m_content.overLimit ? ColorRole::Error
+       : m_content.inactive                         ? ColorRole::OnSurfaceVariant
+                                                    : ColorRole::Primary;
++  ColorSpec glyphColor = colorSpecFromRole(accentRole);
++  ColorSpec sliderColor = colorSpecFromRole(accentRole);
++
++  if (!m_content.overLimit && m_config != nullptr) {
++    std::string_view widgetType;
++    if (m_content.kind == OsdKind::Volume) {
++      widgetType = "volume";
++    } else if (m_content.kind == OsdKind::Brightness) {
++      widgetType = "brightness";
++    } else if (m_content.kind == OsdKind::Microphone) {
++      widgetType = "volume";
++    } else if (m_content.kind == OsdKind::KeyboardBacklight) {
++      widgetType = "keyboard_backlight";
++    }
++    if (!widgetType.empty()) {
++      const auto colors = resolveWidgetColorsForOsd(m_config->config(), widgetType, m_content.inactive);
++      if (colors.color.has_value()) {
++        sliderColor = *colors.color;
++      }
++      if (colors.iconColor.has_value()) {
++        glyphColor = *colors.iconColor;
++      }
++    }
++  }
++
+   inst.glyph->setGlyph(m_content.icon);
+-  inst.glyph->setColor(colorSpecFromRole(accentRole));
++  inst.glyph->setColor(glyphColor);
+   inst.progress->setVisible(m_content.showProgress);
+-  inst.progress->setFill(colorSpecFromRole(accentRole));
++  inst.progress->setFill(sliderColor);
+   inst.progress->setOrientation(vertical ? ProgressBarOrientation::Vertical : ProgressBarOrientation::Horizontal);
+   inst.row->setJustify((vertical || !m_content.showProgress) ? FlexJustify::Center : FlexJustify::Start);
+   inst.value->setFontSize(valueFontSize(s));
