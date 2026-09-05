@@ -125,6 +125,10 @@ in {
                 set-option -sa terminal-overrides ",xterm*:Tc"
                 set-option -ga terminal-overrides ",*-256color:Tc"
 
+                # Extended keys for pi agent
+                set -g extended-keys on
+                set -g extended-keys-format csi-u
+
                 # Layout
                 set -g status-position ${cfg.statusPosition}
                 set -g renumber-windows on

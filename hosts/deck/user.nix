@@ -68,6 +68,10 @@
             nvim.enable = true;
         };
 
+        agents = {
+            pi.enable = true;
+        };
+
         fileManagers = {
             yazi.enable = true;
             nautilus.enable = true;
