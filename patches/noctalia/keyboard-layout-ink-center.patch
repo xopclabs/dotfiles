@@ -1,0 +1,11 @@
+Center keyboard-layout label ink so short codes like "en" are not baseline-sunk.
+
+--- a/src/shell/bar/widgets/keyboard_layout_widget.cpp
++++ b/src/shell/bar/widgets/keyboard_layout_widget.cpp
+@@ -61,6 +61,7 @@ void KeyboardLayoutWidget::create() {
+           .fontSize = Style::fontSizeBody * fontScale(),
+           .fontWeight = labelFontWeight(),
+           .fontFamily = labelFontFamily(),
++          .baselineMode = LabelBaselineMode::InkCentered,
+       })
+   );

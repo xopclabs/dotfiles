@@ -4,98 +4,22 @@ with lib;
 let
     cfg = config.modules.desktop.shells.noctalia;
     palette = config.colorScheme.palette;
+    icons = import ../../bars/app-icons.nix { inherit lib; };
+
+    iconScale = 1.25;
+    controlScale = 1.5;
+
     groupStyle = {
         fill = "#${palette.base01}";
         radius = 0.0;
         padding = 4.0;
         opacity = 1.0;
-        widget_spacing = 4;
+        widget_spacing = 8;
         accordion = false;
         accordion_direction = "end";
         enabled = true;
     };
-    iconScale = 1.25;
-    icons = import ../../bars/app-icons.nix { inherit lib; };
-    hx = name: "#${palette.${name}}";
-    # Tofi's selection blue (base0F / nord10) is the shell accent.
-    # Noctalia's custom-palette loader aliases hover to tertiary (mHover is
-    # dropped), so tertiary is the polar-night grey used for launcher and
-    # control-center hover. Secondary keeps builtin Nord frost cyan.
-    nordTerminal = {
-        background = hx "base00";
-        foreground = hx "base05";
-        cursor = hx "base05";
-        cursorText = hx "base00";
-        selectionBg = hx "base02";
-        selectionFg = hx "base05";
-        normal = {
-            black = hx "base00";
-            red = hx "base08";
-            green = hx "base0B";
-            yellow = hx "base0A";
-            blue = hx "base0D";
-            magenta = hx "base0E";
-            cyan = hx "base0C";
-            white = hx "base05";
-        };
-        bright = {
-            black = hx "base03";
-            red = hx "base08";
-            green = hx "base0B";
-            yellow = hx "base0A";
-            blue = hx "base0D";
-            magenta = hx "base0E";
-            cyan = hx "base07";
-            white = hx "base06";
-        };
-    };
-    nordPalette = {
-        dark = {
-            mPrimary = hx "base0F";
-            mOnPrimary = hx "base06";
-            mSecondary = hx "base0C";
-            mOnSecondary = hx "base00";
-            mTertiary = hx "base03";
-            mOnTertiary = hx "base06";
-            mError = hx "base08";
-            mOnError = hx "base00";
-            mSurface = hx "base00";
-            mOnSurface = hx "base06";
-            mSurfaceVariant = hx "base01";
-            mOnSurfaceVariant = hx "base04";
-            mOutline = hx "base03";
-            mShadow = hx "base00";
-            mHover = hx "base03";
-            mOnHover = hx "base06";
-            terminal = nordTerminal;
-        };
-        light = {
-            mPrimary = hx "base0F";
-            mOnPrimary = hx "base06";
-            mSecondary = hx "base0C";
-            mOnSecondary = hx "base06";
-            mTertiary = hx "base04";
-            mOnTertiary = hx "base00";
-            mError = hx "base08";
-            mOnError = hx "base06";
-            mSurface = hx "base06";
-            mOnSurface = hx "base00";
-            mSurfaceVariant = hx "base05";
-            mOnSurfaceVariant = hx "base03";
-            mOutline = hx "base04";
-            mShadow = hx "base04";
-            mHover = hx "base04";
-            mOnHover = hx "base00";
-            terminal = nordTerminal // {
-                background = hx "base06";
-                foreground = hx "base00";
-                cursor = hx "base00";
-                cursorText = hx "base06";
-                selectionBg = hx "base04";
-                selectionFg = hx "base00";
-            };
-        };
-    };
+    mkGroup = id: members: extra: groupStyle // { inherit id members; } // extra;
 in {
     imports = [
         inputs.noctalia.homeModules.default
@@ -167,7 +91,7 @@ in {
         programs.noctalia = {
             enable = true;
             inherit (cfg) package;
-            customPalettes.nord = nordPalette;
+            customPalettes.base16 = import ./colorscheme.nix { inherit palette; };
             settings = lib.mkMerge [
                 {
                     wallpaper.enabled = false;
@@ -198,13 +122,13 @@ in {
 
                     control_center.hidden_tabs = [ "media" ];
 
-                    # Custom palette from the systemwide base16 Nord scheme.
+                    # Custom palette from the systemwide base16 scheme.
                     # Stylix's noctalia target is disabled so it cannot force
                     # light mode or its own hover/primary mapping.
                     theme = {
                         mode = lib.mkForce "dark";
                         source = lib.mkForce "custom";
-                        custom_palette = lib.mkForce "nord";
+                        custom_palette = lib.mkForce "base16";
                         templates = {
                             enable_community_templates = false;
                             community_ids = [ "telegram" ];
@@ -303,22 +227,14 @@ in {
                                 "clock"
                                 "group:power"
                             ];
-
                             capsule_group = [
-                                (groupStyle // {
-                                    id = "status";
-                                    members = [ "keyboard_layout" "network" "bluetooth" "battery" ];
-                                })
-                                (groupStyle // {
-                                    id = "control";
-                                    members = [ "volume" "brightness" ];
-                                })
-                                (groupStyle // {
-                                    id = "power";
-                                    members = [ "session" "gamescope" "keyboard" ];
+                                (mkGroup "status" [ "keyboard_layout" "network" "bluetooth" "battery" ] {})
+                                (mkGroup "control" [ "volume" "brightness" ] { padding = 2.0; })
+                                (mkGroup "power" [ "session" "gamescope" "keyboard" ] {
                                     accordion = true;
                                     accordion_direction = "start";
                                     padding = 6.0;
+                                    widget_spacing = 4;
                                 })
                             ];
                         } // optionalAttrs (cfg.showOnlyOn != null) {
@@ -334,7 +250,6 @@ in {
                             glyph = "search";
                             scale = iconScale;
                         };
-
                         taskbar = {
                             group_by_workspace = true;
                             workspace_group_content = "icons";
@@ -368,16 +283,16 @@ in {
                             drawer_item_size = 20;
                             detached_panel = false;
                             hide_passive = true;
+                            scale = controlScale;
                         };
-
-                        notifications = {
-                            hide_when_no_unread = false;
-                        };
-
                         privacy = {
                             hide_inactive = true;
                             icon_spacing = 4;
                             active_color = "#${palette.base08}";
+                        };
+                        notifications = {
+                            hide_when_no_unread = false;
+                            scale = controlScale;
                         };
 
                         keyboard_layout = {
@@ -387,21 +302,18 @@ in {
                             scale = iconScale;
                             color = "#${palette.base04}";
                         };
-
                         network = {
                             show_label = false;
                             vpn_status = "both";
-                            scale = iconScale;
+                            scale = controlScale;
                             color = "#${palette.base0C}";
                             actions.left = "panel-toggle control-center";
                         };
-
                         bluetooth = {
                             show_label = false;
-                            scale = iconScale;
+                            scale = controlScale;
                             color = "#${palette.base0D}";
                         };
-
                         battery = {
                             display_mode = "graphic";
                             show_label = false;
@@ -412,7 +324,7 @@ in {
 
                         volume = {
                             show_label = false;
-                            scale = iconScale;
+                            scale = controlScale;
                             color = "#${palette.base0E}";
                             mute_color = "#${palette.base08}";
                             actions = {
@@ -422,10 +334,9 @@ in {
                                 scroll_down = "volume-down 5%";
                             };
                         };
-
                         brightness = {
                             show_label = false;
-                            scale = iconScale;
+                            scale = controlScale;
                             color = "#${palette.base0A}";
                             actions = {
                                 scroll_up = "brightness-up 5%";
@@ -445,7 +356,6 @@ in {
                             scale = iconScale;
                             color = "#${palette.base08}";
                         };
-
                         gamescope = {
                             type = "custom_button";
                             glyph = "device-gamepad";
@@ -454,7 +364,6 @@ in {
                             color = "#${palette.base07}";
                             actions.left = "exec start-gamescope-session";
                         };
-
                         keyboard = {
                             type = "custom_button";
                             glyph = "keyboard";
