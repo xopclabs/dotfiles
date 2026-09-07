@@ -1,0 +1,32 @@
+set -euo pipefail
+
+target="${1:-}"
+if [[ -z "$target" || "$target" == "-h" || "$target" == "--help" ]]; then
+    echo "Usage: niri-focus-output <output>" >&2
+    exit 1
+fi
+
+focused=$(niri msg --json focused-output | jq -r '.name // empty')
+if [[ "$focused" != "$target" ]]; then
+    niri msg action focus-monitor "$target"
+    exit 0
+fi
+
+next=$(jq -n -r \
+    --arg out "$target" \
+    --argjson workspaces "$(niri msg --json workspaces)" \
+    --argjson windows "$(niri msg --json windows)" '
+    ($windows | map(.workspace_id) | unique) as $occupied
+    | [$workspaces[] | select(.output == $out and (.id | IN($occupied[])))]
+    | sort_by(.idx)
+    | (map(.is_active) | index(true)) as $cur
+    | if length == 0 then empty
+      elif $cur == null then .[0].idx
+      elif length == 1 then empty
+      else .[($cur + 1) % length].idx
+      end
+')
+
+if [[ -n "$next" ]]; then
+    niri msg action focus-workspace "$next"
+fi

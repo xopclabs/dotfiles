@@ -50,6 +50,10 @@ let
     output_internal = if internalMon != null then niriOutputName internalMon else null;
 
     scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
+    focusOutput = pkgs.writeShellScriptBin "niri-focus-output" ''
+        export PATH=${lib.makeBinPath [ pkgs.niri pkgs.jq pkgs.coreutils ]}:$PATH
+        ${builtins.readFile ./focus-output}
+    '';
     resetScratch = pkgs.writeShellScript "reset-niri-scratch" ''
         mkdir -p "$(dirname ${lib.escapeShellArg scratchPath})"
         cat > ${lib.escapeShellArg scratchPath} <<'EOF'
@@ -80,6 +84,7 @@ in {
             pkgs.jq
             pkgs.playerctl
             pkgs.awww
+            focusOutput
         ];
 
         programs.niri = with config.colorScheme.palette; {
@@ -154,9 +159,17 @@ in {
                 ];
 
                 binds = {
-                    # Focus monitors
-                    "Mod+A".action.focus-monitor-left = [];
-                    "Mod+T".action.focus-monitor-right = [];
+                    # Focus a monitor, or cycle its non-empty workspaces if already focused
+                    "Mod+A" = if output_external != null then {
+                        action.spawn = [ (lib.getExe focusOutput) output_external ];
+                    } else {
+                        action.focus-monitor-left = [];
+                    };
+                    "Mod+T" = if output_internal != null then {
+                        action.spawn = [ (lib.getExe focusOutput) output_internal ];
+                    } else {
+                        action.focus-monitor-right = [];
+                    };
                     # Move columns to monitors
                     "Mod+Ctrl+A".action.move-column-to-monitor-left = [];
                     "Mod+Ctrl+T".action.move-column-to-monitor-right = [];
