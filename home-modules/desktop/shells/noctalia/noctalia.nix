@@ -243,7 +243,7 @@ in {
                             scale = 1.0;
                             capsule = true;
                             capsule_radius = 0.0;
-                            capsule_thickness = 0.82;
+                            capsule_thickness = 1.0;
                             capsule_fill = "#${palette.base01}";
                             capsule_opacity = 1.0;
 
@@ -294,7 +294,7 @@ in {
                             show_all_outputs = cfg.showOnlyOn != null;
                             show_active_indicator = false;
                             icon_scale = 1.0;
-                            icon_cell = 0.5;
+                            icon_cell = 0.4;
                             icon_source = "glyphs";
                             icon_glyph_default = icons.defaultTabler;
                             icon_glyphs = icons.tablerByAppId;
