@@ -34,7 +34,6 @@ in
         ./media
         ./packages
         ./theming
-        ./agents
         ./other
     ];
 

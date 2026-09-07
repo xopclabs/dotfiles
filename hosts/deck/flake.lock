@@ -2,8 +2,8 @@
   "nodes": {
     "agents": {
       "locked": {
-        "lastModified": 1788798799,
-        "narHash": "sha256-3vOvRDQAxJ+iGWKadOOjSUeBMqo0IQlryy+gPljSsIQ=",
+        "lastModified": 1788813764,
+        "narHash": "sha256-Z2ehU1dW0xd17QPOBNZwe0C+8mgj/vDL61BD/DlsST0=",
         "path": "/home/xopc/agents",
         "type": "path"
       },
