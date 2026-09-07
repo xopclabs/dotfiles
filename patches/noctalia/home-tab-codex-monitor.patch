@@ -1,0 +1,708 @@
+--- a/src/shell/control_center/tabs/home_tab.cpp
++++ b/src/shell/control_center/tabs/home_tab.cpp
+@@ -21,13 +21,20 @@
+ #include "shell/panel/panel_manager.h"
+ #include "shell/profile/avatar_path.h"
+ #include "shell/wallpaper/wallpaper.h"
++#include "core/deferred_call.h"
++#include "core/process/process.h"
++#include "scripting/plugin_state_store.h"
+ #include "system/distro_info.h"
+ #include "system/weather_service.h"
+ #include "time/time_format.h"
+ #include "ui/builders.h"
+ #include "ui/controls/grid_view.h"
++#include "ui/controls/progress_bar.h"
+ #include "ui/dialogs/file_dialog.h"
+ 
++#include <nlohmann/json.hpp>
++#include <fstream>
++
+ #include <algorithm>
+ #include <cmath>
+ #include <cstdint>
+@@ -187,9 +194,33 @@
+       }
+     });
+   }
++
++  // Pre-load cached Codex usage data
++  const auto cached = scripting::PluginStateStore::instance().get("salemsayed/codexbar-meter", "providers");
++  if (cached.has_value() && !cached->empty()) {
++    parseCodexJson(*cached);
++  } else if (const char* home = std::getenv("HOME"); home != nullptr) {
++    std::ifstream f(std::filesystem::path(home) / ".cache/noctalia/codexbar_cache.json");
++    if (f.is_open()) {
++      std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
++      parseCodexJson(content);
++    }
++  }
++
++  scripting::PluginStateStore::instance().watch(
++      "salemsayed/codexbar-meter", "providers", reinterpret_cast<std::uint64_t>(this),
++      [this](const std::string& json) {
++        DeferredCall::callLater([this, json]() {
++          parseCodexJson(json);
++          syncCodexCard();
++          PanelManager::instance().requestRedraw();
++        });
++      }
++  );
+ }
+ 
+ HomeTab::~HomeTab() {
++  scripting::PluginStateStore::instance().removeWatchers(reinterpret_cast<std::uint64_t>(this));
+   if (m_thumbnails != nullptr && !m_loadedWallpaperPath.empty()) {
+     m_thumbnails->release(m_loadedWallpaperPath, m_loadedWallpaperSize);
+   }
+@@ -205,165 +236,150 @@
+       .gap = Style::spaceMd * scale,
+   });
+ 
+-  // --- User card ---
+-  auto userCard = ui::column({
+-      .out = &m_userCard,
+-      .justify = FlexJustify::Center,
++  // --- Codex card ---
++  auto codexCard = ui::column({
++      .out = &m_codexCard,
++      .justify = FlexJustify::SpaceBetween,
++      .gap = Style::spaceXs * scale,
+       .fillHeight = true,
+       .flexGrow = 1.0F,
+-      .configure = [scale, opacity = panelCardOpacity()](Flex& card) { applyHomeCardStyle(card, scale, opacity); },
++      .configure = [scale, opacity = panelCardOpacity()](Flex& card) {
++        applyHomeCardStyle(card, scale, opacity);
++        card.setGap(Style::spaceXs * scale);
++        card.setPadding(
++            Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale
++        );
++      },
+   });
+ 
+-  {
+-    const float wallpaperRadius = std::max(0.0F, Style::scaledRadiusXl(scale) - Style::borderWidth);
+-    userCard->addChild(
+-        ui::image({
+-            .out = &m_wallpaperPlaceholder,
+-            .fit = ImageFit::Cover,
+-            .radius = wallpaperRadius,
+-            .participatesInLayout = false,
+-            .configure = [](Image& image) { image.setZIndex(-2); },
+-        })
+-    );
+-
+-    userCard->addChild(
+-        ui::image({
+-            .out = &m_wallpaperBg,
+-            .fit = ImageFit::Cover,
+-            .radius = wallpaperRadius,
+-            .participatesInLayout = false,
+-            .configure = [](Image& image) {
+-              image.setZIndex(-1);
+-              image.setOpacity(0.0F);
+-            },
+-        })
+-    );
+-  }
+-
+-  const float avatarSize = homeAvatarSize(scale);
+-  const auto openAvatarPicker = [this]() {
+-    if (m_config == nullptr) {
+-      return;
+-    }
+-
+-    FileDialogOptions options;
+-    options.mode = FileDialogMode::Open;
+-    options.defaultViewMode = FileDialogViewMode::Grid;
+-    options.title = i18n::tr("control-center.home.select-avatar");
+-    options.extensions = DirectoryScanner::imageExtensionFilter(false);
+-    options.startDirectory = avatarStartDirectory(m_accounts, m_config);
+-
+-    (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> pickedPath) {
+-      if (!pickedPath.has_value() || m_config == nullptr) {
+-        return;
+-      }
+-      const auto applyResult = shell::applyAvatarPath(m_accounts, m_config, pickedPath->string());
+-      if (applyResult.success()) {
+-        DeferredCall::callLater([]() {
+-          PanelManager::instance().refresh();
+-          PanelManager::instance().requestRedraw();
+-        });
+-        return;
+-      }
+-      notify::error(
+-          "Noctalia", i18n::tr("control-center.home.avatar-error-title"),
+-          i18n::tr(shell::avatarApplyErrorTranslationKey(applyResult.error))
+-      );
+-    });
+-  };
+-
+-  auto avatarArea = ui::inputArea({});
+-  avatarArea->setSize(avatarSize, avatarSize);
+-  avatarArea->setHitShape(InputArea::HitShape::Circle);
+-  avatarArea->setFocusable(true);
+-  avatarArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+-  avatarArea->setOnClick([openAvatarPicker](const InputArea::PointerData&) { openAvatarPicker(); });
+-  avatarArea->setOnKeyDown([openAvatarPicker](const InputArea::KeyData& key) {
+-    if (key.pressed && KeybindMatcher::matches(KeybindAction::Validate, key.sym, key.modifiers)) {
+-      openAvatarPicker();
+-    }
+-  });
+-  m_userAvatarArea = avatarArea.get();
+-  avatarArea->addChild(
+-      ui::image({
+-          .out = &m_userAvatar,
+-          .fit = ImageFit::Cover,
+-          .radius = avatarSize * 0.5F,
+-          .padding = 1.0F * scale,
+-          .width = avatarSize,
+-          .height = avatarSize,
+-          .configure = [](Image& image) {
+-            image.setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * 3.0F);
+-            image.setHitTestVisible(false);
+-            image.setAsyncReadyCallback([]() { PanelManager::instance().refresh(); });
+-          },
+-      })
+-  );
+-  const auto syncAvatarChrome = [this]() {
+-    const bool highlighted =
+-        m_userAvatarArea != nullptr && (m_userAvatarArea->focused() || m_userAvatarArea->hovered());
+-    applyAvatarChrome(m_userAvatar, highlighted);
+-    PanelManager::instance().requestRedraw();
+-  };
+-  avatarArea->setOnEnter([syncAvatarChrome](const InputArea::PointerData&) { syncAvatarChrome(); });
+-  avatarArea->setOnLeave([syncAvatarChrome]() { syncAvatarChrome(); });
+-  avatarArea->setOnFocusGain(syncAvatarChrome);
+-  avatarArea->setOnFocusLoss(syncAvatarChrome);
+-  const auto configureUserDetailLabel = [scale](Label& label) {
+-    label.setShadow(colorSpecFromRole(ColorRole::Shadow, 0.36F), 0.0F, 1.0F * scale);
+-  };
+-  auto userRow = ui::row(
+-      {.align = FlexAlign::Center, .gap = Style::spaceMd * scale}, std::move(avatarArea),
+-      ui::column(
+-          {.out = &m_userMain,
+-           .align = FlexAlign::Stretch,
+-           .justify = FlexJustify::Center,
+-           .gap = Style::spaceXs * 0.5F * scale,
+-           .minHeight = avatarSize,
+-           .width = 0.0F,
+-           .height = avatarSize,
+-           .flexGrow = 1.0F},
++  // Header row: Brand logo, title, email, and status/updated label
++  Flex* headerRow = nullptr;
++  codexCard->addChild(
++      ui::row(
++          {.out = &headerRow, .align = FlexAlign::Center, .gap = Style::spaceSm * scale, .fillWidth = true},
++          ui::glyph({
++              .glyph = "brand-openai",
++              .glyphSize = 18.0F * scale,
++              .color = colorSpecFromRole(ColorRole::Primary),
++          }),
+           ui::label({
+-              .text = displayName,
+-              .fontSize = Style::fontSizeTitle * 1.12F * scale,
++              .text = "OpenAI Codex",
++              .fontSize = Style::fontSizeTitle * scale,
+               .fontWeight = FontWeight::Bold,
+               .color = colorSpecFromRole(ColorRole::OnSurface),
+-              .configure = [scale](
+-                               Label& label
+-                           ) { label.setShadow(colorSpecFromRole(ColorRole::Shadow, 0.42F), 0.0F, 1.0F * scale); },
+           }),
+           ui::label({
+-              .out = &m_userHost,
+-              .text = userHostLine(),
++              .out = &m_codexAccountLabel,
++              .text = "",
+               .fontSize = Style::fontSizeCaption * scale,
+               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+-              .configure = configureUserDetailLabel,
++              .flexGrow = 1.0F,
+           }),
+           ui::label({
+-              .out = &m_userUptime,
+-              .text = "…",
++              .out = &m_codexUpdatedLabel,
++              .text = "Codex limits",
+               .fontSize = Style::fontSizeCaption * scale,
+               .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+-              .configure = configureUserDetailLabel,
+-          }),
++          })
++      )
++  );
++
++  // 5-Hour session limit section
++  Flex* primarySection = nullptr;
++  codexCard->addChild(
++      ui::column(
++          {.out = &primarySection, .gap = 2.0F * scale, .fillWidth = true},
++          ui::row(
++              {.align = FlexAlign::Center, .justify = FlexJustify::SpaceBetween, .fillWidth = true},
++              ui::label({
++                  .text = "5-Hour Limit",
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .fontWeight = FontWeight::SemiBold,
++                  .color = colorSpecFromRole(ColorRole::OnSurface),
++              }),
++              ui::label({
++                  .out = &m_codex5hInfoLabel,
++                  .text = "--",
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
++              })
++          ),
++          ui::progressBar({
++              .out = &m_codex5hProgress,
++              .fill = colorSpecFromRole(ColorRole::Primary),
++              .track = colorSpecFromRole(ColorRole::Surface),
++              .radius = 3.0F * scale,
++              .progress = 0.0F,
++              .height = 6.0F * scale,
++          })
++      )
++  );
++
++  // Weekly limit section
++  Flex* secondarySection = nullptr;
++  codexCard->addChild(
++      ui::column(
++          {.out = &secondarySection, .gap = 2.0F * scale, .fillWidth = true},
++          ui::row(
++              {.align = FlexAlign::Center, .justify = FlexJustify::SpaceBetween, .fillWidth = true},
++              ui::label({
++                  .text = "Weekly Limit",
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .fontWeight = FontWeight::SemiBold,
++                  .color = colorSpecFromRole(ColorRole::OnSurface),
++              }),
++              ui::label({
++                  .out = &m_codexWeeklyInfoLabel,
++                  .text = "--",
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
++              })
++          ),
++          ui::progressBar({
++              .out = &m_codexWeeklyProgress,
++              .fill = colorSpecFromRole(ColorRole::Secondary),
++              .track = colorSpecFromRole(ColorRole::Surface),
++              .radius = 3.0F * scale,
++              .progress = 0.0F,
++              .height = 6.0F * scale,
++          })
++      )
++  );
++
++  // Footer row: Pace / status info and refresh hint
++  Flex* footerRow = nullptr;
++  codexCard->addChild(
++      ui::row(
++          {.out = &footerRow, .align = FlexAlign::Center, .justify = FlexJustify::SpaceBetween, .fillWidth = true},
++          ui::row(
++              {.align = FlexAlign::Center, .gap = Style::spaceXs * scale},
++              ui::glyph({
++                  .glyph = "activity",
++                  .glyphSize = Style::fontSizeCaption * scale,
++                  .color = colorSpecFromRole(ColorRole::Tertiary),
++              }),
++              ui::label({
++                  .out = &m_codexPaceLabel,
++                  .text = "Pace: Normal",
++                  .fontSize = Style::fontSizeCaption * scale,
++                  .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
++              })
++          ),
+           ui::label({
+-              .out = &m_userVersion,
+-              .text = noctaliaVersionLine(),
++              .text = "Click to refresh",
+               .fontSize = Style::fontSizeCaption * scale,
+-              .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+-              .configure = configureUserDetailLabel,
++              .color = colorSpecFromRole(ColorRole::Outline),
+           })
+       )
+   );
+-  userCard->addChild(std::move(userRow));
+ 
+-  // Wallpaper panel: full-card keyboard target; carved pointer target leaves the avatar clickable.
+-  const auto openWallpaperPanel = []() { PanelManager::instance().togglePanel("wallpaper"); };
+-  m_userCardKeyboardArea =
+-      addCardOverlay(*m_userCard, openWallpaperPanel, {.keyboardFocus = true, .pointerHitTest = false});
+-  m_userCardArea = addCardOverlay(*m_userCard, openWallpaperPanel, {.keyboardFocus = false, .pointerHitTest = true});
++  const auto triggerCodexRefresh = [this]() { refreshCodexUsage(true); };
++  m_codexCardKeyboardArea =
++      addCardOverlay(*m_codexCard, triggerCodexRefresh, {.keyboardFocus = true, .pointerHitTest = false});
++  m_codexCardArea =
++      addCardOverlay(*m_codexCard, triggerCodexRefresh, {.keyboardFocus = false, .pointerHitTest = true});
+ 
+-  tab->addChild(std::move(userCard));
++  tab->addChild(std::move(codexCard));
+ 
+   auto bottomRow = ui::row({
+       .out = &m_bottomRow,
+@@ -818,27 +834,15 @@
+     }
+   }
+ 
+-  if (m_userCard != nullptr) {
+-    const float userWrap = innerWidth(m_userCard);
+-    for (Label* label : {m_userHost, m_userUptime, m_userVersion}) {
+-      if (label != nullptr) {
+-        label->setMaxWidth(userWrap);
+-        label->setMaxLines(1);
+-      }
+-    }
+-  }
+-
+-  if (m_userAvatar != nullptr && m_userMain != nullptr) {
++  if (m_codexCard != nullptr) {
++    const float barW = std::max(0.0F, m_codexCard->width() - m_codexCard->paddingLeft() - m_codexCard->paddingRight());
+     const float scale = contentScale();
+-    const float minAvatar = homeAvatarSize(scale);
+-    const float desiredAvatar = std::max(minAvatar, m_userMain->height());
+-    if (std::abs(m_userAvatar->width() - desiredAvatar) > 0.5F) {
+-      m_userAvatar->setSize(desiredAvatar, desiredAvatar);
+-      m_userAvatar->setRadius(desiredAvatar * 0.5F);
+-      m_userAvatar->setPadding(1.0F * scale);
++    if (m_codex5hProgress != nullptr) {
++      m_codex5hProgress->setSize(barW, 6.0F * scale);
++    }
++    if (m_codexWeeklyProgress != nullptr) {
++      m_codexWeeklyProgress->setSize(barW, 6.0F * scale);
+     }
+-    m_userMain->setMinHeight(desiredAvatar);
+-    m_userMain->setSize(m_userMain->width(), desiredAvatar);
+   }
+ 
+   // Lock the shortcuts grid height to its square-cell natural size so it does not vary
+@@ -978,21 +982,8 @@
+   };
+   cover(m_mediaCard, m_mediaCardArea);
+   cover(m_dateTimeCard, m_dateTimeCardArea);
+-  cover(m_userCard, m_userCardKeyboardArea);
+-
+-  // The pointer overlay must not swallow the avatar's own click, so start it just past the
+-  // avatar's right edge; the avatar (a nested InputArea) keeps the carved-out left region.
+-  if (m_userCard != nullptr && m_userCardArea != nullptr) {
+-    float left = 0.0F;
+-    if (m_userAvatar != nullptr) {
+-      float ax = 0.0F, ay = 0.0F, cx = 0.0F, cy = 0.0F;
+-      Node::absolutePosition(m_userAvatar, ax, ay);
+-      Node::absolutePosition(m_userCard, cx, cy);
+-      left = std::max(0.0F, (ax - cx) + m_userAvatar->width() + Style::spaceMd * contentScale());
+-    }
+-    m_userCardArea->setPosition(left, 0.0F);
+-    m_userCardArea->setSize(std::max(0.0F, m_userCard->width() - left), m_userCard->height());
+-  }
++  cover(m_codexCard, m_codexCardKeyboardArea);
++  cover(m_codexCard, m_codexCardArea);
+ }
+ 
+ bool HomeTab::resizeMediaArtToCard() {
+@@ -1294,6 +1285,16 @@
+   m_dateTimeCard = nullptr;
+   m_mediaCard = nullptr;
+   m_mediaText = nullptr;
++  m_codexCard = nullptr;
++  m_codexAccountLabel = nullptr;
++  m_codexUpdatedLabel = nullptr;
++  m_codex5hInfoLabel = nullptr;
++  m_codex5hProgress = nullptr;
++  m_codexWeeklyInfoLabel = nullptr;
++  m_codexWeeklyProgress = nullptr;
++  m_codexPaceLabel = nullptr;
++  m_codexCardKeyboardArea = nullptr;
++  m_codexCardArea = nullptr;
+   m_userCard = nullptr;
+   m_userMain = nullptr;
+   m_userAvatar = nullptr;
+@@ -1409,34 +1410,9 @@
+     m_dateLabel->setText(formatShellDate(m_config));
+   }
+ 
+-  syncWallpaperBackground(renderer);
+-
+-  if (m_userAvatar != nullptr && m_config != nullptr && m_asyncTextures != nullptr) {
+-    const std::string displayPath = shell::avatarDisplayPath(m_accounts, m_config->config());
+-    if (displayPath.empty()) {
+-      m_userAvatar->clear(renderer);
+-    } else {
+-      warnOnOversizedAvatarSource(displayPath);
+-      // Decode at the avatar's final on-screen size with no mipmaps: layout grows the
+-      // avatar to match the user text block, and trilinear mipmap sampling softens an
+-      // image displayed near 1:1. Both made the avatar look blurry. The decode runs on
+-      // the async cache workers so a large source never stalls the panel open.
+-      const int avatarSize = static_cast<int>(std::round(m_userAvatar->width()));
+-      (void)m_userAvatar->setSourceFileAsync(renderer, *m_asyncTextures, displayPath, avatarSize, false);
+-    }
+-  }
+-
+-  if (m_userHost != nullptr) {
+-    m_userHost->setText(userHostLine());
+-  }
+-  if (m_userUptime != nullptr) {
+-    const auto uptime = systemUptime();
+-    const std::string uptimeText =
+-        uptime.has_value() ? formatDuration(*uptime) : i18n::tr("control-center.home.unknown");
+-    m_userUptime->setText(i18n::tr("control-center.home.uptime", "uptime", uptimeText));
+-  }
+-  if (m_userVersion != nullptr) {
+-    m_userVersion->setText(noctaliaVersionLine());
++  syncCodexCard();
++  if (m_active) {
++    refreshCodexUsage(false);
+   }
+ 
+   if (m_weatherGlyph != nullptr && m_weatherLine != nullptr) {
+@@ -1654,3 +1630,194 @@
+     }
+   }
+ }
++
++void HomeTab::parseCodexJson(const std::string& jsonStr) {
++  if (jsonStr.empty()) {
++    return;
++  }
++  try {
++    auto root = nlohmann::json::parse(jsonStr);
++    const nlohmann::json* item = nullptr;
++    if (root.is_array() && !root.empty()) {
++      for (const auto& el : root) {
++        if (el.is_object() && el.value("provider", "") == "codex") {
++          item = &el;
++          break;
++        }
++      }
++      if (item == nullptr && root[0].is_object()) {
++        item = &root[0];
++      }
++    } else if (root.is_object()) {
++      item = &root;
++    }
++
++    if (item != nullptr) {
++      m_codexData.hasData = true;
++      m_codexData.error.clear();
++
++      const auto& usage = item->contains("usage") && (*item)["usage"].is_object() ? (*item)["usage"] : *item;
++
++      m_codexData.accountEmail = usage.value("accountEmail", item->value("account", ""));
++      m_codexData.loginMethod = usage.value("loginMethod", item->value("loginMethod", ""));
++
++      if (usage.contains("primary") && usage["primary"].is_object()) {
++        const auto& p = usage["primary"];
++        m_codexData.primary.title = "5-Hour Limit";
++        m_codexData.primary.usedPercent = p.value("usedPercent", 0.0F);
++        m_codexData.primary.resetDesc = p.value("resetDescription", "");
++        m_codexData.primary.resetsAt = p.value("resetsAt", "");
++      }
++
++      if (usage.contains("secondary") && usage["secondary"].is_object()) {
++        const auto& s = usage["secondary"];
++        m_codexData.secondary.title = "Weekly Limit";
++        m_codexData.secondary.usedPercent = s.value("usedPercent", 0.0F);
++        m_codexData.secondary.resetDesc = s.value("resetDescription", "");
++        m_codexData.secondary.resetsAt = s.value("resetsAt", "");
++      }
++
++      if (item->contains("pace") && (*item)["pace"].is_object()) {
++        const auto& pace = (*item)["pace"];
++        if (pace.contains("secondary") && pace["secondary"].is_object()) {
++          const auto& ps = pace["secondary"];
++          std::string summary = ps.value("summary", "");
++          if (!summary.empty()) {
++            auto barPos = summary.find('|');
++            if (barPos != std::string::npos) {
++              summary = summary.substr(0, barPos);
++              while (!summary.empty() && summary.back() == ' ') {
++                summary.pop_back();
++              }
++            }
++            m_codexData.paceSummary = summary;
++          }
++        }
++      }
++
++      m_codexData.updatedAt = "Updated";
++    }
++  } catch (...) {
++  }
++}
++
++void HomeTab::refreshCodexUsage(bool force) {
++  if (m_codexFetchInFlight) {
++    return;
++  }
++  const auto now = std::chrono::steady_clock::now();
++  if (!force && m_lastCodexFetch != std::chrono::steady_clock::time_point{} &&
++      (now - m_lastCodexFetch) < std::chrono::seconds(60)) {
++    return;
++  }
++
++  m_codexFetchInFlight = true;
++  if (m_codexUpdatedLabel != nullptr) {
++    m_codexUpdatedLabel->setText("Refreshing…");
++  }
++
++  process::RunOptions options;
++  options.timeout = std::chrono::milliseconds(30000);
++  process::RunCallbacks callbacks;
++  callbacks.onExit = [this](process::RunResult res) {
++    DeferredCall::callLater([this, exitCode = res.exitCode, out = std::move(res.out)]() {
++      m_codexFetchInFlight = false;
++      m_lastCodexFetch = std::chrono::steady_clock::now();
++      if (exitCode == 0 && !out.empty()) {
++        parseCodexJson(out);
++        scripting::PluginStateStore::instance().set("salemsayed/codexbar-meter", "providers", out);
++        if (const char* home = std::getenv("HOME"); home != nullptr) {
++          std::filesystem::path cachePath = std::filesystem::path(home) / ".cache/noctalia/codexbar_cache.json";
++          std::error_code ec;
++          std::filesystem::create_directories(cachePath.parent_path(), ec);
++          std::ofstream f(cachePath);
++          if (f.is_open()) {
++            f << out;
++          }
++        }
++        syncCodexCard();
++      } else {
++        if (m_codexUpdatedLabel != nullptr) {
++          m_codexUpdatedLabel->setText(m_codexData.hasData ? "Refresh failed" : "Error");
++        }
++      }
++      PanelManager::instance().requestRedraw();
++    });
++  };
++
++  const std::string cmd = "codexbar usage --format json --json-only";
++  if (!process::runAsync(cmd, std::move(callbacks), options)) {
++    m_codexFetchInFlight = false;
++    if (m_codexUpdatedLabel != nullptr) {
++      m_codexUpdatedLabel->setText("Command failed");
++    }
++  }
++}
++
++void HomeTab::syncCodexCard() {
++  if (m_codexCard == nullptr) {
++    return;
++  }
++  if (!m_codexData.hasData) {
++    if (m_codexAccountLabel != nullptr) {
++      m_codexAccountLabel->setText("Loading…");
++    }
++    return;
++  }
++
++  if (m_codexAccountLabel != nullptr) {
++    std::string acc = m_codexData.accountEmail;
++    if (!m_codexData.loginMethod.empty()) {
++      std::string m = m_codexData.loginMethod;
++      if (!m.empty()) {
++        m[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(m[0])));
++      }
++      acc += " (" + m + ")";
++    }
++    m_codexAccountLabel->setText(acc);
++  }
++
++  if (m_codexUpdatedLabel != nullptr && !m_codexFetchInFlight) {
++    m_codexUpdatedLabel->setText(m_codexData.updatedAt);
++  }
++
++  if (m_codex5hInfoLabel != nullptr) {
++    std::string resetStr = m_codexData.primary.resetDesc.empty() ? "" : " · Resets " + m_codexData.primary.resetDesc;
++    m_codex5hInfoLabel->setText(std::format("{:.0F}% used{}", m_codexData.primary.usedPercent, resetStr));
++  }
++  if (m_codex5hProgress != nullptr) {
++    const float pct = std::clamp(m_codexData.primary.usedPercent / 100.0F, 0.0F, 1.0F);
++    m_codex5hProgress->setProgress(pct);
++    if (m_codexData.primary.usedPercent >= 90.0F) {
++      m_codex5hProgress->setFill(colorSpecFromRole(ColorRole::Error));
++    } else if (m_codexData.primary.usedPercent >= 75.0F) {
++      m_codex5hProgress->setFill(colorSpecFromRole(ColorRole::Tertiary));
++    } else {
++      m_codex5hProgress->setFill(colorSpecFromRole(ColorRole::Primary));
++    }
++  }
++
++  if (m_codexWeeklyInfoLabel != nullptr) {
++    std::string resetStr = m_codexData.secondary.resetDesc.empty() ? "" : " · Resets " + m_codexData.secondary.resetDesc;
++    m_codexWeeklyInfoLabel->setText(std::format("{:.0F}% used{}", m_codexData.secondary.usedPercent, resetStr));
++  }
++  if (m_codexWeeklyProgress != nullptr) {
++    const float pct = std::clamp(m_codexData.secondary.usedPercent / 100.0F, 0.0F, 1.0F);
++    m_codexWeeklyProgress->setProgress(pct);
++    if (m_codexData.secondary.usedPercent >= 90.0F) {
++      m_codexWeeklyProgress->setFill(colorSpecFromRole(ColorRole::Error));
++    } else if (m_codexData.secondary.usedPercent >= 75.0F) {
++      m_codexWeeklyProgress->setFill(colorSpecFromRole(ColorRole::Tertiary));
++    } else {
++      m_codexWeeklyProgress->setFill(colorSpecFromRole(ColorRole::Secondary));
++    }
++  }
++
++  if (m_codexPaceLabel != nullptr) {
++    if (!m_codexData.paceSummary.empty()) {
++      m_codexPaceLabel->setText("Pace: " + m_codexData.paceSummary);
++    } else {
++      m_codexPaceLabel->setText("Status: Active");
++    }
++  }
++}
+--- a/src/shell/control_center/tabs/home_tab.h
++++ b/src/shell/control_center/tabs/home_tab.h
+@@ -28,6 +28,7 @@
+ class Image;
+ class InputArea;
+ class Label;
++class ProgressBar;
+ class Shortcut;
+ class Wallpaper;
+ class ClipboardService;
+@@ -85,6 +86,43 @@
+   bool resizeMediaArtToCard();
+   void onPanelCardOpacityChanged(float opacity) override;
+ 
++  struct CodexWindow {
++    std::string title;
++    float usedPercent = 0.0F;
++    std::string resetDesc;
++    std::string resetsAt;
++  };
++
++  struct CodexUsageData {
++    std::string accountEmail;
++    std::string loginMethod;
++    std::string updatedAt;
++    CodexWindow primary;
++    CodexWindow secondary;
++    std::string paceSummary;
++    std::string error;
++    bool hasData = false;
++  };
++
++  void refreshCodexUsage(bool force = false);
++  void parseCodexJson(const std::string& jsonStr);
++  void syncCodexCard();
++
++  Flex* m_codexCard = nullptr;
++  Label* m_codexAccountLabel = nullptr;
++  Label* m_codexUpdatedLabel = nullptr;
++  Label* m_codex5hInfoLabel = nullptr;
++  ProgressBar* m_codex5hProgress = nullptr;
++  Label* m_codexWeeklyInfoLabel = nullptr;
++  ProgressBar* m_codexWeeklyProgress = nullptr;
++  Label* m_codexPaceLabel = nullptr;
++  InputArea* m_codexCardKeyboardArea = nullptr;
++  InputArea* m_codexCardArea = nullptr;
++
++  CodexUsageData m_codexData;
++  std::chrono::steady_clock::time_point m_lastCodexFetch{};
++  bool m_codexFetchInFlight = false;
++
+   MprisService* m_mpris = nullptr;
+   HttpClient* m_httpClient = nullptr;
+   WeatherService* m_weather = nullptr;

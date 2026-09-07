@@ -66,7 +66,7 @@ in {
                 postBuild = ''
                     rm -f $out/bin/noctalia
                     makeWrapper ${lib.getExe patched} $out/bin/noctalia \
-                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil ]}
+                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil (import ../../../packages/ai-meter.nix { inherit pkgs; }).codexbar ]}
                 '';
             };
             description = "The noctalia package to use.";

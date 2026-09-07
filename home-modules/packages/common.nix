@@ -48,6 +48,7 @@ in {
             dust duf
             ncdu
             openspec
+            gh
         ];
     };
 }

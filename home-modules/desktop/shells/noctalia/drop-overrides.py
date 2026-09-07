@@ -5,6 +5,7 @@ from typing import List
 
 
 HEADERS: List[str] = [
+    '[bar]',
     '[widget.taskbar]',
     '[widget.workspaces]',
     '[control_center]',
