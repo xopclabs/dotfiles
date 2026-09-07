@@ -294,6 +294,7 @@ in {
                             show_all_outputs = cfg.showOnlyOn != null;
                             show_active_indicator = false;
                             icon_scale = 1.0;
+                            icon_cell = 0.5;
                             icon_source = "glyphs";
                             icon_glyph_default = icons.defaultTabler;
                             icon_glyphs = icons.tablerByAppId;

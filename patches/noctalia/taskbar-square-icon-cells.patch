@@ -1,0 +1,208 @@
+Pad workspace-group icon slots between glyph wrap and a capsule square.
+icon_cell 0 wraps the glyph; 1 matches bar capsule width.
+
+--- a/src/shell/bar/widgets/taskbar_widget.cpp
++++ b/src/shell/bar/widgets/taskbar_widget.cpp
+@@ -884,6 +884,17 @@
+       std::min(m_windowTitleMaxWidth * m_contentScale, std::max(0.0F, maxTileWidth - tileSize - windowTitleGap));
+   const bool showWindowTitle = m_showWindowTitle && windowTitleWidth > minWindowTitleWidth;
+   const float tileWidthWithTitle = tileSize + (showWindowTitle ? windowTitleWidth + windowTitleGap : 0.0F);
++  const float iconCell = std::clamp(m_configOptions.iconCell, 0.0F, 1.0F);
++  float iconCellSize = tileSize;
++  if (m_groupByWorkspace && m_workspaceGroupCapsule && barCross > 0.0F && capsuleThickness > 0.0F) {
++    float targetCross = std::max(1.0F, std::round(barCross * capsuleThickness));
++    if (groupedCrossInner > 0.0F) {
++      targetCross = std::min(targetCross, groupedCrossInner);
++    }
++    iconCellSize = std::round(tileSize + (targetCross - tileSize) * iconCell);
++  }
++  const float tileFrameWidth = std::max(tileWidthWithTitle, iconCellSize);
++  const float tileFrameHeight = iconCellSize;
+ 
+   auto attachHover = [this](InputArea& area, float width, float height) {
+     auto hoverBox = ui::box({
+@@ -959,7 +970,7 @@
+     }
+     const TaskModel& task = *taskModel;
+     auto area = ui::inputArea({});
+-    area->setFrameSize(tileWidthWithTitle, tileSize);
++    area->setFrameSize(tileFrameWidth, tileFrameHeight);
+     float tileOpacity = task.active ? m_activeOpacity : m_inactiveOpacity;
+     // Pinned-but-not-running tiles are launchers, dim them so they don't read as open apps.
+     if (task.pinned && !task.running) {
+@@ -1136,8 +1147,8 @@
+             .align = FlexAlign::Center,
+             .justify = showWindowTitle ? FlexJustify::Start : FlexJustify::Center,
+             .gap = showWindowTitle ? windowTitleGap : tilePadding,
+-            .width = tileWidthWithTitle,
+-            .height = tileSize,
++            .width = tileFrameWidth,
++            .height = tileFrameHeight,
+         }
+     );
+ 
+@@ -1194,8 +1205,8 @@
+       const float runHeight =
+           dotSize * static_cast<float>(dotCount) + dotGap * static_cast<float>(dotCount > 0 ? dotCount - 1 : 0);
+       const float iconRightInset = std::round(std::max(1.0F, iconSize * 0.08F));
+-      const float dotX = std::round(centeredOffset(tileSize, iconSize) + iconSize - dotSize - iconRightInset);
+-      const float startY = std::round(centeredOffset(tileSize, iconSize) + (iconSize - runHeight) * 0.5F);
++      const float dotX = std::round(centeredOffset(tileFrameWidth, iconSize) + iconSize - dotSize - iconRightInset);
++      const float startY = std::round(centeredOffset(tileFrameHeight, iconSize) + (iconSize - runHeight) * 0.5F);
+       const ColorSpec dotColor = colorSpecFromRole(ColorRole::Primary, 0.9F);
+ 
+       for (std::size_t i = 0; i < dotCount; ++i) {
+@@ -1221,12 +1232,12 @@
+         auto indicator = ui::box({
+             .fill = m_activeIndicatorColor,
+             .radius = lineThickness * 0.5F,
+-            .width = tileWidthWithTitle - tilePadding * 2,
++            .width = tileFrameWidth - tilePadding * 2,
+             .height = lineThickness,
+         });
+         indicatorPtr = indicator.get();
+         indicator->setVisible(task.active);
+-        indicator->setPosition(tilePadding, std::round(tileSize));
++        indicator->setPosition(tilePadding, std::round(tileFrameHeight));
+         area->addChild(std::move(indicator));
+       } else {
+         auto indicator = ui::box({
+@@ -1237,7 +1248,7 @@
+         });
+         indicatorPtr = indicator.get();
+         indicator->setVisible(task.active);
+-        indicator->setPosition(std::round((tileSize - d) * 0.5F), std::round(tileSize - d - bottomInset));
++        indicator->setPosition(std::round((tileFrameWidth - d) * 0.5F), std::round(tileFrameHeight - d - bottomInset));
+         area->addChild(std::move(indicator));
+       }
+     }
+@@ -1254,13 +1265,14 @@
+         .titleLabel = titleLabelPtr,
+         .activeIndicator = indicatorPtr,
+     });
+-    attachHover(*area, tileWidthWithTitle, tileSize);
++    attachHover(*area, tileFrameWidth, tileFrameHeight);
+     return area;
+   };
+ 
+   if (m_groupByWorkspace && !m_workspaces.empty()) {
+     const float groupGap = Style::spaceXs * m_contentScale;
+-    const float groupPad = Style::spaceXs * m_contentScale;
++    const float groupPad = std::round(groupGap * (1.0F - iconCell));
++    const float iconGap = groupPad;
+ 
+     const bool inlineBadge = m_showWorkspaceLabel && m_workspaceLabelPlacement == WorkspaceLabelPlacement::Inside;
+     const bool externalBadge = m_showWorkspaceLabel && !inlineBadge;
+@@ -1585,11 +1597,11 @@
+       }
+       if (groupedCrossInner > 0.0F) {
+         if (m_vertical) {
+-          const float maxCrossPad = std::max(0.0F, (groupedCrossInner - tileWidthWithTitle) * 0.5F);
++          const float maxCrossPad = std::max(0.0F, (groupedCrossInner - tileFrameWidth) * 0.5F);
+           groupPadLeft = std::min(groupPadLeft, maxCrossPad);
+           groupPadRight = std::min(groupPadRight, maxCrossPad);
+         } else {
+-          const float maxCrossPad = std::max(0.0F, (groupedCrossInner - tileSize) * 0.5F);
++          const float maxCrossPad = std::max(0.0F, (groupedCrossInner - tileFrameHeight) * 0.5F);
+           groupPadTop = std::min(groupPadTop, maxCrossPad);
+           groupPadBottom = std::min(groupPadBottom, maxCrossPad);
+         }
+@@ -1600,24 +1612,24 @@
+           targetCross = std::min(targetCross, groupedCrossInner);
+         }
+         if (m_vertical) {
+-          const float extra = std::max(0.0F, targetCross - tileWidthWithTitle);
++          const float extra = std::max(0.0F, targetCross - tileFrameWidth);
+           groupPadLeft = std::floor(extra * 0.5F);
+           groupPadRight = extra - groupPadLeft;
+         } else {
+-          const float extra = std::max(0.0F, targetCross - tileSize);
++          const float extra = std::max(0.0F, targetCross - tileFrameHeight);
+           groupPadTop = std::floor(extra * 0.5F);
+           groupPadBottom = extra - groupPadTop;
+         }
+       }
+-      const float crossSize = m_vertical ? std::round(tileWidthWithTitle + groupPadLeft + groupPadRight)
+-                                         : std::round(tileSize + groupPadTop + groupPadBottom);
++      const float crossSize = m_vertical ? std::round(tileFrameWidth + groupPadLeft + groupPadRight)
++                                         : std::round(tileFrameHeight + groupPadTop + groupPadBottom);
+ 
+       auto group = ui::flex(
+           m_vertical ? FlexDirection::Vertical : FlexDirection::Horizontal,
+           {
+               .align = FlexAlign::Center,
+               .justify = FlexJustify::Center,
+-              .gap = groupGap,
++              .gap = iconGap,
+               .fill = m_workspaceGroupCapsule ? surfaceFill : clearColorSpec(),
+               .radius = m_workspaceGroupCapsule ? resolvedBarCapsuleRadius(crossSize, crossSize) : 0.0F,
+               .border = clearColorSpec(),
+@@ -1643,7 +1655,7 @@
+       if (emptyWorkspace) {
+         if (!inlineBadge || !m_showWorkspaceLabel) {
+           auto switcher = ui::inputArea({});
+-          switcher->setFrameSize(tileSize, tileSize);
++          switcher->setFrameSize(tileFrameWidth, tileFrameHeight);
+           switcher->setAcceptedButtons(InputArea::buttonMask(BTN_LEFT));
+           auto wsCopy = ws.workspace;
+           wl_output* const wsHost = workspaceHostOutput(ws);
+@@ -1656,9 +1668,9 @@
+         } else {
+           // Inline badge is clickable; reserve tile cross extent so empty groups match occupied ones.
+           if (m_vertical) {
+-            group->setMinWidth(groupPadLeft + tileSize + groupPadRight);
++            group->setMinWidth(groupPadLeft + tileFrameWidth + groupPadRight);
+           } else {
+-            group->setMinHeight(groupPadTop + tileSize + groupPadBottom);
++            group->setMinHeight(groupPadTop + tileFrameHeight + groupPadBottom);
+           }
+         }
+       } else if (m_workspaceGroupContent == WorkspaceGroupContent::Icons) {
+--- a/src/shell/bar/widgets/taskbar_widget.h
++++ b/src/shell/bar/widgets/taskbar_widget.h
+@@ -64,6 +64,7 @@
+   float activeOpacity = 1.0F;
+   float inactiveOpacity = 1.0F;
+   float iconScale = 1.0F;
++  float iconCell = 0.0F;
+   int itemSpacing = 4;
+   std::vector<std::string> pinned;
+   float pinnedOpacity = 0.5F;
+--- a/src/shell/bar/widgets/taskbar_widget_definition.cpp
++++ b/src/shell/bar/widgets/taskbar_widget_definition.cpp
+@@ -257,6 +257,22 @@
+                           ),
+                       }
+                   ),
++                  field<&Options::iconCell>({
++                      .key = "icon_cell",
++                      .minValue = 0.0,
++                      .maxValue = 1.0,
++                      .step = 0.05,
++                      .presentation = presentation(
++                          "taskbar.grouping",
++                          all(
++                              {
++                                  {"group_by_workspace", {"true"}},
++                                  {"workspace_group_content", {"icons"}},
++                              }
++                          ),
++                          true, "settings.widgets.settings.icon-cell.description"
++                      ),
++                  }),
+                   field<&Options::showWorkspaceLabel>({
+                       .key = "show_workspace_label",
+                       .presentation = presentation("taskbar.workspace-labels", groupedOnly(), true),
+--- a/assets/translations/en.json
++++ b/assets/translations/en.json
+@@ -4085,6 +4085,10 @@
+           "description": "Tabler glyph used when an app has no mapping and unmapped apps use a placeholder",
+           "label": "Default Icon Glyph"
+         },
++        "icon-cell": {
++          "description": "How square each workspace icon slot is. 0 wraps the glyph; 1 matches the bar capsule width",
++          "label": "Icon Cell"
++        },
+         "icon-glyphs": {
+           "description": "Map app ids to Tabler names (brand-firefox) or nerd-font characters. Keys may also be title:youtube",
+           "label": "App Icon Glyphs"
