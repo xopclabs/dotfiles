@@ -269,6 +269,14 @@ in {
                     "XF86PowerOff".action.spawn = [ "systemctl" "suspend" ];
                 } // lib.optionalAttrs config.modules.desktop.shells.noctalia.enable {
                     "Mod+Comma".action.spawn-sh = "noctalia msg settings-toggle";
+                    "XF86MonBrightnessUp" = {
+                        allow-when-locked = true;
+                        action.spawn = [ "noctalia" "msg" "brightness-up" "5%" ];
+                    };
+                    "XF86MonBrightnessDown" = {
+                        allow-when-locked = true;
+                        action.spawn = [ "noctalia" "msg" "brightness-down" "5%" ];
+                    };
                 } // cfg.extraBinds;
 
                 switch-events.lid-close.action.spawn = [ "systemctl" "suspend" ];

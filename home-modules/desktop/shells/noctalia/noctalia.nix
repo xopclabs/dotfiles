@@ -9,6 +9,17 @@ let
     iconScale = 1.25;
     controlScale = 1.5;
 
+    hardwareCfg = config.metadata.hardware;
+    internalMon = hardwareCfg.monitors.internal;
+    brightnessMonitor =
+        lib.optionalAttrs (internalMon != null && internalMon.connector != null) {
+            ${internalMon.connector} = { backend = "backlight"; };
+        }
+        // lib.mapAttrs' (_: mon: {
+            name = if mon.connector != null then mon.connector else mon.name;
+            value = { backend = "ddcutil"; };
+        }) hardwareCfg.monitors.external;
+
     groupStyle = {
         fill = "#${palette.base01}";
         radius = 0.0;
@@ -43,9 +54,21 @@ in {
 
         package = mkOption {
             type = types.nullOr types.package;
-            default = (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default or pkgs.noctalia).overrideAttrs (old: {
-                patches = (old.patches or []) ++ (import ../../../../patches { inherit lib; }).noctalia;
-            });
+            default = let
+                patched = (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default or pkgs.noctalia).overrideAttrs (old: {
+                    patches = (old.patches or []) ++ (import ../../../../patches { inherit lib; }).noctalia;
+                });
+            in pkgs.symlinkJoin {
+                name = "noctalia";
+                paths = [ patched ];
+                nativeBuildInputs = [ pkgs.makeWrapper ];
+                inherit (patched) meta;
+                postBuild = ''
+                    rm -f $out/bin/noctalia
+                    makeWrapper ${lib.getExe patched} $out/bin/noctalia \
+                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil ]}
+                '';
+            };
             description = "The noctalia package to use.";
         };
 
@@ -64,6 +87,7 @@ in {
 
     config = mkIf cfg.enable {
         home.packages = [
+            pkgs.ddcutil
             (pkgs.writeShellScriptBin "noctalia-restart" ''
                 # Drop GUI overrides so Nix-declared config takes precedence
                 settings="''${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
@@ -106,6 +130,11 @@ in {
                     nightlight = {
                         temperature_day = 10000;
                         temperature_night = 3200;
+                    };
+
+                    brightness = {
+                        enable_ddcutil = true;
+                        monitor = brightnessMonitor;
                     };
 
                     osd = {

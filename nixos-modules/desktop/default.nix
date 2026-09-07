@@ -14,6 +14,7 @@
         ./virtual_webcam.nix
         ./ereader-relay.nix
         ./vanta.nix
+        ./ddcutil.nix
     ];
 }
 
