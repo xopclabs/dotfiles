@@ -10,7 +10,10 @@ let
         defaultProvider = "openai-codex";
         enableInstallTelemetry = false;
         tuiMode = "regular";
-        packages = [ "npm:pi-web-access@0.28.0" ];
+        packages = [
+            "npm:pi-web-access@0.28.0"
+            "npm:pi-open-tui"
+        ];
     };
 in {
     options.modules.agents.pi = { enable = mkEnableOption "pi"; };
