@@ -122,6 +122,8 @@ in {
 
                     control_center.hidden_tabs = [ "media" ];
 
+                    notification.prefer_app_monitor = true;
+
                     # Custom palette from the systemwide base16 scheme.
                     # Stylix's noctalia target is disabled so it cannot force
                     # light mode or its own hover/primary mapping.

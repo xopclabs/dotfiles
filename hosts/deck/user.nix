@@ -11,7 +11,10 @@
     
     config.modules = {
         desktop = {
-            shells.noctalia.enable = true;
+            shells.noctalia = {
+                enable = true;
+                settings.notification.monitors = [ config.metadata.hardware.monitors.internal.connector ];
+            };
             wm = {
                 hyprland.enable = false;
                 niri.enable = true;

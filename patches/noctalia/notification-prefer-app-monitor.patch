@@ -1,0 +1,540 @@
+diff -ruN noctalia-src/assets/translations/en.json noctalia-work/assets/translations/en.json
+--- noctalia-src/assets/translations/en.json	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/assets/translations/en.json	2026-09-07 17:55:10.813077864 +0200
+@@ -2284,6 +2284,10 @@
+           "description": "Choose which monitors show notification toasts; leave empty to show on all monitors",
+           "label": "Monitors"
+         },
++        "prefer-app-monitor": {
++          "description": "If the notifying app has an open window, show its toast only on that window's monitor before falling back to the monitor list",
++          "label": "Prefer App Monitor"
++        },
+         "offset-x": {
+           "description": "Absolute horizontal margin from the screen or bar edge",
+           "label": "Horizontal Margin"
+diff -ruN noctalia-src/src/app/application_ui.cpp noctalia-work/src/app/application_ui.cpp
+--- noctalia-src/src/app/application_ui.cpp	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/src/app/application_ui.cpp	2026-09-07 17:50:24.471938936 +0200
+@@ -707,7 +707,9 @@
+ }
+ 
+ void Application::initNotificationAndOsd() {
+-  m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
++  m_notificationToast.initialize(
++      m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_compositorPlatform, &m_httpClient
++  );
+   m_configService.addReloadCallback([this]() { m_notificationToast.onConfigReload(); });
+   auto applyNotificationFilterConfig = [this]() {
+     m_notificationManager.setFilters(m_configService.config().notification.filters);
+diff -ruN noctalia-src/src/config/config_types.h noctalia-work/src/config/config_types.h
+--- noctalia-src/src/config/config_types.h	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/src/config/config_types.h	2026-09-07 17:50:24.471938936 +0200
+@@ -752,6 +752,7 @@
+   int offsetX = 20;                // absolute horizontal margin from the screen edge
+   int offsetY = 8;                 // absolute vertical margin from the screen edge
+   std::vector<std::string> monitors;
++  bool preferAppMonitor = false;
+   bool collapseOnDismiss = true;
+   int historyRetentionHours = 0;
+   int maxVisible = 0; // 0 = unlimited (space-based only)
+diff -ruN noctalia-src/src/config/schema/config_schema.cpp noctalia-work/src/config/schema/config_schema.cpp
+--- noctalia-src/src/config/schema/config_schema.cpp	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/src/config/schema/config_schema.cpp	2026-09-07 17:50:24.471938936 +0200
+@@ -256,6 +256,7 @@
+         field(&NotificationConfig::offsetX, "offset_x"),
+         field(&NotificationConfig::offsetY, "offset_y"),
+         field(&NotificationConfig::monitors, "monitors"),
++        field(&NotificationConfig::preferAppMonitor, "prefer_app_monitor"),
+         field(&NotificationConfig::collapseOnDismiss, "collapse_on_dismiss"),
+         field(&NotificationConfig::historyRetentionHours, "history_retention_hours", Range<std::int64_t>{0, 8760}),
+         field(&NotificationConfig::maxVisible, "max_visible", Range<std::int64_t>{0, 20}),
+diff -ruN noctalia-src/src/shell/notification/notification_toast.cpp noctalia-work/src/shell/notification/notification_toast.cpp
+--- noctalia-src/src/shell/notification/notification_toast.cpp	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/src/shell/notification/notification_toast.cpp	2026-09-07 17:59:09.660778813 +0200
+@@ -1,5 +1,6 @@
+ #include "shell/notification/notification_toast.h"
+ 
++#include "compositors/compositor_platform.h"
+ #include "config/config_service.h"
+ #include "config/config_types.h"
+ #include "core/deferred_call.h"
+@@ -267,6 +268,56 @@
+ 
+   std::int32_t outputLogicalHeight(const WaylandOutput& output) { return output.effectiveLogicalHeight(); }
+ 
++  std::string normalizedAppId(std::string_view raw) {
++    std::string value = StringUtils::toLower(StringUtils::trim(raw));
++    if (value.ends_with(".desktop")) {
++      value.resize(value.size() - std::string_view(".desktop").size());
++    }
++    for (char& ch : value) {
++      if (ch == '_' || ch == ' ') {
++        ch = '-';
++      }
++    }
++    return value;
++  }
++
++  std::vector<std::string> notificationAppMatchTokens(const Notification& notification) {
++    std::vector<std::string> tokens;
++    auto addToken = [&tokens](std::string_view raw) {
++      std::string token = normalizedAppId(raw);
++      if (!token.empty() && !std::ranges::contains(tokens, token)) {
++        tokens.push_back(std::move(token));
++      }
++    };
++
++    if (notification.desktopEntry.has_value()) {
++      addToken(*notification.desktopEntry);
++    }
++    addToken(notification.appName);
++    if (notification.icon.has_value()
++        && !notification.icon->starts_with("/")
++        && notification.icon->find(':') == std::string::npos) {
++      addToken(*notification.icon);
++    }
++    return tokens;
++  }
++
++  bool appIdMatchesAnyToken(std::string_view appId, const std::vector<std::string>& tokens) {
++    const std::string normalized = normalizedAppId(appId);
++    if (normalized.empty()) {
++      return false;
++    }
++    return std::ranges::any_of(tokens, [&normalized](const std::string& token) {
++      return normalized == token
++          || (normalized.size() > token.size() && normalized.ends_with(std::string(".") + token))
++          || (token.size() > normalized.size() && token.ends_with(std::string(".") + normalized));
++    });
++  }
++
++  bool outputNameInList(const WaylandOutput& output, const std::vector<std::string>& names) {
++    return std::ranges::contains(names, output.connectorName);
++  }
++
+   float notificationTextMaxWidth(float scale, bool showActions) {
+     return std::max(
+         0.0F,
+@@ -511,12 +562,13 @@
+ 
+ void NotificationToast::initialize(
+     WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications, RenderContext* renderContext,
+-    HttpClient* httpClient
++    CompositorPlatform* platform, HttpClient* httpClient
+ ) {
+   m_wayland = &wayland;
+   m_config = config;
+   m_notifications = notifications;
+   m_renderContext = renderContext;
++  m_platform = platform;
+   m_httpClient = httpClient;
+ 
+   m_callbackToken = m_notifications->addEventCallback([this](const Notification& n, NotificationEvent event) {
+@@ -553,7 +605,7 @@
+     if (entry.exiting || !wasPlaced[i]) {
+       continue;
+     }
+-    if (const auto placement = findPlacementY(entry.height); placement.has_value()) {
++    if (const auto placement = findPlacementY(entry); placement.has_value()) {
+       entry.y = *placement;
+     } else if (entry.rawTimeoutMs > 0 && m_notifications != nullptr) {
+       m_notifications->pauseExpiry(entry.notificationId);
+@@ -657,6 +709,17 @@
+         m_entries[i].icon = n.icon;
+         m_entries[i].imageData = n.imageData;
+         m_entries[i].dndPolicy = n.dndPolicy;
++        const auto nextTargetOutputNames = appOutputNamesForNotification(n);
++        const bool targetOutputsChanged = nextTargetOutputNames != m_entries[i].targetOutputNames;
++        m_entries[i].targetOutputNames = nextTargetOutputNames;
++        if (targetOutputsChanged) {
++          ensureSurfaces();
++          for (auto& inst : m_instances) {
++            if (i >= inst->cards.size()) {
++              inst->cards.resize(m_entries.size());
++            }
++          }
++        }
+         refreshEntryGeometry(m_entries[i]);
+         m_entries[i].rawTimeoutMs = n.timeout;
+         const bool layoutChanged = contentChanged
+@@ -820,7 +883,7 @@
+         if (!hasPlacement(m_entries[i])) {
+           syncEntryVisibility(i);
+           revealQueuedEntries();
+-        } else if (std::abs(previousHeight - m_entries[i].height) > 0.5F) {
++        } else if (targetOutputsChanged || std::abs(previousHeight - m_entries[i].height) > 0.5F) {
+           syncEntryVisibility(i);
+           revealQueuedEntries();
+         }
+@@ -866,8 +929,6 @@
+     }
+   }
+ 
+-  ensureSurfaces();
+-
+   PopupEntry entry;
+   entry.notificationId = n.id;
+   entry.appName = notificationDisplayAppName(n);
+@@ -880,18 +941,22 @@
+   entry.dndPolicy = n.dndPolicy;
+   entry.displayDurationMs = resolveDisplayDuration(n.timeout);
+   entry.rawTimeoutMs = n.timeout;
++  entry.targetOutputNames = appOutputNamesForNotification(n);
+   entry.remainingProgress = 1.0F;
+-  refreshEntryGeometry(entry);
+-  if (const auto placement = findPlacementY(entry.height); placement.has_value()) {
+-    entry.y = *placement;
+-  } else if (entry.rawTimeoutMs > 0 && m_notifications != nullptr) {
++  m_entries.push_back(std::move(entry));
++  std::size_t index = m_entries.size() - 1;
++  auto& storedEntry = m_entries[index];
++
++  ensureSurfaces();
++  refreshEntryGeometry(storedEntry);
++  if (const auto placement = findPlacementY(storedEntry); placement.has_value()) {
++    storedEntry.y = *placement;
++  } else if (storedEntry.rawTimeoutMs > 0 && m_notifications != nullptr) {
+     // Queued off-screen: freeze the manager-side auto-dismiss timer so the notification
+     // doesn't expire silently before a slot opens up. It will be resumed with the full
+     // duration when revealQueuedEntries() places the card.
+     m_notifications->pauseExpiry(n.id);
+   }
+-  m_entries.push_back(std::move(entry));
+-  std::size_t index = m_entries.size() - 1;
+ 
+   for (auto& inst : m_instances) {
+     if (inst->sceneRoot == nullptr) {
+@@ -1001,7 +1066,9 @@
+ 
+ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex) {
+   auto& entry = m_entries[entryIndex];
+-  if (!hasPlacement(entry) || !fitsOnSurface(entry, static_cast<float>(inst.surface->height()))) {
++  const auto* output = m_wayland != nullptr ? m_wayland->findOutputByWl(inst.output) : nullptr;
++  if (output == nullptr || !entryTargetsOutput(entry, *output) || !hasPlacement(entry)
++      || !fitsOnSurface(entry, static_cast<float>(inst.surface->height()))) {
+     return;
+   }
+ 
+@@ -1181,7 +1248,10 @@
+     }
+ 
+     auto& cs = inst->cards[entryIndex];
+-    const bool shouldShow = hasPlacement(m_entries[entryIndex])
++    const auto* output = m_wayland != nullptr ? m_wayland->findOutputByWl(inst->output) : nullptr;
++    const bool shouldShow = output != nullptr
++        && entryTargetsOutput(m_entries[entryIndex], *output)
++        && hasPlacement(m_entries[entryIndex])
+         && fitsOnSurface(m_entries[entryIndex], static_cast<float>(inst->surface->height()));
+     if (shouldShow) {
+       if (cs.cardNode == nullptr) {
+@@ -1456,7 +1526,7 @@
+       if (entry.exiting || hasPlacement(entry)) {
+         continue;
+       }
+-      const auto placement = findPlacementY(entry.height);
++      const auto placement = findPlacementY(entry);
+       if (!placement.has_value()) {
+         continue;
+       }
+@@ -1517,6 +1587,9 @@
+     if (i == anchorIndex || m_entries[i].exiting || !hasPlacement(m_entries[i])) {
+       continue;
+     }
++    if (!entriesMayShareOutput(m_entries[anchorIndex], m_entries[i])) {
++      continue;
++    }
+ 
+     const float entryTop = m_entries[i].y;
+     const float entryBottom = entryTop + m_entries[i].height;
+@@ -1537,7 +1610,7 @@
+ bool NotificationToast::hasPlacement(const PopupEntry& entry) const { return !entry.exiting && entry.y >= 0.0F; }
+ 
+ bool NotificationToast::canKeepPlacement(const PopupEntry& entry, std::optional<uint32_t> ignoreNotificationId) const {
+-  if (!hasPlacement(entry) || entry.y + entry.height > maxPlacementBottom() + 0.5F) {
++  if (!hasPlacement(entry) || entry.y + entry.height > maxPlacementBottom(&entry) + 0.5F) {
+     return false;
+   }
+ 
+@@ -1555,6 +1628,10 @@
+       continue;
+     }
+ 
++    if (!entriesMayShareOutput(entry, other)) {
++      continue;
++    }
++
+     const float otherTop = other.y;
+     const float otherBottom = other.y + other.height;
+     const bool separated = (bottom + layoutGap <= otherTop + 0.5F) || (otherBottom + layoutGap <= top + 0.5F);
+@@ -1606,6 +1683,33 @@
+   return m_config->config().notification.monitors;
+ }
+ 
++std::vector<std::string> NotificationToast::appOutputNamesForNotification(const Notification& notification) const {
++  if (m_config == nullptr || !m_config->config().notification.preferAppMonitor || m_platform == nullptr) {
++    return {};
++  }
++
++  const auto tokens = notificationAppMatchTokens(notification);
++  if (tokens.empty()) {
++    return {};
++  }
++
++  std::vector<std::string> outputNames;
++  for (const auto& output : m_platform->outputs()) {
++    if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
++      continue;
++    }
++
++    const auto assignments = m_platform->workspaceWindowAssignments(output.output);
++    const bool hasMatchingWindow = std::ranges::any_of(assignments, [&tokens](const WorkspaceWindowAssignment& window) {
++      return appIdMatchesAnyToken(window.appId, tokens);
++    });
++    if (hasMatchingWindow && !std::ranges::contains(outputNames, output.connectorName)) {
++      outputNames.push_back(output.connectorName);
++    }
++  }
++  return outputNames;
++}
++
+ bool NotificationToast::shouldRenderOnOutput(const WaylandOutput& output) const {
+   const auto selectedMonitors = notificationMonitors();
+   if (selectedMonitors.empty()) {
+@@ -1616,6 +1720,50 @@
+   });
+ }
+ 
++bool NotificationToast::entryHasPresentTarget(const PopupEntry& entry) const {
++  if (entry.targetOutputNames.empty() || m_wayland == nullptr) {
++    return false;
++  }
++  return std::ranges::any_of(m_wayland->outputs(), [&entry](const WaylandOutput& output) {
++    return output.done && output.output != nullptr && output.hasUsableGeometry()
++        && outputNameInList(output, entry.targetOutputNames);
++  });
++}
++
++bool NotificationToast::entryTargetsOutput(const PopupEntry& entry, const WaylandOutput& output) const {
++  if (entryHasPresentTarget(entry)) {
++    return outputNameInList(output, entry.targetOutputNames);
++  }
++  return shouldRenderOnOutput(output);
++}
++
++bool NotificationToast::entriesMayShareOutput(const PopupEntry& a, const PopupEntry& b) const {
++  if (m_wayland == nullptr) {
++    return true;
++  }
++  return std::ranges::any_of(m_wayland->outputs(), [this, &a, &b](const WaylandOutput& output) {
++    return output.done && output.output != nullptr && output.hasUsableGeometry() && entryTargetsOutput(a, output)
++        && entryTargetsOutput(b, output);
++  });
++}
++
++bool NotificationToast::outputNeededForNotifications(const WaylandOutput& output, bool anyConfiguredPresent) const {
++  bool needsDefaultRoute = m_entries.empty();
++  for (const auto& entry : m_entries) {
++    if (entry.exiting) {
++      continue;
++    }
++    if (entryHasPresentTarget(entry)) {
++      if (outputNameInList(output, entry.targetOutputNames)) {
++        return true;
++      }
++    } else {
++      needsDefaultRoute = true;
++    }
++  }
++  return needsDefaultRoute && (!anyConfiguredPresent || shouldRenderOnOutput(output));
++}
++
+ bool NotificationToast::isBottomStacking() const { return isBottomPosition(notificationPosition()); }
+ 
+ NotificationToast::RevealDirection NotificationToast::revealDirection() const {
+@@ -1661,7 +1809,7 @@
+ }
+ 
+ float NotificationToast::entryOffsetFromPlacementBottom(const PopupEntry& entry) const {
+-  return maxPlacementBottom() - entry.y;
++  return maxPlacementBottom(&entry) - entry.y;
+ }
+ 
+ float NotificationToast::cardSurfaceY(const Instance& inst, std::size_t entryIndex) const {
+@@ -1673,7 +1821,7 @@
+   const bool bottom = isBottomStacking();
+   const auto surfaceHeight = static_cast<float>(inst.surface->height());
+   const float layoutBottom = layoutBottomForSurfaceHeight(surfaceHeight);
+-  const float placementBottom = maxPlacementBottom();
++  const float placementBottom = maxPlacementBottom(&m_entries[entryIndex]);
+ 
+   // Collect this instance's present cards in from-the-edge stacking order. The "primary"
+   // coordinate is the distance along the stacking direction from the anchored edge,
+@@ -1719,21 +1867,28 @@
+   return bottom ? (layoutBottom - cursor) : cursor;
+ }
+ 
+-float NotificationToast::maxPlacementBottom() const {
++float NotificationToast::maxPlacementBottom(const PopupEntry* entry) const {
+   float maxSurfaceHeight = 0.0F;
+   bool haveSurfaceHeight = false;
+   for (const auto& inst : m_instances) {
+-    if (inst != nullptr && inst->surface != nullptr && inst->surface->height() > 0) {
+-      haveSurfaceHeight = true;
+-      maxSurfaceHeight = std::max(maxSurfaceHeight, static_cast<float>(inst->surface->height()));
++    if (inst == nullptr || inst->surface == nullptr || inst->surface->height() == 0) {
++      continue;
+     }
++    if (entry != nullptr) {
++      const auto* output = m_wayland != nullptr ? m_wayland->findOutputByWl(inst->output) : nullptr;
++      if (output == nullptr || !entryTargetsOutput(*entry, *output)) {
++        continue;
++      }
++    }
++    haveSurfaceHeight = true;
++    maxSurfaceHeight = std::max(maxSurfaceHeight, static_cast<float>(inst->surface->height()));
+   }
+   if (!haveSurfaceHeight && m_wayland != nullptr) {
+     for (const auto& output : m_wayland->outputs()) {
+       if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
+         continue;
+       }
+-      if (!shouldRenderOnOutput(output)) {
++      if (entry != nullptr ? !entryTargetsOutput(*entry, output) : !shouldRenderOnOutput(output)) {
+         continue;
+       }
+       haveSurfaceHeight = true;
+@@ -1910,7 +2065,7 @@
+ }
+ 
+ std::optional<float>
+-NotificationToast::findPlacementY(float candidateHeight, std::optional<uint32_t> ignoreNotificationId) const {
++NotificationToast::findPlacementY(const PopupEntry& candidate, std::optional<uint32_t> ignoreNotificationId) const {
+   struct Interval {
+     float top = 0.0F;
+     float bottom = 0.0F;
+@@ -1925,9 +2080,13 @@
+     if (ignoreNotificationId.has_value() && entry.notificationId == *ignoreNotificationId) {
+       continue;
+     }
++    if (!entriesMayShareOutput(candidate, entry)) {
++      continue;
++    }
+     occupied.push_back({entry.y, entry.y + entry.height});
+   }
+-  const float bottom = maxPlacementBottom();
++  const float bottom = maxPlacementBottom(&candidate);
++  const float candidateHeight = candidate.height;
+   const float scale = notificationUiScale(m_config);
+   const float layoutGap = kGap * scale;
+   const float topPadding = paddingTop(scale);
+@@ -2027,14 +2186,14 @@
+     if (output == nullptr || !output->done || !output->hasUsableGeometry()) {
+       return true;
+     }
+-    return anyConfiguredPresent && !shouldRenderOnOutput(*output);
++    return !outputNeededForNotifications(*output, anyConfiguredPresent);
+   });
+ 
+   for (const auto& output : m_wayland->outputs()) {
+     if (!output.done || output.output == nullptr || !output.hasUsableGeometry()) {
+       continue;
+     }
+-    if (anyConfiguredPresent && !shouldRenderOnOutput(output)) {
++    if (!outputNeededForNotifications(output, anyConfiguredPresent)) {
+       continue;
+     }
+ 
+@@ -2193,8 +2352,11 @@
+   // Build cards for any entries that already exist
+   inst.cards.clear();
+   inst.cards.resize(m_entries.size());
++  const auto* output = m_wayland != nullptr ? m_wayland->findOutputByWl(inst.output) : nullptr;
+   for (std::size_t i = 0; i < m_entries.size(); ++i) {
+-    if (!m_entries[i].exiting
++    if (output != nullptr
++        && entryTargetsOutput(m_entries[i], *output)
++        && !m_entries[i].exiting
+         && hasPlacement(m_entries[i])
+         && fitsOnSurface(m_entries[i], static_cast<float>(height))) {
+       addCardToInstance(inst, i);
+diff -ruN noctalia-src/src/shell/notification/notification_toast.h noctalia-work/src/shell/notification/notification_toast.h
+--- noctalia-src/src/shell/notification/notification_toast.h	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/src/shell/notification/notification_toast.h	2026-09-07 17:50:41.645379942 +0200
+@@ -11,6 +11,7 @@
+ #include <unordered_set>
+ #include <vector>
+ 
++class CompositorPlatform;
+ class ConfigService;
+ class HttpClient;
+ class Input;
+@@ -40,7 +41,7 @@
+ 
+   void initialize(
+       WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
+-      RenderContext* renderContext, HttpClient* httpClient = nullptr
++      RenderContext* renderContext, CompositorPlatform* platform = nullptr, HttpClient* httpClient = nullptr
+   );
+   void onConfigReload();
+   void onOutputChange();
+@@ -67,6 +68,9 @@
+     NotificationDndPolicy dndPolicy = NotificationDndPolicy::Respect;
+     int displayDurationMs = 0; // -1 = persistent (no auto-dismiss)
+     int32_t rawTimeoutMs = 0;  // raw DBus timeout; >0 means manager has an auto-expire timer we must coordinate with
++    // Connector names to route this toast to when the notifying app already has windows.
++    // Empty means use notification.monitors normally.
++    std::vector<std::string> targetOutputNames;
+     float remainingProgress = 1.0F;
+     float y = -1.0F; // stable top position while visible; negative = queued/off-screen
+     float height = 0.0F;
+@@ -173,12 +177,17 @@
+   [[nodiscard]] std::string notificationPosition() const;
+   [[nodiscard]] std::string notificationLayer() const;
+   [[nodiscard]] std::vector<std::string> notificationMonitors() const;
++  [[nodiscard]] std::vector<std::string> appOutputNamesForNotification(const Notification& notification) const;
+   [[nodiscard]] bool shouldRenderOnOutput(const WaylandOutput& output) const;
++  [[nodiscard]] bool entryHasPresentTarget(const PopupEntry& entry) const;
++  [[nodiscard]] bool entryTargetsOutput(const PopupEntry& entry, const WaylandOutput& output) const;
++  [[nodiscard]] bool entriesMayShareOutput(const PopupEntry& a, const PopupEntry& b) const;
++  [[nodiscard]] bool outputNeededForNotifications(const WaylandOutput& output, bool anyConfiguredPresent) const;
+   [[nodiscard]] bool isBottomStacking() const;
+   [[nodiscard]] RevealDirection revealDirection() const;
+   void refreshEntryGeometry(PopupEntry& entry) const;
+   [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
+-  [[nodiscard]] float maxPlacementBottom() const;
++  [[nodiscard]] float maxPlacementBottom(const PopupEntry* entry = nullptr) const;
+   [[nodiscard]] float entryOffsetFromPlacementBottom(const PopupEntry& entry) const;
+   // Resting surface Y for one instance's card, packed from the stacking edge using this
+   // instance's real per-card heights (CardState::clipHeight). Inter-card gaps are taken
+@@ -187,7 +196,7 @@
+   [[nodiscard]] float cardSurfaceY(const Instance& inst, std::size_t entryIndex) const;
+   void alignBottomStackToPlacementBottom();
+   [[nodiscard]] std::optional<float>
+-  findPlacementY(float entryHeight, std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
++  findPlacementY(const PopupEntry& entry, std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
+   [[nodiscard]] uint32_t surfaceHeightForOutput(wl_output* output) const;
+   // Configured render scale of a notification output, for pre-surface sizing.
+   [[nodiscard]] float notificationScale() const;
+@@ -195,6 +204,7 @@
+ 
+   WaylandConnection* m_wayland = nullptr;
+   ConfigService* m_config = nullptr;
++  CompositorPlatform* m_platform = nullptr;
+   NotificationManager* m_notifications = nullptr;
+   RenderContext* m_renderContext = nullptr;
+   HttpClient* m_httpClient = nullptr;
+diff -ruN noctalia-src/src/shell/settings/settings_registry.cpp noctalia-work/src/shell/settings/settings_registry.cpp
+--- noctalia-src/src/shell/settings/settings_registry.cpp	1970-01-01 01:00:01.000000000 +0100
++++ noctalia-work/src/shell/settings/settings_registry.cpp	2026-09-07 17:54:50.383581365 +0200
+@@ -2932,6 +2932,11 @@
+         "monitor output display screen"
+     ));
+     entries.push_back(makeEntry(
++        SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.prefer-app-monitor.label"),
++        tr("settings.schema.notifications.prefer-app-monitor.description"), {"notification", "prefer_app_monitor"},
++        ToggleSetting{cfg.notification.preferAppMonitor}, "application app window monitor output routing"
++    ));
++    entries.push_back(makeEntry(
+         SettingsSection::Notifications, "history", tr("settings.schema.notifications.history-retention-hours.label"),
+         tr("settings.schema.notifications.history-retention-hours.description"),
+         {"notification", "history_retention_hours"},
