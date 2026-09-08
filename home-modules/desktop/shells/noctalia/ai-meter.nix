@@ -50,8 +50,9 @@ let
             WEOF
                 chmod +x /tmp/which 2>/dev/null || true
             fi
-            exec $out/libexec/codexbar "$@"
             EOF
+
+            echo "exec $out/libexec/codexbar \"\$@\"" >> $out/bin/codexbar
             chmod +x $out/bin/codexbar
         '';
     };

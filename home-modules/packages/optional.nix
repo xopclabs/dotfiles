@@ -76,8 +76,6 @@ let cfg = config.modules.packages.optional;
             wrapProgram $out/bin/zoom-us --run ${ensureZoomWayland}
         '';
     };
-
-    aiMeters = import ./ai-meter.nix { inherit pkgs; };
 in {
     options.modules.packages.optional = { enable = mkEnableOption "optional"; };
     config = mkIf cfg.enable {
@@ -103,7 +101,6 @@ in {
             pkgs.android-tools
             pkgs.rclone
             pkgs.stremio-linux-shell
-            aiMeters.codexbar
         ];
 
         home.activation.zoomWaylandConf =

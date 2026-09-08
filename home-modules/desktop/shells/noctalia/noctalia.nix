@@ -5,6 +5,7 @@ let
     cfg = config.modules.desktop.shells.noctalia;
     palette = config.colorScheme.palette;
     icons = import ../../bars/app-icons.nix { inherit lib; };
+    aiMeters = import ./ai-meter.nix { inherit pkgs; };
 
     iconScale = 1.25;
     controlScale = 1.5;
@@ -66,7 +67,7 @@ in {
                 postBuild = ''
                     rm -f $out/bin/noctalia
                     makeWrapper ${lib.getExe patched} $out/bin/noctalia \
-                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil (import ../../../packages/ai-meter.nix { inherit pkgs; }).codexbar ]}
+                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil aiMeters.codexbar ]}
                 '';
             };
             description = "The noctalia package to use.";
@@ -88,6 +89,7 @@ in {
     config = mkIf cfg.enable {
         home.packages = [
             pkgs.ddcutil
+            aiMeters.codexbar
             (pkgs.writeShellScriptBin "noctalia-restart" ''
                 # Drop GUI overrides so Nix-declared config takes precedence
                 settings="''${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
