@@ -12,10 +12,12 @@
                 home = {
                     enable = true;
                     autostart = false;
+                    sopsFile = ../../../secrets/hosts/deck.yaml;
                 };
                 home_lan = {
                     enable = true;
                     autostart = true;
+                    sopsFile = ../../../secrets/hosts/deck.yaml;
                 };
                 home_pi = {
                     enable = true;

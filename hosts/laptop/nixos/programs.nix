@@ -12,10 +12,12 @@
                 home = {
                     enable = true;
                     autostart = false;
+                    sopsFile = ../../../secrets/hosts/laptop.yaml;
                 };
                 home_lan = {
                     enable = true;
                     autostart = false;
+                    sopsFile = ../../../secrets/hosts/laptop.yaml;
                 };
                 home_pi = {
                     enable = true;

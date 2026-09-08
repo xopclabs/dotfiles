@@ -26,13 +26,19 @@ in
                 '';
             };
             
+            forwardTlsUpstream = mkOption {
+                type = types.bool;
+                default = true;
+                description = "Use DNS-over-TLS for the default forward-zone upstreams.";
+            };
+
             upstreamServers = mkOption {
                 type = types.listOf types.str;
                 default = [
                     "9.9.9.9@853#dns.quad9.net"
                     "149.112.112.112@853#dns.quad9.net"
                 ];
-                description = "Upstream DNS-over-TLS servers (only used when forwardUpstream is true)";
+                description = "Default upstream DNS servers (only used when forwardUpstream is true). Include @853#name when forwardTlsUpstream is true.";
             };
         };
         
@@ -247,7 +253,7 @@ in
                     # Optionally forward all other queries to upstream DoT servers
                     ++ optional cfg.unbound.forwardUpstream {
                         name = ".";
-                        forward-tls-upstream = true;
+                        forward-tls-upstream = cfg.unbound.forwardTlsUpstream;
                         forward-addr = cfg.unbound.upstreamServers;
                     };
             };

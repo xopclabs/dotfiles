@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, options, ... }:
 
 with lib;
 let
@@ -34,13 +34,15 @@ in
         };
     };
 
-    config = mkIf cfg.enable {
-        services.wallpaper-generator = {
-            enable = true;
-            listenAddress = "127.0.0.1";
-            port = cfg.port;
-        };
-
+    config = mkIf cfg.enable (mkMerge [
+        (optionalAttrs (hasAttrByPath [ "services" "wallpaper-generator" ] options) {
+            services.wallpaper-generator = {
+                enable = true;
+                listenAddress = "127.0.0.1";
+                port = cfg.port;
+            };
+        })
+        {
         services.traefik.dynamicConfigOptions.http.middlewares = mkIf rateLimitEnabled {
             wallpaper-generator-ratelimit.rateLimit = {
                 # Generation is CPU-heavy and cache-bypass is a unique seed per request.
@@ -70,5 +72,6 @@ in
                 group = "Other";
             }
         ];
-    };
+        }
+    ]);
 }

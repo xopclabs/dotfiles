@@ -21,6 +21,11 @@ in
                         description = "Enable this peer";
                     };
                     autostart = mkEnableOption "Autostart this peer";
+                    sopsFile = mkOption {
+                        type = types.nullOr types.path;
+                        default = null;
+                        description = "Optional SOPS file for this peer config; defaults to the host defaultSopsFile.";
+                    };
                 };
             });
             default = {};
@@ -34,6 +39,8 @@ in
             name = "vpn/${name}";
             value = {
                 path = "/etc/wireguard/${name}.conf";
+            } // optionalAttrs (peer.sopsFile != null) {
+                sopsFile = peer.sopsFile;
             };
         }) cfg.peers;
 

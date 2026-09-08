@@ -91,7 +91,13 @@
                 subdomain = "pihole.vm.local";
                 socksProxy = "socks5h://127.0.0.1:10808";
             };
-            unbound.forwardUpstream = true;
+            unbound = {
+                forwardUpstream = true;
+                # Quad9/DoT returns Fastly POPs for cache.nixos.org that are flaky
+                # from Russia. Plain Google/Cloudflare DNS returns reachable POPs.
+                forwardTlsUpstream = false;
+                upstreamServers = [ "8.8.8.8" "1.1.1.1" ];
+            };
         };
 
         # VPN
@@ -113,6 +119,14 @@
                 pavel-pc = {
                     publicKey = "dgkPzUZ+R3ODZWzY46DROU7VOOvuvndJucQlWEu0UV0=";
                     allowedIPs = [ "10.250.250.4/32" ];
+                };
+                pavel-deck = {
+                    publicKey = "x3dOhPW67b4CzC8mdXXhP5RhruapLnoS+DyvcZ/dGGg=";
+                    allowedIPs = [ "10.250.250.10/32" ];
+                };
+                pavel-laptop = {
+                    publicKey = "5dHbRApQLj6rgDGmLrX/FByKnaZajACCxVajx/IelVQ=";
+                    allowedIPs = [ "10.250.250.11/32" ];
                 };
                 tv = {
                     publicKey = "HrTCQLCg8TBAm/9+VfiOijQ17jRO18DrSyj+a/cpgDw=";
