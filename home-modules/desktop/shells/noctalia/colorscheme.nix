@@ -49,6 +49,11 @@ in {
         mShadow = "#${palette.base00}";
         mHover = "#${palette.base03}";
         mOnHover = "#${palette.base06}";
+        mWarning = "#${palette.base09}";
+        mOrange = "#${palette.base09}";
+        mYellow = "#${palette.base0A}";
+        mGreen = "#${palette.base0B}";
+        mRed = "#${palette.base08}";
         inherit terminal;
     };
     light = {
@@ -68,6 +73,11 @@ in {
         mShadow = "#${palette.base04}";
         mHover = "#${palette.base04}";
         mOnHover = "#${palette.base00}";
+        mWarning = "#${palette.base09}";
+        mOrange = "#${palette.base09}";
+        mYellow = "#${palette.base0A}";
+        mGreen = "#${palette.base0B}";
+        mRed = "#${palette.base08}";
         terminal = terminal // {
             background = "#${palette.base06}";
             foreground = "#${palette.base00}";

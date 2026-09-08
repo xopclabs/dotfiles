@@ -1,27 +1,33 @@
-Pad workspace-group icon slots between glyph wrap and a capsule square.
-icon_cell 0 wraps the glyph; 1 matches bar capsule width.
+Pad workspace-group icons along the bar; always fill the capsule on the cross axis.
+icon_cell 0 wraps the glyph along the bar; 1 matches capsule width.
 
 --- a/src/shell/bar/widgets/taskbar_widget.cpp
 +++ b/src/shell/bar/widgets/taskbar_widget.cpp
-@@ -884,6 +884,17 @@
+@@ -884,6 +884,23 @@
        std::min(m_windowTitleMaxWidth * m_contentScale, std::max(0.0F, maxTileWidth - tileSize - windowTitleGap));
    const bool showWindowTitle = m_showWindowTitle && windowTitleWidth > minWindowTitleWidth;
    const float tileWidthWithTitle = tileSize + (showWindowTitle ? windowTitleWidth + windowTitleGap : 0.0F);
 +  const float iconCell = std::clamp(m_configOptions.iconCell, 0.0F, 1.0F);
-+  float iconCellSize = tileSize;
++  float tileFrameWidth = tileWidthWithTitle;
++  float tileFrameHeight = tileSize;
 +  if (m_groupByWorkspace && m_workspaceGroupCapsule && barCross > 0.0F && capsuleThickness > 0.0F) {
 +    float targetCross = std::max(1.0F, std::round(barCross * capsuleThickness));
 +    if (groupedCrossInner > 0.0F) {
 +      targetCross = std::min(targetCross, groupedCrossInner);
 +    }
-+    iconCellSize = std::round(tileSize + (targetCross - tileSize) * iconCell);
++    const float tileMain = std::round(tileSize + (targetCross - tileSize) * iconCell);
++    if (m_vertical) {
++      tileFrameWidth = std::max(tileWidthWithTitle, targetCross);
++      tileFrameHeight = tileMain;
++    } else {
++      tileFrameWidth = std::max(tileWidthWithTitle, tileMain);
++      tileFrameHeight = std::max(tileSize, targetCross);
++    }
 +  }
-+  const float tileFrameWidth = std::max(tileWidthWithTitle, iconCellSize);
-+  const float tileFrameHeight = iconCellSize;
  
    auto attachHover = [this](InputArea& area, float width, float height) {
      auto hoverBox = ui::box({
-@@ -959,7 +970,7 @@
+@@ -959,7 +976,7 @@
      }
      const TaskModel& task = *taskModel;
      auto area = ui::inputArea({});
@@ -30,7 +36,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
      float tileOpacity = task.active ? m_activeOpacity : m_inactiveOpacity;
      // Pinned-but-not-running tiles are launchers, dim them so they don't read as open apps.
      if (task.pinned && !task.running) {
-@@ -1136,8 +1147,8 @@
+@@ -1136,8 +1153,8 @@
              .align = FlexAlign::Center,
              .justify = showWindowTitle ? FlexJustify::Start : FlexJustify::Center,
              .gap = showWindowTitle ? windowTitleGap : tilePadding,
@@ -41,7 +47,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
          }
      );
  
-@@ -1194,8 +1205,8 @@
+@@ -1194,8 +1211,8 @@
        const float runHeight =
            dotSize * static_cast<float>(dotCount) + dotGap * static_cast<float>(dotCount > 0 ? dotCount - 1 : 0);
        const float iconRightInset = std::round(std::max(1.0F, iconSize * 0.08F));
@@ -52,7 +58,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
        const ColorSpec dotColor = colorSpecFromRole(ColorRole::Primary, 0.9F);
  
        for (std::size_t i = 0; i < dotCount; ++i) {
-@@ -1221,12 +1232,12 @@
+@@ -1221,12 +1238,12 @@
          auto indicator = ui::box({
              .fill = m_activeIndicatorColor,
              .radius = lineThickness * 0.5F,
@@ -67,7 +73,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
          area->addChild(std::move(indicator));
        } else {
          auto indicator = ui::box({
-@@ -1237,7 +1248,7 @@
+@@ -1237,7 +1254,7 @@
          });
          indicatorPtr = indicator.get();
          indicator->setVisible(task.active);
@@ -76,7 +82,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
          area->addChild(std::move(indicator));
        }
      }
-@@ -1254,13 +1265,14 @@
+@@ -1254,13 +1271,14 @@
          .titleLabel = titleLabelPtr,
          .activeIndicator = indicatorPtr,
      });
@@ -93,7 +99,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
  
      const bool inlineBadge = m_showWorkspaceLabel && m_workspaceLabelPlacement == WorkspaceLabelPlacement::Inside;
      const bool externalBadge = m_showWorkspaceLabel && !inlineBadge;
-@@ -1585,11 +1597,11 @@
+@@ -1585,11 +1603,11 @@
        }
        if (groupedCrossInner > 0.0F) {
          if (m_vertical) {
@@ -107,7 +113,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
            groupPadTop = std::min(groupPadTop, maxCrossPad);
            groupPadBottom = std::min(groupPadBottom, maxCrossPad);
          }
-@@ -1600,24 +1612,24 @@
+@@ -1600,24 +1618,24 @@
            targetCross = std::min(targetCross, groupedCrossInner);
          }
          if (m_vertical) {
@@ -137,7 +143,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
                .fill = m_workspaceGroupCapsule ? surfaceFill : clearColorSpec(),
                .radius = m_workspaceGroupCapsule ? resolvedBarCapsuleRadius(crossSize, crossSize) : 0.0F,
                .border = clearColorSpec(),
-@@ -1643,7 +1655,7 @@
+@@ -1643,7 +1661,7 @@
        if (emptyWorkspace) {
          if (!inlineBadge || !m_showWorkspaceLabel) {
            auto switcher = ui::inputArea({});
@@ -146,7 +152,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
            switcher->setAcceptedButtons(InputArea::buttonMask(BTN_LEFT));
            auto wsCopy = ws.workspace;
            wl_output* const wsHost = workspaceHostOutput(ws);
-@@ -1656,9 +1668,9 @@
+@@ -1656,9 +1674,9 @@
          } else {
            // Inline badge is clickable; reserve tile cross extent so empty groups match occupied ones.
            if (m_vertical) {
@@ -200,7 +206,7 @@ icon_cell 0 wraps the glyph; 1 matches bar capsule width.
            "label": "Default Icon Glyph"
          },
 +        "icon-cell": {
-+          "description": "How square each workspace icon slot is. 0 wraps the glyph; 1 matches the bar capsule width",
++          "description": "Along-bar padding of each workspace icon. 0 wraps the glyph; 1 matches capsule width. The other axis always fills the capsule",
 +          "label": "Icon Cell"
 +        },
          "icon-glyphs": {
