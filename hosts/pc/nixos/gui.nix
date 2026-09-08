@@ -1,0 +1,128 @@
+{ config, pkgs, inputs, lib, ... }:
+
+let
+  corefonts-subset = pkgs.runCommand "corefonts-subset" {} ''
+    mkdir -p $out/share/fonts/truetype
+    # Copy only subset of fonts from corefonts
+    for font in Times_New_Roman Arial Comic_Sans_MS; do
+        echo $font
+        cp "${pkgs.corefonts}/share/fonts/truetype/$font"*.ttf "$out/share/fonts/truetype/"
+        chmod 444 "$out/share/fonts/truetype/$font"*.ttf
+    done
+  '';
+in
+{
+    # Remove unecessary preinstalled packages
+    environment.defaultPackages = [ pkgs.sudo ];
+    services.xserver.desktopManager.xterm.enable = false;
+    services.displayManager.sddm.wayland.enable = true;
+
+    # Install fonts
+    fonts = {
+        packages = with pkgs; [
+            #times-new-roman
+            corefonts-subset
+            noto-fonts
+            noto-fonts-cjk-sans
+            jetbrains-mono
+            roboto
+            openmoji-color
+            nerd-fonts.jetbrains-mono
+            nerd-fonts.mononoki
+        ];
+
+        fontconfig = {
+            hinting.autohint = true;
+            defaultFonts = {
+              serif = [  "Noto Serif" ];
+              sansSerif = [ "DejaVu Sans" ];
+              monospace = [ "Mononoki Nerd Font Mono" ];
+              emoji = [ "OpenMoji Color" ];
+            };
+        };
+    };
+
+   programs.dconf.enable = true; 
+
+    # Wayland stuff: enable XDG integration, allow sway to use brillo
+    xdg = {
+        autostart.enable = true;
+        portal = {
+            enable = true;
+            extraPortals = with pkgs; [
+                xdg-desktop-portal-hyprland
+                xdg-desktop-portal-gnome
+                xdg-desktop-portal-gtk
+            ];
+            config = {
+                common.default = [ "gtk" ];
+                hyprland.default = [ "hyprland" "gtk" ];
+                niri.default = [ "gnome" "gtk" ];
+            };
+        };
+    };
+
+    # Set environment variables
+    environment.variables = {
+        XDG_DATA_HOME = "$HOME/.local/share";
+        QT_QPA_PLATFORM = "wayland";
+        QT_QPA_PLATFORMTHEME = "qt5ct";
+        MOZ_ENABLE_WAYLAND = "1";
+        DIRENV_LOG_FORMAT = "";
+        DISABLE_QT5_COMPAT = "0";
+    };
+
+
+    # Screen sharing
+    security.rtkit.enable = true;
+    # enable pipewire with wlr support
+    services.pipewire = {
+        enable = true;
+        wireplumber.enable = true;
+    };
+    xdg.portal.wlr.settings = {
+        screencast = {
+            output_name = "eDP-1";
+            max_fps = 60;
+            chooser_type = "simple";
+            chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";		
+        };
+    };
+    environment.systemPackages = with pkgs; [ 
+        kdePackages.qtstyleplugin-kvantum
+        kdePackages.qt6ct
+        xwayland-satellite
+    ];
+
+    # Binary caches
+    nix.settings = {
+        substituters = [
+            "https://noctalia.cachix.org"
+            "https://jovian.cachix.org"
+            "https://chaotic-nyx.cachix.org"
+            "https://hyprland.cachix.org"
+            "https://nix-community.cachix.org"
+        ];
+        trusted-public-keys = [
+            "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+            "jovian.cachix.org-1:8Vq4Txku6VZIRhYrHYki3Ab9XHJRoWmdYqMqj4rB/Uc="
+            "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+            "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        ];
+    };
+
+    # Niri is the desktop session (Switch to Desktop from Game Mode)
+    programs.niri.enable = true;
+    programs.hyprland.enable = false;
+
+    # Map each touchscreen to its panel via udev WL_OUTPUT (see system.nix).
+    nixpkgs.overlays = [
+        (final: prev: {
+            niri = prev.niri.overrideAttrs (old: {
+                patches = (old.patches or []) ++ (import ../../../patches { inherit lib; }).niri;
+            });
+        })
+    ];
+
+}
