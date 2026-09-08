@@ -1,0 +1,522 @@
+Show headphones glyph when the default sink or its card is a headphone output.
+
+--- a/src/pipewire/audio_glyphs.cpp
++++ b/src/pipewire/audio_glyphs.cpp
+@@ -2,6 +2,7 @@
+ 
+ #include <algorithm>
+ #include <cmath>
++#include <string_view>
+ 
+ namespace {
+ 
+@@ -9,17 +10,48 @@
+     return static_cast<int>(std::round(std::max(0.0F, volume) * 100.0F));
+   }
+ 
++  [[nodiscard]] char asciiLower(char c) {
++    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
++  }
++
++  [[nodiscard]] bool containsIgnoreCase(std::string_view hay, std::string_view needle) {
++    if (needle.empty() || hay.size() < needle.size()) {
++      return false;
++    }
++    const auto pred = [](char a, char b) { return asciiLower(a) == asciiLower(b); };
++    return std::ranges::search(hay, needle, pred).begin() != hay.end();
++  }
++
++  [[nodiscard]] bool looksLikeHeadphoneText(std::string_view text) {
++    return containsIgnoreCase(text, "headphone")
++        || containsIgnoreCase(text, "headset")
++        || containsIgnoreCase(text, "earbud")
++        || containsIgnoreCase(text, "earphone");
++  }
++
+ } // namespace
+ 
+-const char* audioVolumeGlyph(float volume, bool muted, bool isInput) {
++const char* audioVolumeGlyph(float volume, bool muted, bool isInput, bool headphones) {
+   if (isInput) {
+     return (muted || displayedVolumePercent(volume) == 0) ? "microphone-mute" : "microphone";
+   }
+   if (muted || displayedVolumePercent(volume) == 0) {
+     return "volume-mute";
+   }
++  if (headphones) {
++    return "headphones";
++  }
+   if (volume < 0.4F) {
+     return "volume-low";
+   }
+   return "volume-high";
+ }
++
++bool audioSinkIsHeadphones(
++    std::string_view name, std::string_view description, std::string_view iconName, std::string_view formFactor
++) {
++  if (looksLikeHeadphoneText(formFactor) || looksLikeHeadphoneText(iconName)) {
++    return true;
++  }
++  return looksLikeHeadphoneText(name) || looksLikeHeadphoneText(description);
++}
+--- a/src/pipewire/audio_glyphs.h
++++ b/src/pipewire/audio_glyphs.h
+@@ -1,7 +1,14 @@
+ #pragma once
+ 
++#include <string_view>
++
+ // Canonical bar/OSD glyph for a sink (isInput == false) or source (isInput == true) given its
+ // volume and effective mute. Single source of the speaker mute->slashed-icon rule and the
+ // volume-level thresholds so the bar widget and the OSD can never map the same state to different
+-// icons.
+-[[nodiscard]] const char* audioVolumeGlyph(float volume, bool muted, bool isInput);
++// icons. headphones is ignored for input devices and for muted/0% output (those stay mute glyphs).
++[[nodiscard]] const char* audioVolumeGlyph(float volume, bool muted, bool isInput, bool headphones = false);
++
++// True when PipeWire identity looks like a headphone/headset/earbud sink (form-factor, icon, or name).
++[[nodiscard]] bool audioSinkIsHeadphones(
++    std::string_view name, std::string_view description, std::string_view iconName, std::string_view formFactor
++);
+--- a/src/pipewire/pipewire_service.cpp
++++ b/src/pipewire/pipewire_service.cpp
+@@ -504,6 +504,30 @@
+     return true;
+   }
+ 
++  bool applyDeviceIdentityFromDict(PipeWireService::DeviceData& device, const spa_dict* props) {
++    if (props == nullptr) {
++      return false;
++    }
++    bool changed = false;
++    std::string icon = dictGet(props, "device.icon-name");
++    if (icon.empty()) {
++      icon = dictGet(props, "device.icon_name");
++    }
++    if (icon.empty()) {
++      icon = dictGet(props, "api.bluez5.icon");
++    }
++    if (!icon.empty() && icon != device.iconName) {
++      device.iconName = std::move(icon);
++      changed = true;
++    }
++    std::string formFactor = dictGet(props, "device.form-factor");
++    if (!formFactor.empty() && formFactor != device.formFactor) {
++      device.formFactor = std::move(formFactor);
++      changed = true;
++    }
++    return changed;
++  }
++
+   void upsertRoute(std::vector<PipeWireService::DeviceRouteData>& routes, PipeWireService::DeviceRouteData route) {
+     const std::int32_t lookupIndex = route.index >= 0 ? route.index : -1;
+     if (lookupIndex < 0) {
+@@ -926,12 +950,11 @@
+   }
+ 
+   if (std::strcmp(type, PW_TYPE_INTERFACE_Device) == 0) {
+-    DeviceData device;
+-    device.service = this;
+-    device.id = id;
+-    auto [it, inserted] = m_devices.insert_or_assign(id, std::move(device));
+-
++    auto [it, inserted] = m_devices.try_emplace(id);
+     auto& stored = it->second;
++    stored.service = this;
++    stored.id = id;
++    applyDeviceIdentityFromDict(stored, props);
+     if (inserted) {
+       auto* proxy = static_cast<pw_device*>(pw_registry_bind(m_registry, id, type, PW_VERSION_DEVICE, sizeof(void*)));
+       if (proxy != nullptr) {
+@@ -944,6 +967,7 @@
+         pw_device_enum_params(proxy, 0, SPA_PARAM_Route, 0, UINT32_MAX, nullptr);
+       }
+     }
++    rebuildState();
+     return;
+   }
+ 
+@@ -1018,6 +1042,11 @@
+     if (nd->iconName.empty()) {
+       nd->iconName = nd->applicationBinary;
+     }
++    nd->deviceIconName = dictGet(props, "device.icon-name");
++    if (nd->deviceIconName.empty()) {
++      nd->deviceIconName = dictGet(props, "device.icon_name");
++    }
++    nd->formFactor = dictGet(props, "device.form-factor");
+     nd->mediaClass = mediaClass;
+     applyStreamFilterPropsFromDict(*nd, props, false);
+     const bool audioDeviceNode = mediaClass == "Audio/Sink" || mediaClass == "Audio/Source";
+@@ -1159,6 +1188,7 @@
+   const bool wasPrivacyCandidate = isPrivacyCandidateClass(nd.mediaClass);
+   bool filterPropsChanged = false;
+   bool profileDeviceChanged = false;
++  bool deviceIdChanged = false;
+ 
+   if (info->props != nullptr) {
+     std::string mediaClass = dictGet(info->props, PW_KEY_MEDIA_CLASS);
+@@ -1192,10 +1222,12 @@
+     if (clientId != 0) {
+       nd.clientId = clientId;
+     }
++    const std::uint32_t previousDeviceId = nd.deviceId;
+     const std::uint32_t deviceId = parseUint32Or(dictGet(info->props, "device.id"), nd.deviceId);
+     if (deviceId != 0) {
+       nd.deviceId = deviceId;
+     }
++    deviceIdChanged = nd.deviceId != previousDeviceId;
+     // card.profile.device is absent from the registry-global props and only arrives here, after the
+     // card already published its routes. It selects which card route drives this node, so a change
+     // must re-derive the cached effective mute.
+@@ -1227,6 +1259,17 @@
+     if (!iconName.empty()) {
+       nd.iconName = iconName;
+     }
++    std::string deviceIconName = dictGet(info->props, "device.icon-name");
++    if (deviceIconName.empty()) {
++      deviceIconName = dictGet(info->props, "device.icon_name");
++    }
++    if (!deviceIconName.empty()) {
++      nd.deviceIconName = deviceIconName;
++    }
++    std::string formFactor = dictGet(info->props, "device.form-factor");
++    if (!formFactor.empty()) {
++      nd.formFactor = formFactor;
++    }
+     filterPropsChanged = applyStreamFilterPropsFromDict(nd, info->props, true);
+     const bool audioDevice = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
+     applyVolumePropsFromDict(nd, info->props, !audioDevice);
+@@ -1243,6 +1286,7 @@
+     recomputeEffectiveMute(nd);
+   }
+   if (profileDeviceChanged
++      || deviceIdChanged
+       || (isStream && (!wasStreamReady || filterPropsChanged))
+       || wasProgramStream != isStream
+       || wasPrivacyCandidate
+@@ -1401,6 +1445,11 @@
+     return;
+   }
+ 
++  bool identityChanged = false;
++  if (info->props != nullptr) {
++    identityChanged = applyDeviceIdentityFromDict(it->second, info->props);
++  }
++
+   if ((info->change_mask & PW_DEVICE_CHANGE_MASK_PARAMS) != 0) {
+     for (std::uint32_t i = 0; i < info->n_params; ++i) {
+       if (info->params[i].id == SPA_PARAM_Route) {
+@@ -1408,6 +1457,10 @@
+       }
+     }
+   }
++
++  if (identityChanged) {
++    rebuildState();
++  }
+ }
+ 
+ void PipeWireService::onDeviceParam(
+@@ -1660,6 +1713,19 @@
+     }
+     const AudioDeviceRoutes deviceRoutes = device != nullptr ? AudioDeviceRoutes{device->routes} : AudioDeviceRoutes{};
+     node.available = !isDeviceNode || audioNodeRouteAvailable(nd->routes, deviceRoutes, wantDir, nd->profileDevice);
++    if (nd->mediaClass == "Audio/Sink") {
++      std::string_view iconName = nd->deviceIconName;
++      std::string_view formFactor = nd->formFactor;
++      if (device != nullptr) {
++        if (iconName.empty()) {
++          iconName = device->iconName;
++        }
++        if (formFactor.empty()) {
++          formFactor = device->formFactor;
++        }
++      }
++      node.headphone = audioSinkIsHeadphones(nd->name, nd->description, iconName, formFactor);
++    }
+ 
+     if (nd->mediaClass == "Audio/Sink") {
+       node.isDefault = (nd->name == m_defaultSinkName);
+--- a/src/pipewire/pipewire_service.h
++++ b/src/pipewire/pipewire_service.h
+@@ -41,6 +41,7 @@
+   std::uint32_t channelCount = 0;
+   bool isDefault = false;
+   bool available = true; // false for a device whose active route is unavailable (e.g. unplugged HDMI)
++  bool headphone = false; // output looks like headphones/headset (bar/OSD glyph)
+ 
+   bool operator==(const AudioNode&) const = default;
+ };
+@@ -156,6 +157,8 @@
+     std::string streamTitle;
+     std::string mediaName;
+     std::string iconName;
++    std::string deviceIconName;
++    std::string formFactor;
+     std::string mediaClass;
+     std::string linkGroup;
+     std::string targetObject;
+@@ -198,6 +201,8 @@
+     std::uint32_t id = 0;
+     struct pw_device* proxy = nullptr;
+     spa_hook* listener = nullptr;
++    std::string iconName;
++    std::string formFactor;
+     std::vector<DeviceRouteData> routes;
+   };
+   struct LinkData {
+--- a/src/shell/bar/widgets/volume_widget.cpp
++++ b/src/shell/bar/widgets/volume_widget.cpp
+@@ -113,6 +113,8 @@
+   const auto* node = m_target == VolumeWidgetTarget::Input ? m_audio->defaultSource() : m_audio->defaultSink();
+   float volume = node != nullptr ? node->volume : 0.0F;
+   bool muted = node != nullptr ? node->muted : false;
++  const bool headphones = node != nullptr && m_target == VolumeWidgetTarget::Output && node->headphone;
++  const std::uint32_t nodeId = node != nullptr ? node->id : 0;
+   const auto kind =
+       m_target == VolumeWidgetTarget::Input ? AudioEffectsProfileKind::Input : AudioEffectsProfileKind::Output;
+   const std::string effectsProfile =
+@@ -126,6 +128,8 @@
+ 
+   if (volume == m_lastVolume
+       && muted == m_lastMuted
++      && headphones == m_lastHeadphones
++      && nodeId == m_lastNodeId
+       && m_isVertical == m_lastVertical
+       && effectsProfile == m_lastEffectsProfile
+       && micActive == m_lastMicActive) {
+@@ -134,6 +138,8 @@
+ 
+   m_lastVolume = volume;
+   m_lastMuted = muted;
++  m_lastHeadphones = headphones;
++  m_lastNodeId = nodeId;
+   m_lastVertical = m_isVertical;
+   m_lastEffectsProfile = effectsProfile;
+   m_lastMicActive = micActive;
+@@ -150,7 +156,7 @@
+         muted ? m_muteColor : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface))
+     );
+   } else {
+-    m_glyph->setGlyph(glyphName(volume, muted, effectsProfile));
++    m_glyph->setGlyph(glyphName(volume, muted, effectsProfile, headphones));
+     m_glyph->setGlyphSize(Style::baseGlyphSize * m_contentScale);
+     m_glyph->setColor(muted ? m_muteColor : widgetIconColorOr(colorSpecFromRole(ColorRole::OnSurface)));
+     m_glyph->measure(renderer);
+@@ -189,8 +195,8 @@
+   requestRedraw();
+ }
+ 
+-std::string VolumeWidget::glyphName(float volume, bool muted, const std::string& effectsProfile) const {
+-  const char* dynamicGlyph = audioVolumeGlyph(volume, muted, m_target == VolumeWidgetTarget::Input);
++std::string VolumeWidget::glyphName(float volume, bool muted, const std::string& effectsProfile, bool headphones) const {
++  const char* dynamicGlyph = audioVolumeGlyph(volume, muted, m_target == VolumeWidgetTarget::Input, headphones);
+   const std::string_view muteGlyph = m_target == VolumeWidgetTarget::Input ? "microphone-mute" : "volume-mute";
+   const bool usingMuteGlyph = std::string_view{dynamicGlyph} == muteGlyph;
+   if (usingMuteGlyph && !m_muteGlyphOverride.empty()) {
+--- a/src/shell/bar/widgets/volume_widget.h
++++ b/src/shell/bar/widgets/volume_widget.h
+@@ -42,7 +42,7 @@
+   void doUpdate(Renderer& renderer) override;
+   void syncState(Renderer& renderer);
+   void syncWidgetVisibility(bool showWidget);
+-  [[nodiscard]] std::string glyphName(float volume, bool muted, const std::string& effectsProfile = {}) const;
++  [[nodiscard]] std::string glyphName(float volume, bool muted, const std::string& effectsProfile = {}, bool headphones = false) const;
+ 
+   PipeWireService* m_audio = nullptr;
+   EasyEffectsService* m_easyEffects = nullptr;
+@@ -61,6 +61,8 @@
+   float m_lastVolume = -1.0F;
+   std::string m_lastEffectsProfile;
+   bool m_lastMuted = false;
++  bool m_lastHeadphones = false;
++  std::uint32_t m_lastNodeId = 0;
+   bool m_isVertical = false;
+   bool m_lastVertical = false;
+   bool m_lastMicActive = false;
+--- a/src/shell/desktop/widgets/desktop_volume_widget.cpp
++++ b/src/shell/desktop/widgets/desktop_volume_widget.cpp
+@@ -328,10 +328,12 @@
+   bool muted = false;
+   std::string deviceName;
+ 
++  bool headphones = false;
+   if (const auto* node = currentNode(); node != nullptr) {
+     volume = node->volume;
+     muted = node->muted;
+     deviceName = audioDeviceLabel(*node);
++    headphones = !m_input && node->headphone;
+   }
+ 
+   const float displayVolume = muted ? 0.0F : std::clamp(volume, 0.0F, 1.0F);
+@@ -340,7 +342,7 @@
+   const std::string statusText = muted
+       ? i18n::tr("desktop-widgets.volume.muted")
+       : i18n::tr(m_input ? "desktop-widgets.volume.mic" : "desktop-widgets.volume.volume");
+-  const std::string glyphName = resolveGlyphName(volume, muted);
++  const std::string glyphName = resolveGlyphName(volume, muted, headphones);
+ 
+   bool changed = forceLayout;
+   if (percentText != m_lastPercentText) {
+@@ -452,11 +454,11 @@
+   }
+ }
+ 
+-std::string DesktopVolumeWidget::resolveGlyphName(float volume, bool muted) const {
++std::string DesktopVolumeWidget::resolveGlyphName(float volume, bool muted, bool headphones) const {
+   if (!m_glyphOverride.empty()) {
+     return m_glyphOverride;
+   }
+-  return audioVolumeGlyph(volume, muted, m_input);
++  return audioVolumeGlyph(volume, muted, m_input, headphones);
+ }
+ 
+ const AudioNode* DesktopVolumeWidget::currentNode() const noexcept {
+--- a/src/shell/desktop/widgets/desktop_volume_widget.h
++++ b/src/shell/desktop/widgets/desktop_volume_widget.h
+@@ -47,7 +47,7 @@
+   void applyShadow();
+   void updateFillClip();
+   [[nodiscard]] const AudioNode* currentNode() const noexcept;
+-  [[nodiscard]] std::string resolveGlyphName(float volume, bool muted) const;
++  [[nodiscard]] std::string resolveGlyphName(float volume, bool muted, bool headphones = false) const;
+   [[nodiscard]] float maxVolume() const;
+ 
+   PipeWireService* m_audio = nullptr;
+--- a/src/shell/osd/audio_osd.cpp
++++ b/src/shell/osd/audio_osd.cpp
+@@ -15,11 +15,11 @@
+ 
+   [[nodiscard]] bool volumeChanged(float a, float b) { return std::abs(a - b) > kVolumeChangeEpsilon; }
+ 
+-  OsdContent makeOutputContent(float volume, bool muted) {
++  OsdContent makeOutputContent(float volume, bool muted, bool headphones) {
+     const int percent = static_cast<int>(std::round(std::max(0.0F, volume) * 100.0F));
+     return OsdContent{
+         .kind = OsdKind::Volume,
+-        .icon = audioVolumeGlyph(volume, muted, false),
++        .icon = audioVolumeGlyph(volume, muted, false, headphones),
+         .value = std::to_string(percent) + "%",
+         .progress = std::clamp(volume, 0.0F, 1.0F),
+         .overLimit = percent > 100,
+@@ -27,10 +27,10 @@
+     };
+   }
+ 
+-  OsdContent makeOutputNameContent(std::string name, bool muted) {
++  OsdContent makeOutputNameContent(std::string name, bool muted, bool headphones) {
+     return OsdContent{
+         .kind = OsdKind::Volume,
+-        .icon = audioVolumeGlyph(1.0F, muted, false),
++        .icon = audioVolumeGlyph(1.0F, muted, false, headphones),
+         .value = std::move(name),
+         .showProgress = false,
+         .inactive = muted,
+@@ -70,6 +70,7 @@
+     m_lastSinkVolume = sink->volume;
+     m_lastSinkPercent = static_cast<int>(std::round(std::max(0.0F, sink->volume) * 100.0F));
+     m_lastSinkMuted = sink->muted;
++    m_lastSinkHeadphones = sink->headphone;
+   }
+ 
+   if (const auto* source = service.defaultSource(); source != nullptr) {
+@@ -91,7 +92,8 @@
+   }
+   m_suppressAutoInputOsdUntil = now + kSuppressInputOsdAfterOutput;
+   if (m_overlay != nullptr) {
+-    m_overlay->show(makeOutputContent(volume, muted));
++    const bool headphones = sinkId == m_lastSinkId && m_lastSinkHeadphones;
++    m_overlay->show(makeOutputContent(volume, muted, headphones));
+     m_currentKind = OsdKind::Volume;
+   }
+   if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+@@ -111,7 +113,7 @@
+   }
+   m_suppressAutoInputOsdUntil = now + kSuppressInputOsdAfterOutput;
+   if (m_overlay != nullptr) {
+-    m_overlay->show(makeOutputNameContent(std::move(name), muted));
++    m_overlay->show(makeOutputNameContent(std::move(name), muted, m_lastSinkHeadphones));
+     m_currentKind = OsdKind::Volume;
+   }
+ }
+@@ -150,7 +152,7 @@
+   if (m_overlay == nullptr) {
+     return;
+   }
+-  m_overlay->show(makeOutputContent(volume, muted));
++  m_overlay->show(makeOutputContent(volume, muted, m_lastSinkHeadphones));
+   m_currentKind = OsdKind::Volume;
+ }
+ 
+@@ -171,6 +173,7 @@
+   const float sinkVolume = sink != nullptr ? sink->volume : 0.0F;
+   const int sinkPercent = sink != nullptr ? static_cast<int>(std::round(std::max(0.0F, sinkVolume) * 100.0F)) : 0;
+   const bool sinkMuted = sink != nullptr ? sink->muted : false;
++  const bool sinkHeadphones = sink != nullptr && sink->headphone;
+ 
+   const std::uint32_t sourceId = source != nullptr ? source->id : 0;
+   const std::string sourceName = source != nullptr ? audioDeviceLabel(*source) : "";
+@@ -187,7 +190,7 @@
+   // one already on screen; volume stays optimistic, only the mute state is reconciled.
+   if (m_overlay != nullptr && m_overlay->isVisible()) {
+     if (sink != nullptr && m_currentKind == OsdKind::Volume && sinkMuted != m_lastSinkMuted) {
+-      m_overlay->show(makeOutputContent(sinkVolume, sinkMuted));
++      m_overlay->show(makeOutputContent(sinkVolume, sinkMuted, sinkHeadphones));
+     } else if (source != nullptr && m_currentKind == OsdKind::Microphone && sourceMuted != m_lastSourceMuted) {
+       m_overlay->show(makeInputContent(sourceVolume, sourceMuted));
+     }
+@@ -198,6 +201,7 @@
+     m_lastSinkVolume = sinkVolume;
+     m_lastSinkPercent = sinkPercent;
+     m_lastSinkMuted = sinkMuted;
++    m_lastSinkHeadphones = sinkHeadphones;
+     m_lastSourceId = sourceId;
+     m_lastSourceVolume = sourceVolume;
+     m_lastSourcePercent = sourcePercent;
+@@ -217,6 +221,8 @@
+     m_suppressAutoInputOsdUntil = now + std::chrono::milliseconds(400);
+   }
+ 
++  m_lastSinkHeadphones = sinkHeadphones;
++
+   if (m_overlay != nullptr) {
+     if (sinkRouteChanged) {
+       showOutputName(sinkName, sinkMuted);
+--- a/src/shell/osd/audio_osd.h
++++ b/src/shell/osd/audio_osd.h
+@@ -34,6 +34,7 @@
+   float m_lastSinkVolume = -1.0F;
+   int m_lastSinkPercent = -1;
+   bool m_lastSinkMuted = false;
++  bool m_lastSinkHeadphones = false;
+   std::uint32_t m_lastSourceId = 0;
+   float m_lastSourceVolume = -1.0F;
+   int m_lastSourcePercent = -1;
+--- a/tests/audio_glyphs_test.cpp
++++ b/tests/audio_glyphs_test.cpp
+@@ -27,6 +27,23 @@
+   ok = expectGlyph(audioVolumeGlyph(0.8f, true, false), "volume-mute", "muted speaker") && ok;
+   ok = expectGlyph(audioVolumeGlyph(0.0f, false, true), "microphone-mute", "zero microphone volume") && ok;
+   ok = expectGlyph(audioVolumeGlyph(0.8f, true, true), "microphone-mute", "muted microphone") && ok;
++  ok = expectGlyph(audioVolumeGlyph(0.8f, false, false, true), "headphones", "headphones sink") && ok;
++  ok = expectGlyph(audioVolumeGlyph(0.2f, false, false, true), "headphones", "headphones sink at low volume") && ok;
++  ok = expectGlyph(audioVolumeGlyph(0.8f, true, false, true), "volume-mute", "muted headphones") && ok;
++  ok = expectGlyph(audioVolumeGlyph(0.0f, false, false, true), "volume-mute", "zero volume headphones") && ok;
++
++  if (!audioSinkIsHeadphones("alsa_output.foo.HiFi__Headphones__sink", "Audio Coprocessor Headphones", "audio-headphones", "")) {
++    std::println(stderr, "audio_glyphs_test: expected alsa headphones sink to match");
++    ok = false;
++  }
++  if (!audioSinkIsHeadphones("bluez_output.x", "Qudelix-5K", "audio-headphones-bluetooth", "headphone")) {
++    std::println(stderr, "audio_glyphs_test: expected bluetooth headphone form-factor to match");
++    ok = false;
++  }
++  if (audioSinkIsHeadphones("alsa_output.foo.HiFi__Speaker__sink", "Audio Coprocessor Speaker", "audio-speakers", "")) {
++    std::println(stderr, "audio_glyphs_test: speaker sink must not match headphones");
++    ok = false;
++  }
+ 
+   return ok ? 0 : 1;
+ }
