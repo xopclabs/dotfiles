@@ -1,12 +1,15 @@
---- a/src/shell/control_center/tabs/home_tab.cpp
-+++ b/src/shell/control_center/tabs/home_tab.cpp
-@@ -21,13 +21,20 @@
+--- a/src/shell/control_center/tabs/home_tab.cpp	1970-01-01 01:00:01.000000000 +0100
++++ b/src/shell/control_center/tabs/home_tab.cpp	2026-09-08 03:26:39.034183118 +0200
+@@ -21,13 +21,23 @@
  #include "shell/panel/panel_manager.h"
  #include "shell/profile/avatar_path.h"
  #include "shell/wallpaper/wallpaper.h"
 +#include "core/deferred_call.h"
 +#include "core/process/process.h"
++#include "render/core/color.h"
 +#include "scripting/plugin_state_store.h"
++#include "theme/community_palettes.h"
++#include "theme/custom_palettes.h"
  #include "system/distro_info.h"
  #include "system/weather_service.h"
  #include "time/time_format.h"
@@ -21,7 +24,7 @@
  #include <algorithm>
  #include <cmath>
  #include <cstdint>
-@@ -187,9 +194,33 @@
+@@ -187,9 +197,40 @@
        }
      });
    }
@@ -38,6 +41,12 @@
 +    }
 +  }
 +
++  resolveCodexColors();
++  m_codexPaletteConn = paletteChanged().connect([this]() {
++    resolveCodexColors();
++    syncCodexCard();
++  });
++
 +  scripting::PluginStateStore::instance().watch(
 +      "salemsayed/codexbar-meter", "providers", reinterpret_cast<std::uint64_t>(this),
 +      [this](const std::string& json) {
@@ -51,11 +60,12 @@
  }
  
  HomeTab::~HomeTab() {
++  m_codexPaletteConn.disconnect();
 +  scripting::PluginStateStore::instance().removeWatchers(reinterpret_cast<std::uint64_t>(this));
    if (m_thumbnails != nullptr && !m_loadedWallpaperPath.empty()) {
      m_thumbnails->release(m_loadedWallpaperPath, m_loadedWallpaperSize);
    }
-@@ -205,165 +236,150 @@
+@@ -205,165 +246,150 @@
        .gap = Style::spaceMd * scale,
    });
  
@@ -255,10 +265,10 @@
 +          ),
 +          ui::progressBar({
 +              .out = &m_codex5hProgress,
-+              .fill = colorSpecFromRole(ColorRole::Primary),
++              .fill = fixedColorSpec(m_codexColors.green),
 +              .track = colorSpecFromRole(ColorRole::Surface),
 +              .radius = 3.0F * scale,
-+              .progress = 0.0F,
++              .progress = 1.0F,
 +              .height = 6.0F * scale,
 +          })
 +      )
@@ -286,10 +296,10 @@
 +          ),
 +          ui::progressBar({
 +              .out = &m_codexWeeklyProgress,
-+              .fill = colorSpecFromRole(ColorRole::Secondary),
++              .fill = fixedColorSpec(m_codexColors.green),
 +              .track = colorSpecFromRole(ColorRole::Surface),
 +              .radius = 3.0F * scale,
-+              .progress = 0.0F,
++              .progress = 1.0F,
 +              .height = 6.0F * scale,
 +          })
 +      )
@@ -343,7 +353,7 @@
  
    auto bottomRow = ui::row({
        .out = &m_bottomRow,
-@@ -818,27 +834,15 @@
+@@ -818,27 +844,15 @@
      }
    }
  
@@ -378,7 +388,7 @@
    }
  
    // Lock the shortcuts grid height to its square-cell natural size so it does not vary
-@@ -978,21 +982,8 @@
+@@ -978,21 +992,8 @@
    };
    cover(m_mediaCard, m_mediaCardArea);
    cover(m_dateTimeCard, m_dateTimeCardArea);
@@ -402,7 +412,7 @@
  }
  
  bool HomeTab::resizeMediaArtToCard() {
-@@ -1294,6 +1285,16 @@
+@@ -1294,6 +1295,16 @@
    m_dateTimeCard = nullptr;
    m_mediaCard = nullptr;
    m_mediaText = nullptr;
@@ -419,7 +429,7 @@
    m_userCard = nullptr;
    m_userMain = nullptr;
    m_userAvatar = nullptr;
-@@ -1409,34 +1410,9 @@
+@@ -1409,34 +1420,9 @@
      m_dateLabel->setText(formatShellDate(m_config));
    }
  
@@ -457,7 +467,7 @@
    }
  
    if (m_weatherGlyph != nullptr && m_weatherLine != nullptr) {
-@@ -1654,3 +1630,194 @@
+@@ -1654,3 +1640,275 @@
      }
    }
  }
@@ -612,35 +622,41 @@
 +    m_codexUpdatedLabel->setText(m_codexData.updatedAt);
 +  }
 +
++  const float remaining5h = std::clamp(100.0F - m_codexData.primary.usedPercent, 0.0F, 100.0F);
 +  if (m_codex5hInfoLabel != nullptr) {
 +    std::string resetStr = m_codexData.primary.resetDesc.empty() ? "" : " · Resets " + m_codexData.primary.resetDesc;
-+    m_codex5hInfoLabel->setText(std::format("{:.0F}% used{}", m_codexData.primary.usedPercent, resetStr));
++    m_codex5hInfoLabel->setText(std::format("{:.0F}% left{}", remaining5h, resetStr));
 +  }
 +  if (m_codex5hProgress != nullptr) {
-+    const float pct = std::clamp(m_codexData.primary.usedPercent / 100.0F, 0.0F, 1.0F);
++    const float pct = remaining5h / 100.0F;
 +    m_codex5hProgress->setProgress(pct);
-+    if (m_codexData.primary.usedPercent >= 90.0F) {
-+      m_codex5hProgress->setFill(colorSpecFromRole(ColorRole::Error));
-+    } else if (m_codexData.primary.usedPercent >= 75.0F) {
-+      m_codex5hProgress->setFill(colorSpecFromRole(ColorRole::Tertiary));
++    if (remaining5h <= 10.0F) {
++      m_codex5hProgress->setFill(fixedColorSpec(m_codexColors.red));
++    } else if (remaining5h <= 25.0F) {
++      m_codex5hProgress->setFill(fixedColorSpec(m_codexColors.orange));
++    } else if (remaining5h <= 50.0F) {
++      m_codex5hProgress->setFill(fixedColorSpec(m_codexColors.yellow));
 +    } else {
-+      m_codex5hProgress->setFill(colorSpecFromRole(ColorRole::Primary));
++      m_codex5hProgress->setFill(fixedColorSpec(m_codexColors.green));
 +    }
 +  }
 +
++  const float remainingWeekly = std::clamp(100.0F - m_codexData.secondary.usedPercent, 0.0F, 100.0F);
 +  if (m_codexWeeklyInfoLabel != nullptr) {
 +    std::string resetStr = m_codexData.secondary.resetDesc.empty() ? "" : " · Resets " + m_codexData.secondary.resetDesc;
-+    m_codexWeeklyInfoLabel->setText(std::format("{:.0F}% used{}", m_codexData.secondary.usedPercent, resetStr));
++    m_codexWeeklyInfoLabel->setText(std::format("{:.0F}% left{}", remainingWeekly, resetStr));
 +  }
 +  if (m_codexWeeklyProgress != nullptr) {
-+    const float pct = std::clamp(m_codexData.secondary.usedPercent / 100.0F, 0.0F, 1.0F);
++    const float pct = remainingWeekly / 100.0F;
 +    m_codexWeeklyProgress->setProgress(pct);
-+    if (m_codexData.secondary.usedPercent >= 90.0F) {
-+      m_codexWeeklyProgress->setFill(colorSpecFromRole(ColorRole::Error));
-+    } else if (m_codexData.secondary.usedPercent >= 75.0F) {
-+      m_codexWeeklyProgress->setFill(colorSpecFromRole(ColorRole::Tertiary));
++    if (remainingWeekly <= 10.0F) {
++      m_codexWeeklyProgress->setFill(fixedColorSpec(m_codexColors.red));
++    } else if (remainingWeekly <= 25.0F) {
++      m_codexWeeklyProgress->setFill(fixedColorSpec(m_codexColors.orange));
++    } else if (remainingWeekly <= 50.0F) {
++      m_codexWeeklyProgress->setFill(fixedColorSpec(m_codexColors.yellow));
 +    } else {
-+      m_codexWeeklyProgress->setFill(colorSpecFromRole(ColorRole::Secondary));
++      m_codexWeeklyProgress->setFill(fixedColorSpec(m_codexColors.green));
 +    }
 +  }
 +
@@ -652,8 +668,83 @@
 +    }
 +  }
 +}
---- a/src/shell/control_center/tabs/home_tab.h
-+++ b/src/shell/control_center/tabs/home_tab.h
++
++void HomeTab::resolveCodexColors() {
++  m_codexColors.green = hex("#A3BE8C");
++  m_codexColors.yellow = hex("#EBCB8B");
++  m_codexColors.orange = hex("#D08770");
++  m_codexColors.red = hex("#BF616A");
++
++  std::filesystem::path palettePath;
++  if (m_config != nullptr) {
++    const auto& themeCfg = m_config->config().theme;
++    if (themeCfg.source == PaletteSource::Custom && !themeCfg.customPalette.empty()) {
++      palettePath = noctalia::theme::customPalettePath(themeCfg.customPalette);
++    } else if (themeCfg.source == PaletteSource::Community && !themeCfg.communityPalette.empty()) {
++      palettePath = noctalia::theme::communityPaletteCachePath(themeCfg.communityPalette);
++    }
++  }
++
++  if (palettePath.empty() || !std::filesystem::exists(palettePath)) {
++    const auto base16Path = noctalia::theme::customPalettePath("base16");
++    if (std::filesystem::exists(base16Path)) {
++      palettePath = base16Path;
++    }
++  }
++
++  if (palettePath.empty() || !std::filesystem::exists(palettePath)) {
++    return;
++  }
++
++  try {
++    std::ifstream in(palettePath);
++    if (!in.is_open()) {
++      return;
++    }
++    auto root = nlohmann::json::parse(in);
++    if (!root.is_object()) {
++      return;
++    }
++
++    const bool isLight = isResolvedLightTheme();
++    const std::string modeKey = isLight ? "light" : "dark";
++    const nlohmann::json* modeObj = nullptr;
++    if (root.contains(modeKey) && root[modeKey].is_object()) {
++      modeObj = &root[modeKey];
++    } else if (root.contains("dark") && root["dark"].is_object()) {
++      modeObj = &root["dark"];
++    }
++
++    auto tryColor = [](const nlohmann::json& obj, const std::string& key) -> std::optional<Color> {
++      if (obj.contains(key) && obj[key].is_string()) {
++        try {
++          return hex(obj[key].get<std::string>());
++        } catch (...) {}
++      }
++      return std::nullopt;
++    };
++
++    if (modeObj != nullptr) {
++      if (modeObj->contains("terminal") && (*modeObj)["terminal"].is_object()) {
++        const auto& term = (*modeObj)["terminal"];
++        if (term.contains("normal") && term["normal"].is_object()) {
++          const auto& norm = term["normal"];
++          if (auto c = tryColor(norm, "green")) m_codexColors.green = *c;
++          if (auto c = tryColor(norm, "yellow")) m_codexColors.yellow = *c;
++          if (auto c = tryColor(norm, "red")) m_codexColors.red = *c;
++        }
++      }
++
++      if (auto c = tryColor(*modeObj, "mGreen")) m_codexColors.green = *c;
++      if (auto c = tryColor(*modeObj, "mYellow")) m_codexColors.yellow = *c;
++      if (auto c = tryColor(*modeObj, "mOrange")) m_codexColors.orange = *c;
++      else if (auto c = tryColor(*modeObj, "mWarning")) m_codexColors.orange = *c;
++      if (auto c = tryColor(*modeObj, "mRed")) m_codexColors.red = *c;
++    }
++  } catch (...) {}
++}
+--- a/src/shell/control_center/tabs/home_tab.h	1970-01-01 01:00:01.000000000 +0100
++++ b/src/shell/control_center/tabs/home_tab.h	2026-09-08 03:26:22.318289293 +0200
 @@ -28,6 +28,7 @@
  class Image;
  class InputArea;
@@ -662,7 +753,7 @@
  class Shortcut;
  class Wallpaper;
  class ClipboardService;
-@@ -85,6 +86,43 @@
+@@ -85,6 +86,53 @@
    bool resizeMediaArtToCard();
    void onPanelCardOpacityChanged(float opacity) override;
  
@@ -684,9 +775,17 @@
 +    bool hasData = false;
 +  };
 +
++  struct CodexThemeColors {
++    Color green;
++    Color yellow;
++    Color orange;
++    Color red;
++  };
++
 +  void refreshCodexUsage(bool force = false);
 +  void parseCodexJson(const std::string& jsonStr);
 +  void syncCodexCard();
++  void resolveCodexColors();
 +
 +  Flex* m_codexCard = nullptr;
 +  Label* m_codexAccountLabel = nullptr;
@@ -700,6 +799,8 @@
 +  InputArea* m_codexCardArea = nullptr;
 +
 +  CodexUsageData m_codexData;
++  CodexThemeColors m_codexColors;
++  Signal<>::ScopedConnection m_codexPaletteConn;
 +  std::chrono::steady_clock::time_point m_lastCodexFetch{};
 +  bool m_codexFetchInFlight = false;
 +
