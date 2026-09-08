@@ -28,17 +28,28 @@ in
         kernelPackages = pkgs.linuxPackages_latest;
         initrd = {
             availableKernelModules = [ "amdgpu" ];
-            extraUtilsCommands = ''
-                copy_bin_and_libs ${pkgs.kbd}/bin/setfont
-                mkdir -p $out/share/consolefonts
-                cp ${initrdConsoleFont} $out/share/consolefonts/ter-v32b.psf
-            '';
-            luks.devices.cryptroot.preOpenCommands = ''
-                # The built-in 5" panel is physically landscape but mounted portrait-ish.
-                # Keep the console unrotated and use a larger font before the LUKS prompt.
-                # echo 0 > /sys/class/graphics/fbcon/rotate_all || true
-                setfont -C /dev/console /share/consolefonts/ter-v32b.psf || true
-            '';
+            luks.devices.cryptroot = {
+                # Use the TPM2 token enrolled by systemd-cryptenroll. If Secure Boot
+                # PCR 7 or the PIN check fails, systemd-cryptsetup falls back to the
+                # regular LUKS passphrase slot.
+                crypttabExtraOpts = [ "tpm2-device=auto" ];
+            };
+            systemd = {
+                contents."/share/consolefonts/ter-v32b.psf".source = initrdConsoleFont;
+                extraBin.setfont = "${pkgs.kbd}/bin/setfont";
+                services.luks-console-font = {
+                    wantedBy = [ "cryptsetup-pre.target" ];
+                    before = [ "cryptsetup-pre.target" ];
+                    unitConfig.DefaultDependencies = "no";
+                    serviceConfig.Type = "oneshot";
+                    script = ''
+                        # The built-in 5" panel is physically landscape but mounted portrait-ish.
+                        # Keep the console unrotated and use a larger font before the LUKS prompt.
+                        # echo 0 > /sys/class/graphics/fbcon/rotate_all || true
+                        setfont -C /dev/console /share/consolefonts/ter-v32b.psf || true
+                    '';
+                };
+            };
         };
         kernelParams = [ "fbcon=rotate:0" ];
         loader = {

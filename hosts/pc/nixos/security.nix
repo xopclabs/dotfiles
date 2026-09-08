@@ -40,18 +40,18 @@
     };
     fileSystems."/home".neededForBoot = true;
 
-    # Enable TPM2 to auto-unlock LUKS
-    # NOTE: apparently my laptop doesn't support TPM2, so I've set every enable to false
-    # should work though for any new machine I spin up, so leaving it here
+    # TPM2 support for LUKS PIN unlock on this host.
+    # Enroll imperatively after rebuilding:
+    #   sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 --tpm2-with-pin=yes /dev/nvme0n1p2
     security.tpm2 = {
-        enable = false;
+        enable = true;
         pkcs11.enable = true;
         tctiEnvironment.enable = true;
     };
-    systemd.tpm2.enable = false;
+    systemd.tpm2.enable = true;
     boot.initrd.systemd = {
-        enable = false;
-        tpm2.enable = false;
+        enable = true;
+        tpm2.enable = true;
     };
 
 }
