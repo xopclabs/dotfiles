@@ -101,6 +101,13 @@ in
             ];
         };
 
+        # Set up ownership for Steam and its directories
+        systemd.tmpfiles.rules = [
+            "d /home/${config.metadata.user}/.local 0755 ${config.metadata.user} users -"
+            "d /home/${config.metadata.user}/.local/share 0755 ${config.metadata.user} users -"
+            "Z /home/${config.metadata.user}/.local/share - ${config.metadata.user} users -"
+        ];
+
         # Extra gaming packages
         environment.systemPackages = mkIf cfg.extraPackages (with pkgs; [
             protontricks

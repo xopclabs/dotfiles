@@ -31,8 +31,8 @@
         steam = {
             enable = true;
             jovian = {
-                enable = true;
-                autoStart = true;
+                enable = false;
+                autoStart = false;
                 desktopSession = "niri";
                 deckyLoader = {
                     enable = false;

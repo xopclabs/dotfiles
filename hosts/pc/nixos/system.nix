@@ -1,5 +1,10 @@
 { config, pkgs, inputs, lib, ... }:
 
+let
+    initrdConsoleFont = pkgs.runCommand "ter-v32b.psf" { nativeBuildInputs = [ pkgs.gzip ]; } ''
+        gzip -dc ${pkgs.terminus_font}/share/consolefonts/ter-v32b.psf.gz > $out
+    '';
+in
 {
     # Nix settings, auto cleanup and enable flakes
     nix = {
@@ -21,7 +26,21 @@
     boot = {
         tmp.cleanOnBoot = true;
         kernelPackages = pkgs.linuxPackages_latest;
-        initrd.availableKernelModules = [ "amdgpu" ];
+        initrd = {
+            availableKernelModules = [ "amdgpu" ];
+            extraUtilsCommands = ''
+                copy_bin_and_libs ${pkgs.kbd}/bin/setfont
+                mkdir -p $out/share/consolefonts
+                cp ${initrdConsoleFont} $out/share/consolefonts/ter-v32b.psf
+            '';
+            luks.devices.cryptroot.preOpenCommands = ''
+                # The built-in 5" panel is physically landscape but mounted portrait-ish.
+                # Keep the console unrotated and use a larger font before the LUKS prompt.
+                # echo 0 > /sys/class/graphics/fbcon/rotate_all || true
+                setfont -C /dev/console /share/consolefonts/ter-v32b.psf || true
+            '';
+        };
+        kernelParams = [ "fbcon=rotate:0" ];
         loader = {
             efi = {
                 canTouchEfiVariables = true;
@@ -32,7 +51,7 @@
                 enable = true;
                 device = "nodev";
                 efiSupport = true;
-                enableCryptodisk = true;
+                enableCryptodisk = false;
             };
 
             systemd-boot = {
@@ -43,8 +62,6 @@
         };
     };
 
-    # Keep swap on disk for the 24GB RAM machine; hibernation resume offset should be
-    # configured after install if we decide to use hibernate with the encrypted btrfs swapfile.
     zramSwap.enable = false;
 
     services.udev.extraRules = ''

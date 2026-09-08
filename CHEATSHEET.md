@@ -200,15 +200,32 @@ snapper -c home create --description "before update"
 
 ## Install on a new host
 
+Boot the NixOS live ISO, connect networking, set a root password, start SSH, and verify the target disk path in the host's `disko.nix`:
+
 ```bash
-# Use install-nixos-anywhere wrapper to copy all the necessary files
+sudo -i
+passwd
+systemctl start sshd
+ip addr
+```
+
+From an existing machine, use `install-nixos-anywhere`. Example for `pc`:
+
+```bash
 install-nixos-anywhere \
-        -t root@192.168.254.100 \
-        -f ~/dotfiles#laptop \
-        -a ~/.ssh/id_ed25519:/home/xopc/.ssh/id_ed25519 \
-        -a ~/.ssh/id_ed25519.pub:/home/xopc/.ssh/id_ed25519.pub \
-        -a /var/lib/sops/age/keys.txt:/var/lib/sops/age/keys.txt \
-        -a ~/dotfiles:/home/xopc/dotfiles -c /home/xopc/dotfiles:1000:100 -c /home/xopc/.ssh:1000:100
+    -t root@192.168.1.147 \
+    -f ~/dotfiles/hosts/pc#pc \
+    -a ~/.ssh/id_ed25519:/etc/ssh/id_ed25519 \
+    -a ~/.ssh/id_ed25519.pub:/etc/ssh/id_ed25519.pub \
+    -a ~/.ssh/id_ed25519:/home/xopc/.ssh/id_ed25519 \
+    -a ~/.ssh/id_ed25519.pub:/home/xopc/.ssh/id_ed25519.pub \
+    -a ~/dotfiles:/home/xopc/dotfiles \
+    -c /etc/ssh:0:0 \
+    -c /home/xopc/.ssh:1000:100 \
+    -c /home/xopc/dotfiles:1000:100 \
+    --generate-hardware-config nixos-generate-config ./hosts/pc/nixos/hardware-configuration.nix \
+    -e --build-on -e local \
+    -e --option -e builders -e ""
 ```
 
 ## Common Caveats

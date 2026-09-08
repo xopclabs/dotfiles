@@ -20,12 +20,16 @@
     systemd.tmpfiles.rules = [
         "d /home/${config.metadata.user}/games 0755 ${config.metadata.user} users -"
         "d /home/${config.metadata.user}/.local 0755 ${config.metadata.user} users -"
+        "d /home/${config.metadata.user}/.local/share 0755 ${config.metadata.user} users -"
+        "Z /home/${config.metadata.user}/.local/share - ${config.metadata.user} users -"
     ];
 
     # Set up locales (timezone and keyboard layout)
     i18n.defaultLocale = "en_US.UTF-8";
     console = {
-        font = "Lat2-Terminus16";
+        earlySetup = true;
+        packages = [ pkgs.terminus_font ];
+        font = "ter-v32b";
         keyMap = "us";
     };
 
