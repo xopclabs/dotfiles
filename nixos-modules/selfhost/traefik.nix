@@ -377,6 +377,7 @@ in
                     storage = "/var/lib/traefik/acme.json";
                     dnsChallenge = {
                         provider = "cloudflare";
+                        resolvers = [ "1.1.1.1:53" "1.0.0.1:53" ];
                     };
                 };
 
