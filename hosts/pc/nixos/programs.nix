@@ -35,12 +35,14 @@
             jovian = {
                 enable = false;
                 autoStart = false;
-                desktopSession = "niri";
+                desktopSession = null;
+                steamDeck.enable = false;
                 deckyLoader = {
                     enable = false;
                     user = "xopc";
                 };
             };
+            gamescopeSession.enable = true;
             extraPackages = true;
             hardware = {
                 xoneSupport = true;

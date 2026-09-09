@@ -3,6 +3,18 @@
 with lib;
 let
     cfg = config.desktop.steam;
+    startSteamGamescope = pkgs.writeShellScriptBin "start-gamescope-session" ''
+        mkdir -p "$HOME/.cache"
+        gamescope=/run/wrappers/bin/gamescope
+        if [ ! -x "$gamescope" ]; then
+            gamescope=${pkgs.gamescope}/bin/gamescope
+        fi
+        echo "Shutting down any desktop Steam instance before starting Steam under gamescope" > "$HOME/.cache/start-gamescope-session.log"
+        ${pkgs.coreutils}/bin/timeout 10s ${pkgs.steam}/bin/steam -shutdown >> "$HOME/.cache/start-gamescope-session.log" 2>&1 || true
+        ${pkgs.coreutils}/bin/sleep 2
+        echo "Starting Steam under gamescope: $gamescope --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf $*" >> "$HOME/.cache/start-gamescope-session.log"
+        exec "$gamescope" --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf "$@" >> "$HOME/.cache/start-gamescope-session.log" 2>&1
+    '';
 in
 {
     options.desktop.steam = {
@@ -18,9 +30,17 @@ in
             };
 
             desktopSession = mkOption {
-                type = types.str;
+                type = types.nullOr types.str;
                 default = "niri";
-                description = "Desktop session to use";
+                description = "Desktop session to use when Jovian autostart is enabled";
+            };
+
+            steamDeck = {
+                enable = mkOption {
+                    type = types.bool;
+                    default = true;
+                    description = "Enable Steam Deck-specific Jovian device and SteamOS settings";
+                };
             };
 
             deckyLoader = {
@@ -35,6 +55,14 @@ in
                     default = "decky";
                     description = "User for Decky Loader";
                 };
+            };
+        };
+
+        gamescopeSession = {
+            enable = mkOption {
+                type = types.bool;
+                default = false;
+                description = "Enable the regular NixOS Steam gamescope session";
             };
         };
 
@@ -66,6 +94,11 @@ in
     };
 
     config = mkIf cfg.enable {
+        programs.steam = {
+            enable = true;
+            gamescopeSession.enable = cfg.gamescopeSession.enable;
+        };
+
         # Jovian NixOS configuration
         jovian = mkIf cfg.jovian.enable {
             steam = {
@@ -75,8 +108,8 @@ in
                 user = config.metadata.user;
             };
 
-            devices.steamdeck.enable = true;
-            steamos.useSteamOSConfig = true;
+            devices.steamdeck.enable = cfg.jovian.steamDeck.enable;
+            steamos.useSteamOSConfig = cfg.jovian.steamDeck.enable;
 
             decky-loader = mkIf cfg.jovian.deckyLoader.enable {
                 enable = true;
@@ -86,7 +119,7 @@ in
 
         # Kernel from Jovian's own nixpkgs pin, not ours. The module overlay
         # otherwise rebuilds linux_jovian against host stdenv on every unstable bump.
-        boot.kernelPackages = mkIf cfg.jovian.enable (
+        boot.kernelPackages = mkIf (cfg.jovian.enable && cfg.jovian.steamDeck.enable) (
             mkForce inputs.jovian.legacyPackages.${pkgs.stdenv.hostPlatform.system}.linuxPackages_jovian
         );
 
@@ -109,10 +142,15 @@ in
         ];
 
         # Extra gaming packages
-        environment.systemPackages = mkIf cfg.extraPackages (with pkgs; [
-            protontricks
-            protonup-ng
-        ]);
+        environment.systemPackages = mkMerge [
+            (mkIf cfg.extraPackages (with pkgs; [
+                protontricks
+                protonup-ng
+            ]))
+            (mkIf (cfg.gamescopeSession.enable && !cfg.jovian.enable) [
+                startSteamGamescope
+            ])
+        ];
 
         # Hardware support
         hardware.xone.enable = mkIf cfg.hardware.xoneSupport true;

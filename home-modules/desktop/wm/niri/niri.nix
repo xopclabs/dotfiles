@@ -314,7 +314,10 @@ in {
                     touch.map-to-output = lib.mkIf (output_internal != null) output_internal;
                 };
 
-                spawn-at-startup = lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
+                spawn-at-startup = [
+                    { sh = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET && systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET && systemctl --user start nixos-fake-graphical-session.target"; }
+                ]
+                ++ lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
                 ++ [
                     { argv = [ "slack" ]; }
