@@ -15,6 +15,17 @@ let
         echo "Starting Steam under gamescope: $gamescope --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf $*" >> "$HOME/.cache/start-gamescope-session.log"
         exec "$gamescope" --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf "$@" >> "$HOME/.cache/start-gamescope-session.log" 2>&1
     '';
+    switchToGamescope = pkgs.writeShellScriptBin "switch-to-gamescope-session" ''
+        ${pkgs.systemd}/bin/systemctl --user import-environment PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET
+        ${pkgs.systemd}/bin/systemctl --user unset-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY
+        ${pkgs.systemd}/bin/systemd-run --user --collect --unit=switch-to-gamescope-session ${pkgs.bash}/bin/bash -lc '
+            sleep 1
+            exec env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/bin/start-gamescope-session
+        '
+        if [ -n "''${NIRI_SOCKET:-}" ]; then
+            ${pkgs.niri}/bin/niri msg action quit --skip-confirmation || true
+        fi
+    '';
 in
 {
     options.desktop.steam = {
@@ -104,7 +115,7 @@ in
             steam = {
                 enable = true;
                 autoStart = cfg.jovian.autoStart;
-                desktopSession = cfg.jovian.desktopSession;
+                desktopSession = if cfg.jovian.autoStart then cfg.jovian.desktopSession else null;
                 user = config.metadata.user;
             };
 
@@ -116,6 +127,8 @@ in
                 user = cfg.jovian.deckyLoader.user;
             };
         };
+
+        services.displayManager.defaultSession = mkIf (!cfg.jovian.autoStart && cfg.jovian.desktopSession != null) cfg.jovian.desktopSession;
 
         # Kernel from Jovian's own nixpkgs pin, not ours. The module overlay
         # otherwise rebuilds linux_jovian against host stdenv on every unstable bump.
@@ -134,6 +147,17 @@ in
             ];
         };
 
+        # Jovian's gamescope session is a DRM compositor. If it is launched after
+        # niri, the user manager may still carry niri's WAYLAND_DISPLAY and make
+        # gamescope try to nest into a dead Wayland socket instead of taking DRM.
+        systemd.user.services.gamescope-session.serviceConfig = mkIf cfg.jovian.enable {
+            ExecStart = mkForce [
+                ""
+                "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/lib/steamos/gamescope-session"
+            ];
+            TimeoutStartSec = 15;
+        };
+
         # Set up ownership for Steam and its directories
         systemd.tmpfiles.rules = [
             "d /home/${config.metadata.user}/.local 0755 ${config.metadata.user} users -"
@@ -149,6 +173,9 @@ in
             ]))
             (mkIf (cfg.gamescopeSession.enable && !cfg.jovian.enable) [
                 startSteamGamescope
+            ])
+            (mkIf cfg.jovian.enable [
+                switchToGamescope
             ])
         ];
 

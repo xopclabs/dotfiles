@@ -33,16 +33,16 @@
         steam = {
             enable = true;
             jovian = {
-                enable = false;
+                enable = true;
                 autoStart = false;
-                desktopSession = null;
+                desktopSession = "niri";
                 steamDeck.enable = false;
                 deckyLoader = {
                     enable = false;
                     user = "xopc";
                 };
             };
-            gamescopeSession.enable = true;
+            gamescopeSession.enable = false;
             extraPackages = true;
             hardware = {
                 xoneSupport = true;

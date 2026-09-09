@@ -396,7 +396,7 @@ in {
                             tooltip = "Gamescope";
                             scale = iconScale;
                             color = "#${palette.base07}";
-                            actions.left = "exec start-gamescope-session";
+                            actions.left = "exec sh -c 'if command -v switch-to-gamescope-session >/dev/null; then switch-to-gamescope-session; else start-gamescope-session; fi'";
                         };
                         keyboard = {
                             type = "custom_button";

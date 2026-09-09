@@ -214,7 +214,7 @@ in {
                     "custom/gamescope" = {
                         format = "󰓓";
                         tooltip = false;
-                        on-click = "start-gamescope-session";
+                        on-click = "sh -c 'if command -v switch-to-gamescope-session >/dev/null; then switch-to-gamescope-session; else start-gamescope-session; fi'";
                     };
 
                     "custom/keyboard" = {
