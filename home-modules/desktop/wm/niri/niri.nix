@@ -35,19 +35,25 @@ let
             else 0;
     };
 
-    # niri matches outputs by connector (eDP-1) when set, else by description.
-    niriOutputName = mon: if mon.connector != null then mon.connector else mon.name;
+    primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
+    # niri can match outputs by display description; use that for externals so
+    # settings survive moving the same monitor to another GPU/port. Keep the
+    # connector fallback for panels whose metadata.name is just a local label.
+    niriOutputName = mon: if mon.name != "" then mon.name else primaryConnector mon;
     mkOutput = mon: {
         mode = parseMode mon.mode;
         scale = mon.scale;
         transform = parseTransform (mon.transform or "normal");
         position = parsePosition mon.position;
     };
+    mkOutputAttrs = mon: { ${niriOutputName mon} = mkOutput mon; };
     firstExternal = let
         exts = lib.attrValues hardwareCfg.monitors.external;
     in if exts == [] then null else builtins.head exts;
     output_external = if firstExternal != null then niriOutputName firstExternal else output_internal;
-    output_internal = if internalMon != null then niriOutputName internalMon else null;
+    output_internal = if internalMon != null then let
+        connector = primaryConnector internalMon;
+    in if connector != null then connector else internalMon.name else null;
 
     scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
     focusOutput = pkgs.writeShellScriptBin "niri-focus-output" ''
@@ -331,10 +337,8 @@ in {
 
                 outputs = lib.optionalAttrs (internalMon != null) {
                         ${output_internal} = mkOutput internalMon;
-                    } // lib.mapAttrs' (_: ext: {
-                        name = niriOutputName ext;
-                        value = mkOutput ext;
-                    }) hardwareCfg.monitors.external;
+                    }
+                    // lib.foldl' (acc: ext: acc // mkOutputAttrs ext) {} (lib.attrValues hardwareCfg.monitors.external);
 
                 workspaces = {
                     "messaging" = { name = "messaging"; open-on-output = output_internal; };

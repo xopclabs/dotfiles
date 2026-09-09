@@ -13,14 +13,14 @@
         desktop = {
             shells.noctalia = {
                 enable = true;
-                settings.notification.monitors = [ config.metadata.hardware.monitors.external.oled.connector ];
+                settings.notification.monitors = config.metadata.hardware.monitors.external.oled.connectors;
             };
             wm = {
                 hyprland.enable = false;
                 niri.enable = true;
                 gamma = {
                     enable = true;
-                    outputs.${config.metadata.hardware.monitors.internal.connector} = {
+                    outputs.${builtins.head config.metadata.hardware.monitors.internal.connectors} = {
                         contrast = 1.0;
                         brightness = 1.0;
                         gamma = 1.3;

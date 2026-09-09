@@ -18,7 +18,7 @@
                 position = "1920x140";
                 # below external
                 # position = "320x1080";
-                connector = "eDP-1";
+                connectors = [ "eDP-1" ];
                 touch = [
                     "fts3528:00-2808:1015"
                     "fts3528:00-2808:1015-unknown"
@@ -31,7 +31,7 @@
                     scale = 1.0;
                     position = "0x0";
                     # Absolute-mouse sibling ignored via udev on this host.
-                    connector = "DP-1";
+                    connectors = [ "DP-1" ];
                     touch = [
                         "ilitek-ilitek-tp"
                     ];

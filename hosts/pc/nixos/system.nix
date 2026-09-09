@@ -89,9 +89,11 @@ in
         # the real multitouch node can deliver wl_touch (taps + one-finger scroll).
         ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP Mouse", ENV{LIBINPUT_IGNORE_DEVICE}="1"
 
-        # Per-panel digitizers -> DRM connectors. Niri reads WL_OUTPUT via libinput
-        # (stock niri ignores it unless patched; see patches/niri/).
-        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.external.oled.connector}"
+        # Per-panel digitizers -> outputs. Use the display description instead of
+        # a DRM connector so touch still maps correctly after moving GPU/port.
+        # Niri reads WL_OUTPUT via libinput (stock niri ignores it unless patched;
+        # see patches/niri/).
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.external.oled.name}"
     '';
 
     hardware = {

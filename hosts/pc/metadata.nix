@@ -17,7 +17,7 @@
                 mode = "1920x1080@60.00";
                 scale = 2.0;
                 position = "1920x0";
-                connector = "eDP-1";
+                connectors = [ "eDP-1" ];
                 touch = [ ];
             };
             external = {
@@ -26,7 +26,12 @@
                     mode = "1920x1080@60.00";
                     scale = 1.0;
                     position = "0x0";
-                    connector = "DP-1";
+                    connectors = [
+                        "DP-1"
+                        "DP-2"
+                        "HDMI-A-1"
+                        "HDMI-A-2"
+                    ];
                     touch = [
                         "ilitek-ilitek-tp"
                     ];

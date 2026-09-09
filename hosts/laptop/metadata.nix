@@ -12,6 +12,7 @@
                     mode = "1920x1080@60";
                     scale = 1.0;
                     position = "0x1080";
+                    connectors = [ "eDP-1" ];
                 };
                 external = {
                     aoc = {
@@ -19,6 +20,11 @@
                         mode = "1920x1080@74.97";
                         scale = 1.0;
                         position = "0x0";
+                        connectors = [
+                            "HDMI-A-1"
+                            "HDMI-A-2"
+                            "DP-1"
+                        ];
                     };
                 };
             };

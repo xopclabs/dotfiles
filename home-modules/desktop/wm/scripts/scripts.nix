@@ -6,6 +6,7 @@ let
     hardwareCfg = config.metadata.hardware;
     internal = hardwareCfg.monitors.internal;
     wmEnabled = config.modules.desktop.wm.hyprland.enable || config.modules.desktop.wm.niri.enable;
+    primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
 
     formatScale = s: let
         str = toString s;
@@ -64,12 +65,12 @@ let
                 (if internal != null then formatScale internal.scale else "1")
                 (if internal != null then internal.position else "0x0")
                 (if internal != null then (internal.transform or "normal") else "normal")
-                (if internal != null && internal.connector != null then internal.connector else "")
+                (if internal != null && primaryConnector internal != null then primaryConnector internal else "")
                 (lib.concatStringsSep "\n    " (lib.mapAttrsToList
                     (k: v: ''["ext-${k}"]="${v.name}"'')
                     hardwareCfg.monitors.external))
                 (lib.concatStringsSep "\n    " (lib.mapAttrsToList
-                    (k: v: ''["ext-${k}"]="${if v.connector != null then v.connector else ""}"'')
+                    (k: v: ''["ext-${k}"]="${if primaryConnector v != null then primaryConnector v else ""}"'')
                     hardwareCfg.monitors.external))
             ]
             (builtins.readFile ./lib)

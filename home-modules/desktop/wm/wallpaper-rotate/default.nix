@@ -5,11 +5,12 @@ let
     cfg = config.modules.desktop.wm.wallpaperRotate;
     hardwareCfg = config.metadata.hardware;
     internal = hardwareCfg.monitors.internal;
+    primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
 
     monitorsJson = builtins.toJSON {
         internal = if internal != null then {
             name = internal.name;
-            connector = internal.connector;
+            connector = primaryConnector internal;
         } else null;
     };
 

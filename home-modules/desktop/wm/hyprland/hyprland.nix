@@ -82,15 +82,17 @@ EOF
     allMonitors =
         lib.optional (internalMon != null) internalMon
         ++ lib.attrValues hardwareCfg.monitors.external;
+    primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
 
-    # Per-panel digitizers from metadata (touch/tablet -> DRM connector).
+    # Per-panel digitizers from metadata (touch/tablet -> primary DRM connector).
     touchDeviceConfig = lib.concatMap (mon:
         let
             transform = toString (transformToNum (mon.transform or "0"));
+            connector = primaryConnector mon;
         in map (devName: ''
             device {
               name=${devName}
-              output=${mon.connector}
+              output=${connector}
               transform=${transform}
             }
         '') mon.touch
@@ -116,7 +118,7 @@ in {
     };
     config = lib.mkIf cfg.enable {
         assertions = map (mon: {
-            assertion = mon.connector != null;
+            assertion = primaryConnector mon != null;
             message = "metadata.hardware.monitors entry \"${mon.name}\" sets touch but has no connector (needed for Hyprland device output=).";
         }) (lib.filter (m: m.touch != []) allMonitors);
 

@@ -12,14 +12,12 @@ let
 
     hardwareCfg = config.metadata.hardware;
     internalMon = hardwareCfg.monitors.internal;
+    outputNames = mon: if mon.connectors != [] then mon.connectors else [ mon.name ];
     brightnessMonitor =
-        lib.optionalAttrs (internalMon != null && internalMon.connector != null) {
-            ${internalMon.connector} = { backend = "backlight"; };
-        }
-        // lib.mapAttrs' (_: mon: {
-            name = if mon.connector != null then mon.connector else mon.name;
-            value = { backend = "ddcutil"; };
-        }) hardwareCfg.monitors.external;
+        lib.optionalAttrs (internalMon != null) (lib.genAttrs (outputNames internalMon) (_: { backend = "backlight"; }))
+        // lib.foldl' (acc: mon:
+            acc // lib.genAttrs (outputNames mon) (_: { backend = "ddcutil"; })
+        ) {} (lib.attrValues hardwareCfg.monitors.external);
 
     groupStyle = {
         fill = "#${palette.base01}";

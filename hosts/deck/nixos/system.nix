@@ -63,9 +63,9 @@
 
         # Per-panel digitizers -> DRM connectors. Niri reads WL_OUTPUT via libinput
         # (stock niri ignores it unless patched; see patches/niri/).
-        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="FTS3528:00 2808:1015", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.internal.connector}"
-        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="FTS3528:00 2808:1015 UNKNOWN", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.internal.connector}"
-        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.external.oled.connector}"
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="FTS3528:00 2808:1015", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.internal.name}"
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="FTS3528:00 2808:1015 UNKNOWN", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.internal.name}"
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.external.oled.name}"
 
         # Limit battery charge to 80%
         SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"

@@ -13,7 +13,7 @@
         desktop = {
             shells.noctalia = {
                 enable = true;
-                settings.notification.monitors = [ config.metadata.hardware.monitors.internal.connector ];
+                settings.notification.monitors = config.metadata.hardware.monitors.internal.connectors;
             };
             wm = {
                 hyprland.enable = false;
