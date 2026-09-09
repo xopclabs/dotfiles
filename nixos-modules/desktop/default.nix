@@ -15,6 +15,7 @@
         ./ereader-relay.nix
         ./vanta.nix
         ./ddcutil.nix
+        ./touch-unlock.nix
     ];
 }
 

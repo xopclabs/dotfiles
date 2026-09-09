@@ -51,6 +51,10 @@
         flatpak.enable = true;
         localsend.enable = true;
         ddcutil.enable = true;
+        touchUnlock = {
+            enable = true;
+            allowVendorDrivers = true;
+        };
         virtual_webcam.enable = false;
         p81 = {
             enable = true;

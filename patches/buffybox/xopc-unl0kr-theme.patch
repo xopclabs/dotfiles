@@ -1,0 +1,193 @@
+diff --git a/shared/themes.c b/shared/themes.c
+index e48513c..edac52d 100644
+--- a/shared/themes.c
++++ b/shared/themes.c
+@@ -959,72 +959,38 @@ static const bbx_theme nord_light = {
+ 
+ static const bbx_theme nord_dark = {
+     .name = "nord-dark",
+-    .window = {
+-        .bg_color = NORD0,
+-    },
++    .window = { .bg_color = 0x101622 },
+     .header = {
+-        .bg_color = NORD1,
++        .bg_color = 0x151c2b,
+         .border_width = 1,
+-        .border_color = NORD2,
++        .border_color = 0x263247,
+         .pad = 20,
+         .gap = 10
+     },
+     .keyboard = {
+-        .bg_color = NORD1,
++        .bg_color = 0x101622,
+         .border_width = 1,
+-        .border_color = NORD2,
++        .border_color = 0x263247,
+         .pad = 20,
+         .gap = 10,
+         .keys = {
+             .border_width = 1,
+             .corner_radius = 3,
+             .key_char = {
+-                .normal = {
+-                    .fg_color = NORD0,
+-                    .bg_color = NORD9,
+-                    .border_color = NORD10
+-                },
+-                .pressed = {
+-                    .fg_color = NORD6,
+-                    .bg_color = NORD10,
+-                    .border_color = NORD10
+-                }
++                .normal = { .fg_color = 0xd8dee9, .bg_color = 0x151c2b, .border_color = 0x263247 },
++                .pressed = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac }
+             },
+             .key_non_char = {
+-                .normal = {
+-                    .fg_color = NORD0,
+-                    .bg_color = NORD8,
+-                    .border_color = NORD10
+-                },
+-                .pressed = {
+-                    .fg_color = NORD6,
+-                    .bg_color = NORD10,
+-                    .border_color = NORD10
+-                }
++                .normal = { .fg_color = 0xd8dee9, .bg_color = 0x1b2435, .border_color = 0x263247 },
++                .pressed = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac }
+             },
+             .key_mod_act = {
+-                .normal = {
+-                    .fg_color = NORD10,
+-                    .bg_color = 0xbed5da,
+-                    .border_color = 0x009900
+-                },
+-                .pressed = {
+-                    .fg_color = NORD6,
+-                    .bg_color = NORD10,
+-                    .border_color = NORD10
+-                }
++                .normal = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac },
++                .pressed = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac }
+             },
+             .key_mod_inact = {
+-                .normal = {
+-                    .fg_color = NORD0,
+-                    .bg_color = NORD8,
+-                    .border_color = NORD10
+-                },
+-                .pressed = {
+-                    .fg_color = 0xf2f7f8,
+-                    .bg_color = 0x009900,
+-                    .border_color = 0x009900
+-                }
++                .normal = { .fg_color = 0xd8dee9, .bg_color = 0x1b2435, .border_color = 0x263247 },
++                .pressed = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac }
+             }
+         }
+     },
+@@ -1032,81 +998,54 @@ static const bbx_theme nord_dark = {
+         .border_width = 1,
+         .corner_radius = 3,
+         .pad = 8,
+-        .normal = {
+-            .fg_color = NORD0,
+-            .bg_color = NORD8,
+-            .border_color = NORD10
+-        },
+-        .pressed = {
+-            .fg_color = NORD6,
+-            .bg_color = NORD10,
+-            .border_color = NORD10
+-        }
++        .normal = { .fg_color = 0xd8dee9, .bg_color = 0x151c2b, .border_color = 0x263247 },
++        .pressed = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac }
+     },
+     .textarea = {
+-        .fg_color = NORD6,
+-        .bg_color = NORD2,
++        .fg_color = 0xeceff4,
++        .bg_color = 0x151c2b,
+         .border_width = 1,
+-        .border_color = NORD4,
++        .border_color = 0x5e81ac,
+         .corner_radius = 3,
+         .pad = 8,
+-        .placeholder_color = NORD10,
+-        .cursor = {
+-            .width = 2,
+-            .color = NORD4,
+-            .period = 700
+-        }
++        .placeholder_color = 0x4c566a,
++        .cursor = { .width = 2, .color = 0x5e81ac, .period = 700 }
+     },
+     .dropdown = {
+         .button = {
+             .border_width = 1,
+             .corner_radius = 3,
+             .pad = 8,
+-            .normal = {
+-                .fg_color = NORD0,
+-                .bg_color = NORD8,
+-                .border_color = NORD10
+-            },
+-            .pressed = {
+-                .fg_color = NORD6,
+-                .bg_color = NORD10,
+-                .border_color = NORD10
+-            }
++            .normal = { .fg_color = 0xd8dee9, .bg_color = 0x151c2b, .border_color = 0x263247 },
++            .pressed = { .fg_color = 0xeceff4, .bg_color = 0x5e81ac, .border_color = 0x5e81ac }
+         },
+         .list = {
+-            .fg_color = NORD6,
+-            .bg_color = NORD1,
+-            .selection_fg_color = NORD6,
+-            .selection_bg_color = NORD10,
++            .fg_color = 0xd8dee9,
++            .bg_color = 0x101622,
++            .selection_fg_color = 0xeceff4,
++            .selection_bg_color = 0x5e81ac,
+             .border_width = 1,
+-            .border_color = NORD10,
++            .border_color = 0x263247,
+             .corner_radius = 0,
+             .pad = 8
+         }
+     },
+-    .label = {
+-        .fg_color = NORD5
+-    },
++    .label = { .fg_color = 0xd8dee9 },
+     .msgbox = {
+-        .fg_color = NORD6,
+-        .bg_color = NORD1,
++        .fg_color = 0xd8dee9,
++        .bg_color = 0x151c2b,
+         .border_width = 1,
+-        .border_color = NORD10,
++        .border_color = 0x263247,
+         .corner_radius = 3,
+         .pad = 20,
+         .gap = 20,
+-        .dimming = {
+-            .color = NORD0,
+-            .opacity = 225
+-        }
++        .dimming = { .color = 0x101622, .opacity = 225 }
+     },
+     .bar = {
+         .border_width = 1,
+-        .border_color = 0x009900,
++        .border_color = 0x263247,
+         .corner_radius = 3,
+-        .indicator = {
+-            .bg_color = 0x009900
+-        }
++        .indicator = { .bg_color = 0xa3be8c }
+     }
+ };
+ 

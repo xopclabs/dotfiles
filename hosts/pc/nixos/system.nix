@@ -63,6 +63,7 @@ in
                 device = "nodev";
                 efiSupport = true;
                 enableCryptodisk = false;
+                configurationLimit = 3;
             };
 
             systemd-boot = {
