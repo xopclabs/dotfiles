@@ -103,7 +103,14 @@ in
     fileSystems."/mnt/nas" = {
         device = "192.168.254.10:/mnt/raid_pool/shared";
         fsType = "nfs";
-        options = [ "x-systemd.automount" "noauto" ];
+        options = [
+            "x-systemd.automount"
+            "noauto"
+            "nofail"
+            "_netdev"
+            "x-systemd.mount-timeout=3s"
+            "x-systemd.idle-timeout=60s"
+        ];
     };
 
     services.upower.enable = true;

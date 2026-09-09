@@ -1,0 +1,39 @@
+--- a/src/main.c	2026-09-09 13:30:45.777540273 +0200
++++ b/src/main.c	2026-09-09 13:30:45.799801247 +0200
+@@ -207,7 +207,7 @@
+ void wl_set_cbg(double contrast, double brightness, double gamma) {
+ 	struct output *output;
+ 	wl_list_for_each(output, &outputs, link) {
+-		if (monitor_name != NULL && strcmp(output->name, monitor_name) != 0) {
++		if (output->gamma_control == NULL) {
+ 			continue;
+ 		}
+ 		output->table_fd =
+@@ -381,12 +381,27 @@
+ 		return EXIT_FAILURE;
+ 	}
+ 
++	// Parse the monitor name before creating gamma controls, so -m only claims
++	// the selected output. run_cmdline() parses it again later with the rest of
++	// the options.
++	for (int i = 1; i < argc - 1; ++i) {
++		if (strcmp(argv[i], "-m") == 0) {
++			monitor_name = strdup(argv[i + 1]);
++			break;
++		}
++	}
++
+ 	// now we go into the gamma specifics
+ 	// for each output in our stored list:
+ 	//  1. create a gamma controller for this specific output
+ 	//  2. add a listener function
+ 	struct output *output;
+ 	wl_list_for_each(output, &outputs, link) {
++		if (monitor_name != NULL &&
++				(output->name == NULL || strcmp(output->name, monitor_name) != 0)) {
++			continue;
++		}
++
+ 		output->gamma_control = zwlr_gamma_control_manager_v1_get_gamma_control(
+ 				gamma_control_manager, output->wl_output);
+ 		zwlr_gamma_control_v1_add_listener(
