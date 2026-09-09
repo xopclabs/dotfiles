@@ -21,9 +21,9 @@
                 gamma = {
                     enable = true;
                     outputs.${config.metadata.hardware.monitors.internal.connector} = {
-                        contrast = 0.9;
+                        contrast = 1.0;
                         brightness = 1.0;
-                        gamma = 1.45;
+                        gamma = 1.3;
                     };
                 };
                 wallpaperRotate.enable = true;

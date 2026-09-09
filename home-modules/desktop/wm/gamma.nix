@@ -168,7 +168,10 @@ in
             }
         ];
 
-        home.packages = [ package ];
+        home.packages = [
+            cfg.package
+            package
+        ];
 
         systemd.user.services.display-gamma = {
             Unit = {
