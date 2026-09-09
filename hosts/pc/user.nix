@@ -18,6 +18,13 @@
             wm = {
                 hyprland.enable = false;
                 niri.enable = true;
+                gamma = {
+                    enable = true;
+                    outputs.${config.metadata.hardware.monitors.internal.connector} = {
+                        gamma = 1.25;
+                        brightness = 1.0;
+                    };
+                };
                 wallpaperRotate.enable = true;
                 hypridle = {
                     enable = true;

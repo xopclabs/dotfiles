@@ -9,6 +9,7 @@ in {
         ./hyprland/hyprland.nix
         ./niri/niri.nix
         ./kanshi.nix
+        ./gamma.nix
         ./hypridle.nix
         ./scripts/scripts.nix
         ./wallpaper-rotate
