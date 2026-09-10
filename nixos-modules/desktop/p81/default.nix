@@ -106,6 +106,20 @@ in
     config = mkIf cfg.enable {
         environment.systemPackages = [ perimeter81 p81-reset p81ctl ];
 
+        security.polkit = {
+            enable = true;
+            extraConfig = ''
+                polkit.addRule(function(action, subject) {
+                    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+                        action.lookup("unit") == "perimeter81-helper-daemon.service" &&
+                        ["start", "stop", "restart"].indexOf(action.lookup("verb")) >= 0 &&
+                        subject.local && subject.active) {
+                        return polkit.Result.YES;
+                    }
+                });
+            '';
+        };
+
         systemd.tmpfiles.rules = [
             "d /var/lib/p81 0755 root root -"
             "d /var/lib/p81/local 0755 root root -"

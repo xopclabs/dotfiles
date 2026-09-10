@@ -2,6 +2,7 @@
 , buildFHSEnv
 , makeDesktopItem
 , copyDesktopItems
+, systemd
 , perimeter81-unwrapped
 }:
 
@@ -74,7 +75,25 @@ in
         postInstall = ''
             mkdir -p $out/bin
             mkdir -p $out/share
-            ln -s ${fhs "/opt/Perimeter81/perimeter81"}/bin/p81fhs $out/bin/perimeter81
+            cat > $out/bin/perimeter81 <<'EOF'
+            #!/bin/sh
+            service_started=0
+            if ! ${systemd}/bin/systemctl --quiet is-active perimeter81-helper-daemon.service; then
+                if ${systemd}/bin/systemctl start perimeter81-helper-daemon.service; then
+                    service_started=1
+                fi
+            fi
+
+            ${fhs "/opt/Perimeter81/perimeter81"}/bin/p81fhs "$@"
+            status=$?
+
+            if [ "$service_started" = 1 ]; then
+                ${systemd}/bin/systemctl stop perimeter81-helper-daemon.service || true
+            fi
+
+            exit "$status"
+            EOF
+            chmod +x $out/bin/perimeter81
             ln -s ${fhs "/opt/Perimeter81/artifacts/daemon"}/bin/p81fhs $out/bin/p81-helper-daemon
             cp -r ${perimeter81-unwrapped}/share/doc ${perimeter81-unwrapped}/share/icons $out/share
         '';
