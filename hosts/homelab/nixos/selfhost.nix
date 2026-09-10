@@ -93,10 +93,13 @@
             };
             unbound = {
                 forwardUpstream = true;
-                # Quad9/DoT returns Fastly POPs for cache.nixos.org that are flaky
-                # from Russia. Plain Google/Cloudflare DNS returns reachable POPs.
-                forwardTlsUpstream = false;
-                upstreamServers = [ "8.8.8.8" "1.1.1.1" ];
+                # Quad9 returns flaky Fastly POPs for cache.nixos.org from Russia
+                # Use Cloudflare over TLS so ISP DNS injection cannot forge responses
+                forwardTlsUpstream = true;
+                upstreamServers = [
+                    "1.1.1.1@853#cloudflare-dns.com"
+                    "1.0.0.1@853#cloudflare-dns.com"
+                ];
             };
         };
 
