@@ -3,7 +3,8 @@
 # Parse arguments
 suffix=""
 use_workspace=false
-while getopts "p:w" opt; do
+niri_managed=false
+while getopts "np:w" opt; do
     case $opt in
         p)
             suffix="-${OPTARG}"
@@ -11,8 +12,11 @@ while getopts "p:w" opt; do
         w)
             use_workspace=true
             ;;
+        n)
+            niri_managed=true
+            ;;
         *)
-            echo "Usage: tm [-w] [-p suffix]"
+            echo "Usage: tm [-w] [-n] [-p suffix]"
             exit 1
             ;;
     esac
@@ -144,6 +148,10 @@ sessionx_cmd() {
 
 # Check if we're already in a tmux session
 if [ -n "$TMUX" ]; then
+    if [ "$niri_managed" = true ]; then
+        echo "tm: -n must be launched as a new terminal, not from inside tmux" >&2
+        exit 1
+    fi
     if [ "$use_workspace" = true ]; then
         if ! tmux has-session -t "$session_name" 2>/dev/null; then
             tmux new-session -d -s "$session_name"
@@ -159,8 +167,8 @@ fi
 # Find an unattached linked session in the same group as $session_name
 # (excludes the base session itself)
 find_orphan() {
-    tmux list-sessions -F '#{session_name} #{session_group} #{session_attached}' 2>/dev/null | \
-        awk -v base="$session_name" '$2 == base && $3 == "0" && $1 != base {print $1; exit}'
+    tmux list-sessions -F '#{session_name} #{session_group} #{session_attached} #{@niri_managed}' 2>/dev/null | \
+        awk -v base="$session_name" '$2 == base && $3 == "0" && $1 != base && $4 != "1" {print $1; exit}'
 }
 
 # Find the lowest available index for a linked session name (e.g. main~1, main~2)
@@ -187,6 +195,83 @@ attach_or_link() {
         tmux new-session -s "$link_name" -t "$session_name" \; set-option destroy-unattached on "$@"
     fi
 }
+
+# Give a compositor-managed terminal its own linked session and its own window.
+# The base session is the persistent backing store; only the linked session is
+# attached, so selecting the new window cannot move another terminal client.
+if [ "$niri_managed" = true ]; then
+    if [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_TTY:-}" ]; then
+        echo "tm: -n is only intended for local graphical terminals" >&2
+        exit 1
+    fi
+
+    # tmux may assign the same next numeric index to concurrent new-window
+    # requests. Retry until the winning request has finished and the next
+    # index is available; ownership uses the returned stable window ID.
+    create_managed_window() {
+        local attempt=0
+        while [ "$attempt" -lt 100 ]; do
+            # The trailing colon targets the session rather than its current
+            # window. Without it, tmux repeatedly tries current-index + 1 and
+            # fails once that index already exists.
+            if window_id=$(tmux new-window -d -P -F '#{window_id}' -t "=$session_name:" 2>/dev/null); then
+                return 0
+            fi
+            attempt=$((attempt + 1))
+            sleep 0.01
+        done
+        return 1
+    }
+
+    if tmux has-session -t "=$session_name" 2>/dev/null; then
+        create_managed_window || exit 1
+    else
+        # new-session must create one window. Use it as this terminal's owned
+        # window, avoiding a dummy window on a fresh workspace. If another
+        # launcher won the race to create the base, add a window to that base.
+        if ! window_id=$(tmux new-session -d -P -F '#{window_id}' -s "$session_name" 2>/dev/null); then
+            create_managed_window || exit 1
+        fi
+    fi
+
+    # Name allocation and creation must be retried together: several niri
+    # launches may all observe the same available suffix. A failed creator
+    # must never kill the linked session another launcher just created.
+    link_name=""
+    for _ in $(seq 1 100); do
+        candidate=$(next_link_name)
+        if tmux new-session -d -s "$candidate" -t "=$session_name" 2>/dev/null; then
+            link_name="$candidate"
+            break
+        fi
+        if ! tmux has-session -t "$candidate" 2>/dev/null; then
+            break
+        fi
+    done
+
+    if [ -z "$link_name" ]; then
+        tmux kill-window -t "$window_id" 2>/dev/null
+        exit 1
+    fi
+
+    if ! tmux set-option -t "$link_name" @niri_managed 1 ||
+       ! tmux set-option -t "$link_name" @niri_window "$window_id" ||
+       ! tmux select-window -t "$link_name:$window_id"; then
+        tmux kill-session -t "$link_name" 2>/dev/null
+        tmux kill-window -t "$window_id" 2>/dev/null
+        exit 1
+    fi
+
+    # Set up the linked session completely before attaching. In particular,
+    # this avoids tmux trying to attach while it is still linking and selecting
+    # windows, which can fail against a long-running server with renumbering.
+    if ! tmux attach-session -t "$link_name"; then
+        tmux kill-session -t "$link_name" 2>/dev/null
+        tmux kill-window -t "$window_id" 2>/dev/null
+        exit 1
+    fi
+    exit 0
+fi
 
 if [ "$use_workspace" = true ]; then
     if tmux has-session 2>/dev/null; then

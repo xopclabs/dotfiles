@@ -225,7 +225,7 @@ in {
                     "Mod+Tab".action.toggle-overview = [];
 
                     # Terminal
-                    "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" "-w" ];
+                    "Mod+Space".action.spawn = [ config.modules.terminals.default "-e" "tm" "-w" "-n" ];
                     "Mod+Ctrl+Space".action.spawn = [ config.modules.terminals.default "-e" "tmux" ];
                     # Launcher
                     "Mod+L".action.spawn = "launcher-drun";

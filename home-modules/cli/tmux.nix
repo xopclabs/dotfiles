@@ -33,6 +33,7 @@ let
         '';
     };
     tmux-clean-empty = pkgs.writeShellScriptBin "tmux-clean-empty" ''
+        export PATH=${lib.makeBinPath [ pkgs.tmux pkgs.procps pkgs.gnused pkgs.gnugrep ]}:$PATH
         ${builtins.readFile ./scripts/tmux-clean-empty.sh}
     '';
 in {
@@ -100,6 +101,7 @@ in {
                         set -g @catppuccin_window_current_background "#${strings.toLower base03}"
                         set -g @catppuccin_status_modules_right "date_time"
                         set -g @catppuccin_status_modules_left "session"
+                        set -g @catppuccin_session_text "#{?session_group,#{session_group},#S}"
                         set -g @catppuccin_status_left_separator  "█"
                         set -g @catppuccin_status_right_separator "█"
                         set -g @catppuccin_status_right_separator_inverse "no"
@@ -156,8 +158,9 @@ in {
                 # Environment
                 set-option -ga update-environment " NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK I3SOCK WAYLAND_DISPLAY DISPLAY DBUS_SESSION_BUS_ADDRESS"
 
-                # Auto-close untouched sessions when detached
-                set-hook -g client-detached 'run-shell "${tmux-clean-empty}/bin/tmux-clean-empty \"#{session_name}\""'
+                # Auto-close untouched ordinary sessions, or the owned window
+                # and linked session for a compositor-managed terminal.
+                set-hook -g client-detached 'run-shell "${tmux-clean-empty}/bin/tmux-clean-empty \"#{session_name}\" \"#{@niri_managed}\" \"#{@niri_window}\""'
             '';
         };
 
