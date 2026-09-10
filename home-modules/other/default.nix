@@ -8,6 +8,7 @@ in {
         ./kicad.nix
         ./plover.nix
         ./minecraft.nix
+        ./mangohud.nix
         ./androidcam.nix
         ./autofirma.nix
     ];

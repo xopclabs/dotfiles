@@ -14,6 +14,9 @@
         shell = pkgs.zsh;
         isNormalUser = true;
         hashedPasswordFile = config.sops.secrets.userpass.path;
+        openssh.authorizedKeys.keys = [
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/qy9bDzKgpuIyHMalEPhMFgJ9hamF2LhR0kfk+2Et7"
+        ];
     };
 
     # Set correct ownership for games and steam directories

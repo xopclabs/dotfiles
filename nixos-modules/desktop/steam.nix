@@ -168,6 +168,7 @@ in
         # Extra gaming packages
         environment.systemPackages = mkMerge [
             (mkIf cfg.extraPackages (with pkgs; [
+                mangohud
                 protontricks
                 protonup-ng
             ]))
@@ -178,6 +179,11 @@ in
                 switchToGamescope
             ])
         ];
+
+        hardware.graphics = mkIf cfg.extraPackages {
+            extraPackages = [ pkgs.mangohud ];
+            extraPackages32 = [ pkgs.pkgsi686Linux.mangohud ];
+        };
 
         # Hardware support
         hardware.xone.enable = mkIf cfg.hardware.xoneSupport true;

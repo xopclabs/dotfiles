@@ -43,6 +43,7 @@ in {
                 tofi.enable = false;
                 kitty.enable = false;
                 btop.enable = false;
+                mangohud.enable = false;
 		        firefox.profileNames = [ "${config.home.username}" ];
             } // optionalAttrs (options.stylix.targets ? noctalia) {
                 noctalia.enable = false;
