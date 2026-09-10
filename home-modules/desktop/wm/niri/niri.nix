@@ -36,17 +36,15 @@ let
     };
 
     primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
-    # niri can match outputs by display description; use that for externals so
-    # settings survive moving the same monitor to another GPU/port. Keep the
-    # connector fallback for panels whose metadata.name is just a local label.
     niriOutputName = mon: if mon.name != "" then mon.name else primaryConnector mon;
+    niriOutputTargets = mon: lib.unique ([ (niriOutputName mon) ] ++ mon.connectors);
     mkOutput = mon: {
         mode = parseMode mon.mode;
         scale = mon.scale;
         transform = parseTransform (mon.transform or "normal");
         position = parsePosition mon.position;
     };
-    mkOutputAttrs = mon: { ${niriOutputName mon} = mkOutput mon; };
+    mkOutputAttrs = mon: lib.genAttrs (niriOutputTargets mon) (_: mkOutput mon);
     firstExternal = let
         exts = lib.attrValues hardwareCfg.monitors.external;
     in if exts == [] then null else builtins.head exts;
@@ -166,13 +164,13 @@ in {
 
                 binds = {
                     # Focus a monitor, or cycle its non-empty workspaces if already focused
-                    "Mod+A" = if output_external != null then {
-                        action.spawn = [ (lib.getExe focusOutput) output_external ];
+                    "Mod+A" = if firstExternal != null then {
+                        action.spawn = [ (lib.getExe focusOutput) ] ++ niriOutputTargets firstExternal;
                     } else {
                         action.focus-monitor-left = [];
                     };
-                    "Mod+T" = if output_internal != null then {
-                        action.spawn = [ (lib.getExe focusOutput) output_internal ];
+                    "Mod+T" = if internalMon != null then {
+                        action.spawn = [ (lib.getExe focusOutput) ] ++ niriOutputTargets internalMon;
                     } else {
                         action.focus-monitor-right = [];
                     };

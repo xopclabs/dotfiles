@@ -58,6 +58,13 @@
         touchUnlock = {
             enable = true;
             allowVendorDrivers = true;
+            inputSettleTimeoutSec = 3;
+            extraKernelModules = [
+                "usbhid"
+                "hid_generic"
+                "hid_multitouch"
+                "evdev"
+            ];
         };
         virtual_webcam.enable = false;
         p81 = {

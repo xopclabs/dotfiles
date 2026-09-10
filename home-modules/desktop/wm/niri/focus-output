@@ -1,13 +1,44 @@
 set -euo pipefail
 
-target="${1:-}"
-if [[ -z "$target" || "$target" == "-h" || "$target" == "--help" ]]; then
-    echo "Usage: niri-focus-output <output>" >&2
+if [[ $# -eq 0 || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    echo "Usage: niri-focus-output <output-or-description> [fallback ...]" >&2
     exit 1
 fi
 
+targets=("$@")
+outputs_json="$(niri msg --json outputs)"
 focused=$(niri msg --json focused-output | jq -r '.name // empty')
-if [[ "$focused" != "$target" ]]; then
+
+target=""
+for candidate in "${targets[@]}"; do
+    target="$(jq -n -r \
+        --argjson outputs "$outputs_json" \
+        --arg target "$candidate" '
+        def desc:
+          [.make, .model, .serial]
+          | map(select(. != null and . != "") | gsub("\\s+$"; ""))
+          | join(" ");
+        first($outputs | to_entries[]
+            | select(.key == $target or (.value | desc) == $target)
+            | .key)
+        // empty
+    ')"
+    [[ -n "$target" ]] && break
+done
+
+if [[ -z "$target" ]]; then
+    target="${targets[0]}"
+fi
+
+is_target_focused=0
+for t in "${targets[@]}"; do
+    if [[ "$focused" == "$t" || "$focused" == "$target" ]]; then
+        is_target_focused=1
+        break
+    fi
+done
+
+if [[ "$is_target_focused" != 1 ]]; then
     niri msg action focus-monitor "$target"
     exit 0
 fi
