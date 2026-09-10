@@ -51,7 +51,15 @@ in
                 };
             };
         };
-        kernelParams = [ "fbcon=rotate:0" ];
+        kernelParams = [
+            "fbcon=rotate:0"
+
+            # OCuLink/eGPU hotplug: let Linux own PCIe port services, poll for presence changes, and reserve bus/MMIO space for a GPU appearing after boot. The RX 9070 XT exposes a large prefetchable BAR.
+            "pcie_ports=native"
+            "pciehp.pciehp_poll_mode=1"
+            "pciehp.pciehp_poll_time=1"
+            "pci=assign-busses,realloc,hpbussize=0x40,hpmemsize=256M,hpmmioprefsize=32G"
+        ];
         loader = {
             efi = {
                 canTouchEfiVariables = true;
@@ -84,6 +92,12 @@ in
         KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
         # Sweep keyboard plover-HID non-root access.
         SUBSYSTEM=="hidraw", ATTRS{driver}=="hid-generic", MODE="0660", GROUP="input"
+
+        # Keep the OCuLink/eGPU RX 9070 XT awake. With amdgpu BOCO runtime PM it
+        # can suspend after an output disappears, and then HDMI hotplug may not be
+        # detected again until the GPU is manually woken or reset.
+        ACTION=="add|change", SUBSYSTEM=="pci", ATTR{vendor}=="0x1002", ATTR{device}=="0x7550", ATTR{power/control}="on"
+        ACTION=="add|change", SUBSYSTEM=="pci", ATTR{vendor}=="0x1002", ATTR{device}=="0xab40", ATTR{power/control}="on"
 
         # SF13TO external touchscreen: ignore the absolute-mouse HID interface so
         # the real multitouch node can deliver wl_touch (taps + one-finger scroll).
