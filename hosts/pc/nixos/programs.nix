@@ -50,6 +50,12 @@
             };
         };
 
+        deckControllerPassthrough = {
+            enable = true;
+            role = "importer";
+            exporterAddress = "192.168.1.151";
+        };
+
         lutris.enable = true;
         flatpak.enable = true;
         localsend.enable = true;

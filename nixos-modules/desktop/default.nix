@@ -16,6 +16,7 @@
         ./vanta.nix
         ./ddcutil.nix
         ./touch-unlock.nix
+        ./deck-controller-passthrough
     ];
 }
 

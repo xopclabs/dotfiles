@@ -8,7 +8,8 @@
     metadata = {
         user = "xopc";
         hostName = "deck";
-        
+        network.ipv4 = "192.168.1.151";
+
         hardware.monitors = {
             internal = {
                 name = "Valve Corporation ANX7530 U 0x00000001";

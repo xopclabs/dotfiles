@@ -8,6 +8,7 @@
     metadata = {
         user = "xopc";
         hostName = "pc";
+        network.ipv4 = "192.168.1.150";
 
         hardware.monitors = {
             # Built-in 5" panel. Connector/name are placeholders until we inspect

@@ -49,6 +49,11 @@
             };
         };
 
+        deckControllerPassthrough = {
+            enable = true;
+            role = "exporter";
+        };
+
         lutris.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
