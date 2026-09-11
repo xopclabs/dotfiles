@@ -15,6 +15,7 @@
                 enable = true;
                 settings.notification.monitors = config.metadata.hardware.monitors.external.oled.connectors;
             };
+
             wm = {
                 hyprland.enable = false;
                 niri.enable = true;

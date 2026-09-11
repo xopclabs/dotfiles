@@ -115,7 +115,7 @@ in
             steam = {
                 enable = true;
                 autoStart = cfg.jovian.autoStart;
-                desktopSession = if cfg.jovian.autoStart then cfg.jovian.desktopSession else null;
+                desktopSession = cfg.jovian.desktopSession;
                 user = config.metadata.user;
             };
 

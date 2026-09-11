@@ -34,7 +34,7 @@
             enable = true;
             jovian = {
                 enable = true;
-                autoStart = false;
+                autoStart = true;
                 desktopSession = "niri";
                 steamDeck.enable = false;
                 deckyLoader = {
@@ -47,7 +47,6 @@
             hardware = {
                 xoneSupport = true;
                 joyconSupport = true;
-                trackpadDesktop = true;
             };
         };
 
