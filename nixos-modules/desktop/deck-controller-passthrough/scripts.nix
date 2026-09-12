@@ -80,7 +80,7 @@ in {
         set -eu
         case "''${SSH_ORIGINAL_COMMAND:-}" in
             start|stop)
-                exec ${pkgs.sudo}/bin/sudo ${remoteControlScript} "$SSH_ORIGINAL_COMMAND"
+                exec /run/wrappers/bin/sudo ${remoteControlScript} "$SSH_ORIGINAL_COMMAND"
                 ;;
             *)
                 echo "only start or stop is permitted" >&2
