@@ -1,0 +1,97 @@
+--- a/shared/display.c
++++ b/shared/display.c
+@@ -6,10 +6,54 @@
+ #include "display.h"
+ #include "log.h"
+ 
++#include <dirent.h>
+ #include <stdio.h>
+ #include <stdbool.h>
++#include <stdlib.h>
++#include <string.h>
+ #include <unistd.h>
+ 
++static bool find_builtin_drm(char *drm_path, size_t drm_path_size, int64_t *connector_id) {
++    DIR *dir = opendir("/sys/class/drm");
++    if (!dir)
++        return false;
++
++    struct dirent *entry;
++    while ((entry = readdir(dir))) {
++        if (strncmp(entry->d_name, "card", 4) != 0)
++            continue;
++
++        char *connector_name;
++        long card = strtol(entry->d_name + 4, &connector_name, 10);
++        if (connector_name == entry->d_name + 4 || strncmp(connector_name, "-eDP-", 5) != 0)
++            continue;
++
++        char connector_id_path[256];
++        snprintf(connector_id_path, sizeof(connector_id_path),
++                 "/sys/class/drm/%s/connector_id", entry->d_name);
++
++        FILE *connector_id_file = fopen(connector_id_path, "r");
++        long long id;
++        if (!connector_id_file || fscanf(connector_id_file, "%lld", &id) != 1) {
++            if (connector_id_file)
++                fclose(connector_id_file);
++            continue;
++        }
++        fclose(connector_id_file);
++
++        snprintf(drm_path, drm_path_size, "/dev/dri/card%ld", card);
++        if (access(drm_path, F_OK) != 0)
++            continue;
++
++        *connector_id = id;
++        closedir(dir);
++        return true;
++    }
++
++    closedir(dir);
++    return false;
++}
++
+ lv_display_t *bbx_display_create(bbx_backends_backend_id_t backend_id, bbx_display_config_t *config) {
+     lv_display_t *disp = NULL;
+ 
+@@ -45,21 +89,27 @@
+         }
+ 
+         char drm_path[16];
+-        bool found = false;
+-        for (int i = 0; i < 9; i++) {
+-            sprintf(drm_path, "/dev/dri/card%d", i);
+-
+-            if (access(drm_path, F_OK) == 0) {
+-                found = true;
+-                break;
++        int64_t connector_id = -1;
++        if (find_builtin_drm(drm_path, sizeof(drm_path), &connector_id)) {
++            bbx_log(BBX_LOG_LEVEL_VERBOSE, "Using built-in eDP display on %s", drm_path);
++        }
++        else {
++            bool found = false;
++            for (int i = 0; i < 9; i++) {
++                snprintf(drm_path, sizeof(drm_path), "/dev/dri/card%d", i);
++
++                if (access(drm_path, F_OK) == 0) {
++                    found = true;
++                    break;
++                }
++            }
++            if (!found) {
++                bbx_log(BBX_LOG_LEVEL_ERROR, "/dev/dri/card* are not available");
++                return NULL;
+             }
+-        }
+-        if (!found) {
+-            bbx_log(BBX_LOG_LEVEL_ERROR, "/dev/dri/card* are not available");
+-            return NULL;
+         }
+ 
+-        lv_linux_drm_set_file(disp, drm_path, -1);
++        lv_linux_drm_set_file(disp, drm_path, connector_id);
+         break;
+ #endif /* LV_USE_LINUX_DRM */
+ 

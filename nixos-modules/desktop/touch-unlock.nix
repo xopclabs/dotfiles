@@ -9,7 +9,10 @@ let
     ];
 
     themedBuffybox = pkgs.buffybox.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ../../patches/buffybox/xopc-unl0kr-theme.patch ];
+        patches = (old.patches or [ ]) ++ [
+            ../../patches/buffybox/xopc-unl0kr-theme.patch
+            ../../patches/buffybox/prefer-built-in-display.patch
+        ];
     });
 
     knownInputRules = ''
