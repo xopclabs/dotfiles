@@ -136,6 +136,11 @@ with lib;
                         default = [];
                         description = "Touch/tablet device names built into this panel (from hyprctl devices).";
                     };
+                    variableRefreshRate = mkOption {
+                        type = types.oneOf [ types.bool (types.enum [ "on-demand" ]) ];
+                        default = false;
+                        description = "Niri variable-refresh-rate setting: false, true, or \"on-demand\".";
+                    };
                 };
             };
         in {

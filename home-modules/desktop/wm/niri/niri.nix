@@ -37,21 +37,24 @@ let
 
     primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
     niriOutputName = mon: if mon.name != "" then mon.name else primaryConnector mon;
-    niriOutputTargets = mon: lib.unique ([ (niriOutputName mon) ] ++ mon.connectors);
+    # Niri output configuration keys should be stable monitor descriptions, not
+    # ephemeral DRM connector names like DP-1/DP-2. Keep connector names in
+    # metadata for Hyprland/scripts, but don't generate Niri output blocks for
+    # them when a description is known.
+    niriOutputTargets = mon: [ (niriOutputName mon) ];
     mkOutput = mon: {
         mode = parseMode mon.mode;
         scale = mon.scale;
         transform = parseTransform (mon.transform or "normal");
         position = parsePosition mon.position;
+        variable-refresh-rate = mon.variableRefreshRate;
     };
     mkOutputAttrs = mon: lib.genAttrs (niriOutputTargets mon) (_: mkOutput mon);
     firstExternal = let
         exts = lib.attrValues hardwareCfg.monitors.external;
     in if exts == [] then null else builtins.head exts;
     output_external = if firstExternal != null then niriOutputName firstExternal else output_internal;
-    output_internal = if internalMon != null then let
-        connector = primaryConnector internalMon;
-    in if connector != null then connector else internalMon.name else null;
+    output_internal = if internalMon != null then niriOutputName internalMon else null;
 
     scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
     focusOutput = pkgs.writeShellScriptBin "niri-focus-output" ''
