@@ -70,13 +70,17 @@ let
     remote = lib.escapeShellArg "${icfg.remoteControl.user}@${icfg.exporterAddress}";
     gamescopeStart = pkgs.writeShellScript "deck-controller-passthrough-gamescope-start" ''
         set -eu
+        remote_started=false
         cleanup() {
             ${pkgs.systemd}/bin/systemctl stop ${importerService} || true
-            ${ssh} ${remote} stop || true
+            if [ "$remote_started" = true ]; then
+                ${ssh} ${remote} stop || true
+            fi
         }
         trap cleanup EXIT
 
         ${ssh} ${remote} start
+        remote_started=true
         for _ in $(${pkgs.coreutils}/bin/seq 1 30); do
             if ${pkgs.systemd}/bin/systemctl start ${importerService}; then
                 trap - EXIT
@@ -118,15 +122,17 @@ lib.mkMerge [
                 RemainAfterExit = true;
                 ExecStart = gamescopeStart;
                 ExecStop = gamescopeStop;
+                Restart = "on-failure";
+                RestartSec = 5;
             };
         };
 
         systemd.user.services.gamescope-session.serviceConfig = {
             ExecStartPre = lib.mkBefore [
-                "${pkgs.systemd}/bin/systemctl --no-ask-password start ${gamescopeService}"
+                "${pkgs.systemd}/bin/systemctl --no-ask-password --no-block start ${gamescopeService}"
             ];
             ExecStopPost = lib.mkAfter [
-                "${pkgs.systemd}/bin/systemctl --no-ask-password stop ${gamescopeService}"
+                "${pkgs.systemd}/bin/systemctl --no-ask-password --no-block stop ${gamescopeService}"
             ];
         };
 

@@ -115,7 +115,7 @@ in
             steam = {
                 enable = true;
                 autoStart = cfg.jovian.autoStart;
-                desktopSession = cfg.jovian.desktopSession;
+                desktopSession = if cfg.jovian.autoStart then cfg.jovian.desktopSession else null;
                 user = config.metadata.user;
             };
 
@@ -127,8 +127,6 @@ in
                 user = cfg.jovian.deckyLoader.user;
             };
         };
-
-        services.displayManager.defaultSession = mkIf (!cfg.jovian.autoStart && cfg.jovian.desktopSession != null) cfg.jovian.desktopSession;
 
         # Kernel from Jovian's own nixpkgs pin, not ours. The module overlay
         # otherwise rebuilds linux_jovian against host stdenv on every unstable bump.
@@ -148,12 +146,15 @@ in
         };
 
         # Prevent Gamescope from trying to nest into the previous desktop session.
-        systemd.user.services.gamescope-session.serviceConfig = mkIf cfg.jovian.enable {
-            ExecStart = mkForce [
-                ""
-                "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/lib/steamos/gamescope-session"
-            ];
-            TimeoutStartSec = 45;
+        systemd.user.services.gamescope-session = mkIf cfg.jovian.enable {
+            overrideStrategy = "asDropin";
+            serviceConfig = {
+                ExecStart = mkForce [
+                    ""
+                    "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/lib/steamos/gamescope-session"
+                ];
+                TimeoutStartSec = 45;
+            };
         };
 
         # Set up ownership for Steam and its directories

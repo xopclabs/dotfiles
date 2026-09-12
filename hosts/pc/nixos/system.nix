@@ -29,9 +29,6 @@ in
         initrd = {
             availableKernelModules = [ "amdgpu" ];
             luks.devices.cryptroot = {
-                # Use the TPM2 token enrolled by systemd-cryptenroll. If Secure Boot
-                # PCR 7 or the PIN check fails, systemd-cryptsetup falls back to the
-                # regular LUKS passphrase slot.
                 crypttabExtraOpts = [ "tpm2-device=auto" ];
             };
             systemd = {
@@ -53,12 +50,6 @@ in
         };
         kernelParams = [
             "fbcon=rotate:0"
-
-            # OCuLink/eGPU hotplug: let Linux own PCIe port services, poll for presence changes, and reserve bus/MMIO space for a GPU appearing after boot. The RX 9070 XT exposes a large prefetchable BAR.
-            "pcie_ports=native"
-            "pciehp.pciehp_poll_mode=1"
-            "pciehp.pciehp_poll_time=1"
-            "pci=assign-busses,realloc,hpbussize=0x40,hpmemsize=256M,hpmmioprefsize=32G"
         ];
         loader = {
             efi = {
@@ -71,7 +62,7 @@ in
                 device = "nodev";
                 efiSupport = true;
                 enableCryptodisk = false;
-                configurationLimit = 3;
+                configurationLimit = 30;
             };
 
             systemd-boot = {

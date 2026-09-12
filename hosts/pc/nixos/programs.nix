@@ -41,7 +41,7 @@
             enable = true;
             jovian = {
                 enable = true;
-                autoStart = true;
+                autoStart = false;
                 desktopSession = "niri";
                 steamDeck.enable = false;
                 deckyLoader = {
