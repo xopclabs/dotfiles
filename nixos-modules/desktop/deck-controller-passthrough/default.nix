@@ -1,118 +1,152 @@
 { config, lib, pkgs, ... }:
 
-with lib;
 let
     cfg = config.desktop.deckControllerPassthrough;
     usbip = config.boot.kernelPackages.usbip;
-    scripts = import ./scripts.nix { inherit cfg pkgs usbip; };
+    command = pkgs.writeShellScriptBin "deck-controller-passthrough" ''
+        set -eu
+        case "''${1:-}" in
+            start|stop|restart|status)
+                exec ${pkgs.systemd}/bin/systemctl "$1" deck-controller-passthrough-${cfg.role}.service
+                ;;
+            *)
+                echo "usage: deck-controller-passthrough {start|stop|restart|status}" >&2
+                exit 2
+                ;;
+        esac
+    '';
 in
 {
     options.desktop.deckControllerPassthrough = {
-        enable = mkEnableOption "Steam Deck controller passthrough over USB/IP";
+        enable = lib.mkEnableOption "Steam Deck controller passthrough over USB/IP";
 
-        role = mkOption {
-            type = types.enum [ "exporter" "importer" ];
-            description = "Whether this host exports the physical Deck controller or imports it.";
+        role = lib.mkOption {
+            type = lib.types.enum [ "exporter" "importer" ];
+            description = "Whether this host exports or imports the controller.";
         };
 
-        exporterAddress = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = "Resolvable IPv4 address or hostname of the USB/IP exporter.";
-        };
-
-        vendorId = mkOption {
-            type = types.strMatching "[0-9a-fA-F]{4}";
-            default = "28de";
-            description = "USB vendor ID of the controller to forward.";
-        };
-
-        productId = mkOption {
-            type = types.strMatching "[0-9a-fA-F]{4}";
-            default = "1205";
-            description = "USB product ID of the controller to forward.";
-        };
-
-        bootActivation = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Start the exporter automatically after the network is online.";
-        };
-
-        allowedPeerAddress = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = "IPv4 address allowed to control the exporter and observed by its disconnect watchdog.";
-        };
-
-        disconnectGraceSeconds = mkOption {
-            type = types.ints.positive;
-            default = 45;
-            description = "How long an observed USB/IP peer may be absent before the exporter restores local controls.";
-        };
-
-        remoteControl = {
-            enable = mkEnableOption "controlled SSH activation of the exporter";
-
-            user = mkOption {
-                type = types.str;
-                default = "deck-controller";
-                description = "Dedicated SSH account used by the importer to start or stop forwarding.";
+        device = {
+            vendorId = lib.mkOption {
+                type = lib.types.strMatching "[0-9a-fA-F]{4}";
+                default = "28de";
+                description = "USB vendor ID of the controller to forward.";
             };
 
-            authorizedKey = mkOption {
-                type = types.nullOr types.str;
+            productId = lib.mkOption {
+                type = lib.types.strMatching "[0-9a-fA-F]{4}";
+                default = "1205";
+                description = "USB product ID of the controller to forward.";
+            };
+        };
+
+        exporter = {
+            activateAtBoot = lib.mkEnableOption "controller export at boot";
+
+            peerAddress = lib.mkOption {
+                type = lib.types.nullOr (lib.types.strMatching "([0-9]{1,3}[.]){3}[0-9]{1,3}");
                 default = null;
-                description = "SSH public key permitted to issue the forced start or stop command on the exporter.";
+                description = "IPv4 address allowed to import and remotely control the controller.";
             };
 
-            identityFile = mkOption {
-                type = types.nullOr types.path;
-                default = null;
-                description = "Private key path used by the importer for controlled SSH activation.";
+            disconnectGraceSeconds = lib.mkOption {
+                type = lib.types.ints.positive;
+                default = 45;
+                description = "Seconds without the importer before local controls are restored.";
             };
 
-            hostPublicKey = mkOption {
-                type = types.nullOr types.str;
-                default = null;
-                description = "Expected exporter SSH host public key, including its key type.";
+            remoteControl = {
+                enable = lib.mkEnableOption "controlled SSH activation of the exporter";
+
+                user = lib.mkOption {
+                    type = lib.types.str;
+                    default = "deck-controller";
+                    description = "Dedicated SSH account used to control the exporter.";
+                };
+
+                authorizedKey = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "SSH public key allowed to start or stop the exporter.";
+                };
             };
         };
 
-        gamescopeLifecycle = mkEnableOption "controller forwarding around the Jovian Gamescope session";
+        importer = {
+            exporterAddress = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Resolvable IPv4 address or hostname of the USB/IP exporter.";
+            };
+
+            remoteControl = {
+                enable = lib.mkEnableOption "controlled SSH activation of the exporter";
+
+                user = lib.mkOption {
+                    type = lib.types.str;
+                    default = "deck-controller";
+                    description = "SSH account used to control the exporter.";
+                };
+
+                identityFile = lib.mkOption {
+                    type = lib.types.nullOr lib.types.path;
+                    default = null;
+                    description = "Private key used to control the exporter.";
+                };
+
+                hostPublicKey = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "Expected exporter SSH host public key, including its key type.";
+                };
+            };
+
+            gamescopeLifecycle.enable = lib.mkEnableOption "controller forwarding around the Jovian Gamescope session";
+        };
     };
 
-    config = mkIf cfg.enable (mkMerge [
+    config = lib.mkIf cfg.enable (lib.mkMerge [
         {
             assertions = [
                 {
-                    assertion = cfg.role != "importer" || cfg.exporterAddress != null;
-                    message = "desktop.deckControllerPassthrough.exporterAddress must be set for the importer role.";
+                    assertion = cfg.role != "exporter" || cfg.exporter.peerAddress != null;
+                    message = "The controller exporter requires exporter.peerAddress.";
                 }
                 {
-                    assertion = !cfg.bootActivation || cfg.role == "exporter";
-                    message = "desktop.deckControllerPassthrough.bootActivation is only valid for the exporter role.";
+                    assertion = cfg.role != "exporter" || !cfg.exporter.remoteControl.enable || cfg.exporter.remoteControl.authorizedKey != null;
+                    message = "Remote exporter control requires exporter.remoteControl.authorizedKey.";
                 }
                 {
-                    assertion = !cfg.gamescopeLifecycle || cfg.role == "importer";
-                    message = "desktop.deckControllerPassthrough.gamescopeLifecycle is only valid for the importer role.";
+                    assertion = cfg.role != "importer" || cfg.importer.exporterAddress != null;
+                    message = "The controller importer requires importer.exporterAddress.";
                 }
                 {
-                    assertion = cfg.role != "exporter" || !cfg.remoteControl.enable || (cfg.allowedPeerAddress != null && cfg.remoteControl.authorizedKey != null);
-                    message = "Controlled exporter activation requires allowedPeerAddress and remoteControl.authorizedKey.";
+                    assertion = cfg.role != "importer" || !cfg.importer.remoteControl.enable || (cfg.importer.remoteControl.identityFile != null && cfg.importer.remoteControl.hostPublicKey != null);
+                    message = "Remote importer control requires importer.remoteControl.identityFile and hostPublicKey.";
                 }
                 {
-                    assertion = !cfg.gamescopeLifecycle || (cfg.remoteControl.enable && cfg.remoteControl.identityFile != null && cfg.remoteControl.hostPublicKey != null);
-                    message = "Gamescope controller forwarding requires remoteControl plus identityFile and hostPublicKey on the importer.";
+                    assertion = !cfg.importer.gamescopeLifecycle.enable || cfg.role == "importer";
+                    message = "importer.gamescopeLifecycle is only valid for the importer role.";
+                }
+                {
+                    assertion = !cfg.importer.gamescopeLifecycle.enable || cfg.importer.remoteControl.enable;
+                    message = "Gamescope controller forwarding requires importer.remoteControl.";
+                }
+                {
+                    assertion = !cfg.importer.gamescopeLifecycle.enable || (config.desktop.steam.enable && config.desktop.steam.jovian.enable);
+                    message = "Gamescope controller forwarding requires desktop.steam with Jovian enabled.";
                 }
             ];
 
-            boot.kernelModules = optional (cfg.role == "exporter") "usbip-host"
-                ++ optional (cfg.role == "importer") "vhci-hcd";
-            environment.systemPackages = [ usbip scripts.command ];
+            boot.kernelModules = lib.optional (cfg.role == "exporter") "usbip-host"
+                ++ lib.optional (cfg.role == "importer") "vhci-hcd";
+            environment.systemPackages = [ usbip command ];
         }
 
-        (mkIf (cfg.role == "exporter") (import ./exporter.nix { inherit cfg scripts usbip lib; }))
-        (mkIf (cfg.role == "importer") (import ./importer.nix { inherit cfg scripts lib; }))
+        (lib.mkIf (cfg.role == "exporter") (import ./exporter.nix {
+            inherit config cfg lib pkgs usbip;
+        }))
+        (lib.mkIf (cfg.role == "importer") (import ./importer.nix {
+            inherit config cfg lib pkgs usbip;
+        }))
     ]);
 }

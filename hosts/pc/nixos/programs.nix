@@ -60,12 +60,14 @@
         deckControllerPassthrough = {
             enable = true;
             role = "importer";
-            exporterAddress = "192.168.1.151";
-            gamescopeLifecycle = true;
-            remoteControl = {
-                enable = true;
-                identityFile = config.sops.secrets."deck-controller/id_ed25519".path;
-                hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkwF057CuwoyRixmDypfz/zHbSt/WWAx5MOBUQnsLMf";
+            importer = {
+                exporterAddress = "192.168.1.151";
+                gamescopeLifecycle.enable = true;
+                remoteControl = {
+                    enable = true;
+                    identityFile = config.sops.secrets."deck-controller/id_ed25519".path;
+                    hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkwF057CuwoyRixmDypfz/zHbSt/WWAx5MOBUQnsLMf";
+                };
             };
         };
 

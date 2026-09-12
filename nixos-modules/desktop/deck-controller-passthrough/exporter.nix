@@ -1,9 +1,103 @@
-{ cfg, scripts, usbip, lib, ... }:
+{ config, cfg, lib, pkgs, usbip }:
 
+let
+    ecfg = cfg.exporter;
+    service = "deck-controller-passthrough-exporter.service";
+    findDevice = pkgs.writeShellScript "deck-controller-passthrough-find-device" ''
+        set -eu
+
+        for device in /sys/bus/usb/devices/*; do
+            [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
+            read -r vendor < "$device/idVendor"
+            read -r product < "$device/idProduct"
+            if [ "$vendor" = ${lib.escapeShellArg cfg.device.vendorId} ] && [ "$product" = ${lib.escapeShellArg cfg.device.productId} ]; then
+                basename "$device"
+                exit 0
+            fi
+        done
+
+        echo "Steam Deck controller ${cfg.device.vendorId}:${cfg.device.productId} was not found" >&2
+        exit 1
+    '';
+    start = pkgs.writeShellScript "deck-controller-passthrough-exporter-start" ''
+        set -eu
+        bus_id="$(${findDevice})"
+        if ! ${usbip}/bin/usbip bind --busid "$bus_id"; then
+            ${usbip}/bin/usbip unbind --busid "$bus_id" || true
+            ${pkgs.systemd}/bin/udevadm trigger --action=change --subsystem-match=usb
+            exit 1
+        fi
+    '';
+    stop = pkgs.writeShellScript "deck-controller-passthrough-exporter-stop" ''
+        set -eu
+        bus_id="$(${findDevice})" || exit 0
+        ${usbip}/bin/usbip unbind --busid "$bus_id" || true
+        ${pkgs.systemd}/bin/udevadm trigger --action=change --subsystem-match=usb
+    '';
+    watchdog = pkgs.writeShellScript "deck-controller-passthrough-watchdog" ''
+        set -eu
+        absent_since="$(${pkgs.coreutils}/bin/date +%s)"
+
+        while true; do
+            if ${pkgs.iproute2}/bin/ss -Htn state established '( sport = :3240 )' | ${pkgs.gawk}/bin/awk -v peer=${lib.escapeShellArg ecfg.peerAddress} '
+                {
+                    remote = $4
+                    sub(/:[0-9]+$/, "", remote)
+                    if (remote == peer) found = 1
+                }
+                END { exit !found }
+            '; then
+                absent_since=0
+            else
+                now="$(${pkgs.coreutils}/bin/date +%s)"
+                if [ "$absent_since" -eq 0 ]; then
+                    absent_since="$now"
+                elif [ $((now - absent_since)) -ge ${toString ecfg.disconnectGraceSeconds} ]; then
+                    ${pkgs.systemd}/bin/systemctl --no-block stop ${service}
+                    exit 0
+                fi
+            fi
+            ${pkgs.coreutils}/bin/sleep 5
+        done
+    '';
+    remoteControl = pkgs.writeShellScript "deck-controller-passthrough-remote-control" ''
+        set -eu
+        case "''${1:-}" in
+            start|stop)
+                exec ${pkgs.systemd}/bin/systemctl "$1" ${service}
+                ;;
+            *)
+                echo "usage: deck-controller-passthrough-remote-control {start|stop}" >&2
+                exit 2
+                ;;
+        esac
+    '';
+    remoteCommand = pkgs.writeShellScript "deck-controller-passthrough-remote-command" ''
+        set -eu
+        case "''${SSH_ORIGINAL_COMMAND:-}" in
+            start|stop)
+                exec /run/wrappers/bin/sudo ${remoteControl} "$SSH_ORIGINAL_COMMAND"
+                ;;
+            *)
+                echo "only start or stop is permitted" >&2
+                exit 2
+                ;;
+        esac
+    '';
+    allowFromPeer = port: {
+        networking.firewall = {
+            extraCommands = lib.mkIf (!config.networking.nftables.enable) ''
+                ${config.networking.firewall.package}/bin/iptables -A nixos-fw -p tcp -s ${ecfg.peerAddress} --dport ${toString port} -j nixos-fw-accept
+            '';
+            extraInputRules = lib.mkIf config.networking.nftables.enable ''
+                ip saddr ${ecfg.peerAddress} tcp dport ${toString port} accept
+            '';
+        };
+    };
+in
 lib.mkMerge [
+    (allowFromPeer 3240)
     {
-        networking.firewall.allowedTCPPorts = [ 3240 ];
-
         systemd.services.deck-controller-passthrough-usbipd = {
             description = "USB/IP daemon for Steam Deck controller passthrough";
             serviceConfig = {
@@ -15,26 +109,24 @@ lib.mkMerge [
         systemd.services.deck-controller-passthrough-exporter = {
             description = "Export the Steam Deck controller over USB/IP";
             requires = [ "deck-controller-passthrough-usbipd.service" ];
-            after = [ "network-online.target" "deck-controller-passthrough-usbipd.service" ];
-            wants = [ "network-online.target" ];
-            wantedBy = if cfg.bootActivation then [ "multi-user.target" ] else [];
-            unitConfig.PartOf = [ "deck-controller-passthrough-usbipd.service" ];
+            after = [ "deck-controller-passthrough-usbipd.service" ];
+            wantedBy = lib.optional ecfg.activateAtBoot "multi-user.target";
+            partOf = [ "deck-controller-passthrough-usbipd.service" ];
             serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
-                ExecStart = scripts.exporterStart;
-                ExecStop = scripts.exporterStop;
+                ExecStart = start;
+                ExecStop = stop;
             };
         };
 
         systemd.services.deck-controller-passthrough-watchdog = {
             description = "Restore Steam Deck local controls after USB/IP peer loss";
-            after = [ "deck-controller-passthrough-exporter.service" ];
-            wantedBy = [ "deck-controller-passthrough-exporter.service" ];
-            partOf = [ "deck-controller-passthrough-exporter.service" ];
+            after = [ service ];
+            wantedBy = [ service ];
+            partOf = [ service ];
             serviceConfig = {
-                Type = "simple";
-                ExecStart = scripts.watchdog;
+                ExecStart = watchdog;
                 Restart = "on-failure";
                 RestartSec = 5;
                 NoNewPrivileges = true;
@@ -44,35 +136,29 @@ lib.mkMerge [
             };
         };
     }
-    (lib.mkIf cfg.remoteControl.enable {
-        networking.firewall.allowedTCPPorts = [ 22 ];
 
-        services.openssh = {
-            enable = true;
-            settings = {
-                PasswordAuthentication = false;
-                PermitRootLogin = "no";
+    (lib.mkIf ecfg.remoteControl.enable (lib.mkMerge [
+        (allowFromPeer 22)
+        {
+            services.openssh.enable = true;
+
+            users.users.${ecfg.remoteControl.user} = {
+                isSystemUser = true;
+                group = ecfg.remoteControl.user;
+                shell = pkgs.bashInteractive;
+                openssh.authorizedKeys.keys = [
+                    "from=\"${ecfg.peerAddress}\",command=\"${remoteCommand}\",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding ${ecfg.remoteControl.authorizedKey}"
+                ];
             };
-        };
+            users.groups.${ecfg.remoteControl.user} = {};
 
-        users.users.${cfg.remoteControl.user} = {
-            isSystemUser = true;
-            group = cfg.remoteControl.user;
-            shell = "/run/current-system/sw/bin/bash";
-            openssh.authorizedKeys.keys = [
-                "from=\"${cfg.allowedPeerAddress}\",command=\"${scripts.remoteCommand}\",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding ${cfg.remoteControl.authorizedKey}"
-            ];
-        };
-        users.groups.${cfg.remoteControl.user} = {};
-
-        security.sudo.extraRules = [
-            {
-                users = [ cfg.remoteControl.user ];
+            security.sudo.extraRules = [{
+                users = [ ecfg.remoteControl.user ];
                 commands = [{
-                    command = toString scripts.remoteControl;
+                    command = toString remoteControl;
                     options = [ "NOPASSWD" ];
                 }];
-            }
-        ];
-    })
+            }];
+        }
+    ]))
 ]
