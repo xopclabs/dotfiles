@@ -52,6 +52,13 @@
         deckControllerPassthrough = {
             enable = true;
             role = "exporter";
+            bootActivation = true;
+            allowedPeerAddress = "192.168.1.150";
+            disconnectGraceSeconds = 45;
+            remoteControl = {
+                enable = true;
+                authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILtyvankFvSvOPNKlIeBOswkvj4RlfRaHCZDq2h3RJuN";
+            };
         };
 
         lutris.enable = true;

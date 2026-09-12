@@ -5,6 +5,13 @@
         ../../../nixos-modules/desktop/default.nix
     ];
     
+    config.sops.secrets."deck-controller/id_ed25519" = {
+        sopsFile = ../../../secrets/hosts/pc.yaml;
+        key = "deck-controller/id_ed25519";
+        owner = config.metadata.user;
+        mode = "0400";
+    };
+
     config.desktop = {
         wireguard = {
             enable = true;
@@ -54,6 +61,12 @@
             enable = true;
             role = "importer";
             exporterAddress = "192.168.1.151";
+            gamescopeLifecycle = true;
+            remoteControl = {
+                enable = true;
+                identityFile = config.sops.secrets."deck-controller/id_ed25519".path;
+                hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkwF057CuwoyRixmDypfz/zHbSt/WWAx5MOBUQnsLMf";
+            };
         };
 
         lutris.enable = true;

@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.desktop.steam;
+    controller = config.desktop.deckControllerPassthrough;
     startSteamGamescope = pkgs.writeShellScriptBin "start-gamescope-session" ''
         mkdir -p "$HOME/.cache"
         gamescope=/run/wrappers/bin/gamescope
@@ -150,13 +151,39 @@ in
         # Jovian's gamescope session is a DRM compositor. If it is launched after
         # niri, the user manager may still carry niri's WAYLAND_DISPLAY and make
         # gamescope try to nest into a dead Wayland socket instead of taking DRM.
-        systemd.user.services.gamescope-session.serviceConfig = mkIf cfg.jovian.enable {
-            ExecStart = mkForce [
-                ""
-                "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/lib/steamos/gamescope-session"
-            ];
-            TimeoutStartSec = 15;
-        };
+        # Jovian's Gamescope session is the authoritative Game Mode lifecycle.  The
+        # system forwarding unit performs the privileged USB/IP work; this narrowly
+        # scoped rule lets this user's Gamescope unit start and stop only that unit.
+        systemd.user.services.gamescope-session.serviceConfig = mkMerge [
+            (mkIf cfg.jovian.enable {
+                ExecStart = mkForce [
+                    ""
+                    "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/lib/steamos/gamescope-session"
+                ];
+                TimeoutStartSec = 45;
+            })
+            (mkIf controller.gamescopeLifecycle {
+                ExecStartPre = mkBefore [
+                    "${pkgs.systemd}/bin/systemctl --no-ask-password start deck-controller-passthrough-gamescope.service"
+                ];
+                ExecStopPost = mkAfter [
+                    "${pkgs.systemd}/bin/systemctl --no-ask-password stop deck-controller-passthrough-gamescope.service"
+                ];
+            })
+        ];
+
+        security.polkit.extraConfig = mkIf controller.gamescopeLifecycle ''
+            polkit.addRule(function(action, subject) {
+              if (
+                action.id == "org.freedesktop.systemd1.manage-units" &&
+                action.lookup("unit") == "deck-controller-passthrough-gamescope.service" &&
+                subject.user == "${config.metadata.user}" &&
+                subject.local
+              ) {
+                return polkit.Result.YES;
+              }
+            });
+        '';
 
         # Set up ownership for Steam and its directories
         systemd.tmpfiles.rules = [
