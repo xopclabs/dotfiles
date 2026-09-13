@@ -15,12 +15,30 @@ let
         echo "Starting Steam under gamescope: $gamescope --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf $*" >> "$HOME/.cache/start-gamescope-session.log"
         exec "$gamescope" --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf "$@" >> "$HOME/.cache/start-gamescope-session.log" 2>&1
     '';
+    sessionMarker = "jovian-switch-to-desktop";
+    sessionSelect = pkgs.writeShellScript "steamos-session-select" ''
+        set -eu
+        marker="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}/${sessionMarker}"
+        : > "$marker"
+        ${pkgs.systemd}/bin/systemctl --user --no-block stop graphical-session.target
+    '';
+    ttyGamescopeSession = pkgs.writeShellScriptBin "start-gamescope-session" ''
+        set -eu
+        marker="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}/${sessionMarker}"
+        ${pkgs.coreutils}/bin/rm -f "$marker"
+        ${pkgs.gamescope-session}/bin/start-gamescope-session
+        if [ -e "$marker" ]; then
+            ${pkgs.coreutils}/bin/rm -f "$marker"
+            exec ${pkgs.niri}/bin/niri-session
+        fi
+    '';
+    gamescopeSession = if cfg.jovian.autoStart then pkgs.gamescope-session else ttyGamescopeSession;
     switchToGamescope = pkgs.writeShellScriptBin "switch-to-gamescope-session" ''
         ${pkgs.systemd}/bin/systemctl --user import-environment PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET
         ${pkgs.systemd}/bin/systemctl --user unset-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY
         ${pkgs.systemd}/bin/systemd-run --user --collect --unit=switch-to-gamescope-session ${pkgs.bash}/bin/bash -lc '
             sleep 1
-            exec env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/bin/start-gamescope-session
+            exec env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${gamescopeSession}/bin/start-gamescope-session
         '
         if [ -n "''${NIRI_SOCKET:-}" ]; then
             ${pkgs.niri}/bin/niri msg action quit --skip-confirmation || true
@@ -110,6 +128,13 @@ in
             gamescopeSession.enable = cfg.gamescopeSession.enable;
         };
 
+        security.wrappers.steamos-session-select = mkIf (cfg.jovian.enable && !cfg.jovian.autoStart) {
+            source = sessionSelect;
+            owner = config.metadata.user;
+            group = "users";
+            permissions = "u+rx,g+rx,o+rx";
+        };
+
         # Jovian NixOS configuration
         jovian = mkIf cfg.jovian.enable {
             steam = {
@@ -174,9 +199,9 @@ in
             (mkIf (cfg.gamescopeSession.enable && !cfg.jovian.enable) [
                 startSteamGamescope
             ])
-            (mkIf cfg.jovian.enable [
+            (mkIf cfg.jovian.enable ([
                 switchToGamescope
-            ])
+            ] ++ optional (!cfg.jovian.autoStart) (hiPrio ttyGamescopeSession)))
         ];
 
         hardware.graphics = mkIf cfg.extraPackages {
