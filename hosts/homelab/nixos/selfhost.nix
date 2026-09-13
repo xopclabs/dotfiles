@@ -151,6 +151,10 @@
                     publicKey = "fKfKXEK6U7RZtaYLrmLG8UCbR4o3xvT1joS8hEZUGHU=";
                     allowedIPs = [ "10.250.250.9/32" ];
                 };
+                apartment-pi = {
+                    publicKey = "dq3knp1EIUCPihHuhIb/ntNFaIzDS40AnAwhYlamj0s=";
+                    allowedIPs = [ "10.250.250.12/32" ];
+                };
             };
             socks5Proxy = {
                 enable = true;

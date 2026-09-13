@@ -11,5 +11,6 @@ in {
         ./mangohud.nix
         ./androidcam.nix
         ./autofirma.nix
+        ./sops-age-key.nix
     ];
 }
