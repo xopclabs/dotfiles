@@ -1,6 +1,8 @@
 treestyletab.css
 vimium.css
 
+.meta/
+
 __pycache__/
 *.py[cod]
 
