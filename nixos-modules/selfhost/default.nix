@@ -7,6 +7,7 @@ with lib;
         ./traefik.nix
         ./pihole-unbound/pihole-unbound.nix
         ./postgres.nix
+        ./telemetry
         ./traccar.nix
         ./nextcloud.nix
         ./minecraft/minecraft.nix

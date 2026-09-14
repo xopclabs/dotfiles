@@ -6,6 +6,8 @@
     ];
     
     config.homelab = {
+        telemetry.enable = true;
+
         # Dynamic DNS
         ddns = {
             enable = true;
