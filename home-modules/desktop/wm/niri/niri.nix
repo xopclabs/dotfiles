@@ -57,16 +57,8 @@ let
     output_internal = if internalMon != null then niriOutputName internalMon else null;
 
     scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
-    focusOutput = pkgs.writeShellScriptBin "niri-focus-output" ''
-        export PATH=${lib.makeBinPath [ pkgs.niri pkgs.jq pkgs.coreutils ]}:$PATH
-        ${builtins.readFile ./focus-output}
-    '';
-    resetScratch = pkgs.writeShellScript "reset-niri-scratch" ''
-        mkdir -p "$(dirname ${lib.escapeShellArg scratchPath})"
-        cat > ${lib.escapeShellArg scratchPath} <<'EOF'
-// Live niri overrides. Cleared on every home-manager switch.
-EOF
-    '';
+    scripts = import ./scripts { inherit pkgs lib config; };
+    inherit (scripts) focusOutput autoPlaceOutputs resetScratch;
 in {
     options.modules.desktop.wm.niri = {
         enable = lib.mkEnableOption "niri";
@@ -91,8 +83,7 @@ in {
             pkgs.jq
             pkgs.playerctl
             pkgs.awww
-            focusOutput
-        ];
+        ] ++ scripts.packages;
 
         programs.niri = with config.colorScheme.palette; {
             package = pkgs.niri;
@@ -324,6 +315,7 @@ in {
                 spawn-at-startup = [
                     { sh = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET && systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET && systemctl --user start nixos-fake-graphical-session.target"; }
                 ]
+                ++ lib.optional (autoPlaceOutputs != null) { argv = [ (lib.getExe autoPlaceOutputs) "--watch" ]; }
                 ++ lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
                 ++ [

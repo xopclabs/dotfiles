@@ -1,0 +1,33 @@
+internal_connectors='@INTERNAL_CONNECTORS@'
+internal_y='@INTERNAL_Y@'
+
+place_once() {
+    outputs_json="$(niri msg -j outputs 2>/dev/null)" || return 0
+    internal_output="$(jq -r --argjson internal_connectors "$internal_connectors" '
+        to_entries
+        | map(select(.value.logical != null and ((.value.name as $name | $internal_connectors | index($name)) != null)))
+        | .[0].key // empty
+    ' <<<"$outputs_json")"
+    [ -n "$internal_output" ] || return 0
+
+    internal_x="$(jq -r --arg internal_output "$internal_output" '
+        [to_entries[]
+            | select(.key != $internal_output and .value.logical != null)
+            | (.value.logical.x + .value.logical.width)]
+        | if length == 0 then 0 else max end
+        | floor
+    ' <<<"$outputs_json")"
+    current_position="$(jq -r --arg internal_output "$internal_output" '
+        .[$internal_output].logical | "\(.x) \(.y)"
+    ' <<<"$outputs_json")"
+    [ "$current_position" = "$internal_x $internal_y" ] && return 0
+
+    niri msg output "$internal_output" position set "$internal_x" "$internal_y" >/dev/null
+}
+
+place_once
+if [ "${1:-}" = "--watch" ]; then
+    niri msg event-stream | while IFS= read -r _; do
+        place_once
+    done
+fi
