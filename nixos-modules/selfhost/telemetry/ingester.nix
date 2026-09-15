@@ -46,7 +46,7 @@ in
                 Group = "telemetry";
                 Environment = [
                     "MQTT_HOST=10.250.250.1"
-                    "MQTT_PASSWORD_FILE=${config.sops.secrets."mqtt/telemetry-ingester/password".path}"
+                    "MQTT_PASSWORD_FILE=${config.sops.secrets."mqtt/homelab/telemetry-ingester/password".path}"
                 ];
                 ExecStart = "${python}/bin/python ${./ingest.py}";
                 Restart = "always";

@@ -15,7 +15,7 @@ db = None
 
 
 def on_connect(client, userdata, flags, reason_code, properties=None):
-    client.subscribe("home/apartment/#", qos=1)
+    client.subscribe("apartment/#", qos=1)
     client.subscribe("homeassistant/#", qos=1)
 
 

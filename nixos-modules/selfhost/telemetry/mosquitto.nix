@@ -7,14 +7,14 @@ in
 {
     config = mkIf cfg.enable {
         sops.secrets = {
-            "mqtt/apartment-bridge/password" = {
-                sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
+            "mqtt/homelab/apartment-bridge/password" = {
+                sopsFile = ../../../secrets/shared/selfhost.yaml;
                 owner = "root";
                 group = "root";
                 mode = "0400";
             };
-            "mqtt/telemetry-ingester/password" = {
-                sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
+            "mqtt/homelab/telemetry-ingester/password" = {
+                sopsFile = ../../../secrets/shared/selfhost.yaml;
                 owner = "telemetry";
                 group = "telemetry";
                 mode = "0400";
@@ -29,12 +29,12 @@ in
                 port = 1883;
                 users = {
                     apartment-bridge = {
-                        passwordFile = config.sops.secrets."mqtt/apartment-bridge/password".path;
-                        acl = [ "write home/apartment/#" "write homeassistant/#" ];
+                        passwordFile = config.sops.secrets."mqtt/homelab/apartment-bridge/password".path;
+                        acl = [ "write apartment/#" "write home/apartment/#" "write homeassistant/#" ];
                     };
                     telemetry-ingester = {
-                        passwordFile = config.sops.secrets."mqtt/telemetry-ingester/password".path;
-                        acl = [ "read home/apartment/#" "read homeassistant/#" ];
+                        passwordFile = config.sops.secrets."mqtt/homelab/telemetry-ingester/password".path;
+                        acl = [ "read apartment/#" "read home/apartment/#" "read homeassistant/#" ];
                     };
                 };
             }];

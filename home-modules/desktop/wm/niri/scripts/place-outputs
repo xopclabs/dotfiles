@@ -1,0 +1,118 @@
+monitors_json='@MONITORS_JSON@'
+primary_strategy='@PRIMARY_STRATEGY@'
+default_align='@DEFAULT_ALIGN@'
+
+# A home-manager switch does not restart niri's existing spawned processes.
+# Make sure the legacy placer from older generations is not still moving outputs.
+pkill -f niri-autoplace-outputs >/dev/null 2>&1 || true
+
+output_desc() {
+    jq -r '[.make, .model, .serial] | map(select(. != null and . != "")) | join(" ")' <<<"$1"
+}
+
+monitor_for_output() {
+    local out_json="$1" name desc
+    name=$(jq -r '.name' <<<"$out_json")
+    desc=$(output_desc "$out_json")
+    jq -c --arg name "$name" --arg desc "$desc" '
+        .[]
+        | select(.name == $desc or ((.connectors | index($name)) != null))
+    ' <<<"$monitors_json" | head -n1
+}
+
+active_outputs() {
+    local outputs_json key out mon
+    outputs_json="$(niri msg -j outputs 2>/dev/null)" || return 0
+    jq -c 'to_entries[] | select(.value.logical != null)' <<<"$outputs_json" | while read -r entry; do
+        key=$(jq -r '.key' <<<"$entry")
+        out=$(jq -c '.value' <<<"$entry")
+        mon=$(monitor_for_output "$out")
+        [ -n "$mon" ] || continue
+        jq -cn --arg key "$key" --argjson output "$out" --argjson monitor "$mon" \
+            '{key: $key, output: $output, monitor: $monitor}'
+    done
+}
+
+select_primary_key() {
+    local active="$1"
+    jq -r --arg strategy "$primary_strategy" '
+        def area: .output.logical.width * .output.logical.height;
+        def physicalArea: ((.output.physical_size.width // 0) * (.output.physical_size.height // 0));
+        ([.[] | select(.monitor.primary == true)]
+            | if length > 0 then max_by(area).key else empty end) //
+        (if $strategy == "largest-physical" then max_by([physicalArea, area]).key else max_by(area).key end)
+    ' <<<"$active"
+}
+
+axis_pos() {
+    local align="$1" anchor_start="$2" anchor_size="$3" size="$4"
+    case "$align" in
+        start) printf '%s\n' "$anchor_start" ;;
+        end) printf '%s\n' $((anchor_start + anchor_size - size)) ;;
+        *) printf '%s\n' $((anchor_start + (anchor_size - size) / 2)) ;;
+    esac
+}
+
+place_once() {
+    local active primary primary_item px py pw ph item key x y w h side align ox oy
+    active="$(active_outputs | jq -s '.')"
+    [ "$(jq 'length' <<<"$active")" -gt 0 ] || return 0
+    primary="$(select_primary_key "$active")"
+    [ -n "$primary" ] || return 0
+
+    primary_item="$(jq -c --arg primary "$primary" '.[] | select(.key == $primary)' <<<"$active")"
+    px=$(jq -r '.output.logical.x | floor' <<<"$primary_item")
+    py=$(jq -r '.output.logical.y | floor' <<<"$primary_item")
+    pw=$(jq -r '.output.logical.width | floor' <<<"$primary_item")
+    ph=$(jq -r '.output.logical.height | floor' <<<"$primary_item")
+
+    while read -r item; do
+        key=$(jq -r '.key' <<<"$item")
+        w=$(jq -r '.output.logical.width | floor' <<<"$item")
+        h=$(jq -r '.output.logical.height | floor' <<<"$item")
+        if [ "$key" = "$primary" ]; then
+            x=0; y=0
+        else
+            side=$(jq -r '.monitor.placement.side // "right"' <<<"$item")
+            align=$(jq -r --arg default_align "$default_align" '.monitor.placement.align // $default_align' <<<"$item")
+            ox=$(jq -r --argjson pw "$pw" '.monitor.placement.offsetFraction[0] // 0 | . * $pw | floor' <<<"$item")
+            oy=$(jq -r --argjson ph "$ph" '.monitor.placement.offsetFraction[1] // 0 | . * $ph | floor' <<<"$item")
+            case "$side" in
+                left)
+                    x=$((0 - w + ox))
+                    y=$(axis_pos "$align" 0 "$ph" "$h")
+                    y=$((y + oy))
+                    ;;
+                above)
+                    x=$(axis_pos "$align" 0 "$pw" "$w")
+                    x=$((x + ox))
+                    y=$((0 - h + oy))
+                    ;;
+                below)
+                    x=$(axis_pos "$align" 0 "$pw" "$w")
+                    x=$((x + ox))
+                    y=$((ph + oy))
+                    ;;
+                same)
+                    x=$ox
+                    y=$oy
+                    ;;
+                *)
+                    x=$((pw + ox))
+                    y=$(axis_pos "$align" 0 "$ph" "$h")
+                    y=$((y + oy))
+                    ;;
+            esac
+        fi
+        current=$(jq -r '.output.logical | "\(.x | floor) \(.y | floor)"' <<<"$item")
+        [ "$current" = "$x $y" ] && continue
+        niri msg output "$key" position set "$x" "$y" >/dev/null || true
+    done < <(jq -c '.[]' <<<"$active")
+}
+
+place_once
+if [ "${1:-}" = "--watch" ]; then
+    niri msg event-stream | while IFS= read -r _; do
+        place_once
+    done
+fi
