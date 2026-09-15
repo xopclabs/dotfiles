@@ -134,6 +134,7 @@ in {
                 # Layout
                 set -g status-position ${cfg.statusPosition}
                 set -g renumber-windows on
+                set -g history-limit 100000
 
                 # Panes
                 bind n select-pane -L
