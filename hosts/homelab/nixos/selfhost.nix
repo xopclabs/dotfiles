@@ -6,7 +6,6 @@
     ];
     
     config.homelab = {
-        telemetry.enable = true;
 
         # Dynamic DNS
         ddns = {
@@ -163,6 +162,13 @@
                 host = "127.0.0.1";
                 port = 10808;
             };
+        };
+
+        # Log dashboards and home automation
+        telemetry.enable = true;
+        grafana = {
+            enable = true;
+            subdomain = "grafana.vm.local";
         };
 
         # Dashboard

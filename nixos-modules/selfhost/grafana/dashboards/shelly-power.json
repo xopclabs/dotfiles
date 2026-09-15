@@ -1,0 +1,84 @@
+{
+  "uid": "apartment-power",
+  "title": "Apartment Power",
+  "tags": ["mqtt", "shelly", "telemetry"],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Active power",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "watt", "decimals": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), split_part(topic, '/', 3) AS metric, avg((payload->>'apower')::double precision) AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic LIKE 'apartment/%/%/status/switch:0' AND payload ? 'apower' GROUP BY 1, 2 ORDER BY 1, 2",
+          "refId": "A",
+          "rawQuery": true
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Cumulative energy",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "kwatth", "decimals": 3 }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), split_part(topic, '/', 3) AS metric, max((payload->'aenergy'->>'total')::double precision) / 1000 AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic LIKE 'apartment/%/%/status/switch:0' AND payload ? 'aenergy' GROUP BY 1, 2 ORDER BY 1, 2",
+          "refId": "A",
+          "rawQuery": true
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Voltage and current",
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "fieldConfig": {
+        "defaults": { "decimals": 2 },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "/voltage/" }, "properties": [{ "id": "unit", "value": "volt" }] },
+          { "matcher": { "id": "byRegexp", "options": "/current/" }, "properties": [{ "id": "unit", "value": "amp" }] }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), split_part(topic, '/', 3) || ' voltage' AS metric, avg((payload->>'voltage')::double precision) AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic LIKE 'apartment/%/%/status/switch:0' AND payload ? 'voltage' GROUP BY 1, 2 ORDER BY 1, 2",
+          "refId": "A",
+          "rawQuery": true
+        },
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "telemetry-postgres" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), split_part(topic, '/', 3) || ' current' AS metric, avg((payload->>'current')::double precision) AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic LIKE 'apartment/%/%/status/switch:0' AND payload ? 'current' GROUP BY 1, 2 ORDER BY 1, 2",
+          "refId": "B",
+          "rawQuery": true
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }
+    }
+  ]
+}

@@ -16,6 +16,7 @@ with lib;
         ./arr-stack/arr-stack.nix
         ./wireguard/wireguard.nix
         ./glance.nix
+        ./grafana/grafana.nix
         ./scrutiny.nix
         ./borgbackup.nix
         ./keepalived.nix
