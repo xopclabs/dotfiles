@@ -1,6 +1,7 @@
 monitors_json='@MONITORS_JSON@'
 primary_strategy='@PRIMARY_STRATEGY@'
 default_align='@DEFAULT_ALIGN@'
+unknown_json='@UNKNOWN_JSON@'
 
 # A home-manager switch does not restart niri's existing spawned processes.
 # Make sure the legacy placer from older generations is not still moving outputs.
@@ -11,13 +12,26 @@ output_desc() {
 }
 
 monitor_for_output() {
-    local out_json="$1" name desc
+    local out_json="$1" name desc mon include primaryEligible
     name=$(jq -r '.name' <<<"$out_json")
     desc=$(output_desc "$out_json")
-    jq -c --arg name "$name" --arg desc "$desc" '
+    mon=$(jq -c --arg name "$name" --arg desc "$desc" '
         .[]
         | select(.name == $desc or ((.connectors | index($name)) != null))
-    ' <<<"$monitors_json" | head -n1
+    ' <<<"$monitors_json" | head -n1)
+    if [ -n "$mon" ]; then
+        printf '%s\n' "$mon"
+        return 0
+    fi
+
+    include=$(jq -r '.include' <<<"$unknown_json")
+    [ "$include" = "true" ] || return 1
+    primaryEligible=$(jq -r '.primaryEligible' <<<"$unknown_json")
+    jq -cn \
+        --arg name "$desc" \
+        --argjson placement "$(jq -c '.placement' <<<"$unknown_json")" \
+        --argjson primaryEligible "$primaryEligible" \
+        '{key: "unknown", name: $name, internal: false, primary: false, primaryEligible: $primaryEligible, placement: $placement, connectors: [], touch: [], variableRefreshRate: false}'
 }
 
 active_outputs() {
@@ -26,8 +40,7 @@ active_outputs() {
     jq -c 'to_entries[] | select(.value.logical != null)' <<<"$outputs_json" | while read -r entry; do
         key=$(jq -r '.key' <<<"$entry")
         out=$(jq -c '.value' <<<"$entry")
-        mon=$(monitor_for_output "$out")
-        [ -n "$mon" ] || continue
+        mon=$(monitor_for_output "$out") || continue
         jq -cn --arg key "$key" --argjson output "$out" --argjson monitor "$mon" \
             '{key: $key, output: $output, monitor: $monitor}'
     done
@@ -40,7 +53,8 @@ select_primary_key() {
         def physicalArea: ((.output.physical_size.width // 0) * (.output.physical_size.height // 0));
         ([.[] | select(.monitor.primary == true)]
             | if length > 0 then max_by(area).key else empty end) //
-        (if $strategy == "largest-physical" then max_by([physicalArea, area]).key else max_by(area).key end)
+        ([.[] | select(.monitor.primaryEligible // true)]
+            | if $strategy == "largest-physical" then max_by([physicalArea, area]).key else max_by(area).key end)
     ' <<<"$active"
 }
 
@@ -53,61 +67,101 @@ axis_pos() {
     esac
 }
 
+move_output() {
+    local key="$1" x="$2" y="$3" current="$4"
+    [ "$current" = "$x $y" ] && return 0
+    niri msg output "$key" position set "$x" "$y" >/dev/null || true
+}
+
 place_once() {
-    local active primary primary_item px py pw ph item key x y w h side align ox oy
+    local active primary primary_item pw ph side item key w h align stack ox oy current x y cursor cross
     active="$(active_outputs | jq -s '.')"
     [ "$(jq 'length' <<<"$active")" -gt 0 ] || return 0
     primary="$(select_primary_key "$active")"
     [ -n "$primary" ] || return 0
 
     primary_item="$(jq -c --arg primary "$primary" '.[] | select(.key == $primary)' <<<"$active")"
-    px=$(jq -r '.output.logical.x | floor' <<<"$primary_item")
-    py=$(jq -r '.output.logical.y | floor' <<<"$primary_item")
     pw=$(jq -r '.output.logical.width | floor' <<<"$primary_item")
     ph=$(jq -r '.output.logical.height | floor' <<<"$primary_item")
 
-    while read -r item; do
-        key=$(jq -r '.key' <<<"$item")
-        w=$(jq -r '.output.logical.width | floor' <<<"$item")
-        h=$(jq -r '.output.logical.height | floor' <<<"$item")
-        if [ "$key" = "$primary" ]; then
-            x=0; y=0
-        else
-            side=$(jq -r '.monitor.placement.side // "right"' <<<"$item")
+    current=$(jq -r '.output.logical | "\(.x | floor) \(.y | floor)"' <<<"$primary_item")
+    move_output "$primary" 0 0 "$current"
+
+    for side in right left above below same; do
+        cursor=0
+        jq -c --arg primary "$primary" --arg side "$side" '
+            [.[]
+             | select(.key != $primary)
+             | select((.monitor.placement.side // "right") == $side)]
+            | sort_by(.monitor.placement.order // 50, .key)
+            | .[]
+        ' <<<"$active" | while read -r item; do
+            key=$(jq -r '.key' <<<"$item")
+            w=$(jq -r '.output.logical.width | floor' <<<"$item")
+            h=$(jq -r '.output.logical.height | floor' <<<"$item")
             align=$(jq -r --arg default_align "$default_align" '.monitor.placement.align // $default_align' <<<"$item")
+            stack=$(jq -r '.monitor.placement.stack // "horizontal"' <<<"$item")
             ox=$(jq -r --argjson pw "$pw" '.monitor.placement.offsetFraction[0] // 0 | . * $pw | floor' <<<"$item")
             oy=$(jq -r --argjson ph "$ph" '.monitor.placement.offsetFraction[1] // 0 | . * $ph | floor' <<<"$item")
+            current=$(jq -r '.output.logical | "\(.x | floor) \(.y | floor)"' <<<"$item")
+
             case "$side" in
                 left)
-                    x=$((0 - w + ox))
-                    y=$(axis_pos "$align" 0 "$ph" "$h")
-                    y=$((y + oy))
+                    if [ "$stack" = "vertical" ]; then
+                        x=$((0 - w + ox))
+                        y=$((cursor + oy))
+                        cursor=$((cursor + h))
+                    else
+                        [ "$stack" = "none" ] || cursor=$((cursor - w))
+                        x=$((cursor + ox))
+                        y=$(axis_pos "$align" 0 "$ph" "$h")
+                        y=$((y + oy))
+                    fi
                     ;;
                 above)
-                    x=$(axis_pos "$align" 0 "$pw" "$w")
-                    x=$((x + ox))
-                    y=$((0 - h + oy))
+                    if [ "$stack" = "vertical" ]; then
+                        x=$(axis_pos "$align" 0 "$pw" "$w")
+                        x=$((x + ox))
+                        cursor=$((cursor - h))
+                        y=$((cursor + oy))
+                    else
+                        x=$((cursor + ox))
+                        y=$((0 - h + oy))
+                        [ "$stack" = "none" ] || cursor=$((cursor + w))
+                    fi
                     ;;
                 below)
-                    x=$(axis_pos "$align" 0 "$pw" "$w")
-                    x=$((x + ox))
-                    y=$((ph + oy))
+                    if [ "$stack" = "vertical" ]; then
+                        x=$(axis_pos "$align" 0 "$pw" "$w")
+                        x=$((x + ox))
+                        y=$((ph + cursor + oy))
+                        cursor=$((cursor + h))
+                    else
+                        x=$((cursor + ox))
+                        y=$((ph + oy))
+                        [ "$stack" = "none" ] || cursor=$((cursor + w))
+                    fi
                     ;;
                 same)
                     x=$ox
                     y=$oy
                     ;;
                 *)
-                    x=$((pw + ox))
-                    y=$(axis_pos "$align" 0 "$ph" "$h")
-                    y=$((y + oy))
+                    if [ "$stack" = "vertical" ]; then
+                        x=$((pw + ox))
+                        y=$((cursor + oy))
+                        cursor=$((cursor + h))
+                    else
+                        x=$((pw + cursor + ox))
+                        y=$(axis_pos "$align" 0 "$ph" "$h")
+                        y=$((y + oy))
+                        [ "$stack" = "none" ] || cursor=$((cursor + w))
+                    fi
                     ;;
             esac
-        fi
-        current=$(jq -r '.output.logical | "\(.x | floor) \(.y | floor)"' <<<"$item")
-        [ "$current" = "$x $y" ] && continue
-        niri msg output "$key" position set "$x" "$y" >/dev/null || true
-    done < <(jq -c '.[]' <<<"$active")
+            move_output "$key" "$x" "$y" "$current"
+        done
+    done
 }
 
 place_once

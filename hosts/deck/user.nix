@@ -1,6 +1,9 @@
 { config, lib, inputs, ...}:
 
-{
+let
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues config.metadata.hardware.monitors);
+    internalMonitor = builtins.head internalMonitors;
+in {
     imports = [
         ../../home-modules
         ./home.nix
@@ -13,7 +16,7 @@
         desktop = {
             shells.noctalia = {
                 enable = true;
-                settings.notification.monitors = config.metadata.hardware.monitors.internal.connectors;
+                settings.notification.monitors = internalMonitor.connectors;
             };
             wm = {
                 hyprland.enable = false;

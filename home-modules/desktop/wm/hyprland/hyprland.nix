@@ -4,10 +4,11 @@ let
     cfg = config.modules.desktop.wm.hyprland;
     lock = "${pkgs.hyprlock}/bin/hyprlock";
     hardwareCfg = config.metadata.hardware;
-    
-    # Internal monitor reference
-    internalMon = hardwareCfg.monitors.internal;
-    monitor_internal = "desc:${internalMon.name}";
+    monitors = hardwareCfg.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    externalMonitors = lib.filterAttrs (_: mon: !mon.internal) monitors;
+    internalMon = if internalMonitors == [] then null else builtins.head internalMonitors;
+    monitor_internal = if internalMon != null then "desc:${internalMon.name}" else "";
     
     # Helper to convert transform string to number for hyprland
     transformToNum = t: {
@@ -33,18 +34,12 @@ let
 
     # Generate monitor rules from metadata
     # Format: NAME,RES@Hz,OFFSET,SCALE (no spaces after commas!)
-    # Internal monitor
-    internalMonitorRule = let
-        transform = if internalMon ? transform then ",transform,${toString (transformToNum internalMon.transform)}" else "";
-    in "desc:${internalMon.name},${internalMon.mode},${positionOrAuto internalMon},${formatScale internalMon.scale}${transform}";
-    
-    # External monitors
-    externalMonitorRules = lib.mapAttrsToList (key: ext: 
-        "desc:${ext.name},${ext.mode},${positionOrAuto ext},${formatScale ext.scale}"
-    ) hardwareCfg.monitors.external;
+    monitorRulesFromMetadata = lib.mapAttrsToList (_: mon: let
+        transform = if mon ? transform then ",transform,${toString (transformToNum mon.transform)}" else "";
+    in "desc:${mon.name},${mon.mode},${positionOrAuto mon},${formatScale mon.scale}${transform}") monitors;
     
     # All monitor rules including fallback for unknown monitors
-    monitorRules = [ internalMonitorRule ] ++ externalMonitorRules ++ [
+    monitorRules = monitorRulesFromMetadata ++ [
         # Fallback: enable any unknown monitor with preferred settings
         ",preferred,auto,1"
     ];
@@ -59,10 +54,10 @@ let
         "3, monitor:${monitor_desc}"
         "4, monitor:${monitor_desc}"
         "5, monitor:${monitor_desc}"
-    ]) hardwareCfg.monitors.external);
+    ]) externalMonitors);
     
     # Check if disableGapsOutOn matches any external monitor
-    externalMonitorNames = lib.mapAttrsToList (k: v: v.name) hardwareCfg.monitors.external;
+    externalMonitorNames = lib.mapAttrsToList (k: v: v.name) externalMonitors;
     disableGapsOnExternal = cfg.disableGapsOutOn != null && 
         lib.any (name: name == cfg.disableGapsOutOn) externalMonitorNames;
     
@@ -81,9 +76,7 @@ EOF
         if internalMon != null then (internalMon.transform or "0") else "0"
     );
 
-    allMonitors =
-        lib.optional (internalMon != null) internalMon
-        ++ lib.attrValues hardwareCfg.monitors.external;
+    allMonitors = lib.attrValues monitors;
     primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
 
     # Per-panel digitizers from metadata (touch/tablet -> primary DRM connector).
@@ -313,7 +306,7 @@ in {
                     "9, monitor:${monitor_internal}"
                     "10, monitor:${monitor_internal}"
                 ]
-                ++ (if cfg.disableGapsOutOn != null && cfg.disableGapsOutOn == hardwareCfg.monitors.internal.name then [
+                ++ (if cfg.disableGapsOutOn != null && internalMon != null && cfg.disableGapsOutOn == internalMon.name then [
                     "6, gapsout:0"
                     "7, gapsout:0"
                     "8, gapsout:0"

@@ -1,6 +1,7 @@
 { config, pkgs, inputs, lib, ... }:
 
 let
+    monitors = config.metadata.hardware.monitors;
     initrdConsoleFont = pkgs.runCommand "ter-v32b.psf" { nativeBuildInputs = [ pkgs.gzip ]; } ''
         gzip -dc ${pkgs.terminus_font}/share/consolefonts/ter-v32b.psf.gz > $out
     '';
@@ -98,7 +99,7 @@ in
         # a DRM connector so touch still maps correctly after moving GPU/port.
         # Niri reads WL_OUTPUT via libinput (stock niri ignores it unless patched;
         # see patches/niri/).
-        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${config.metadata.hardware.monitors.external.oled.name}"
+        ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="ILITEK ILITEK-TP", ENV{WL_OUTPUT}="${monitors.oled.name}"
     '';
 
     hardware = {

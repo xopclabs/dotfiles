@@ -127,6 +127,11 @@ with lib;
                         default = null;
                         description = "Legacy/manual monitor position (e.g., '0x0'). Prefer placement for dynamic layouts.";
                     };
+                    internal = mkOption {
+                        type = types.bool;
+                        default = false;
+                        description = "Whether this is a built-in/internal display.";
+                    };
                     primary = mkOption {
                         type = types.bool;
                         default = false;
@@ -153,6 +158,16 @@ with lib;
                             default = [ 0.0 0.0 ];
                             description = "Additional x/y offset as fractions of the anchor logical size.";
                         };
+                        stack = mkOption {
+                            type = types.enum [ "horizontal" "vertical" "none" ];
+                            default = "horizontal";
+                            description = "How to stack monitors that share the same anchor side.";
+                        };
+                        order = mkOption {
+                            type = types.int;
+                            default = 50;
+                            description = "Ordering inside a placement stack; lower values are closer to the anchor.";
+                        };
                     };
                     connectors = mkOption {
                         type = types.listOf types.str;
@@ -172,17 +187,10 @@ with lib;
                 };
             };
         in {
-            monitors = {
-                internal = mkOption {
-                    type = types.nullOr monitorSubmodule;
-                    default = null;
-                    description = "Internal display configuration";
-                };
-                external = mkOption {
-                    type = types.attrsOf monitorSubmodule;
-                    default = {};
-                    description = "External monitor configurations (keyed by identifier, e.g., 'aoc22', 'lg27')";
-                };
+            monitors = mkOption {
+                type = types.attrsOf monitorSubmodule;
+                default = {};
+                description = "Monitor configurations keyed by stable host-local identifiers.";
             };
         };
     };

@@ -11,13 +11,17 @@ let
     controlScale = 1.5;
 
     hardwareCfg = config.metadata.hardware;
-    internalMon = hardwareCfg.monitors.internal;
+    monitors = hardwareCfg.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    externalMonitors = lib.filter (mon: !mon.internal) (lib.attrValues monitors);
     outputNames = mon: if mon.connectors != [] then mon.connectors else [ mon.name ];
     brightnessMonitor =
-        lib.optionalAttrs (internalMon != null) (lib.genAttrs (outputNames internalMon) (_: { backend = "backlight"; }))
+        lib.foldl' (acc: mon:
+            acc // lib.genAttrs (outputNames mon) (_: { backend = "backlight"; })
+        ) {} internalMonitors
         // lib.foldl' (acc: mon:
             acc // lib.genAttrs (outputNames mon) (_: { backend = "ddcutil"; })
-        ) {} (lib.attrValues hardwareCfg.monitors.external);
+        ) {} externalMonitors;
 
     groupStyle = {
         fill = "#${palette.base01}";

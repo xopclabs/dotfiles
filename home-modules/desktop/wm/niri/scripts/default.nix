@@ -1,7 +1,9 @@
 { pkgs, lib, config }:
 
 let
-    internalMon = config.metadata.hardware.monitors.internal;
+    monitors = config.metadata.hardware.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    internalMon = if internalMonitors == [] then null else builtins.head internalMonitors;
 
     parsePosition = posStr: let
         xy = lib.splitString "x" posStr;
@@ -14,9 +16,7 @@ let
     monitorPlacementCfg = config.modules.desktop.wm.monitorPlacement;
     internalPosition = if internalMon != null && internalMon.position != null then parsePosition internalMon.position else { x = 0; y = 0; };
 
-    monitorRecords =
-        lib.optional (internalMon != null) ({ key = "internal"; } // internalMon)
-        ++ lib.mapAttrsToList (key: mon: { inherit key; } // mon) config.metadata.hardware.monitors.external;
+    monitorRecords = lib.mapAttrsToList (key: mon: { inherit key; } // mon) monitors;
 
     focusOutput = pkgs.writeShellScriptBin "niri-focus-output" ''
         export PATH=${lib.makeBinPath [ pkgs.niri pkgs.jq pkgs.coreutils ]}:$PATH
@@ -34,8 +34,8 @@ let
     placeOutputs = if monitorPlacementCfg.enable then pkgs.writeShellScriptBin "niri-place-outputs" ''
         export PATH=${lib.makeBinPath [ pkgs.niri pkgs.jq pkgs.coreutils ]}:$PATH
         ${builtins.replaceStrings
-            [ "@MONITORS_JSON@" "@PRIMARY_STRATEGY@" "@DEFAULT_ALIGN@" ]
-            [ (builtins.toJSON monitorRecords) monitorPlacementCfg.primaryStrategy monitorPlacementCfg.defaultAlign ]
+            [ "@MONITORS_JSON@" "@PRIMARY_STRATEGY@" "@DEFAULT_ALIGN@" "@UNKNOWN_JSON@" ]
+            [ (builtins.toJSON monitorRecords) monitorPlacementCfg.primaryStrategy monitorPlacementCfg.defaultAlign (builtins.toJSON monitorPlacementCfg.unknown) ]
             (builtins.readFile ./place-outputs)}
     '' else null;
 

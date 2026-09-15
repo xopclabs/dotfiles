@@ -3,7 +3,10 @@
 let
     cfg = config.modules.desktop.wm.niri;
     hardwareCfg = config.metadata.hardware;
-    internalMon = hardwareCfg.monitors.internal;
+    monitors = hardwareCfg.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    externalMonitors = lib.filter (mon: !mon.internal) (lib.attrValues monitors);
+    internalMon = if internalMonitors == [] then null else builtins.head internalMonitors;
     cursorTheme = "OpenZone_Black";
     cursorSize = 24;
 
@@ -51,9 +54,7 @@ let
         position = parsePosition mon.position;
     };
     mkOutputAttrs = mon: lib.genAttrs (niriOutputTargets mon) (_: mkOutput mon);
-    firstExternal = let
-        exts = lib.attrValues hardwareCfg.monitors.external;
-    in if exts == [] then null else builtins.head exts;
+    firstExternal = if externalMonitors == [] then null else builtins.head externalMonitors;
     output_external = if firstExternal != null then niriOutputName firstExternal else output_internal;
     output_internal = if internalMon != null then niriOutputName internalMon else null;
 
@@ -332,7 +333,7 @@ in {
                 outputs = lib.optionalAttrs (internalMon != null) {
                         ${output_internal} = mkOutput internalMon;
                     }
-                    // lib.foldl' (acc: ext: acc // mkOutputAttrs ext) {} (lib.attrValues hardwareCfg.monitors.external);
+                    // lib.foldl' (acc: ext: acc // mkOutputAttrs ext) {} externalMonitors;
 
                 workspaces = {
                     "messaging" = { name = "messaging"; open-on-output = output_internal; };

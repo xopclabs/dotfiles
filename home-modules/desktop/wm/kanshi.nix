@@ -3,16 +3,14 @@
 let
     cfg = config.modules.desktop.wm.kanshi;
 
-    # Get monitor configuration
-    internalMonitor = config.metadata.hardware.monitors.internal;
-    externalMonitors = config.metadata.hardware.monitors.external;
+    monitors = config.metadata.hardware.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    externalMonitors = lib.filterAttrs (_: mon: !mon.internal) monitors;
+    internalMonitor = if internalMonitors == [] then null else builtins.head internalMonitors;
 
-    # Check if monitors are configured
     monitorsConfigured = internalMonitor != null && externalMonitors != {};
-
     positionOrDefault = mon: default: if mon.position != null then mon.position else default;
 
-    # Helper function to generate workspace move commands
     generateWorkspaceMoves = monitorName: [
         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 1 ${monitorName}"
         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 2 ${monitorName}"
@@ -20,12 +18,10 @@ let
         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 4 ${monitorName}"
     ];
 
-    # Helper function to generate monitor disable commands
     generateMonitorDisables = monitorNames: map (name:
         "${pkgs.hyprland}/bin/hyprctl keyword monitor \"${name}, disable\""
     ) monitorNames;
 
-    # Helper to create internal monitor output config
     mkInternalOutput = {
         criteria = internalMonitor.name;
         status = "enable";
@@ -35,7 +31,6 @@ let
         transform = internalMonitor.transform;
     };
 
-    # Generate HDMI + Type-C profiles for each external monitor
     mkProfilesForExternal = key: ext: [
         {
             profile = {
@@ -75,7 +70,6 @@ let
         }
     ];
 
-    # On-the-go profile (internal monitor only)
     onTheGoProfile = {
         profile = {
             name = "on-the-go";
@@ -88,23 +82,16 @@ let
         };
     };
 
-    # Flatten all profiles: generate for each external monitor + on-the-go
     kanshiProfiles = if monitorsConfigured then
         lib.flatten (lib.mapAttrsToList mkProfilesForExternal externalMonitors) ++ [ onTheGoProfile ]
     else [];
 in {
     options.modules.desktop.wm.kanshi = {
-        enable = lib.mkEnableOption "kanshi";
+        enable = lib.mkEnableOption "kanshi monitor configuration";
     };
 
-    config = lib.mkIf (cfg.enable && monitorsConfigured) {
-        home.packages = [ pkgs.awww ];
-
-        # Symlink your wallpaper directory into ~/.config/hypr/wallpaper
-        home.file.".config/wallpaper" = {
-            recursive = true;
-            source = ./wallpaper;
-        };
+    config = lib.mkIf cfg.enable {
+        home.packages = [ pkgs.kanshi ];
 
         services.kanshi = {
             enable = true;

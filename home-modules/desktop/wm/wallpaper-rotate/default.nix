@@ -4,7 +4,8 @@ with lib;
 let
     cfg = config.modules.desktop.wm.wallpaperRotate;
     hardwareCfg = config.metadata.hardware;
-    internal = hardwareCfg.monitors.internal;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues hardwareCfg.monitors);
+    internal = if internalMonitors == [] then null else builtins.head internalMonitors;
     primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
 
     monitorsJson = builtins.toJSON {

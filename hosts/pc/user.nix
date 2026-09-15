@@ -1,6 +1,11 @@
 { config, lib, inputs, ...}:
 
-{
+let
+    monitors = config.metadata.hardware.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    internalMonitor = builtins.head internalMonitors;
+    oledMonitor = monitors.oled;
+in {
     imports = [
         ../../home-modules
         ./home.nix
@@ -13,7 +18,7 @@
         desktop = {
             shells.noctalia = {
                 enable = true;
-                settings.notification.monitors = config.metadata.hardware.monitors.external.oled.connectors;
+                settings.notification.monitors = oledMonitor.connectors;
             };
 
             wm = {
@@ -21,7 +26,7 @@
                 niri.enable = true;
                 gamma = {
                     enable = true;
-                    outputs.${builtins.head config.metadata.hardware.monitors.internal.connectors} = {
+                    outputs.${builtins.head internalMonitor.connectors} = {
                         contrast = 1.0;
                         brightness = 1.0;
                         gamma = 1.3;

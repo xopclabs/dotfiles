@@ -4,7 +4,10 @@ with lib;
 let
     cfg = config.modules.desktop.wm.scripts;
     hardwareCfg = config.metadata.hardware;
-    internal = hardwareCfg.monitors.internal;
+    monitors = hardwareCfg.monitors;
+    internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
+    externalMonitors = lib.filter (mon: !mon.internal) (lib.attrValues monitors);
+    internal = if internalMonitors == [] then null else builtins.head internalMonitors;
     wmEnabled = config.modules.desktop.wm.hyprland.enable || config.modules.desktop.wm.niri.enable;
     primaryConnector = mon: if mon.connectors != [] then builtins.head mon.connectors else null;
 
@@ -70,10 +73,10 @@ let
                 (if internal != null && primaryConnector internal != null then primaryConnector internal else "")
                 (lib.concatStringsSep "\n    " (lib.mapAttrsToList
                     (k: v: ''["ext-${k}"]="${v.name}"'')
-                    hardwareCfg.monitors.external))
+                    (lib.filterAttrs (_: mon: !mon.internal) monitors)))
                 (lib.concatStringsSep "\n    " (lib.mapAttrsToList
                     (k: v: ''["ext-${k}"]="${if primaryConnector v != null then primaryConnector v else ""}"'')
-                    hardwareCfg.monitors.external))
+                    (lib.filterAttrs (_: mon: !mon.internal) monitors)))
             ]
             (builtins.readFile ./lib)
     );

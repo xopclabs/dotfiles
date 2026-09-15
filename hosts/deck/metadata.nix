@@ -11,32 +11,31 @@
         network.ipv4 = "192.168.1.151";
 
         hardware.monitors = {
-            internal = {
+            deck = {
                 name = "Valve Corporation ANX7530 U 0x00000001";
                 mode = "800x1280@90";
                 scale = 1.0;
-                # to the right of external
-                position = "1920x140";
-                # below external
-                # position = "320x1080";
+                internal = true;
+                placement = {
+                    relativeTo = "primary";
+                    side = "right";
+                    align = "center";
+                    order = 100;
+                };
                 connectors = [ "eDP-1" ];
                 touch = [
                     "fts3528:00-2808:1015"
                     "fts3528:00-2808:1015-unknown"
                 ];
             };
-            external = {
-                oled = {
-                    name = "Woodwind Communications Systems Inc SF13TO demoset-1";
-                    mode = "1920x1080@60.00";
-                    scale = 1.0;
-                    position = "0x0";
-                    # Absolute-mouse sibling ignored via udev on this host.
-                    connectors = [ "DP-1" ];
-                    touch = [
-                        "ilitek-ilitek-tp"
-                    ];
-                };
+            oled = {
+                name = "Woodwind Communications Systems Inc SF13TO demoset-1";
+                mode = "1920x1080@60.00";
+                scale = 1.0;
+                connectors = [ "DP-1" ];
+                touch = [
+                    "ilitek-ilitek-tp"
+                ];
             };
         };
     };
