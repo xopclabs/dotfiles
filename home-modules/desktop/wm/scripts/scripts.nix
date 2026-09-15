@@ -55,6 +55,7 @@ let
                 "@INTERNAL_SCALE@"
                 "@INTERNAL_POSITION@"
                 "@INTERNAL_TRANSFORM@"
+                "@MONITOR_PLACEMENT_ENABLED@"
                 "@INTERNAL_CONNECTOR@"
                 "@EXTERNAL_MONITORS@"
                 "@EXTERNAL_CONNECTORS@"
@@ -63,8 +64,9 @@ let
                 (if internal != null then internal.name else "")
                 (if internal != null then internal.mode else "")
                 (if internal != null then formatScale internal.scale else "1")
-                (if internal != null then internal.position else "0x0")
+                (if internal != null && internal.position != null then internal.position else "0x0")
                 (if internal != null then (internal.transform or "normal") else "normal")
+                (if config.modules.desktop.wm.monitorPlacement.enable then "1" else "0")
                 (if internal != null && primaryConnector internal != null then primaryConnector internal else "")
                 (lib.concatStringsSep "\n    " (lib.mapAttrsToList
                     (k: v: ''["ext-${k}"]="${v.name}"'')

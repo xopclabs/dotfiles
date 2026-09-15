@@ -46,8 +46,9 @@ let
         mode = parseMode mon.mode;
         scale = mon.scale;
         transform = parseTransform (mon.transform or "normal");
-        position = parsePosition mon.position;
         variable-refresh-rate = mon.variableRefreshRate;
+    } // lib.optionalAttrs (!config.modules.desktop.wm.monitorPlacement.enable && mon.position != null) {
+        position = parsePosition mon.position;
     };
     mkOutputAttrs = mon: lib.genAttrs (niriOutputTargets mon) (_: mkOutput mon);
     firstExternal = let
@@ -58,7 +59,7 @@ let
 
     scratchPath = "${config.xdg.configHome}/niri/scratch.kdl";
     scripts = import ./scripts { inherit pkgs lib config; };
-    inherit (scripts) focusOutput autoPlaceOutputs resetScratch;
+    inherit (scripts) focusOutput autoPlaceOutputs placeOutputs resetScratch;
 in {
     options.modules.desktop.wm.niri = {
         enable = lib.mkEnableOption "niri";
@@ -315,7 +316,7 @@ in {
                 spawn-at-startup = [
                     { sh = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET && systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET && systemctl --user start nixos-fake-graphical-session.target"; }
                 ]
-                ++ lib.optional (autoPlaceOutputs != null) { argv = [ (lib.getExe autoPlaceOutputs) "--watch" ]; }
+                ++ lib.optional (placeOutputs != null) { argv = [ (lib.getExe placeOutputs) "--watch" ]; }
                 ++ lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
                 ++ [

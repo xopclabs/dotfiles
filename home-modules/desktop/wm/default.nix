@@ -21,6 +21,20 @@ in {
             default = null;
             internal = true;
         };
+
+        monitorPlacement = {
+            enable = mkEnableOption "dynamic monitor placement from hardware metadata" // { default = true; };
+            primaryStrategy = mkOption {
+                type = types.enum [ "largest-resolution" "largest-physical" ];
+                default = "largest-resolution";
+                description = "How to choose a primary monitor when no connected monitor has metadata.primary = true.";
+            };
+            defaultAlign = mkOption {
+                type = types.enum [ "center" "start" "end" ];
+                default = "center";
+                description = "Default alignment for dynamically placed monitors.";
+            };
+        };
     };
     
     config = mkMerge [

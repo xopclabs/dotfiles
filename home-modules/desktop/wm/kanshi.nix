@@ -10,6 +10,8 @@ let
     # Check if monitors are configured
     monitorsConfigured = internalMonitor != null && externalMonitors != {};
 
+    positionOrDefault = mon: default: if mon.position != null then mon.position else default;
+
     # Helper function to generate workspace move commands
     generateWorkspaceMoves = monitorName: [
         "${pkgs.hyprland}/bin/hyprctl dispatch moveworkspacetomonitor 1 ${monitorName}"
@@ -29,7 +31,7 @@ let
         status = "enable";
         mode = internalMonitor.mode;
         scale = internalMonitor.scale;
-        position = internalMonitor.position;
+        position = positionOrDefault internalMonitor "0,0";
         transform = internalMonitor.transform;
     };
 
@@ -43,7 +45,7 @@ let
                         criteria = ext.name;
                         status = "enable";
                         mode = ext.mode;
-                        position = ext.position;
+                        position = positionOrDefault ext "0,0";
                         scale = ext.scale;
                     }
                     mkInternalOutput
@@ -61,7 +63,7 @@ let
                         criteria = ext.name;
                         status = "enable";
                         mode = ext.mode;
-                        position = ext.position;
+                        position = positionOrDefault ext "0,0";
                         scale = ext.scale;
                     }
                     mkInternalOutput

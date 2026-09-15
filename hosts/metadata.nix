@@ -123,8 +123,36 @@ with lib;
                         description = "Monitor transformation (rotation/flipping)";
                     };
                     position = mkOption {
-                        type = types.str;
-                        description = "Monitor position (e.g., '0,0')";
+                        type = types.nullOr types.str;
+                        default = null;
+                        description = "Legacy/manual monitor position (e.g., '0x0'). Prefer placement for dynamic layouts.";
+                    };
+                    primary = mkOption {
+                        type = types.bool;
+                        default = false;
+                        description = "Prefer this monitor as primary when connected.";
+                    };
+                    placement = {
+                        relativeTo = mkOption {
+                            type = types.enum [ "primary" ];
+                            default = "primary";
+                            description = "Anchor monitor for dynamic placement.";
+                        };
+                        side = mkOption {
+                            type = types.enum [ "left" "right" "above" "below" "same" ];
+                            default = "right";
+                            description = "Side of the anchor where this monitor should be placed.";
+                        };
+                        align = mkOption {
+                            type = types.enum [ "center" "start" "end" ];
+                            default = "center";
+                            description = "Alignment on the axis perpendicular to side.";
+                        };
+                        offsetFraction = mkOption {
+                            type = types.listOf (types.oneOf [ types.float types.int ]);
+                            default = [ 0.0 0.0 ];
+                            description = "Additional x/y offset as fractions of the anchor logical size.";
+                        };
                     };
                     connectors = mkOption {
                         type = types.listOf types.str;

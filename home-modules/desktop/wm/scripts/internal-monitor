@@ -7,11 +7,41 @@ PREF="$STATE_DIR/preference"
 WATCH_LOCK="$STATE_DIR/watch.lock"
 
 wanted_position() {
-    if drm_has_external; then
-        printf '%s\n' "$INTERNAL_POSITION"
-    else
+    if ! drm_has_external; then
         printf '0x0\n'
+        return 0
     fi
+
+    # When dynamic placement is enabled, niri-place-outputs owns coordinates.
+    # This watchdog should only ensure the internal output is on, not fight the
+    # placement script.
+    if [[ "$(desktop)" == "niri" && "$MONITOR_PLACEMENT_ENABLED" == "1" ]]; then
+        local current
+        current=$(output_xy "$(resolve_output internal)" 2>/dev/null || true)
+        printf '%s\n' "${current:-0x0}"
+        return 0
+    fi
+
+    # Legacy niri fallback: use the same rule as the old autoplace helper.
+    if [[ "$(desktop)" == "niri" ]]; then
+        local internal_name name enabled x width right max y
+        internal_name=$(resolve_output internal 2>/dev/null || true)
+        max=0
+        while IFS=$'\t' read -r name _ enabled x _ width _; do
+            [[ -n "$name" && "$enabled" == "1" && "$name" != "$internal_name" ]] || continue
+            x="${x%.*}"
+            width="${width%.*}"
+            right=$((x + width))
+            (( right > max )) && max="$right"
+        done < <(outputs_tsv)
+        if (( max > 0 )); then
+            y="${INTERNAL_POSITION#*x}"
+            printf '%sx%s\n' "$max" "$y"
+            return 0
+        fi
+    fi
+
+    printf '%s\n' "$INTERNAL_POSITION"
 }
 
 get_preference() {

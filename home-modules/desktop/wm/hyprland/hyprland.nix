@@ -29,16 +29,18 @@ let
        then lib.removeSuffix ".000000" str 
        else str;
     
+    positionOrAuto = mon: if mon.position != null then mon.position else "auto";
+
     # Generate monitor rules from metadata
     # Format: NAME,RES@Hz,OFFSET,SCALE (no spaces after commas!)
     # Internal monitor
     internalMonitorRule = let
         transform = if internalMon ? transform then ",transform,${toString (transformToNum internalMon.transform)}" else "";
-    in "desc:${internalMon.name},${internalMon.mode},${internalMon.position},${formatScale internalMon.scale}${transform}";
+    in "desc:${internalMon.name},${internalMon.mode},${positionOrAuto internalMon},${formatScale internalMon.scale}${transform}";
     
     # External monitors
     externalMonitorRules = lib.mapAttrsToList (key: ext: 
-        "desc:${ext.name},${ext.mode},${ext.position},${formatScale ext.scale}"
+        "desc:${ext.name},${ext.mode},${positionOrAuto ext},${formatScale ext.scale}"
     ) hardwareCfg.monitors.external;
     
     # All monitor rules including fallback for unknown monitors
