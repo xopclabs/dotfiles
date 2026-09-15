@@ -37,10 +37,16 @@ monitor_for_output() {
 active_outputs() {
     local outputs_json key out mon
     outputs_json="$(niri msg -j outputs 2>/dev/null)" || return 0
-    jq -c 'to_entries[] | select(.value.logical != null)' <<<"$outputs_json" | while read -r entry; do
+    jq -c 'to_entries[]' <<<"$outputs_json" | while read -r entry; do
         key=$(jq -r '.key' <<<"$entry")
         out=$(jq -c '.value' <<<"$entry")
         mon=$(monitor_for_output "$out") || continue
+        if [ "$(jq -r '.logical == null' <<<"$out")" = "true" ]; then
+            # Connected but currently disabled. Turn it on; the next niri event
+            # will include logical size and we can place it then.
+            niri msg output "$key" on >/dev/null 2>&1 || true
+            continue
+        fi
         jq -cn --arg key "$key" --argjson output "$out" --argjson monitor "$mon" \
             '{key: $key, output: $output, monitor: $monitor}'
     done
