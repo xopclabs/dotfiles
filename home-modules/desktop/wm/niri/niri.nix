@@ -75,9 +75,19 @@ in {
             description = "Extra niri keybindings merged into programs.niri.settings.binds.";
         };
     };
-    imports = [ inputs.niri.homeModules.config ];
+    imports = [
+        inputs.niri.homeModules.config
+        ./nirinit.nix
+    ];
 
     config = lib.mkIf cfg.enable {
+        modules.desktop.wm.niri.sessionRestore.settings = lib.mkDefault {
+            skip.apps = [
+                "steam"
+                "Steam"
+            ];
+        };
+
         home.packages = [
             pkgs.xwayland-satellite
             pkgs.wl-clipboard
@@ -320,7 +330,7 @@ in {
                 ++ lib.optional (placeOutputs != null) { argv = [ (lib.getExe placeOutputs) "--watch" ]; }
                 ++ lib.optional (!config.modules.desktop.wm.wallpaperRotate.enable)
                     { sh = "awww-daemon && sleep 0.5 && awww img ~/.config/wallpaper/nord.png"; }
-                ++ [
+                ++ lib.optionals (!cfg.sessionRestore.enable) [
                     { argv = [ "slack" ]; }
                     { argv = [ "Telegram" ]; }
                 ]

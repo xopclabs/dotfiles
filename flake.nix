@@ -52,6 +52,9 @@
         niri.url = "github:epireyn/niri-flake";
         niri.inputs.nixpkgs.follows = "nixpkgs";
 
+        nirinit.url = "github:amaanq/nirinit";
+        nirinit.flake = false;
+
         waybar.url = "github:Alexays/Waybar";
         waybar.inputs.nixpkgs.follows = "nixpkgs";
 

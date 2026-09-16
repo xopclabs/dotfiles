@@ -570,6 +570,22 @@
         "type": "github"
       }
     },
+    "nirinit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774415025,
+        "narHash": "sha256-jpSYhiJNI5u/1CJ1RY+9BkSQtvishCfm5n+l9r7hdEk=",
+        "owner": "amaanq",
+        "repo": "nirinit",
+        "rev": "0e43f61069f81bba1114475cae2e84aa0965a1a3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "amaanq",
+        "repo": "nirinit",
+        "type": "github"
+      }
+    },
     "nix-colors": {
       "inputs": {
         "base16-schemes": "base16-schemes",
@@ -1155,6 +1171,7 @@
         "jovian": "jovian",
         "lrcget-cli": "lrcget-cli",
         "niri": "niri",
+        "nirinit": "nirinit",
         "nix-colors": "nix-colors",
         "nix-minecraft": "nix-minecraft",
         "nix-vscode-extensions": "nix-vscode-extensions",

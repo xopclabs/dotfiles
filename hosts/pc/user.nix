@@ -23,7 +23,10 @@ in {
 
             wm = {
                 hyprland.enable = false;
-                niri.enable = true;
+                niri = {
+                    enable = true;
+                    sessionRestore.enable = true;
+                };
                 gamma = {
                     enable = true;
                     outputs.${builtins.head internalMonitor.connectors} = {

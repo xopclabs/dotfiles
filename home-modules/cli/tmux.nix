@@ -127,9 +127,13 @@ in {
                 set-option -sa terminal-overrides ",xterm*:Tc"
                 set-option -ga terminal-overrides ",*-256color:Tc"
 
-                # Extended keys for pi agent
+                # Extended keys and terminal notifications for pi agent
                 set -g extended-keys on
                 set -g extended-keys-format csi-u
+                set -g allow-passthrough all
+                set -g bell-action any
+                set -g visual-bell off
+                setw -g monitor-bell on
 
                 # Layout
                 set -g status-position ${cfg.statusPosition}

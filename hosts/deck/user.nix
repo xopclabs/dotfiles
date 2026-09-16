@@ -20,7 +20,10 @@ in {
             };
             wm = {
                 hyprland.enable = false;
-                niri.enable = true;
+                niri = {
+                    enable = true;
+                    sessionRestore.enable = true;
+                };
                 wallpaperRotate.enable = true;
                 hypridle = {
                     enable = true;
