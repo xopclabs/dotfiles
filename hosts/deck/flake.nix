@@ -3,7 +3,7 @@
 
     inputs = {
         dotfiles.url = "path:../..";
-        agents.url = "path:/home/xopc/agents";
+        agents.url = "git+ssh://git@github.com/xopclabs/agents?ref=main";
     };
 
     outputs = { dotfiles, agents, ... }: {

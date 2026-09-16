@@ -2,14 +2,18 @@
   "nodes": {
     "agents": {
       "locked": {
-        "lastModified": 1789221602,
-        "narHash": "sha256-QlSni8QLRTJvcGIFfXe2Zi5271opqnnslV9YiPygkI0=",
-        "path": "/home/xopc/agents",
-        "type": "path"
+        "lastModified": 1789591955,
+        "narHash": "sha256-HyDKQjrb9yvdFlyqCg11752x2Z/OmOrg8xViSsqAJdY=",
+        "ref": "main",
+        "rev": "8691f3ea1a2c360c9f51fab1ba2bb3d53c84bd1a",
+        "revCount": 14,
+        "type": "git",
+        "url": "ssh://git@github.com/xopclabs/agents"
       },
       "original": {
-        "path": "/home/xopc/agents",
-        "type": "path"
+        "ref": "main",
+        "type": "git",
+        "url": "ssh://git@github.com/xopclabs/agents"
       }
     },
     "autofirma": {
