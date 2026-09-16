@@ -116,6 +116,103 @@ get_workspace_i3() {
     return 1
 }
 
+get_monitor_letter_niri() {
+    if ! command -v niri >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+        return 1
+    fi
+    local focused_mon letter
+    focused_mon=$(niri msg --json focused-output 2>/dev/null | jq -r '.name // empty' 2>/dev/null)
+    [ -n "$focused_mon" ] || return 1
+    letter=$(niri msg --json outputs 2>/dev/null | jq -r --arg mon "$focused_mon" '
+        to_entries
+        | sort_by(.value.logical.y, .value.logical.x)
+        | to_entries
+        | .[]
+        | select(.value.key == $mon)
+        | ([97 + .key] | implode)
+    ' 2>/dev/null | head -n 1)
+    if [ -n "$letter" ]; then
+        echo "$letter"
+        return 0
+    fi
+    return 1
+}
+
+get_monitor_letter_hyprland() {
+    if ! command -v hyprctl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+        return 1
+    fi
+    local letter
+    letter=$(hyprctl monitors -j 2>/dev/null | jq -r '
+        sort_by(.y, .x)
+        | to_entries
+        | .[]
+        | select(.value.focused)
+        | ([97 + .key] | implode)
+    ' 2>/dev/null | head -n 1)
+    if [ -n "$letter" ]; then
+        echo "$letter"
+        return 0
+    fi
+    return 1
+}
+
+get_monitor_letter_sway() {
+    if ! command -v swaymsg >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+        return 1
+    fi
+    local letter
+    letter=$(swaymsg -t get_outputs 2>/dev/null | jq -r '
+        map(select(.active))
+        | sort_by(.rect.y, .rect.x)
+        | to_entries
+        | .[]
+        | select(.value.focused)
+        | ([97 + .key] | implode)
+    ' 2>/dev/null | head -n 1)
+    if [ -n "$letter" ]; then
+        echo "$letter"
+        return 0
+    fi
+    return 1
+}
+
+get_monitor_letter_i3() {
+    if ! command -v i3-msg >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+        return 1
+    fi
+    local focused_output letter
+    focused_output=$(i3-msg -t get_workspaces 2>/dev/null | jq -r '(.[] | select(.focused)).output // empty' 2>/dev/null | head -n 1)
+    [ -n "$focused_output" ] || return 1
+    letter=$(i3-msg -t get_outputs 2>/dev/null | jq -r --arg output "$focused_output" '
+        map(select(.active))
+        | sort_by(.rect.y, .rect.x)
+        | to_entries
+        | .[]
+        | select(.value.name == $output)
+        | ([97 + .key] | implode)
+    ' 2>/dev/null | head -n 1)
+    if [ -n "$letter" ]; then
+        echo "$letter"
+        return 0
+    fi
+    return 1
+}
+
+get_monitor_letter() {
+    local wm
+    wm=$(get_wm)
+    case "$wm" in
+        niri) get_monitor_letter_niri ;;
+        hyprland) get_monitor_letter_hyprland ;;
+        sway) get_monitor_letter_sway ;;
+        i3) get_monitor_letter_i3 ;;
+        *)
+            get_monitor_letter_niri || get_monitor_letter_hyprland || get_monitor_letter_sway || return 1
+            ;;
+    esac
+}
+
 get_workspace() {
     local wm
     wm=$(get_wm)
@@ -133,10 +230,11 @@ get_workspace() {
 # Define session name
 if [ "$use_workspace" = true ]; then
     ws=$(get_workspace)
+    monitor=$(get_monitor_letter)
     if [ -n "$ws" ]; then
-        session_name="${ws}${suffix}"
+        session_name="${monitor}${ws}${suffix}"
     else
-        session_name="main${suffix}"
+        session_name="${monitor}main${suffix}"
     fi
 else
     session_name="main${suffix}"
@@ -196,25 +294,38 @@ attach_or_link() {
     fi
 }
 
-# Give a compositor-managed terminal its own linked session and its own window.
-# The base session is the persistent backing store; only the linked session is
-# attached, so selecting the new window cannot move another terminal client.
+# Give a compositor-managed terminal its own linked session. Prefer a window
+# no other client is currently viewing; create a new window only when all
+# existing windows in the session group are already attached somewhere.
 if [ "$niri_managed" = true ]; then
     if [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_TTY:-}" ]; then
         echo "tm: -n is only intended for local graphical terminals" >&2
         exit 1
     fi
 
-    # tmux may assign the same next numeric index to concurrent new-window
-    # requests. Retry until the winning request has finished and the next
-    # index is available; ownership uses the returned stable window ID.
+    if ! tmux has-session -t "=$session_name" 2>/dev/null; then
+        tmux new-session -d -s "$session_name" 2>/dev/null || true
+    fi
+    if ! tmux has-session -t "=$session_name" 2>/dev/null; then
+        exit 1
+    fi
+
+    find_unattached_window() {
+        local group window_id
+        group=$(tmux display-message -p -t "=$session_name" '#{session_group}' 2>/dev/null) || return 1
+        tmux list-windows -t "=$session_name" -F '#{window_id}' 2>/dev/null | while read -r window_id; do
+            if ! tmux list-clients -a -F '#{session_group} #{client_window_id}' 2>/dev/null | \
+                awk -v group="$group" -v window_id="$window_id" '$1 == group && $2 == window_id {found = 1} END {exit found ? 0 : 1}'; then
+                echo "$window_id"
+                return 0
+            fi
+        done
+    }
+
     create_managed_window() {
         local attempt=0
         while [ "$attempt" -lt 100 ]; do
-            # The trailing colon targets the session rather than its current
-            # window. Without it, tmux repeatedly tries current-index + 1 and
-            # fails once that index already exists.
-            if window_id=$(tmux new-window -d -P -F '#{window_id}' -t "=$session_name:" 2>/dev/null); then
+            if tmux new-window -d -P -F '#{window_id}' -t "=$session_name:" 2>/dev/null; then
                 return 0
             fi
             attempt=$((attempt + 1))
@@ -223,51 +334,45 @@ if [ "$niri_managed" = true ]; then
         return 1
     }
 
-    if tmux has-session -t "=$session_name" 2>/dev/null; then
-        create_managed_window || exit 1
-    else
-        # new-session must create one window. Use it as this terminal's owned
-        # window, avoiding a dummy window on a fresh workspace. If another
-        # launcher won the race to create the base, add a window to that base.
-        if ! window_id=$(tmux new-session -d -P -F '#{window_id}' -s "$session_name" 2>/dev/null); then
-            create_managed_window || exit 1
-        fi
+    create_linked_session() {
+        local candidate
+        for _ in $(seq 1 100); do
+            candidate=$(next_link_name)
+            if tmux new-session -d -s "$candidate" -t "=$session_name" 2>/dev/null; then
+                echo "$candidate"
+                return 0
+            fi
+            if ! tmux has-session -t "$candidate" 2>/dev/null; then
+                return 1
+            fi
+        done
+        return 1
+    }
+
+    window_id=$(find_unattached_window)
+    owned_window=""
+    if [ -z "$window_id" ]; then
+        window_id=$(create_managed_window) || exit 1
+        owned_window="$window_id"
     fi
 
-    # Name allocation and creation must be retried together: several niri
-    # launches may all observe the same available suffix. A failed creator
-    # must never kill the linked session another launcher just created.
-    link_name=""
-    for _ in $(seq 1 100); do
-        candidate=$(next_link_name)
-        if tmux new-session -d -s "$candidate" -t "=$session_name" 2>/dev/null; then
-            link_name="$candidate"
-            break
-        fi
-        if ! tmux has-session -t "$candidate" 2>/dev/null; then
-            break
-        fi
-    done
-
+    link_name=$(create_linked_session)
     if [ -z "$link_name" ]; then
-        tmux kill-window -t "$window_id" 2>/dev/null
+        [ -n "$owned_window" ] && tmux kill-window -t "$owned_window" 2>/dev/null
         exit 1
     fi
 
     if ! tmux set-option -t "$link_name" @niri_managed 1 ||
-       ! tmux set-option -t "$link_name" @niri_window "$window_id" ||
+       ! tmux set-option -t "$link_name" @niri_window "$owned_window" ||
        ! tmux select-window -t "$link_name:$window_id"; then
         tmux kill-session -t "$link_name" 2>/dev/null
-        tmux kill-window -t "$window_id" 2>/dev/null
+        [ -n "$owned_window" ] && tmux kill-window -t "$owned_window" 2>/dev/null
         exit 1
     fi
 
-    # Set up the linked session completely before attaching. In particular,
-    # this avoids tmux trying to attach while it is still linking and selecting
-    # windows, which can fail against a long-running server with renumbering.
     if ! tmux attach-session -t "$link_name"; then
         tmux kill-session -t "$link_name" 2>/dev/null
-        tmux kill-window -t "$window_id" 2>/dev/null
+        [ -n "$owned_window" ] && tmux kill-window -t "$owned_window" 2>/dev/null
         exit 1
     fi
     exit 0

@@ -159,8 +159,8 @@ in {
                 # Environment
                 set-option -ga update-environment " NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK I3SOCK WAYLAND_DISPLAY DISPLAY DBUS_SESSION_BUS_ADDRESS"
 
-                # Auto-close untouched ordinary sessions, or the owned window
-                # and linked session for a compositor-managed terminal.
+                # Auto-close untouched ordinary sessions, or managed linked sessions
+                # and their newly-created windows.
                 set-hook -g client-detached 'run-shell "${tmux-clean-empty}/bin/tmux-clean-empty \"#{session_name}\" \"#{@niri_managed}\" \"#{@niri_window}\""'
             '';
         };

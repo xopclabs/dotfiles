@@ -53,11 +53,6 @@ window_is_untouched() {
 }
 
 if [ "$managed" = "1" ]; then
-    case "$owned_window" in
-        @*) ;;
-        *) exit 0 ;;
-    esac
-
     # Managed sessions deliberately do not use destroy-unattached: tmux 3.7c
     # destroys such a session before client-detached formats are expanded.
     # The hook passes its metadata here while the session still exists, and
@@ -69,9 +64,13 @@ if [ "$managed" = "1" ]; then
     fi
 
     tmux kill-session -t "$session" 2>/dev/null || exit 0
-    if window_is_untouched "$owned_window"; then
-        tmux kill-window -t "$owned_window" 2>/dev/null
-    fi
+    case "$owned_window" in
+        @*)
+            if window_is_untouched "$owned_window"; then
+                tmux kill-window -t "$owned_window" 2>/dev/null
+            fi
+            ;;
+    esac
     exit 0
 fi
 
