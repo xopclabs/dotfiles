@@ -3,9 +3,29 @@
 with lib;
 let
     cfg = config.homelab.grafana;
-    dashboardPath = pkgs.runCommand "grafana-dashboards" {} ''
-        mkdir -p "$out"
-        cp ${./dashboards/shelly-power.json} "$out/shelly-power.json"
+
+    telemetry = {
+        database = "telemetry";
+        databaseUser = "grafana";
+        datasource = {
+            name = "Telemetry PostgreSQL";
+            uid = "telemetry-postgres";
+            type = "grafana-postgresql-datasource";
+        };
+    };
+
+    grafanaSecret = {
+        sopsFile = ../../../secrets/shared/selfhost.yaml;
+        owner = "grafana";
+        group = "grafana";
+        mode = "0400";
+    };
+
+    dashboards = pkgs.runCommand "grafana-dashboards" {
+        nativeBuildInputs = [ pkgs.jq ];
+    } ''
+        cp -r ${./dashboards} "$out"
+        find "$out" -type f -name '*.json' -exec jq empty {} +
     '';
 in
 {
@@ -25,24 +45,9 @@ in
     };
 
     config = mkIf cfg.enable {
-        homelab.postgres.ensureUsers = [{
-            name = "grafana";
-            ensureDBOwnership = false;
-        }];
-
         sops.secrets = {
-            "grafana/admin-password" = {
-                sopsFile = ../../../secrets/shared/selfhost.yaml;
-                owner = "grafana";
-                group = "grafana";
-                mode = "0400";
-            };
-            "grafana/secret-key" = {
-                sopsFile = ../../../secrets/shared/selfhost.yaml;
-                owner = "grafana";
-                group = "grafana";
-                mode = "0400";
-            };
+            "grafana/admin-password" = grafanaSecret;
+            "grafana/secret-key" = grafanaSecret;
         };
 
         services.grafana = {
@@ -68,52 +73,40 @@ in
             provision = {
                 datasources.settings = {
                     apiVersion = 1;
+                    prune = true;
                     datasources = [{
-                        name = "Telemetry PostgreSQL";
-                        uid = "telemetry-postgres";
-                        type = "grafana-postgresql-datasource";
+                        inherit (telemetry.datasource) name uid type;
                         url = "127.0.0.1:5432";
-                        database = "telemetry";
-                        user = "grafana";
+                        database = telemetry.database;
+                        user = telemetry.databaseUser;
                         editable = false;
                         jsonData = {
-                            database = "telemetry";
+                            database = telemetry.database;
                             sslmode = "disable";
                             postgresVersion = 1600;
                         };
                     }];
                 };
-                dashboards.settings.providers = [{
-                    name = "telemetry";
-                    options.path = dashboardPath;
-                }];
+                dashboards.settings = {
+                    apiVersion = 1;
+                    providers = [{
+                        name = "telemetry";
+                        type = "file";
+                        disableDeletion = false;
+                        allowUiUpdates = false;
+                        updateIntervalSeconds = 30;
+                        options = {
+                            path = dashboards;
+                            foldersFromFilesStructure = true;
+                        };
+                    }];
+                };
             };
-        };
-
-        systemd.services.grafana-db-access = {
-            description = "Grant Grafana read-only telemetry access";
-            after = [ "telemetry-db-setup.service" ];
-            requires = [ "telemetry-db-setup.service" ];
-            before = [ "grafana.service" ];
-            wantedBy = [ "multi-user.target" ];
-            serviceConfig = {
-                Type = "oneshot";
-                User = "telemetry";
-                RemainAfterExit = true;
-            };
-            script = ''
-                ${config.services.postgresql.package}/bin/psql -d telemetry -v ON_ERROR_STOP=1 <<'SQL'
-                GRANT CONNECT ON DATABASE telemetry TO grafana;
-                GRANT USAGE ON SCHEMA public TO grafana;
-                GRANT SELECT ON ALL TABLES IN SCHEMA public TO grafana;
-                ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO grafana;
-                SQL
-            '';
         };
 
         systemd.services.grafana = {
-            after = [ "grafana-db-access.service" ];
-            requires = [ "grafana-db-access.service" ];
+            after = [ "telemetry-grafana-db-access.service" ];
+            requires = [ "telemetry-grafana-db-access.service" ];
         };
 
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [{
