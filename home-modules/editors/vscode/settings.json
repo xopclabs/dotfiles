@@ -129,6 +129,6 @@
     "window.autoDetectColorScheme": false,
     "cursor.composer.editorConversationDensity": "compact-ungrouped",
     "cursor.composer.shouldChimeAfterChatFinishes": true,
-    "cursor.composer.queueMessageDefaultBehavior": "steer",
-    "cursor.composer.showEmptyStateTips": false
+    "cursor.composer.showEmptyStateTips": false,
+    "cursor.composer.queueManualSendBehavior2": "steer"
 }
