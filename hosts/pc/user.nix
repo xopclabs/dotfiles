@@ -25,7 +25,7 @@ in {
                 hyprland.enable = false;
                 niri = {
                     enable = true;
-                    sessionRestore.enable = true;
+                    sessionRestore.enable = false;
                 };
                 gamma = {
                     enable = true;
