@@ -312,9 +312,9 @@ if [ "$niri_managed" = true ]; then
 
     find_unattached_window() {
         local group window_id
-        group=$(tmux display-message -p -t "=$session_name" '#{session_group}' 2>/dev/null) || return 1
+        group=$(tmux display-message -p -t "=$session_name:" '#{?session_group,#{session_group},#{session_name}}' 2>/dev/null) || return 1
         tmux list-windows -t "=$session_name" -F '#{window_id}' 2>/dev/null | while read -r window_id; do
-            if ! tmux list-clients -a -F '#{session_group} #{client_window_id}' 2>/dev/null | \
+            if ! tmux list-clients -F '#{?session_group,#{session_group},#{session_name}} #{window_id}' 2>/dev/null | \
                 awk -v group="$group" -v window_id="$window_id" '$1 == group && $2 == window_id {found = 1} END {exit found ? 0 : 1}'; then
                 echo "$window_id"
                 return 0
