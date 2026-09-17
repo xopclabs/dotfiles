@@ -9,7 +9,11 @@ let
     sortedLocalZones =
         sort (a: b: (stringLength a) > (stringLength b)) (attrNames cfg.localZones);
 
-    sync-to-orangepi = pkgs.writeShellScriptBin "sync-to-orangepi" ''${builtins.readFile ./sync-to-orangepi}'';
+    orangePiZoneTargets = concatMapStringsSep "\n" (zone: "${zone}|${cfg.localZones.${zone}}") sortedLocalZones;
+
+    sync-to-orangepi = pkgs.writeShellScriptBin "sync-to-orangepi" (
+        replaceStrings [ "@LOCAL_ZONE_TARGETS@" ] [ orangePiZoneTargets ] (builtins.readFile ./sync-to-orangepi)
+    );
 in
 {
     options.homelab.pihole_unbound = {
