@@ -96,6 +96,34 @@ let
         ${pkgs.systemd}/bin/systemctl stop ${importerService} || true
         ${ssh} ${remote} stop || true
     '';
+    reconnect = pkgs.writeShellScript "deck-controller-passthrough-reconnect" ''
+        set -eu
+        app_id="$(${pkgs.procps}/bin/ps -ww -eo args= | ${pkgs.gawk}/bin/awk '
+            match($0, /SteamLaunch AppId=([0-9]+)/, fields) {
+                print fields[1]
+                exit
+            }
+        ')"
+
+        ${pkgs.systemd}/bin/systemctl restart ${gamescopeService}
+
+        if [ -n "$app_id" ]; then
+            user=${lib.escapeShellArg config.metadata.user}
+            uid="$(${pkgs.coreutils}/bin/id -u "$user")"
+            ${pkgs.util-linux}/bin/runuser -u "$user" -- \
+                ${pkgs.coreutils}/bin/env XDG_RUNTIME_DIR="/run/user/$uid" DISPLAY=:0 \
+                ${pkgs.systemd}/bin/systemd-run --user --collect --quiet \
+                ${config.programs.steam.package}/bin/steam "steam://forceinputappid/$app_id"
+        fi
+    '';
+    reconnectCommand = pkgs.writeShellScript "deck-controller-passthrough-reconnect-command" ''
+        set -eu
+        if [ "''${SSH_ORIGINAL_COMMAND:-}" != reconnect ]; then
+            echo "only reconnect is permitted" >&2
+            exit 2
+        fi
+        exec /run/wrappers/bin/sudo ${reconnect}
+    '';
 in
 lib.mkMerge [
     {
@@ -111,6 +139,39 @@ lib.mkMerge [
             };
         };
     }
+
+    (lib.mkIf icfg.reconnectControl.enable (lib.mkMerge [
+        {
+            networking.firewall = {
+                extraCommands = lib.mkIf (!config.networking.nftables.enable) ''
+                    ${config.networking.firewall.package}/bin/iptables -A nixos-fw -p tcp -s ${icfg.exporterAddress} --dport 22 -j nixos-fw-accept
+                '';
+                extraInputRules = lib.mkIf config.networking.nftables.enable ''
+                    ip saddr ${icfg.exporterAddress} tcp dport 22 accept
+                '';
+            };
+
+            services.openssh.enable = true;
+
+            users.users.${icfg.reconnectControl.user} = {
+                isSystemUser = true;
+                group = icfg.reconnectControl.user;
+                shell = pkgs.bashInteractive;
+                openssh.authorizedKeys.keys = [
+                    "from=\"${icfg.exporterAddress}\",command=\"${reconnectCommand}\",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding ${icfg.reconnectControl.authorizedKey}"
+                ];
+            };
+            users.groups.${icfg.reconnectControl.user} = {};
+
+            security.sudo.extraRules = [{
+                users = [ icfg.reconnectControl.user ];
+                commands = [{
+                    command = toString reconnect;
+                    options = [ "NOPASSWD" ];
+                }];
+            }];
+        }
+    ]))
 
     (lib.mkIf icfg.gamescopeLifecycle.enable {
         systemd.services.deck-controller-passthrough-gamescope = {

@@ -69,6 +69,28 @@ in
                     description = "SSH public key allowed to start or stop the exporter.";
                 };
             };
+
+            reconnectTrigger = {
+                enable = lib.mkEnableOption "a launcher that requests controller reconnection from the importer";
+
+                user = lib.mkOption {
+                    type = lib.types.str;
+                    default = "deck-controller-reconnect";
+                    description = "Restricted SSH account on the importer.";
+                };
+
+                identityFile = lib.mkOption {
+                    type = lib.types.nullOr lib.types.path;
+                    default = null;
+                    description = "Private key used to request controller reconnection.";
+                };
+
+                hostPublicKey = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "Expected importer SSH host public key, including its key type.";
+                };
+            };
         };
 
         importer = {
@@ -100,6 +122,22 @@ in
                 };
             };
 
+            reconnectControl = {
+                enable = lib.mkEnableOption "restricted SSH requests to reconnect the controller";
+
+                user = lib.mkOption {
+                    type = lib.types.str;
+                    default = "deck-controller-reconnect";
+                    description = "Dedicated SSH account used to request controller reconnection.";
+                };
+
+                authorizedKey = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "SSH public key allowed to request controller reconnection.";
+                };
+            };
+
             gamescopeLifecycle.enable = lib.mkEnableOption "controller forwarding around the Jovian Gamescope session";
         };
     };
@@ -116,12 +154,20 @@ in
                     message = "Remote exporter control requires exporter.remoteControl.authorizedKey.";
                 }
                 {
+                    assertion = cfg.role != "exporter" || !cfg.exporter.reconnectTrigger.enable || (cfg.exporter.reconnectTrigger.identityFile != null && cfg.exporter.reconnectTrigger.hostPublicKey != null);
+                    message = "The reconnect trigger requires exporter.reconnectTrigger.identityFile and hostPublicKey.";
+                }
+                {
                     assertion = cfg.role != "importer" || cfg.importer.exporterAddress != null;
                     message = "The controller importer requires importer.exporterAddress.";
                 }
                 {
                     assertion = cfg.role != "importer" || !cfg.importer.remoteControl.enable || (cfg.importer.remoteControl.identityFile != null && cfg.importer.remoteControl.hostPublicKey != null);
                     message = "Remote importer control requires importer.remoteControl.identityFile and hostPublicKey.";
+                }
+                {
+                    assertion = cfg.role != "importer" || !cfg.importer.reconnectControl.enable || cfg.importer.reconnectControl.authorizedKey != null;
+                    message = "Reconnect control requires importer.reconnectControl.authorizedKey.";
                 }
                 {
                     assertion = !cfg.importer.gamescopeLifecycle.enable || cfg.role == "importer";

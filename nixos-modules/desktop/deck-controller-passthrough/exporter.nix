@@ -84,6 +84,36 @@ let
                 ;;
         esac
     '';
+    reconnectKnownHosts = pkgs.writeText "deck-controller-importer-known-hosts"
+        "deck-controller-importer ${ecfg.reconnectTrigger.hostPublicKey}\n";
+    reconnect = pkgs.writeShellScriptBin "reconnect-deck-controller" ''
+        set -eu
+        if ${pkgs.openssh}/bin/ssh \
+            -o BatchMode=yes \
+            -o ConnectTimeout=5 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=${reconnectKnownHosts} \
+            -o GlobalKnownHostsFile=/dev/null \
+            -o HostKeyAlias=deck-controller-importer \
+            -i ${ecfg.reconnectTrigger.identityFile} \
+            ${ecfg.reconnectTrigger.user}@${ecfg.peerAddress} reconnect; then
+            ${pkgs.libnotify}/bin/notify-send "Steam Deck controller" "Reconnection requested" || true
+        else
+            status=$?
+            ${pkgs.libnotify}/bin/notify-send --urgency=critical "Steam Deck controller" "Reconnection failed" || true
+            exit "$status"
+        fi
+    '';
+    reconnectLauncher = pkgs.makeDesktopItem {
+        name = "reconnect-deck-controller";
+        desktopName = "Reconnect Deck Controller";
+        comment = "Reconnect this Steam Deck's controller to the gaming PC";
+        exec = "${reconnect}/bin/reconnect-deck-controller";
+        icon = "input-gaming";
+        terminal = false;
+        categories = [ "Game" "Utility" ];
+    };
     allowFromPeer = port: {
         networking.firewall = {
             extraCommands = lib.mkIf (!config.networking.nftables.enable) ''
@@ -136,6 +166,10 @@ lib.mkMerge [
             };
         };
     }
+
+    (lib.mkIf ecfg.reconnectTrigger.enable {
+        environment.systemPackages = [ reconnect reconnectLauncher ];
+    })
 
     (lib.mkIf ecfg.remoteControl.enable (lib.mkMerge [
         (allowFromPeer 22)

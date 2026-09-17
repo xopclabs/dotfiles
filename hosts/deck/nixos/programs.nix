@@ -5,6 +5,13 @@
         ../../../nixos-modules/desktop/default.nix
     ];
     
+    config.sops.secrets."deck-controller-reconnect/id_ed25519" = {
+        sopsFile = ../../../secrets/hosts/deck.yaml;
+        key = "deck-controller-reconnect/id_ed25519";
+        owner = config.metadata.user;
+        mode = "0400";
+    };
+
     config.desktop = {
         wireguard = {
             enable = true;
@@ -58,6 +65,11 @@
                 remoteControl = {
                     enable = true;
                     authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILtyvankFvSvOPNKlIeBOswkvj4RlfRaHCZDq2h3RJuN";
+                };
+                reconnectTrigger = {
+                    enable = true;
+                    identityFile = config.sops.secrets."deck-controller-reconnect/id_ed25519".path;
+                    hostPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDj+UaBfIa6icB/CFq3PRV7H48O5bD4UIjyFgBNdORB5";
                 };
             };
         };
