@@ -41,6 +41,7 @@ in {
                 After = [ "graphical-session.target" ];
                 PartOf = [ "graphical-session.target" ];
                 ConditionEnvironment = "NIRI_SOCKET";
+                X-RestartIfChanged = false;
             };
             Service = {
                 ExecStart = "${lib.getExe package} --config ${configFile}";
