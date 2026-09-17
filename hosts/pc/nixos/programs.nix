@@ -76,6 +76,7 @@
         };
 
         lutris.enable = true;
+        lact.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
         ddcutil.enable = true;

@@ -15,6 +15,7 @@
         ./ereader-relay.nix
         ./vanta.nix
         ./ddcutil.nix
+        ./lact.nix
         ./touch-unlock.nix
         ./deck-controller-passthrough
     ];
