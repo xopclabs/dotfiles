@@ -71,6 +71,8 @@
 
         nixos-vanta.url = "github:taho-inc/nixos-vanta";
         nixos-vanta.inputs.nixpkgs.follows = "nixpkgs";
+
+        multiverse.url = "github:fzakaria/nixpkgs-multiverse";
     };
 
     # All outputs for the system (configs)

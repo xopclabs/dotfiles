@@ -190,6 +190,7 @@
         "home-manager": "home-manager_2",
         "jovian": "jovian",
         "lrcget-cli": "lrcget-cli",
+        "multiverse": "multiverse",
         "niri": "niri",
         "nirinit": "nirinit",
         "nix-colors": "nix-colors",
@@ -571,6 +572,21 @@
         "owner": "xopclabs",
         "ref": "nix-flake-testbranch",
         "repo": "lrcget-cli",
+        "type": "github"
+      }
+    },
+    "multiverse": {
+      "locked": {
+        "lastModified": 1789596272,
+        "narHash": "sha256-77w6/8smBVoIGOMdRyq3G7RnujIS7h5B4wMGVhTIKf0=",
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "rev": "b780524b47fbe8b9ae8605a761a8fe9ad1a8e48b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
         "type": "github"
       }
     },

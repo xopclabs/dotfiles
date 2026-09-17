@@ -118,6 +118,10 @@ in
 
     # Map each touchscreen to its panel via udev WL_OUTPUT (see system.nix).
     nixpkgs.overlays = [
+        # 0.8.2 makes Steam XWayland menus/popups close immediately under niri.
+        (inputs.multiverse.lib.pinOverlay {
+            pins.xwayland-satellite = "0.8.1";
+        })
         (final: prev: {
             niri = prev.niri.overrideAttrs (old: {
                 patches = (old.patches or []) ++ (import ../../../patches { inherit lib; }).niri;

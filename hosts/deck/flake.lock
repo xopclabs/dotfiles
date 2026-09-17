@@ -2,11 +2,11 @@
   "nodes": {
     "agents": {
       "locked": {
-        "lastModified": 1789591955,
-        "narHash": "sha256-HyDKQjrb9yvdFlyqCg11752x2Z/OmOrg8xViSsqAJdY=",
+        "lastModified": 1789602992,
+        "narHash": "sha256-vOWdMPaa7Za703DiQ9QSp1ecdTqLsJ9QAqzgf8rLRYU=",
         "ref": "main",
-        "rev": "8691f3ea1a2c360c9f51fab1ba2bb3d53c84bd1a",
-        "revCount": 14,
+        "rev": "5468dc4935471fd040d67bac0dcdfee05a27898c",
+        "revCount": 17,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/agents"
       },
@@ -190,7 +190,9 @@
         "home-manager": "home-manager_2",
         "jovian": "jovian",
         "lrcget-cli": "lrcget-cli",
+        "multiverse": "multiverse",
         "niri": "niri",
+        "nirinit": "nirinit",
         "nix-colors": "nix-colors",
         "nix-minecraft": "nix-minecraft",
         "nix-vscode-extensions": "nix-vscode-extensions",
@@ -573,6 +575,21 @@
         "type": "github"
       }
     },
+    "multiverse": {
+      "locked": {
+        "lastModified": 1789596272,
+        "narHash": "sha256-77w6/8smBVoIGOMdRyq3G7RnujIS7h5B4wMGVhTIKf0=",
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "rev": "b780524b47fbe8b9ae8605a761a8fe9ad1a8e48b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "type": "github"
+      }
+    },
     "niri": {
       "inputs": {
         "niri-stable": "niri-stable",
@@ -629,6 +646,22 @@
       "original": {
         "owner": "niri-wm",
         "repo": "niri",
+        "type": "github"
+      }
+    },
+    "nirinit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774415025,
+        "narHash": "sha256-jpSYhiJNI5u/1CJ1RY+9BkSQtvishCfm5n+l9r7hdEk=",
+        "owner": "amaanq",
+        "repo": "nirinit",
+        "rev": "0e43f61069f81bba1114475cae2e84aa0965a1a3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "amaanq",
+        "repo": "nirinit",
         "type": "github"
       }
     },
