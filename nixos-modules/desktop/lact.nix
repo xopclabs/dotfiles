@@ -43,6 +43,13 @@ in
                 auto_switch_profiles = false;
             };
         };
-        hardware.amdgpu.overdrive.enable = true;
+        hardware.amdgpu.overdrive = {
+	    enable = true;
+	    # Default kernel mask + OverDrive on 
+	    # NixOS also disables GFXOFF, STUTTER_MODE and enables GFX_DCS
+	    # I tested that without GFXOFF, GPU didn't enter s2idle and drew ~250W
+	    # Other features didn't matter, so left on kernel's default
+	    ppfeaturemask = "0xfff7ffff";
+	};
     };
 }
