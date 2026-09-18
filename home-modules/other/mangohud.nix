@@ -20,27 +20,26 @@ in {
             enable = true;
             enableSessionWide = cfg.enableSessionWide;
             settings = {
+                position = "top-left";
+
                 fps = true;
-                frametime = true;
+                fps_metrics = "avg,0.01,0.001";
                 frame_timing = true;
+
                 gpu_stats = true;
                 gpu_temp = true;
-                gpu_power = true;
                 gpu_mem_temp = true;
+                gpu_power = true;
+                throttling_status = true;
                 vram = true;
+
                 cpu_stats = true;
                 cpu_temp = true;
+                cpu_power = true;
                 ram = true;
-                wine = true;
-                vulkan_driver = true;
-                engine_version = true;
-                gamemode = true;
-                throttling_status = true;
-                frame_count = true;
 
                 # Match the active nix-colors/base16 palette. Keep the HUD background transparent.
                 background_alpha = 0.0;
-                alpha = 1.0;
                 background_color = colors.base00;
                 text_color = colors.base05;
                 fps_color = [ colors.base0B colors.base0A colors.base08 ];
@@ -50,18 +49,15 @@ in {
                 vram_color = colors.base0C;
                 cpu_color = colors.base0D;
                 cpu_load_color = [ colors.base0B colors.base0A colors.base08 ];
-                io_color = colors.base0A;
+                ram_color = "c26693";
                 engine_color = colors.base0E;
                 wine_color = colors.base0E;
                 battery_color = colors.base04;
                 media_player_color = colors.base05;
+                network_color = "e07b85";
+                horizontal_separator_color = "ffffff";
 
-                # Bigger and crisper: avoid the default outline blur and Stylix's font_scale workaround.
                 font_size = 22;
-                font_size_text = 22;
-                font_scale = 1.0;
-                no_small_font = true;
-                text_outline = false;
 
                 toggle_hud = "Shift_L+F10";
                 toggle_logging = "Shift_L+F9";
