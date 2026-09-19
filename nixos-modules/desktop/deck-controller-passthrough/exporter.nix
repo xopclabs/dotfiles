@@ -34,6 +34,14 @@ let
         ${usbip}/bin/usbip unbind --busid "$bus_id" || true
         ${pkgs.systemd}/bin/udevadm trigger --action=change --subsystem-match=usb
     '';
+    sleepInhibitor = pkgs.writeShellScript "deck-controller-passthrough-sleep-inhibitor" ''
+        exec ${pkgs.systemd}/bin/systemd-inhibit \
+            --what=sleep \
+            --mode=block \
+            --who=deck-controller-passthrough \
+            --why="Steam Deck controller is forwarded" \
+            ${pkgs.coreutils}/bin/sleep infinity
+    '';
     watchdog = pkgs.writeShellScript "deck-controller-passthrough-watchdog" ''
         set -eu
         absent_since="$(${pkgs.coreutils}/bin/date +%s)"
@@ -147,6 +155,16 @@ lib.mkMerge [
                 RemainAfterExit = true;
                 ExecStart = start;
                 ExecStop = stop;
+            };
+        };
+
+        systemd.services.deck-controller-passthrough-sleep-inhibitor = {
+            description = "Inhibit sleep while the Steam Deck controller is forwarded";
+            after = [ service ];
+            wantedBy = [ service ];
+            partOf = [ service ];
+            serviceConfig = {
+                ExecStart = sleepInhibitor;
             };
         };
 
