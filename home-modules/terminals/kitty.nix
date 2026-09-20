@@ -57,7 +57,7 @@ in {
                 repaint_delay = 10;
                 input_delay = 3;
                 open_url_with = config.modules.browsers.default;
-                enable_audio_bell = "yes";
+                enable_audio_bell = "no";
                 bell_path = "/run/current-system/sw/share/sounds/freedesktop/stereo/window-attention.oga";
                 term = "xterm-kitty";
             };
