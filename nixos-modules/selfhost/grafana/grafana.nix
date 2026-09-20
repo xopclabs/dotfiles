@@ -27,6 +27,8 @@ let
         cp -r ${./dashboards} "$out"
         find "$out" -type f -name '*.json' -exec jq empty {} +
     '';
+
+    liveDashboards = "/var/lib/grafana/dashboards";
 in
 {
     options.homelab.grafana = {
@@ -93,15 +95,29 @@ in
                         name = "telemetry";
                         type = "file";
                         disableDeletion = false;
-                        allowUiUpdates = false;
+                        # UI changes remain live until the next NixOS rebuild, which
+                        # reseeds this directory from the versioned JSON files.
+                        allowUiUpdates = true;
                         updateIntervalSeconds = 30;
                         options = {
-                            path = dashboards;
+                            path = liveDashboards;
                             foldersFromFilesStructure = true;
                         };
                     }];
                 };
             };
+        };
+
+        system.activationScripts.grafanaDashboards = {
+            deps = [ "users" ];
+            text = ''
+                staging="$(${pkgs.coreutils}/bin/mktemp -d /var/lib/grafana/.dashboards.XXXXXX)"
+                ${pkgs.coreutils}/bin/cp -r ${dashboards}/. "$staging/"
+                ${pkgs.coreutils}/bin/chown -R grafana:grafana "$staging"
+                ${pkgs.coreutils}/bin/chmod -R u=rwX,g=rX,o= "$staging"
+                ${pkgs.coreutils}/bin/rm -rf ${liveDashboards}
+                ${pkgs.coreutils}/bin/mv "$staging" ${liveDashboards}
+            '';
         };
 
         systemd.services.grafana = {
