@@ -49,6 +49,7 @@ in {
             ncdu
             openspec
             gh
+	    rsync
         ];
     };
 }
