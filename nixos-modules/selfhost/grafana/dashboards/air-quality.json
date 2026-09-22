@@ -4,23 +4,24 @@
   "metadata": {
     "name": "air-quality",
     "namespace": "default",
-    "uid": "dc628cfb-5fb8-4a74-8561-64e726903dbd",
-    "resourceVersion": "1789906330776000",
-    "generation": 2,
-    "creationTimestamp": "2026-09-20T02:04:07Z",
+    "uid": "b88c8647-3e55-43aa-942d-1edf5e25917e",
+    "resourceVersion": "1789954096784989",
+    "generation": 12,
+    "creationTimestamp": "2026-09-20T12:32:37Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "2815144816922624"
+      "grafana.app/deprecatedInternalID": "2973314177785856"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:bfycjgitubny8a",
+      "grafana.app/createdBy": "access-policy:service",
       "grafana.app/managedBy": "classic-file-provisioning",
+      "grafana.app/managerAllowsEdits": "true",
       "grafana.app/managerId": "telemetry",
-      "grafana.app/sourceChecksum": "4a3aeafd739df96cb0bc54cd53b216f4",
-      "grafana.app/sourcePath": "/nix/store/jsdrw6ijbm7gpl9wrjcarwjr2cbbcmmh-grafana-dashboards/air-quality.json",
-      "grafana.app/sourceTimestamp": "1000",
-      "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-09-20T12:12:10Z",
-      "grafana.app/folder": ""
+      "grafana.app/saved-from-ui": "Grafana v13.1.4 (NA)",
+      "grafana.app/sourceChecksum": "93b3cd94d3eaa9fc90823f24a67fca32",
+      "grafana.app/sourcePath": "/var/lib/grafana/dashboards/air-quality.json",
+      "grafana.app/sourceTimestamp": "1789909234000",
+      "grafana.app/updatedBy": "user:bfycjgitubny8a",
+      "grafana.app/updatedTimestamp": "2026-09-21T01:28:16Z"
     }
   },
   "spec": {
@@ -28,29 +29,33 @@
       {
         "kind": "AnnotationQuery",
         "spec": {
-          "builtIn": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
+          },
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
           "name": "Annotations & Alerts",
-          "query": {
-            "datasource": {
-              "name": "-- Grafana --"
-            },
-            "group": "grafana",
-            "kind": "DataQuery",
-            "spec": {},
-            "version": "v0"
-          }
+          "builtIn": true
         }
       }
     ],
-    "cursorSync": "Off",
+    "cursorSync": "Crosshair",
     "editable": true,
     "elements": {
       "panel-1": {
         "kind": "Panel",
         "spec": {
+          "id": 1,
+          "title": "CO₂ now",
+          "description": "Most recent CO₂ reading. Green <1000 ppm; yellow 1000–1499; orange 1500–1999; red ≥2000 ppm.",
+          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -58,78 +63,40 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
-                    "hidden": false,
                     "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
                       "datasource": {
                         "name": "telemetry-postgres"
                       },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "format": "time_series",
                         "rawQuery": true,
                         "rawSql": "SELECT received_at AS time, (payload->>'co2_ppm')::double precision AS value FROM mqtt_messages WHERE topic = 'apartment/room/air-quality' AND payload ? 'co2_ppm' ORDER BY received_at DESC LIMIT 1"
-                      },
-                      "version": "v0"
+                      }
                     },
-                    "refId": "A"
+                    "refId": "A",
+                    "hidden": false
                   }
                 }
               ],
-              "queryOptions": {},
-              "transformations": []
+              "transformations": [],
+              "queryOptions": {}
             }
           },
-          "description": "",
-          "id": 1,
-          "links": [],
-          "title": "Latest CO₂",
           "vizConfig": {
-            "group": "gauge",
             "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.4",
             "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "decimals": 0,
-                  "fieldMinMax": false,
-                  "max": 2400,
-                  "min": 400,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "yellow",
-                        "value": 1000
-                      },
-                      {
-                        "color": "orange",
-                        "value": 1500
-                      },
-                      {
-                        "color": "red",
-                        "value": 2000
-                      },
-                      {
-                        "color": "dark-red",
-                        "value": 2200
-                      }
-                    ]
-                  },
-                  "unit": "ppm"
-                },
-                "overrides": []
-              },
               "options": {
                 "barShape": "flat",
-                "barWidthFactor": 0.54,
+                "barWidthFactor": 0.55,
                 "effects": {
                   "barGlow": false,
-                  "centerGlow": false,
+                  "centerGlow": true,
                   "gradient": true
                 },
                 "endpointMarker": "point",
@@ -149,17 +116,58 @@
                 "showThresholdLabels": false,
                 "showThresholdMarkers": false,
                 "sizing": "auto",
-                "sparkline": false,
+                "sparkline": true,
                 "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "ppm",
+                  "decimals": 0,
+                  "min": 400,
+                  "max": 2400,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 1000,
+                        "color": "yellow"
+                      },
+                      {
+                        "value": 1500,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 2000,
+                        "color": "red"
+                      },
+                      {
+                        "value": 2200,
+                        "color": "dark-red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "fieldMinMax": false
+                },
+                "overrides": []
               }
-            },
-            "version": "13.1.4"
+            }
           }
         }
       },
       "panel-2": {
         "kind": "Panel",
         "spec": {
+          "id": 2,
+          "title": "Temperature now",
+          "description": "Most recent temperature reading. Blue <18 °C; green 18–25.9 °C; orange 26–29.9 °C; red ≥30 °C.",
+          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -167,173 +175,40 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
-                    "hidden": false,
                     "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
                       "datasource": {
                         "name": "telemetry-postgres"
                       },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "format": "time_series",
                         "rawQuery": true,
                         "rawSql": "SELECT received_at AS time, (payload->'scd41'->>'temperature_c')::double precision AS value FROM mqtt_messages WHERE topic = 'apartment/room/air-quality' AND payload->'scd41' ? 'temperature_c' ORDER BY received_at DESC LIMIT 1"
-                      },
-                      "version": "v0"
+                      }
                     },
-                    "refId": "A"
+                    "refId": "A",
+                    "hidden": false
                   }
                 }
               ],
-              "queryOptions": {},
-              "transformations": []
+              "transformations": [],
+              "queryOptions": {}
             }
           },
-          "description": "",
-          "id": 2,
-          "links": [],
-          "title": "Latest temperature",
           "vizConfig": {
-            "group": "gauge",
             "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.4",
             "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "decimals": 1,
-                  "max": 35,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "blue",
-                        "value": 0
-                      },
-                      {
-                        "color": "green",
-                        "value": 18
-                      },
-                      {
-                        "color": "orange",
-                        "value": 26
-                      },
-                      {
-                        "color": "red",
-                        "value": 30
-                      }
-                    ]
-                  },
-                  "unit": "celsius"
-                },
-                "overrides": []
-              },
               "options": {
                 "barShape": "flat",
-                "barWidthFactor": 0.5,
+                "barWidthFactor": 0.55,
                 "effects": {
                   "barGlow": false,
-                  "centerGlow": false,
-                  "gradient": true
-                },
-                "endpointMarker": "point",
-                "minVizHeight": 75,
-                "minVizWidth": 75,
-                "orientation": "auto",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "segmentCount": 1,
-                "segmentSpacing": 0.3,
-                "shape": "gauge",
-                "showThresholdLabels": false,
-                "showThresholdMarkers": true,
-                "sizing": "auto",
-                "sparkline": true,
-                "textMode": "auto"
-              }
-            },
-            "version": "13.1.4"
-          }
-        }
-      },
-      "panel-3": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "telemetry-postgres"
-                      },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "editorMode": "code",
-                        "format": "time_series",
-                        "rawQuery": true,
-                        "rawSql": "SELECT received_at AS time, (payload->'scd41'->>'humidity_pct')::double precision AS value FROM mqtt_messages WHERE topic = 'apartment/room/air-quality' AND payload->'scd41' ? 'humidity_pct' ORDER BY received_at DESC LIMIT 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "",
-          "id": 3,
-          "links": [],
-          "title": "Latest humidity",
-          "vizConfig": {
-            "group": "gauge",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "blue",
-                    "mode": "fixed"
-                  },
-                  "decimals": 1,
-                  "max": 100,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "percent"
-                },
-                "overrides": []
-              },
-              "options": {
-                "barShape": "flat",
-                "barWidthFactor": 0.5,
-                "effects": {
-                  "barGlow": false,
-                  "centerGlow": false,
+                  "centerGlow": true,
                   "gradient": true
                 },
                 "endpointMarker": "point",
@@ -355,15 +230,147 @@
                 "sizing": "auto",
                 "sparkline": true,
                 "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "celsius",
+                  "decimals": 1,
+                  "min": 0,
+                  "max": 45,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "blue"
+                      },
+                      {
+                        "value": 18,
+                        "color": "green"
+                      },
+                      {
+                        "value": 26,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 30,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
-            },
-            "version": "13.1.4"
+            }
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Humidity now",
+          "description": "Most recent relative humidity, shown with a calm blue treatment.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "SELECT received_at AS time, (payload->'scd41'->>'humidity_pct')::double precision AS value FROM mqtt_messages WHERE topic = 'apartment/room/air-quality' AND payload->'scd41' ? 'humidity_pct' ORDER BY received_at DESC LIMIT 1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.4",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.55,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": true,
+                  "gradient": true
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": false,
+                "sizing": "auto",
+                "sparkline": true,
+                "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percent",
+                  "decimals": 1,
+                  "min": 0,
+                  "max": 100,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "blue"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "blue"
+                  }
+                },
+                "overrides": []
+              }
+            }
           }
         }
       },
       "panel-4": {
         "kind": "Panel",
         "spec": {
+          "id": 4,
+          "title": "CO₂ history",
+          "description": "CO₂ over the selected time range, colored by the same air-quality thresholds as the current-value gauge.",
+          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -371,102 +378,34 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
-                    "hidden": false,
                     "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
                       "datasource": {
                         "name": "telemetry-postgres"
                       },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "format": "time_series",
                         "rawQuery": true,
                         "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), avg((payload->>'co2_ppm')::double precision) AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic = 'apartment/room/air-quality' AND payload ? 'co2_ppm' GROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
+                      }
                     },
-                    "refId": "A"
+                    "refId": "A",
+                    "hidden": false
                   }
                 }
               ],
-              "queryOptions": {},
-              "transformations": []
+              "transformations": [],
+              "queryOptions": {}
             }
           },
-          "description": "",
-          "id": 4,
-          "links": [],
-          "title": "CO₂",
           "vizConfig": {
-            "group": "timeseries",
             "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.4",
             "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "yellow",
-                        "value": 1000
-                      },
-                      {
-                        "color": "orange",
-                        "value": 1500
-                      },
-                      {
-                        "color": "red",
-                        "value": 2000
-                      }
-                    ]
-                  },
-                  "unit": "ppm"
-                },
-                "overrides": []
-              },
               "options": {
                 "annotations": {
                   "clustering": -1,
@@ -485,15 +424,92 @@
                   "mode": "single",
                   "sort": "none"
                 }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "ppm",
+                  "decimals": 0,
+                  "min": 400,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 1000,
+                        "color": "yellow"
+                      },
+                      {
+                        "value": 1500,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 2000,
+                        "color": "red"
+                      },
+                      {
+                        "value": 2200,
+                        "color": "dark-red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds",
+                    "seriesBy": "last"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 8,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
               }
-            },
-            "version": "13.1.4"
+            }
           }
         }
       },
       "panel-5": {
         "kind": "Panel",
         "spec": {
+          "id": 5,
+          "title": "Temperature history",
+          "description": "Temperature over the selected time range, colored by comfort thresholds.",
+          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -501,94 +517,34 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
-                    "hidden": false,
                     "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
                       "datasource": {
                         "name": "telemetry-postgres"
                       },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "format": "time_series",
                         "rawQuery": true,
                         "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), avg((payload->'scd41'->>'temperature_c')::double precision) AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic = 'apartment/room/air-quality' AND payload->'scd41' ? 'temperature_c' GROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
+                      }
                     },
-                    "refId": "A"
+                    "refId": "A",
+                    "hidden": false
                   }
                 }
               ],
-              "queryOptions": {},
-              "transformations": []
+              "transformations": [],
+              "queryOptions": {}
             }
           },
-          "description": "",
-          "id": 5,
-          "links": [],
-          "title": "Temperature",
           "vizConfig": {
-            "group": "timeseries",
             "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.4",
             "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "celsius"
-                },
-                "overrides": []
-              },
               "options": {
                 "annotations": {
                   "clustering": -1,
@@ -607,15 +563,87 @@
                   "mode": "single",
                   "sort": "none"
                 }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "celsius",
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "blue"
+                      },
+                      {
+                        "value": 18,
+                        "color": "green"
+                      },
+                      {
+                        "value": 26,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 30,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds",
+                    "seriesBy": "last"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 8,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
               }
-            },
-            "version": "13.1.4"
+            }
           }
         }
       },
       "panel-6": {
         "kind": "Panel",
         "spec": {
+          "id": 6,
+          "title": "Humidity history",
+          "description": "Relative humidity over the selected time range, kept in a calm blue treatment for easy visual separation.",
+          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -623,95 +651,34 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
-                    "hidden": false,
                     "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
                       "datasource": {
                         "name": "telemetry-postgres"
                       },
-                      "group": "grafana-postgresql-datasource",
-                      "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
                         "format": "time_series",
                         "rawQuery": true,
                         "rawSql": "SELECT $__timeGroupAlias(received_at, $__interval), avg((payload->'scd41'->>'humidity_pct')::double precision) AS value FROM mqtt_messages WHERE $__timeFilter(received_at) AND topic = 'apartment/room/air-quality' AND payload->'scd41' ? 'humidity_pct' GROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
+                      }
                     },
-                    "refId": "A"
+                    "refId": "A",
+                    "hidden": false
                   }
                 }
               ],
-              "queryOptions": {},
-              "transformations": []
+              "transformations": [],
+              "queryOptions": {}
             }
           },
-          "description": "",
-          "id": 6,
-          "links": [],
-          "title": "Humidity",
           "vizConfig": {
-            "group": "timeseries",
             "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.4",
             "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "blue",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "percent"
-                },
-                "overrides": []
-              },
               "options": {
                 "annotations": {
                   "clustering": -1,
@@ -730,9 +697,67 @@
                   "mode": "single",
                   "sort": "none"
                 }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percent",
+                  "decimals": 1,
+                  "min": 0,
+                  "max": 100,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "blue"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "blue"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
               }
-            },
-            "version": "13.1.4"
+            }
           }
         }
       }
@@ -744,79 +769,79 @@
           {
             "kind": "GridLayoutItem",
             "spec": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 9,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-1"
-              },
-              "height": 8,
-              "width": 8,
-              "x": 0,
-              "y": 0
+              }
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-2"
-              },
-              "height": 8,
-              "width": 8,
-              "x": 8,
-              "y": 0
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-3"
-              },
-              "height": 8,
-              "width": 8,
-              "x": 16,
-              "y": 0
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
+              "x": 6,
+              "y": 0,
+              "width": 18,
+              "height": 9,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-4"
-              },
-              "height": 10,
-              "width": 24,
-              "x": 0,
-              "y": 8
+              }
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
+              "x": 0,
+              "y": 9,
+              "width": 6,
+              "height": 9,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 6,
+              "y": 9,
+              "width": 18,
+              "height": 9,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-5"
-              },
-              "height": 10,
-              "width": 12,
-              "x": 0,
-              "y": 18
+              }
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
+              "x": 0,
+              "y": 18,
+              "width": 6,
+              "height": 9,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 6,
+              "y": 18,
+              "width": 18,
+              "height": 9,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-6"
-              },
-              "height": 10,
-              "width": 12,
-              "x": 12,
-              "y": 18
+              }
             }
           }
         ]
@@ -831,6 +856,9 @@
       "air-quality"
     ],
     "timeSettings": {
+      "timezone": "browser",
+      "from": "now-24h",
+      "to": "now",
       "autoRefresh": "30s",
       "autoRefreshIntervals": [
         "5s",
@@ -844,11 +872,8 @@
         "2h",
         "1d"
       ],
-      "fiscalYearStartMonth": 0,
-      "from": "now-24h",
       "hideTimepicker": false,
-      "timezone": "browser",
-      "to": "now"
+      "fiscalYearStartMonth": 0
     },
     "title": "Air Quality",
     "variables": []
