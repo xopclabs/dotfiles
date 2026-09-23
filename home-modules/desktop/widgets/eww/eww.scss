@@ -1,0 +1,32 @@
+* { font-family: "Mononoki Nerd Font"; }
+window { background: transparent; }
+.tile {
+  background: #2e3440;
+  color: #eceff4;
+  padding: 12px;
+  min-height: 136px;
+  border-radius: 0;
+}
+.header { min-height: 23px; }
+.title { font-size: 18px; font-weight: bold; }
+.tile-icon { margin-right: 6px; }
+.period { color: #81a1c1; font-size: 19px; }
+.graph { margin-top: 3px; }
+.axis {
+  min-width: 28px;
+  margin-right: 4px;
+  font-size: 11px;
+  color: #eceff4;
+}
+.axis-bottom { margin-top: 54px; }
+.legend { margin-top: 3px; font-size: 13px; }
+.series-one { color: #88c0d0; }
+.series-two { color: #a3be8c; }
+.value-tile { min-width: 168px; }
+.value-title {
+  margin-top: 22px;
+  font-size: 17px;
+  font-weight: bold;
+}
+.reading { margin-top: 16px; font-size: 48px; font-weight: bold; }
+.energy .reading, .co2 .reading { font-size: 30px; }

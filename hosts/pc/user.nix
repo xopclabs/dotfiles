@@ -46,6 +46,8 @@ in {
                 };
                 scripts.enable = true;
             };
+            widgets.eww.enable = true;
+
             other = {
                 xdg.enable = true;
                 gtk.enable = true;
