@@ -37,6 +37,7 @@ let
 in {
     imports = [
         inputs.noctalia.homeModules.default
+        ./desktop-widgets.nix
     ];
 
     options.modules.desktop.shells.noctalia = {
@@ -124,7 +125,7 @@ in {
                 {
                     wallpaper.enabled = false;
                     dock.enabled = false;
-                    desktop_widgets.enabled = false;
+                    desktop_widgets.enabled = lib.mkDefault false;
                     calendar.enabled = true;
                     # hyprlock still owns the lock screen
                     lockscreen.enabled = false;
