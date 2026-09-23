@@ -336,6 +336,7 @@ in {
                 ]
                 ++ lib.optional config.modules.desktop.bars.waybar.enable { argv = [ "waybar" ]; }
                 ++ lib.optional config.modules.desktop.shells.noctalia.enable { argv = [ "noctalia" ]; }
+                ++ lib.optional (config.modules.desktop.widgets.eww.enable or false) { argv = [ "eww-dashboard" ]; }
                 ++ lib.optional config.modules.cli.tmux.enable { argv = [ "tmux" "new" "-s" "main" ]; }
                 ++ lib.optional config.modules.other.plover.enable { argv = [ "plover" ]; }
                 ++ map (cmd: { sh = cmd; }) cfg.extraAutostart;
@@ -347,6 +348,9 @@ in {
 
                 workspaces = {
                     "messaging" = { name = "messaging"; open-on-output = output_internal; };
+                } // lib.optionalAttrs (config.modules.desktop.widgets.eww.enable or false) {
+                    "telemetry" = { name = "telemetry"; open-on-output = output_internal; };
+                    "telemetry-value" = { name = "telemetry-value"; open-on-output = output_internal; };
                 };
 
                 window-rules = [

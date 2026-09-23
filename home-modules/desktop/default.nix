@@ -9,6 +9,7 @@ in {
         ./bars
         ./shells
         ./launchers
+        ./widgets
         ./other
     ];
 }
