@@ -1,0 +1,41 @@
+--- a/src/scripting/script_runtime_types.h
++++ b/src/scripting/script_runtime_types.h
+@@ -204,0 +205,2 @@
++    float widgetBoxWidth = 0.0F;
++    float widgetBoxHeight = 0.0F;
+--- a/src/scripting/plugin_bindings.cpp
++++ b/src/scripting/plugin_bindings.cpp
+@@ -605,0 +606,7 @@
++  int luau_ui_boxSize(lua_State* L) {
++    auto* context = getContext(L);
++    lua_pushnumber(L, context != nullptr ? context->snapshot.widgetBoxWidth : 0.0F);
++    lua_pushnumber(L, context != nullptr ? context->snapshot.widgetBoxHeight : 0.0F);
++    return 2;
++  }
++
+@@ -607,0 +615 @@
++      {"boxSize", luau_ui_boxSize},
+--- a/src/shell/desktop/widgets/plugin_desktop_widget.h
++++ b/src/shell/desktop/widgets/plugin_desktop_widget.h
+@@ -79,0 +80,3 @@
++  float m_lastBoxWidth = -1.0F;
++  float m_lastBoxHeight = -1.0F;
++  bool m_pendingResize = false;
+--- a/src/shell/desktop/widgets/plugin_desktop_widget.cpp
++++ b/src/shell/desktop/widgets/plugin_desktop_widget.cpp
+@@ -107,0 +108,5 @@
++    if (m_pendingResize && m_treeDirty) {
++      m_maxNaturalWidth = 0.0F;
++      m_maxNaturalHeight = 0.0F;
++      m_pendingResize = false;
++    }
+@@ -110,0 +116,6 @@
++  if (m_runtime != nullptr && (m_lastBoxWidth != m_boxWidth || m_lastBoxHeight != m_boxHeight)) {
++    m_lastBoxWidth = m_boxWidth;
++    m_lastBoxHeight = m_boxHeight;
++    m_pendingResize = true;
++    (void)m_runtime->enqueueUpdate(makeScriptSnapshot());
++  }
+@@ -189,0 +201,2 @@
++      .widgetBoxWidth = m_boxWidth,
++      .widgetBoxHeight = m_boxHeight,

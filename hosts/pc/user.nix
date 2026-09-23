@@ -18,6 +18,7 @@ in {
         desktop = {
             shells.noctalia = {
                 enable = true;
+                desktopWidgets.enable = true;
                 settings.notification.monitors = oledMonitor.connectors;
             };
 
