@@ -7,9 +7,10 @@ import sys
 
 
 def main(key, config_path, cache_path, eww, eww_config):
-    if key not in ("co2", "temperature", "power"):
+    config = json.loads(Path(config_path).read_text())
+    if key not in config["charts"]:
         raise ValueError("Unknown chart")
-    periods = json.loads(Path(config_path).read_text())["periods"]
+    periods = config["periods"]
     if not periods:
         return
     path = Path(cache_path) / (key + "-period")

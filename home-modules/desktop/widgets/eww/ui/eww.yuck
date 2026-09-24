@@ -1,0 +1,32 @@
+(defpoll co2_value :interval "60s" :initial "{\"value\":\"—\",\"color\":\"#d8dee9\"}" `eww-dashboard-query co2_value`)
+
+(defwidget chart-tile [title icon data key plot_width]
+  (box :class "tile chart-tile" :orientation "vertical" :space-evenly false
+    (box :class "header" :space-evenly false
+      (box :class "title" :hexpand true :space-evenly false
+        (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
+        (label :text title))
+      (eventbox :class "period-click" :onclick "eww-dashboard-period ${key}"
+        (label :class "period" :text "${data.period}")))
+    (box :class "graph" :orientation "horizontal" :space-evenly false
+      (box :class "axis" :orientation "vertical" :space-evenly false
+        (label :text {data.high})
+        (label :class "axis-bottom" :text {data.low}))
+      (image :path {data.chart} :image-width plot_width :image-height 88))
+    (box :class "legend" :space-evenly false
+      (label :class "series-one" :text {data.legend1})
+      (box :hexpand true)
+      (label :class "series-two" :visible {data.legend2 != ""} :text {data.legend2}))))
+
+(defwidget value-tile [title icon data kind]
+  (box :class "tile value-tile ${kind}" :orientation "vertical" :space-evenly false
+    (box :class "value-title" :halign "center" :space-evenly false
+      (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
+      (label :text title))
+    (label :class "reading" :halign "center" :style "color: ${data.color};" :text {data.value})))
+
+(defwindow dashboard
+  :monitor "eDP-1"
+  :geometry (geometry :x "16px" :y "14px" :width "192px" :height "160px" :anchor "top left")
+  :stacking "bottom" :namespace "eww-telemetry-current"
+  (value-tile :title "CO₂" :icon "@ICONS@/lungs.png" :data co2_value :kind "co2"))

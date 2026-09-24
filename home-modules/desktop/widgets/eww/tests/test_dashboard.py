@@ -5,37 +5,37 @@ import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-HERE = Path(__file__).parent
+HERE = Path(__file__).parent.parent
 
 
-def load(name):
-    spec = importlib.util.spec_from_file_location(name, HERE / (name + ".py"))
+def load(name, directory):
+    spec = importlib.util.spec_from_file_location(name, HERE / directory / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-query = load("query")
-workspace = load("workspace")
+query = load("query", "grafana")
+workspace = load("workspace", "workspace")
 
 
 class DashboardTests(unittest.TestCase):
     def test_workspace_is_output_specific(self):
         pages = {"telemetry": "chart", "telemetry-value": "value"}
-        workspaces = {
-            1: {"id": 1, "name": "telemetry", "output": "eDP-1", "is_active": True},
-            2: {"id": 2, "name": "telemetry-value", "output": "DP-5", "is_active": True},
-        }
+        workspaces = [
+            {"id": 1, "name": "telemetry", "output": "eDP-1", "is_active": True},
+            {"id": 2, "name": "telemetry-value", "output": "DP-5", "is_active": True},
+        ]
         self.assertEqual(workspace.page_for(workspaces, "eDP-1", pages), "chart")
-        workspaces[1]["is_active"] = False
+        workspaces[0]["is_active"] = False
         self.assertIsNone(workspace.page_for(workspaces, "eDP-1", pages))
 
     def test_all_chart_instances_keep_seven_day_first_and_peak(self):
         week = 7 * 24 * 3600 * 1000
         now = 2 * week
         start = now - week
-        for key, fields in (("co2", ("value",)), ("temperature", ("value",)),
-                            ("power", ("ac", "pc"))):
+        for key, fields, width in (("co2", ("value",), 264), ("temperature", ("value",), 328),
+                                   ("power", ("ac", "pc"), 360)):
             with self.subTest(key=key):
                 schema = [{"type": "time", "name": "Time"}] + [
                     {"type": "number", "name": field} for field in fields]
@@ -49,8 +49,9 @@ class DashboardTests(unittest.TestCase):
                              {"results": {"A": {"frames": frames}}}]
                 with tempfile.TemporaryDirectory() as cache, patch.object(query, "request", side_effect=responses), \
                      patch.object(query.time, "time", return_value=now / 1000):
-                    result = query.render(cfg, key, 0, Path(cache))
+                    result = query.render(cfg, key, 0, Path(cache), width)
                     xml = ET.parse(result["chart"]).getroot()
+                    self.assertEqual(xml.attrib["width"], str(width))
                     lines = xml.findall("{http://www.w3.org/2000/svg}polyline")
                     self.assertEqual(len(lines), len(fields))
                     gradients = xml.findall("{http://www.w3.org/2000/svg}defs/{http://www.w3.org/2000/svg}linearGradient")
@@ -99,7 +100,7 @@ class DashboardTests(unittest.TestCase):
                            "data": {"values": [[value]]}}]
                 responses = [dashboard, {"results": {"A": {"frames": frames}}}]
                 with tempfile.TemporaryDirectory() as cache, patch.object(query, "request", side_effect=responses):
-                    result = query.render(cfg, key, 0, Path(cache))
+                    result = query.render(cfg, key, 0, Path(cache), 0)
                 self.assertEqual(result["value"], expected)
 
 

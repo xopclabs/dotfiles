@@ -46,7 +46,10 @@ in {
                 };
                 scripts.enable = true;
             };
-            widgets.eww.enable = true;
+            widgets.eww = {
+                enable = true;
+                layout = "internal-monitor-dashboard";
+            };
 
             other = {
                 xdg.enable = true;
