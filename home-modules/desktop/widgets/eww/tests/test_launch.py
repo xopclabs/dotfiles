@@ -28,9 +28,12 @@ case "$1" in
 esac
 ''')
             eww.chmod(0o755)
+            warm = tmp / "warm"
+            warm.write_text('#!/usr/bin/env bash\necho warm >> "$MOCK_LOG"\n')
+            warm.chmod(0o755)
             env = os.environ | {"XDG_RUNTIME_DIR": str(tmp), "MOCK_LOG": str(tmp / "log"),
                                 "MOCK_STATE": str(tmp)}
-            cmd = ["bash", str(LAUNCH), str(eww), str(tmp), shutil.which("flock"),
+            cmd = ["bash", str(LAUNCH), str(eww), str(tmp), shutil.which("flock"), str(warm),
                    "--", "co2_chart", "temperature_chart"]
             first = subprocess.Popen(cmd, env=env, stderr=subprocess.PIPE)
             second = subprocess.Popen(cmd, env=env, stderr=subprocess.PIPE)
@@ -40,13 +43,15 @@ esac
             commands = (tmp / "log").read_text().splitlines()
             self.assertEqual(commands.count("daemon"), 1)
             self.assertEqual(commands.count("open-many"), 1)
+            self.assertEqual(commands.count("warm"), 1)
             self.assertNotIn("poll", commands)
 
-            subprocess.run(cmd[:5] + ["--restart"] + cmd[5:], env=env, check=True, timeout=8)
+            subprocess.run(cmd[:6] + ["--restart"] + cmd[6:], env=env, check=True, timeout=8)
             commands = (tmp / "log").read_text().splitlines()
             self.assertEqual(commands.count("kill"), 1)
             self.assertEqual(commands.count("daemon"), 2)
             self.assertEqual(commands.count("open-many"), 2)
+            self.assertEqual(commands.count("warm"), 2)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,8 @@ import time
 import urllib.request
 from datetime import datetime
 
+import snapshot
+
 COLORS = ("#88c0d0", "#a3be8c")
 
 
@@ -178,14 +180,35 @@ def main(config_path, cache_path, key, period_path, plot_width):
         config = json.loads(Path(config_path).read_text())
         cache_dir = Path(cache_path)
         cache_dir.mkdir(parents=True, exist_ok=True)
-        period_index = int(Path(period_path).read_text()) if Path(period_path).exists() else 0
+        period_index = snapshot.index(cache_dir, key)
         result = render(config, key, period_index, cache_dir, int(plot_width))
+        if key in config.get("charts", {}) and result.get("chart"):
+            try:
+                snapshot.save(cache_dir, key, period_index % len(config["periods"]), result)
+            except OSError as exc:
+                print(f"dashboard {key}: could not cache chart: {exc}", file=sys.stderr)
+        retained = {
+            Path(data["chart"])
+            for chart_key in config.get("charts", {})
+            for index in range(len(config["periods"]))
+            if (data := snapshot.read(cache_dir, chart_key, index))
+        }
         for old in cache_dir.glob("*.svg"):
-            if time.time() - old.stat().st_mtime > 300:
+            if old not in retained and time.time() - old.stat().st_mtime > 300:
                 old.unlink()
+        if key in config.get("charts", {}) and snapshot.index(cache_dir, key) != period_index:
+            current = snapshot.index(cache_dir, key) % len(config["periods"])
+            result = snapshot.read(cache_dir, key, current) or result
         print(json.dumps(result))
     except (OSError, ValueError, KeyError, StopIteration, IndexError, TypeError) as exc:
         print(f"dashboard {key}: {exc}", file=sys.stderr)
+        if "config" in locals() and key in config.get("charts", {}):
+            current = snapshot.index(Path(cache_path), key) % len(config["periods"])
+            cached = snapshot.read(Path(cache_path), key, current)
+            if cached:
+                cached["period"] = config["periods"][current]["label"]
+                print(json.dumps(cached))
+                return
         print(json.dumps({"chart": "", "high": "—", "low": "—", "legend1": "—", "legend2": "",
                           "period": "?", "value": "—", "color": "#d8dee9"}))
 
