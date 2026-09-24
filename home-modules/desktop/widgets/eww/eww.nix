@@ -9,11 +9,9 @@ let
     queries = import ./grafana/config.nix { inherit config; };
     ui = import ./ui { inherit config lib pkgs tiles; inherit (grafana) query period; };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
-        eww=${lib.getExe pkgs.eww}
-        config=${ewwConfig}
-        "$eww" --config "$config" daemon >/dev/null 2>&1 || true
-        "$eww" --config "$config" open-many ${lib.escapeShellArgs (map (tile: tile.id) tiles)}
-        "$eww" --config "$config" poll ${lib.escapeShellArgs (map (tile: "${tile.key}_data") tiles)}
+        exec ${pkgs.bash}/bin/bash ${./launch.sh} \
+            ${lib.getExe pkgs.eww} ${ewwConfig} ${pkgs.util-linux}/bin/flock \
+            "$@" -- ${lib.escapeShellArgs (map (tile: tile.id) tiles)}
     '';
 in {
     options.modules.desktop.widgets.eww = {
