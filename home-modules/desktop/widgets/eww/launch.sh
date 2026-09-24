@@ -5,7 +5,8 @@ set -euo pipefail
 eww=$1
 config=$2
 flock=$3
-shift 3
+warm=$4
+shift 4
 restart=false
 if [[ ${1:-} == --restart ]]; then
     restart=true
@@ -49,5 +50,6 @@ fi
 # Eww starts referenced defpolls when their windows open. A separate `poll`
 # here can double the first fetch and contend with queries on startup.
 if [[ -z $("$eww" --config "$config" active-windows 9>&-) ]]; then
+    "$warm" 9>&- || echo "Could not warm Eww chart previews" >&2
     "$eww" --config "$config" open-many "$@" 9>&-
 fi

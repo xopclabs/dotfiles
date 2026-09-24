@@ -16,6 +16,7 @@ import sys
 import tempfile
 import time
 
+sys.path.insert(0, str(Path(__file__).parent / "grafana"))
 import grafana.query as dashboard
 
 # Plot widths from layouts/internal-monitor-dashboard.nix (tile width minus 56).

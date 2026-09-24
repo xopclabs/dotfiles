@@ -1,11 +1,13 @@
 import importlib.util
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 HERE = Path(__file__).parent.parent
+sys.path.insert(0, str(HERE / "grafana"))
 
 
 def load(name, directory):

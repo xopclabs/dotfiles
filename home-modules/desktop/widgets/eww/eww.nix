@@ -11,7 +11,7 @@ let
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         exec ${pkgs.bash}/bin/bash ${./launch.sh} \
             ${lib.getExe pkgs.eww} ${ewwConfig} ${pkgs.util-linux}/bin/flock \
-            "$@" -- ${lib.escapeShellArgs (map (tile: tile.id) tiles)}
+            ${lib.getExe grafana.warm} "$@" -- ${lib.escapeShellArgs (map (tile: tile.id) tiles)}
     '';
 in {
     options.modules.desktop.widgets.eww = {

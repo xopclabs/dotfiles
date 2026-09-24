@@ -32,7 +32,8 @@ in {
                 let
                     restartWidgets = optionalString (config.modules.desktop.widgets.eww.enable or false) ''
                         ${pkgs.procps}/bin/pkill -f '[w]orkspace.py' >/dev/null 2>&1 || true
-                        eww-dashboard --restart >/dev/null 2>&1 &
+                        # Leave a healthy Eww daemon alone; cold GTK startup is slow.
+                        eww-dashboard >/dev/null 2>&1 &
                     '';
                 in
                 if config.modules.desktop.bars.default == "noctalia" then
