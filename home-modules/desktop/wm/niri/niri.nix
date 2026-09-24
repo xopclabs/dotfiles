@@ -294,7 +294,7 @@ in {
                 input = {
                     focus-follows-mouse = { 
                         enable = true; 
-                        max-scroll-amount = "10%";
+                        max-scroll-amount = "0%";
                     };
 
                     keyboard.xkb = {
@@ -365,34 +365,27 @@ in {
                     # Maximized windows
                     {
                         matches = [ 
-                            { app-id = "^[Ss]lack$"; } 
                             { app-id = "^[Ss]team$"; } 
-                            { app-id = "^[Cc]ursor$";}
-                            { app-id = "^[Ff]irefox$"; } 
                         ];
                         open-maximized = true;
                     }
                     # Bigger windows
                     {
                         matches = [ 
+                            { app-id = "^[Cc]ursor$";}
+                            { app-id = "^[Ss]lack$"; } 
+                            { app-id = "^[Ff]irefox$"; } 
                             { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; } 
                             { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "Zoom Workplace - .+"; } 
                         ];
-                        default-column-width = { proportion = 0.75; };
+                        default-column-width = { proportion = 0.85; };
                     }
-
-                    # Workspace pinning
+                    # Smaller windows
                     {
                         matches = [ 
-                            { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; at-startup = true; } 
-                            { app-id = "^[Ss]lack$"; at-startup = true; } 
+                            { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; } 
                         ];
-                        open-on-workspace = "messaging";
-                        open-focused = false;
-                    }
-                    {
-                        matches = [ { app-id = "^[Ss]team$"; at-startup = true; } ];
-                        open-on-output = output_external;
+                        default-column-width = { proportion = 0.20; };
                     }
 
                     # Worst software on Earth's rules
