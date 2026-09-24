@@ -2,44 +2,60 @@
 
 let
     cfg = config.modules.desktop.widgets.eww;
+    layouts = { internal-monitor-dashboard = import ./layouts/internal-monitor-dashboard.nix; };
+    tiles = lib.mapAttrsToList (id: tile: tile // { inherit id; }) cfg.tiles;
     ewwConfig = "${config.xdg.configHome}/eww-dashboard";
-    iconFont = "${config.modules.desktop.shells.noctalia.package}/share/noctalia/assets/fonts/noctalia-tabler.ttf";
-    icons = pkgs.runCommand "eww-dashboard-icons" { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
-        mkdir -p $out
-        magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '︔' $out/lungs.png
-        magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '' $out/temperature.png
-        magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '' $out/plug.png
-        magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '' $out/droplet.png
-        magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '𐀡' $out/bolt.png
-    '';
-    query = pkgs.writeShellScriptBin "eww-dashboard-query" ''
-        cache="''${XDG_CACHE_HOME:-$HOME/.cache}/eww-dashboard"
-        exec ${pkgs.python3}/bin/python3 ${./query.py} \
-            ${config.xdg.configHome}/noctalia/grafana-widgets.json \
-            "$cache" "$1" "$cache/$1-period"
-    '';
-    period = pkgs.writeShellScriptBin "eww-dashboard-period" ''
-        exec ${pkgs.python3}/bin/python3 ${./period.py} \
-            "$1" ${config.xdg.configHome}/noctalia/grafana-widgets.json \
-            "''${XDG_CACHE_HOME:-$HOME/.cache}/eww-dashboard" \
-            ${lib.getExe pkgs.eww} ${ewwConfig}
-    '';
+    grafana = import ./grafana { inherit config lib pkgs ewwConfig; };
+    ui = import ./ui { inherit config lib pkgs tiles; inherit (grafana) query period; };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         eww=${lib.getExe pkgs.eww}
         config=${ewwConfig}
         "$eww" --config "$config" daemon >/dev/null 2>&1 || true
-        "$eww" --config "$config" open-many co2_chart temperature_chart humidity_value today_power power_chart
-        "$eww" --config "$config" poll co2_data temperature_data humidity_data today_power_data power_data
+        "$eww" --config "$config" open-many ${lib.escapeShellArgs (map (tile: tile.id) tiles)}
+        "$eww" --config "$config" poll ${lib.escapeShellArgs (map (tile: "${tile.key}_data") tiles)}
     '';
 in {
-    options.modules.desktop.widgets.eww.enable = lib.mkEnableOption "Eww telemetry widgets";
+    options.modules.desktop.widgets.eww = {
+        enable = lib.mkEnableOption "Eww telemetry widgets";
+
+        layout = lib.mkOption {
+            type = lib.types.nullOr (lib.types.enum (builtins.attrNames layouts));
+            default = null;
+            description = "Named Eww tile layout.";
+        };
+
+        tiles = lib.mkOption {
+            default = {};
+            description = "Tiles in the selected layout; individual fields can be overridden per host.";
+            type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
+                options = {
+                    key = lib.mkOption { type = lib.types.str; description = "Grafana data key and Eww poll name."; };
+                    type = lib.mkOption { type = lib.types.enum [ "chart" "value" ]; };
+                    title = lib.mkOption { type = lib.types.str; };
+                    icon = lib.mkOption { type = lib.types.str; description = "Name of a generated icon PNG."; };
+                    output = lib.mkOption { type = lib.types.str; description = "Eww monitor name."; };
+                    x = lib.mkOption { type = lib.types.int; };
+                    y = lib.mkOption { type = lib.types.int; };
+                    width = lib.mkOption { type = lib.types.int; };
+                    height = lib.mkOption { type = lib.types.int; };
+                };
+            }));
+        };
+    };
 
     config = lib.mkIf cfg.enable {
-        home.packages = [ pkgs.eww query period launch ];
-        xdg.configFile."eww-dashboard/eww.yuck".text = builtins.replaceStrings
-            [ "eww-dashboard-query" "eww-dashboard-period" "@EMPTY_CHART@" "@ICONS@" ]
-            [ (lib.getExe query) (lib.getExe period) (toString ./empty.svg) (toString icons) ]
-            (builtins.readFile ./eww.yuck);
-        xdg.configFile."eww-dashboard/eww.scss".source = ./eww.scss;
+        modules.desktop.widgets.eww.tiles = lib.mkIf (cfg.layout != null)
+            (lib.mapAttrs (_: tile: lib.mapAttrs (_: lib.mkDefault) tile) layouts.${cfg.layout});
+
+        assertions = [ {
+            assertion = lib.length (lib.unique (map (tile: tile.key) tiles)) == lib.length tiles
+                && lib.all (tile: tile.type != "chart" || tile.width > 56) tiles;
+            message = "Eww tiles need unique data keys and chart widths greater than 56px.";
+        } ];
+
+        home.packages = [ pkgs.eww grafana.query grafana.period launch ];
+
+        xdg.configFile."eww-dashboard/eww.yuck".text = ui.yuck;
+        xdg.configFile."eww-dashboard/eww.scss".source = ui.scss;
     };
 }

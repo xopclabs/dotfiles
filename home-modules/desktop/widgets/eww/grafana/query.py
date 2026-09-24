@@ -11,7 +11,6 @@ import urllib.request
 from datetime import datetime
 
 COLORS = ("#88c0d0", "#a3be8c")
-PLOT_WIDTHS = {"co2": 264, "temperature": 328, "power": 360}
 
 
 def request(config, path, payload=None):
@@ -141,7 +140,7 @@ def threshold_color(panel, value):
             "red": "#bf616a", "dark-red": "#bf616a", "blue": "#88c0d0"}.get(name, name)
 
 
-def render(config, key, period_index, cache_dir):
+def render(config, key, period_index, cache_dir, plot_width):
     chart = config.get("charts", {}).get("co2" if key == "co2_value" else key)
     tile = chart or config["values"][key]
     periods = config["periods"]
@@ -170,7 +169,7 @@ def render(config, key, period_index, cache_dir):
     low, high = bounds(series, tile.get("axis_from_zero", False))
     fmt = "%." + str(tile.get("axis_decimals", 0)) + "f"
     path = cache_dir / f"{key}-{os.getpid()}-{time.time_ns()}.svg"
-    path.write_text(svg(series, start, end, PLOT_WIDTHS[key], from_zero=tile.get("axis_from_zero", False)))
+    path.write_text(svg(series, start, end, plot_width, from_zero=tile.get("axis_from_zero", False)))
     legends = [item["alias"] + "  " + ("%.1f" % points[-1][1] + tile.get("unit", "") if points else "—")
                for item, points in zip(tile["series"], series)]
     return {"chart": str(path), "high": fmt % high if high is not None else "—",
@@ -178,13 +177,13 @@ def render(config, key, period_index, cache_dir):
             "legend2": legends[1] if len(legends) > 1 else "", "period": period["label"]}
 
 
-def main(config_path, cache_path, key, period_path):
+def main(config_path, cache_path, key, period_path, plot_width):
     try:
         config = json.loads(Path(config_path).read_text())
         cache_dir = Path(cache_path)
         cache_dir.mkdir(parents=True, exist_ok=True)
         period_index = int(Path(period_path).read_text()) if Path(period_path).exists() else 0
-        result = render(config, key, period_index, cache_dir)
+        result = render(config, key, period_index, cache_dir, int(plot_width))
         for old in cache_dir.glob("*.svg"):
             if time.time() - old.stat().st_mtime > 300:
                 old.unlink()
@@ -196,4 +195,4 @@ def main(config_path, cache_path, key, period_path):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:5])
+    main(*sys.argv[1:6])
