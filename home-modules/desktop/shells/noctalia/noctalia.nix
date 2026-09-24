@@ -37,7 +37,6 @@ let
 in {
     imports = [
         inputs.noctalia.homeModules.default
-        ./desktop-widgets.nix
     ];
 
     options.modules.desktop.shells.noctalia = {
