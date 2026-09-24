@@ -6,6 +6,7 @@ let
     tiles = lib.mapAttrsToList (id: tile: tile // { inherit id; }) cfg.tiles;
     ewwConfig = "${config.xdg.configHome}/eww-dashboard";
     grafana = import ./grafana { inherit config lib pkgs ewwConfig; };
+    queries = import ./grafana/config.nix { inherit config; };
     ui = import ./ui { inherit config lib pkgs tiles; inherit (grafana) query period; };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         eww=${lib.getExe pkgs.eww}
@@ -29,7 +30,7 @@ in {
             description = "Tiles in the selected layout; individual fields can be overridden per host.";
             type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
                 options = {
-                    key = lib.mkOption { type = lib.types.str; description = "Grafana data key and Eww poll name."; };
+                    key = lib.mkOption { type = lib.types.str; description = "Eww query key and poll name."; };
                     type = lib.mkOption { type = lib.types.enum [ "chart" "value" ]; };
                     title = lib.mkOption { type = lib.types.str; };
                     icon = lib.mkOption { type = lib.types.str; description = "Name of a generated icon PNG."; };
@@ -53,8 +54,21 @@ in {
             message = "Eww tiles need unique data keys and chart widths greater than 56px.";
         } ];
 
+        sops.secrets = {
+            "eww/grafana-token" = {
+                sopsFile = ../../../../secrets/hosts/pc.yaml;
+                # Reuse the existing Grafana service token; no new credential needed.
+                key = "grafana/noctalia-token";
+            };
+            "eww/grafana-domain" = {
+                sopsFile = ../../../../secrets/shared/selfhost.yaml;
+                key = "domain";
+            };
+        };
+
         home.packages = [ pkgs.eww grafana.query grafana.period launch ];
 
+        xdg.configFile."eww-dashboard/queries.json".text = builtins.toJSON queries;
         xdg.configFile."eww-dashboard/eww.yuck".text = ui.yuck;
         xdg.configFile."eww-dashboard/eww.scss".source = ui.scss;
     };
