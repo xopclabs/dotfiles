@@ -42,6 +42,8 @@ in {
     options.modules.desktop.shells.noctalia = {
         enable = mkEnableOption "noctalia shell";
 
+        weather.enable = mkEnableOption "Noctalia weather with a sops-managed location";
+
         components = {
             bar = mkOption {
                 type = types.bool;
@@ -89,6 +91,12 @@ in {
     };
 
     config = mkIf cfg.enable {
+        sops.secrets.noctalia-location = mkIf cfg.weather.enable {
+            sopsFile = ../../../../secrets/hosts/${config.metadata.hostName}.yaml;
+            key = "noctalia-location";
+            path = "${config.xdg.configHome}/noctalia/zz-location.toml";
+        };
+
         home.packages = [
             pkgs.ddcutil
             aiMeters.codexbar
@@ -126,6 +134,7 @@ in {
                     dock.enabled = false;
                     desktop_widgets.enabled = lib.mkDefault false;
                     calendar.enabled = true;
+                    weather.enabled = cfg.weather.enable;
                     # hyprlock still owns the lock screen
                     lockscreen.enabled = false;
 
