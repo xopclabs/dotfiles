@@ -1,7 +1,7 @@
 { config, lib, pkgs, ewwConfig }:
 
 let
-    grafanaConfig = "${config.xdg.configHome}/noctalia/grafana-widgets.json";
+    grafanaConfig = "${ewwConfig}/queries.json";
 in {
     query = pkgs.writeShellScriptBin "eww-dashboard-query" ''
         cache="''${XDG_CACHE_HOME:-$HOME/.cache}/eww-dashboard"

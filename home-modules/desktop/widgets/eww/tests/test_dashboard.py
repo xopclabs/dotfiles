@@ -42,14 +42,22 @@ class DashboardTests(unittest.TestCase):
                 columns = [[start, start + 60_000, start + 120_000, now]] + [
                     [10 + i, 11 + i, 100 + i, 12 + i] for i in range(len(fields))]
                 frames = [{"schema": {"fields": schema}, "data": {"values": columns}}]
-                chart = {"dashboard_uid": "demo", "panel_id": 1, "series": [
+                chart = {"sql": "SELECT $__timeFilter(received_at)", "series": [
                     {"field": field, "alias": field.upper()} for field in fields]}
-                cfg = {"charts": {key: chart}, "periods": [{"label": "7d", "ms": week}]}
-                responses = [{"dashboard": {"panels": [{"id": 1, "targets": [{"rawSql": "SELECT 1"}]}]}},
-                             {"results": {"A": {"frames": frames}}}]
-                with tempfile.TemporaryDirectory() as cache, patch.object(query, "request", side_effect=responses), \
+                cfg = {"datasource_uid": "telemetry-postgres", "charts": {key: chart},
+                       "periods": [{"label": "7d", "ms": week}]}
+                response = {"results": {"A": {"frames": frames}}}
+                with tempfile.TemporaryDirectory() as cache, patch.object(query, "request", return_value=response) as request, \
                      patch.object(query.time, "time", return_value=now / 1000):
                     result = query.render(cfg, key, 0, Path(cache), width)
+                    self.assertEqual(request.call_count, 1)
+                    args = request.call_args.args
+                    self.assertEqual(args[:2], (cfg, "/api/ds/query"))
+                    target = args[2]["queries"][0]
+                    self.assertEqual(target["datasource"]["uid"], "telemetry-postgres")
+                    self.assertEqual(target["rawSql"], chart["sql"])
+                    self.assertEqual(target["format"], "time_series")
+                    self.assertEqual(target["intervalMs"], week // 120)
                     xml = ET.parse(result["chart"]).getroot()
                     self.assertEqual(xml.attrib["width"], str(width))
                     lines = xml.findall("{http://www.w3.org/2000/svg}polyline")
@@ -83,25 +91,27 @@ class DashboardTests(unittest.TestCase):
                                                 "data": {"values": [[0.95]]}}], synthetic_time=5), [(5, 0.95)])
 
     def test_value_format_and_thresholds(self):
-        panel = {"fieldConfig": {"defaults": {"thresholds": {"steps": [
-            {"color": "green", "value": None}, {"color": "red", "value": 70}]}}}}
-        self.assertEqual(query.threshold_color(panel, 58), "#a3be8c")
-        self.assertEqual(query.threshold_color(panel, 75), "#bf616a")
-        cfg = {"values": {"humidity": {"dashboard_uid": "demo", "panel_id": 1, "format": "%.0f%%"},
-                          "today_power": {"dashboard_uid": "demo", "panel_id": 1,
-                                          "format": "%.2f kWh", "range": "today"}}, "periods": [{"ms": 3600000}]}
-        dashboard = {"dashboard": {"panels": [{"id": 1, "targets": [{"rawSql": "SELECT 1"}],
-                                               **panel}]}}
+        steps = [{"color": "green"}, {"color": "red", "value": 70}]
+        self.assertEqual(query.threshold_color(steps, 58), "#a3be8c")
+        self.assertEqual(query.threshold_color(steps, 75), "#bf616a")
+        cfg = {"datasource_uid": "telemetry-postgres", "values": {
+            "humidity": {"sql": "SELECT 58", "value_format": "%.0f%%", "thresholds": steps},
+            "today_power": {"sql": "SELECT 0.95", "format": "table",
+                            "value_format": "%.2f kWh", "range": "today", "thresholds": steps}},
+            "periods": [{"ms": 3600000}]}
         for key, field, value, expected in (("humidity", "value", 58, "58%"),
                                             ("today_power", "Selected", 0.95, "0.95 kWh")):
             with self.subTest(key=key):
                 # Energy's Grafana panel has a numeric field but no time column.
                 frames = [{"schema": {"fields": [{"name": field, "type": "number"}]},
                            "data": {"values": [[value]]}}]
-                responses = [dashboard, {"results": {"A": {"frames": frames}}}]
-                with tempfile.TemporaryDirectory() as cache, patch.object(query, "request", side_effect=responses):
+                response = {"results": {"A": {"frames": frames}}}
+                with tempfile.TemporaryDirectory() as cache, patch.object(query, "request", return_value=response) as request:
                     result = query.render(cfg, key, 0, Path(cache), 0)
                 self.assertEqual(result["value"], expected)
+                self.assertEqual(request.call_count, 1)
+                self.assertEqual(request.call_args.args[2]["queries"][0]["format"],
+                                 cfg["values"][key].get("format", "time_series"))
 
 
 if __name__ == "__main__":

@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import sys
 import time
-import urllib.parse
 import urllib.request
 from datetime import datetime
 
@@ -113,25 +112,22 @@ def svg(series, start, end, width=264, height=88, from_zero=False):
 
 
 def query(config, tile, period_ms):
-    dashboard = request(config, "/api/dashboards/uid/" + urllib.parse.quote(tile["dashboard_uid"], safe=""))["dashboard"]
-    panel = next(p for p in dashboard["panels"] if p["id"] == tile["panel_id"])
-    target = dict(panel["targets"][0])
-    for needle, replacement in tile.get("replacements", {}).items():
-        if "rawSql" in target:
-            target["rawSql"] = target["rawSql"].replace(needle, replacement)
     now = int(time.time() * 1000)
     start = now - period_ms
-    target.update(refId="A", intervalMs=max(1000, period_ms // 120), maxDataPoints=120)
     result = request(config, "/api/ds/query", {
-        "from": str(start), "to": str(now), "queries": [target],
+        "from": str(start), "to": str(now), "queries": [{
+            "datasource": {"uid": config["datasource_uid"], "type": "grafana-postgresql-datasource"},
+            "refId": "A", "rawSql": tile["sql"], "format": tile.get("format", "time_series"),
+            "rawQuery": True, "editorMode": "code",
+            "intervalMs": max(1000, period_ms // 120), "maxDataPoints": 120,
+        }],
     })["results"]["A"]
     if result.get("error"):
         raise ValueError(result["error"])
-    return panel, result.get("frames", []), start, now
+    return result.get("frames", []), start, now
 
 
-def threshold_color(panel, value):
-    steps = panel.get("fieldConfig", {}).get("defaults", {}).get("thresholds", {}).get("steps", [])
+def threshold_color(steps, value):
     name = "blue"
     for step in steps:
         if step.get("value") is None or value >= step["value"]:
@@ -152,12 +148,12 @@ def render(config, key, period_index, cache_dir, plot_width):
         period_ms = max(1000, int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() * 1000))
     else:
         period_ms = 24 * 3600 * 1000
-    panel, frames, start, end = query(config, tile, period_ms)
+    frames, start, end = query(config, tile, period_ms)
     if not chart:
         points = extract_points(frames, tile.get("field"), synthetic_time=end)
         latest = points[-1] if points else None
-        text = tile.get("format", "%.1f") % latest[1] if latest else "—"
-        color = threshold_color(panel, latest[1]) if latest and end - latest[0] <= 15 * 60 * 1000 else "#d8dee9"
+        text = tile.get("value_format", "%.1f") % latest[1] if latest else "—"
+        color = threshold_color(tile.get("thresholds", []), latest[1]) if latest and end - latest[0] <= 15 * 60 * 1000 else "#d8dee9"
         return {"value": text, "color": color}
 
     series = [extract_points(frames, item.get("field"), True) for item in tile["series"]]
