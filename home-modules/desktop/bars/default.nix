@@ -32,14 +32,13 @@ in {
                 let
                     restartWidgets = optionalString (config.modules.desktop.widgets.eww.enable or false) ''
                         ${pkgs.procps}/bin/pkill -f '[w]orkspace.py' >/dev/null 2>&1 || true
-                        ${lib.getExe pkgs.eww} --config ${config.xdg.configHome}/eww-dashboard kill >/dev/null 2>&1 || true
-                        eww-dashboard >/dev/null 2>&1 &
+                        eww-dashboard --restart >/dev/null 2>&1 &
                     '';
                 in
                 if config.modules.desktop.bars.default == "noctalia" then
                     ''
-                    noctalia-restart
                     ${restartWidgets}
+                    noctalia-restart
                     ''
                 else if config.modules.desktop.bars.default == "waybar" then
                     ''
