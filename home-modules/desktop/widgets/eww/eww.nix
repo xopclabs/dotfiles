@@ -25,9 +25,11 @@ let
             ${lib.getExe pkgs.eww} ${ewwConfig}
     '';
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
-        ${lib.getExe pkgs.eww} --config ${ewwConfig} daemon >/dev/null 2>&1 || true
-        exec ${pkgs.python3}/bin/python3 ${./workspace.py} \
-            eDP-1 ${lib.getExe pkgs.eww} ${ewwConfig}
+        eww=${lib.getExe pkgs.eww}
+        config=${ewwConfig}
+        "$eww" --config "$config" daemon >/dev/null 2>&1 || true
+        "$eww" --config "$config" open-many co2_chart temperature_chart humidity_value today_power power_chart
+        "$eww" --config "$config" poll co2_data temperature_data humidity_data today_power_data power_data
     '';
 in {
     options.modules.desktop.widgets.eww.enable = lib.mkEnableOption "Eww telemetry widgets";
