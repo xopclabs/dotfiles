@@ -19,6 +19,7 @@ in {
             shells.noctalia = {
                 enable = true;
                 settings.notification.monitors = oledMonitor.connectors;
+                weather.enable = true;
             };
 
             wm = {
