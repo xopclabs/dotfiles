@@ -44,7 +44,7 @@
                       "editorMode": "code",
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "WITH per_device AS (\n  SELECT\n    split_part(topic, '/', 3) AS device,\n    (max((payload->'aenergy'->>'total')::double precision)\n      - min((payload->'aenergy'->>'total')::double precision)) / 1000.0 AS kwh\n  FROM mqtt_messages\n  WHERE $__timeFilter(received_at)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1\n)\nSELECT COALESCE(sum(GREATEST(kwh, 0)), 0) AS \"Selected\" FROM per_device"
+                      "rawSql": "WITH selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages\n  WHERE $__timeFilter(received_at)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n)\nSELECT sum(kwh) AS \"Selected\" FROM selected_device"
                     },
                     "version": "v0"
                   },
@@ -56,10 +56,10 @@
             "transformations": []
           }
         },
-        "description": "Energy used during the currently selected dashboard time range.",
+        "description": "Total energy over the selected dashboard range, summed across outlets with at least two readings.",
         "id": 2,
         "links": [],
-        "title": "Selected",
+        "title": "Selected (kWh)",
         "vizConfig": {
           "group": "stat",
           "kind": "VizConfig",
@@ -67,7 +67,7 @@
             "fieldConfig": {
               "defaults": {
                 "decimals": 2,
-                "unit": "suffix:kWh",
+                "unit": "none",
                 "color": {
                   "mode": "fixed",
                   "fixedColor": "blue"
@@ -127,7 +127,7 @@
                       "editorMode": "code",
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "WITH bounds AS (\n  SELECT\n    to_timestamp(${__from} / 1000.0) - interval '1 day' AS start_at,\n    to_timestamp(${__to} / 1000.0) - interval '1 day' AS end_at\n), per_device AS (\n  SELECT\n    split_part(topic, '/', 3) AS device,\n    (max((payload->'aenergy'->>'total')::double precision)\n      - min((payload->'aenergy'->>'total')::double precision)) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE received_at >= bounds.start_at\n    AND received_at <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1\n)\nSELECT COALESCE(sum(GREATEST(kwh, 0)), 0) AS \"Prev day\" FROM per_device"
+                      "rawSql": "WITH bounds AS (\n  SELECT to_timestamp(${__from} / 1000.0) AS start_at,\n         to_timestamp(${__to} / 1000.0) AS end_at\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE received_at >= bounds.start_at AND received_at <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n), windows AS (\n  SELECT n,\n         ((b.start_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS start_at,\n         ((b.end_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS end_at\n  FROM bounds b CROSS JOIN generate_series(1, ${baseline_days:raw}::int) AS days(n)\n  WHERE b.end_at - b.start_at <= interval '1 day'\n  UNION ALL\n  SELECT n,\n         b.start_at - n * (b.end_at - b.start_at) AS start_at,\n         b.end_at - n * (b.end_at - b.start_at) AS end_at\n  FROM bounds b CROSS JOIN LATERAL generate_series(\n    1, floor(EXTRACT(EPOCH FROM (${baseline_days:raw}::int * interval '1 day'))\n             / NULLIF(EXTRACT(EPOCH FROM (b.end_at - b.start_at)), 0))::int\n  ) AS blocks(n)\n  WHERE b.end_at - b.start_at > interval '1 day'\n), covered_device AS (\n  SELECT w.n, split_part(m.topic, '/', 3) AS device,\n         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)\n           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM windows w CROSS JOIN bounds b\n  JOIN mqtt_messages m ON m.received_at >= w.start_at AND m.received_at <= w.end_at\n    AND m.topic LIKE 'apartment/%/%/status/switch:0'\n    AND m.payload ? 'aenergy'\n    AND m.payload->'aenergy'->>'total' IS NOT NULL\n  WHERE w.end_at <= b.start_at\n    AND (b.end_at - b.start_at <= interval '1 day'\n      OR w.start_at >= b.start_at - ${baseline_days:raw}::int * interval '1 day')\n    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)\n  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)\n  HAVING count(*) >= 2\n    AND min(m.received_at) <= w.start_at + interval '15 minutes'\n    AND max(m.received_at) >= w.end_at - interval '15 minutes'\n), complete_windows AS (\n  SELECT n, sum(kwh) AS kwh\n  FROM covered_device\n  GROUP BY n\n  HAVING count(*) = (SELECT count(*) FROM selected_device)\n), baseline AS (\n  SELECT avg(kwh) AS kwh FROM complete_windows\n)\nSELECT kwh AS \"Prior avg\" FROM baseline"
                     },
                     "version": "v0"
                   },
@@ -139,10 +139,10 @@
             "transformations": []
           }
         },
-        "description": "Energy used during the immediately preceding time window of the same duration as the selected range.",
+        "description": "Average total kWh across complete historical periods within the chosen lookback. For ranges up to one day, compares the same local clock times on preceding days; longer ranges use non-overlapping equal-length blocks. A period is excluded if any selected outlet lacks readings within 15 minutes of either boundary. No complete history means no period qualified.",
         "id": 4,
         "links": [],
-        "title": "Prev day",
+        "title": "Prior avg (kWh)",
         "vizConfig": {
           "group": "stat",
           "kind": "VizConfig",
@@ -150,12 +150,21 @@
             "fieldConfig": {
               "defaults": {
                 "decimals": 2,
-                "unit": "suffix:kWh",
+                "unit": "none",
+                "noValue": "No complete history",
                 "color": {
                   "mode": "fixed",
                   "fixedColor": "purple"
                 },
-                "mappings": [],
+                "mappings": [
+                  {
+                    "type": "special",
+                    "options": {
+                      "match": "null",
+                      "result": { "text": "No complete history" }
+                    }
+                  }
+                ],
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
@@ -210,7 +219,7 @@
                       "editorMode": "code",
                       "format": "table",
                       "rawQuery": true,
-                      "rawSql": "WITH bounds AS (\n  SELECT\n    to_timestamp(${__from} / 1000.0) AS cur_start,\n    to_timestamp(${__to} / 1000.0) AS cur_end,\n    to_timestamp(${__from} / 1000.0) - interval '1 day' AS prev_start,\n    to_timestamp(${__to} / 1000.0) - interval '1 day' AS prev_end\n), per_device AS (\n  SELECT\n    split_part(topic, '/', 3) AS device,\n    (max((payload->'aenergy'->>'total')::double precision) FILTER (\n       WHERE received_at >= bounds.cur_start AND received_at <= bounds.cur_end)\n     - min((payload->'aenergy'->>'total')::double precision) FILTER (\n       WHERE received_at >= bounds.cur_start AND received_at <= bounds.cur_end)) / 1000.0 AS cur_kwh,\n    (max((payload->'aenergy'->>'total')::double precision) FILTER (\n       WHERE received_at >= bounds.prev_start AND received_at <= bounds.prev_end)\n     - min((payload->'aenergy'->>'total')::double precision) FILTER (\n       WHERE received_at >= bounds.prev_start AND received_at <= bounds.prev_end)) / 1000.0 AS prev_kwh\n  FROM mqtt_messages, bounds\n  WHERE received_at >= bounds.prev_start\n    AND received_at <= bounds.cur_end\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1\n), totals AS (\n  SELECT\n    COALESCE(sum(GREATEST(cur_kwh, 0)), 0) AS cur_kwh,\n    COALESCE(sum(GREATEST(prev_kwh, 0)), 0) AS prev_kwh\n  FROM per_device\n)\nSELECT COALESCE(\n  CASE WHEN prev_kwh > 0\n    THEN (cur_kwh - prev_kwh) / prev_kwh * 100.0\n    ELSE 0.0\n  END,\n  0.0\n) AS \"Δ vs prev\"\nFROM totals"
+                      "rawSql": "WITH bounds AS (\n  SELECT to_timestamp(${__from} / 1000.0) AS start_at,\n         to_timestamp(${__to} / 1000.0) AS end_at\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE received_at >= bounds.start_at AND received_at <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n), windows AS (\n  SELECT n,\n         ((b.start_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS start_at,\n         ((b.end_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS end_at\n  FROM bounds b CROSS JOIN generate_series(1, ${baseline_days:raw}::int) AS days(n)\n  WHERE b.end_at - b.start_at <= interval '1 day'\n  UNION ALL\n  SELECT n,\n         b.start_at - n * (b.end_at - b.start_at) AS start_at,\n         b.end_at - n * (b.end_at - b.start_at) AS end_at\n  FROM bounds b CROSS JOIN LATERAL generate_series(\n    1, floor(EXTRACT(EPOCH FROM (${baseline_days:raw}::int * interval '1 day'))\n             / NULLIF(EXTRACT(EPOCH FROM (b.end_at - b.start_at)), 0))::int\n  ) AS blocks(n)\n  WHERE b.end_at - b.start_at > interval '1 day'\n), covered_device AS (\n  SELECT w.n, split_part(m.topic, '/', 3) AS device,\n         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)\n           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM windows w CROSS JOIN bounds b\n  JOIN mqtt_messages m ON m.received_at >= w.start_at AND m.received_at <= w.end_at\n    AND m.topic LIKE 'apartment/%/%/status/switch:0'\n    AND m.payload ? 'aenergy'\n    AND m.payload->'aenergy'->>'total' IS NOT NULL\n  WHERE w.end_at <= b.start_at\n    AND (b.end_at - b.start_at <= interval '1 day'\n      OR w.start_at >= b.start_at - ${baseline_days:raw}::int * interval '1 day')\n    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)\n  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)\n  HAVING count(*) >= 2\n    AND min(m.received_at) <= w.start_at + interval '15 minutes'\n    AND max(m.received_at) >= w.end_at - interval '15 minutes'\n), complete_windows AS (\n  SELECT n, sum(kwh) AS kwh\n  FROM covered_device\n  GROUP BY n\n  HAVING count(*) = (SELECT count(*) FROM selected_device)\n), baseline AS (\n  SELECT avg(kwh) AS kwh FROM complete_windows\n), selected AS (\n  SELECT sum(kwh) AS kwh FROM selected_device\n)\nSELECT CASE WHEN pct IS NOT NULL THEN\n    CASE WHEN pct < 0 THEN '-' WHEN pct > 0 THEN '+' ELSE '' END\n    || to_char(abs(pct), 'FM999999990.0') || '%'\n  END AS \"Δ vs avg\"\nFROM (\n  SELECT CASE WHEN baseline.kwh > 0 AND selected.kwh IS NOT NULL\n    THEN round(((selected.kwh / baseline.kwh - 1) * 100.0)::numeric, 1)\n    END AS pct\n  FROM baseline CROSS JOIN selected\n) comparison"
                     },
                     "version": "v0"
                   },
@@ -222,10 +231,10 @@
             "transformations": []
           }
         },
-        "description": "Percent change between the selected range and the immediately preceding window of the same duration. Negative means lower consumption.",
+        "description": "Percent difference between selected total kWh and the average of complete, equal-length historical periods. Negative means lower consumption. No comparison if no historical period has complete boundary coverage, if selected data is missing, or if the historical average is zero.",
         "id": 5,
         "links": [],
-        "title": "Δ vs prev",
+        "title": "Δ vs avg",
         "vizConfig": {
           "group": "stat",
           "kind": "VizConfig",
@@ -233,25 +242,47 @@
             "fieldConfig": {
               "defaults": {
                 "decimals": 1,
-                "unit": "percent",
+                "unit": "string",
+                "noValue": "No comparison",
                 "color": {
                   "mode": "thresholds"
                 },
-                "mappings": [],
+                "mappings": [
+                  {
+                    "type": "special",
+                    "options": {
+                      "match": "null",
+                      "result": { "text": "No comparison", "color": "white" }
+                    }
+                  },
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "/^-.*%$/",
+                      "result": { "color": "green" }
+                    }
+                  },
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "/^\\+.*%$/",
+                      "result": { "color": "red" }
+                    }
+                  },
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": "^0\\.0%$",
+                      "result": { "color": "white" }
+                    }
+                  }
+                ],
                 "thresholds": {
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green",
+                      "color": "white",
                       "value": -1e+308
-                    },
-                    {
-                      "color": "yellow",
-                      "value": -5
-                    },
-                    {
-                      "color": "red",
-                      "value": 5
                     }
                   ]
                 }
@@ -267,7 +298,7 @@
                 "calcs": [
                   "lastNotNull"
                 ],
-                "fields": "",
+                "fields": "^Δ vs avg$",
                 "values": false
               },
               "showPercentChange": false,
@@ -315,7 +346,7 @@
         "description": "Energy used from the start of the current calendar month through now. Independent of the selected dashboard range.",
         "id": 6,
         "links": [],
-        "title": "MTD",
+        "title": "MTD (kWh)",
         "vizConfig": {
           "group": "stat",
           "kind": "VizConfig",
@@ -323,7 +354,7 @@
             "fieldConfig": {
               "defaults": {
                 "decimals": 2,
-                "unit": "suffix:kWh",
+                "unit": "none",
                 "color": {
                   "mode": "fixed",
                   "fixedColor": "orange"
@@ -869,6 +900,30 @@
   },
   "title": "Apartment Power",
   "variables": [
+    {
+      "kind": "CustomVariable",
+      "spec": {
+        "name": "baseline_days",
+        "query": "7 days : 7, 14 days : 14, 30 days : 30, 90 days : 90",
+        "current": {
+          "text": "30 days",
+          "value": "30"
+        },
+        "options": [
+          { "text": "7 days", "value": "7", "selected": false },
+          { "text": "14 days", "value": "14", "selected": false },
+          { "text": "30 days", "value": "30", "selected": true },
+          { "text": "90 days", "value": "90", "selected": false }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "allowCustomValue": false,
+        "label": "Baseline",
+        "hide": "dontHide",
+        "skipUrlSync": false,
+        "description": "Lookback before the selected period in which to find comparable historical windows."
+      }
+    },
     {
       "kind": "SwitchVariable",
       "spec": {
