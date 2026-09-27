@@ -31,7 +31,8 @@ class PreviewTests(unittest.TestCase):
             self.assertEqual(snapshot.preview(cache, "co2", 1, periods)["period"], "6h")
             self.assertEqual(snapshot.read(cache, "co2", 1)["high"], "900")
             config = cache / "config.json"
-            config.write_text(json.dumps({"periods": periods, "charts": {"co2": {}}}))
+            config.write_text(json.dumps({"periods": periods, "charts": {"co2": {}},
+                                          "instances": {"co2": {"source": "co2", "template": "chart"}}}))
             with patch.object(period.subprocess, "run") as run:
                 period.main("co2", str(config), str(cache), "eww", "/config")
                 self.assertEqual(snapshot.index(cache, "co2"), 1)
@@ -47,13 +48,61 @@ class PreviewTests(unittest.TestCase):
             svg.unlink()
             self.assertIsNone(snapshot.read(cache, "co2", 1))
 
+    def test_two_instances_share_source_but_not_period_or_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            config = cache / "config.json"
+            config.write_text(json.dumps({
+                "datasource_uid": "test", "periods": [{"label": "1h", "ms": 3600000},
+                                                       {"label": "6h", "ms": 21600000}],
+                "charts": {"co2": {"sql": "SELECT 1", "series": [{"alias": "CO₂", "field": "value"}]}},
+                "instances": {"main_co2": {"source": "co2", "template": "chart"},
+                              "detail_co2": {"source": "co2", "template": "chart"}}}))
+            frames = [{"schema": {"fields": [{"name": "time", "type": "time"},
+                                               {"name": "value", "type": "number"}]},
+                       "data": {"values": [[1], [500]]}}]
+            with patch.object(query, "request", return_value={"results": {"A": {"frames": frames}}}):
+                for instance in ("main_co2", "detail_co2"):
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        query.main(str(config), str(cache), instance, "", "264")
+            self.assertIsNotNone(snapshot.read(cache, "main_co2", 0))
+            self.assertIsNotNone(snapshot.read(cache, "detail_co2", 0))
+            with patch.object(period.subprocess, "run"):
+                period.main("main_co2", str(config), str(cache), "eww", "/config")
+            self.assertEqual(snapshot.index(cache, "main_co2"), 1)
+            self.assertEqual(snapshot.index(cache, "detail_co2"), 0)
+
+    def test_chart_source_can_render_as_stat(self):
+        config = {"datasource_uid": "test", "periods": [{"label": "1h", "ms": 3600000}],
+                  "charts": {"co2": {"sql": "SELECT 1", "unit": " ppm",
+                                      "series": [{"field": "value", "alias": "CO₂"}]}}}
+        frames = [{"schema": {"fields": [{"name": "time", "type": "time"},
+                                           {"name": "value", "type": "number"}]},
+                   "data": {"values": [[1], [500]]}}]
+        with tempfile.TemporaryDirectory() as tmp, patch.object(query, "request", return_value={"results": {"A": {"frames": frames}}}):
+            result = query.render(config, "co2", 0, Path(tmp), 0, "value")
+        self.assertEqual(result["value"], "500 ppm")
+        self.assertNotIn("chart", result)
+
+    def test_value_selects_named_field_from_multi_series_source(self):
+        config = {"datasource_uid": "test", "periods": [{"label": "1h", "ms": 3600000}],
+                  "charts": {"power": {"sql": "SELECT 1", "unit": " W", "series": [
+                      {"field": "ac", "alias": "AC"}, {"field": "pc", "alias": "PC"}]}}}
+        frames = [{"schema": {"fields": [{"name": "time", "type": "time"},
+                                           {"name": "ac", "type": "number"},
+                                           {"name": "pc", "type": "number"}]},
+                   "data": {"values": [[1], [120], [75]]}}]
+        with tempfile.TemporaryDirectory() as tmp, patch.object(query, "request", return_value={"results": {"A": {"frames": frames}}}):
+            self.assertEqual(query.render(config, "power", 0, Path(tmp), 0, "value", "pc")["value"], "75 W")
+
     def test_query_retains_chart_and_uses_it_on_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
             config = cache / "config.json"
             config.write_text(json.dumps({"datasource_uid": "test", "periods": [{"label": "1h", "ms": 3600000}],
                                           "charts": {"co2": {"sql": "SELECT 1", "series": [
-                                              {"alias": "CO₂", "field": "value"}]}}}))
+                                              {"alias": "CO₂", "field": "value"}]}},
+                                          "instances": {"co2": {"source": "co2", "template": "chart"}}}))
             frames = [{"schema": {"fields": [{"name": "time", "type": "time"},
                                               {"name": "value", "type": "number"}]},
                        "data": {"values": [[1], [500]]}}]
@@ -78,7 +127,9 @@ class PreviewTests(unittest.TestCase):
             snapshot.save(cache, "co2", 0, {"chart": str(svg), "period": "1h"})
             config = cache / "config.json"
             config.write_text(json.dumps({"periods": [{"label": "1h"}],
-                                          "charts": {"co2": {}, "power": {}}}))
+                                          "charts": {"co2": {}, "power": {}},
+                                          "instances": {"co2": {"source": "co2", "template": "chart"},
+                                                        "power": {"source": "power", "template": "chart"}}}))
             with patch.object(snapshot.subprocess, "run") as run:
                 snapshot.warm(str(config), str(cache), "eww", "/config")
             args = run.call_args.args[0]

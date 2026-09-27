@@ -16,10 +16,10 @@
       (box :hexpand true)
       (label :class "series-two" :visible {data.legend2 != ""} :text {data.legend2}))))
 
-(defwidget value-tile [title icon data kind]
-  (box :class "tile value-tile ${kind}" :orientation "vertical" :space-evenly false
+(defwidget value-tile [title icon data compact]
+  (box :class {compact ? "tile value-tile compact" : "tile value-tile"} :orientation "vertical" :space-evenly false
     (box :class "value-title" :halign "center" :space-evenly false
-      (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
+      (image :class "tile-icon" :path icon :image-width {compact ? 14 : 18} :image-height {compact ? 14 : 18})
       (label :text title))
     (label :class "reading" :halign "center" :style "color: ${data.color};" :text {data.value})))
 

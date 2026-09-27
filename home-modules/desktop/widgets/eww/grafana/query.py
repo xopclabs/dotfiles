@@ -11,7 +11,8 @@ from datetime import datetime
 
 import snapshot
 
-COLORS = ("#88c0d0", "#a3be8c")
+from templates import bounds, svg, threshold_color, present
+
 
 
 def request(config, path, payload=None):
@@ -65,54 +66,6 @@ def extract_points(frames, field_name=None, fill_missing=False, synthetic_time=N
     return sorted(points)
 
 
-def bounds(series, from_zero=False):
-    values = [v for points in series for _, v in points]
-    if not values:
-        return None, None
-    return min(0, min(values)) if from_zero else min(values), max(values)
-
-
-def svg(series, start, end, width=264, height=88, from_zero=False):
-    low, high = bounds(series, from_zero)
-    pad = 3
-    gradients = "".join(
-        f'<linearGradient id="areaFade{i}" x1="0" y1="0" x2="0" y2="1">'
-        f'<stop offset="0%" stop-color="{color}" stop-opacity="0.24"/>'
-        f'<stop offset="100%" stop-color="{color}" stop-opacity="0"/>'
-        '</linearGradient>'
-        for i, color in enumerate(COLORS[:len(series[:2])])
-    )
-    content = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-               f'viewBox="0 0 {width} {height}"><defs>{gradients}</defs>']
-    if low is not None:
-        # Keep every Grafana sample as a vertex, including the first point and narrow peaks.
-        span = high - low or 1
-        baseline = height - pad
-        plotted = []
-        for points in series[:2]:
-            if not points:
-                plotted.append(None)
-                continue
-            coords = " ".join(f"{pad + (t - start) / (end - start) * (width - 2 * pad):.2f},"
-                              f"{pad + (high - v) / span * (height - 2 * pad):.2f}" for t, v in points)
-            plotted.append(coords)
-
-        # Draw all filled areas first so subsequent series cannot cover earlier strokes.
-        for i, coords in enumerate(plotted):
-            if coords is None:
-                continue
-            first_x = coords.split()[0].split(",")[0]
-            last_x = coords.split()[-1].split(",")[0]
-            content.append(f'<polygon points="{first_x},{baseline} {coords} {last_x},{baseline}" '
-                           f'fill="url(#areaFade{i})"/>')
-        for i, coords in enumerate(plotted):
-            if coords is not None:
-                content.append(f'<polyline points="{coords}" fill="none" stroke="{COLORS[i]}" '
-                               'stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>')
-    content.append("</svg>")
-    return "".join(content)
-
-
 def query(config, tile, period_ms):
     now = int(time.time() * 1000)
     start = now - period_ms
@@ -129,82 +82,71 @@ def query(config, tile, period_ms):
     return result.get("frames", []), start, now
 
 
-def threshold_color(steps, value):
-    name = "blue"
-    for step in steps:
-        if step.get("value") is None or value >= step["value"]:
-            name = step["color"]
-    return {"green": "#a3be8c", "yellow": "#ebcb8b", "orange": "#d08770",
-            "red": "#bf616a", "dark-red": "#bf616a", "blue": "#88c0d0"}.get(name, name)
-
-
-def render(config, key, period_index, cache_dir, plot_width):
-    chart = config.get("charts", {}).get("co2" if key == "co2_value" else key)
-    tile = chart or config["values"][key]
+def read_source(config, key, period_index, template):
+    """Fetch once and expose named numeric series, independent of widget geometry."""
+    chart = config.get("charts", {}).get(key)
+    definition = chart or config["values"][key]
     periods = config["periods"]
-    period = periods[period_index % len(periods)] if chart else None
-    if chart:
+    period = periods[period_index % len(periods)] if chart and template != "value" else None
+    if chart and template == "value":
+        period_ms = 24 * 3600 * 1000
+    elif chart:
         period_ms = period["ms"]
-    elif tile.get("range") == "today":
+    elif definition.get("range") == "today":
         now = datetime.now()
         period_ms = max(1000, int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() * 1000))
     else:
         period_ms = 24 * 3600 * 1000
-    frames, start, end = query(config, tile, period_ms)
-    if not chart:
-        points = extract_points(frames, tile.get("field"), synthetic_time=end)
-        latest = points[-1] if points else None
-        text = tile.get("value_format", "%.1f") % latest[1] if latest else "—"
-        color = threshold_color(tile.get("thresholds", []), latest[1]) if latest and end - latest[0] <= 15 * 60 * 1000 else "#d8dee9"
-        return {"value": text, "color": color}
-
-    series = [extract_points(frames, item.get("field"), True) for item in tile["series"]]
-    series = [[p for p in points if start <= p[0] <= end] for points in series]
-    if key == "co2_value":
-        latest = series[0][-1] if series[0] else None
-        return {"value": "%.0f%s" % (latest[1], tile.get("unit", "")) if latest else "—",
-                "color": "#88c0d0"}
-    low, high = bounds(series, tile.get("axis_from_zero", False))
-    fmt = "%." + str(tile.get("axis_decimals", 0)) + "f"
-    path = cache_dir / f"{key}-{os.getpid()}-{time.time_ns()}.svg"
-    path.write_text(svg(series, start, end, plot_width, from_zero=tile.get("axis_from_zero", False)))
-    legends = [item["alias"] + "  " + ("%.1f" % points[-1][1] + tile.get("unit", "") if points else "—")
-               for item, points in zip(tile["series"], series)]
-    return {"chart": str(path), "high": fmt % high if high is not None else "—",
-            "low": fmt % low if low is not None else "—", "legend1": legends[0],
-            "legend2": legends[1] if len(legends) > 1 else "", "period": period["label"]}
+    frames, start, end = query(config, definition, period_ms)
+    if chart:
+        fields = {item["field"]: extract_points(frames, item["field"], template == "chart")
+                  for item in definition["series"]}
+    else:
+        fields = {"value": extract_points(frames, definition.get("field"), synthetic_time=end)}
+    return {"fields": fields, "start": start, "end": end, "period": period}
 
 
-def main(config_path, cache_path, key, period_path, plot_width):
+def render(config, key, period_index, cache_dir, plot_width, template=None, field=None):
+    template = template or ("chart" if key in config.get("charts", {}) else "value")
+    data = read_source(config, key, period_index, template)
+    definition = config.get("charts", {}).get(key) or config["values"][key]
+    return present(template, definition, data, cache_dir, plot_width, field)
+
+def main(config_path, cache_path, instance, period_path, plot_width):
     try:
         config = json.loads(Path(config_path).read_text())
+        source = config["instances"][instance]["source"]
+        is_chart = config["instances"][instance]["template"] == "chart"
         cache_dir = Path(cache_path)
         cache_dir.mkdir(parents=True, exist_ok=True)
-        period_index = snapshot.index(cache_dir, key)
-        result = render(config, key, period_index, cache_dir, int(plot_width))
-        if key in config.get("charts", {}) and result.get("chart"):
+        period_index = snapshot.index(cache_dir, instance)
+        result = render(config, source, period_index, cache_dir, int(plot_width),
+                        config["instances"][instance]["template"],
+                        config["instances"][instance].get("field"))
+        if is_chart and result.get("chart"):
             try:
-                snapshot.save(cache_dir, key, period_index % len(config["periods"]), result)
+                snapshot.save(cache_dir, instance, period_index % len(config["periods"]), result)
             except OSError as exc:
-                print(f"dashboard {key}: could not cache chart: {exc}", file=sys.stderr)
+                print(f"dashboard {instance}: could not cache chart: {exc}", file=sys.stderr)
         retained = {
             Path(data["chart"])
-            for chart_key in config.get("charts", {})
+            for chart_id, widget in config["instances"].items()
+            if widget["template"] == "chart"
             for index in range(len(config["periods"]))
-            if (data := snapshot.read(cache_dir, chart_key, index))
+            if (data := snapshot.read(cache_dir, chart_id, index))
         }
         for old in cache_dir.glob("*.svg"):
             if old not in retained and time.time() - old.stat().st_mtime > 300:
                 old.unlink()
-        if key in config.get("charts", {}) and snapshot.index(cache_dir, key) != period_index:
-            current = snapshot.index(cache_dir, key) % len(config["periods"])
-            result = snapshot.read(cache_dir, key, current) or result
+        if is_chart and snapshot.index(cache_dir, instance) != period_index:
+            current = snapshot.index(cache_dir, instance) % len(config["periods"])
+            result = snapshot.read(cache_dir, instance, current) or result
         print(json.dumps(result))
     except (OSError, ValueError, KeyError, StopIteration, IndexError, TypeError) as exc:
-        print(f"dashboard {key}: {exc}", file=sys.stderr)
-        if "config" in locals() and key in config.get("charts", {}):
-            current = snapshot.index(Path(cache_path), key) % len(config["periods"])
-            cached = snapshot.read(Path(cache_path), key, current)
+        print(f"dashboard {instance}: {exc}", file=sys.stderr)
+        if "config" in locals() and config.get("instances", {}).get(instance, {}).get("template") == "chart":
+            current = snapshot.index(Path(cache_path), instance) % len(config["periods"])
+            cached = snapshot.read(Path(cache_path), instance, current)
             if cached:
                 cached["period"] = config["periods"][current]["label"]
                 print(json.dumps(cached))

@@ -29,4 +29,9 @@ window { background: transparent; }
   font-weight: bold;
 }
 .reading { margin-top: 16px; font-size: 48px; font-weight: bold; }
-.today_power .reading, .co2 .reading { font-size: 27px; }
+.compact {
+  padding: 6px 8px;
+  min-height: 66px;
+}
+.compact .value-title { margin-top: 0; font-size: 12px; }
+.compact .reading { margin-top: 3px; font-size: 22px; }

@@ -45,7 +45,9 @@ def warm(config_path, cache_path, eww, eww_config):
     config = json.loads(Path(config_path).read_text())
     cache = Path(cache_path)
     updates = []
-    for key in config["charts"]:
+    for key, widget in config["instances"].items():
+        if widget["template"] != "chart":
+            continue
         period_index = index(cache, key) % len(config["periods"])
         if read(cache, key, period_index):
             data = preview(cache, key, period_index, config["periods"])
