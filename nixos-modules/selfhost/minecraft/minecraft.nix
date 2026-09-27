@@ -505,6 +505,9 @@ in
                     paths = [ "/srv/minecraft/distant-horizons" ];
                     repo = cfg.distantHorizons.backup.repo;
                     schedule = "daily";
+                    exclude = [
+                        "/srv/minecraft/distant-horizons/bluemap"
+                    ];
                     encryption.mode = "repokey-blake2";
                     prune.keep = { daily = 7; weekly = 4; };
                 };
