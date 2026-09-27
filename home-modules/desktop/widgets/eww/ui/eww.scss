@@ -7,10 +7,10 @@ window { background: transparent; }
   min-height: 132px;
   border-radius: 0;
 }
-.header { min-height: 23px; }
+.header { min-height: 24px; }
 .title { font-size: 18px; font-weight: bold; }
 .tile-icon { margin-right: 6px; }
-.period { color: #88c0d0; font-size: 19px; }
+.period { color: #88c0d0; font-size: 18px; }
 .graph { margin-top: 3px; }
 .axis {
   min-width: 28px;
@@ -23,15 +23,10 @@ window { background: transparent; }
 .series-one { color: #88c0d0; }
 .series-two { color: #a3be8c; }
 .value-tile { min-width: 132px; }
-.value-title {
-  margin-top: 22px;
-  font-size: 17px;
-  font-weight: bold;
-}
-.reading { margin-top: 16px; font-size: 48px; font-weight: bold; }
+.reading { font-size: 48px; font-weight: bold; }
 .compact {
-  padding: 6px 8px;
-  min-height: 66px;
+  padding: 6px 12px;
+  min-height: 60px;
 }
-.compact .value-title { margin-top: 0; font-size: 12px; }
-.compact .reading { margin-top: 3px; font-size: 22px; }
+.compact .header { margin-top: 6px; }
+.compact .reading { font-size: 22px; }
