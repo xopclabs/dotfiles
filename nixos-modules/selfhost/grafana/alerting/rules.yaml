@@ -1,0 +1,73 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: air-quality-alerts
+    folder: Air Quality
+    interval: 1m
+    rules:
+      - uid: co2-high-1000ppm
+        title: CO2 at or above 1000 ppm
+        condition: B
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: CO2 has stayed at or above 1000 ppm for 2 minutes.
+          description: Check ventilation in the apartment.
+        labels:
+          severity: warning
+        notification_settings:
+          receiver: ntfy-co2
+          repeat_interval: 1h
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: telemetry-postgres
+            model:
+              datasource:
+                type: grafana-postgresql-datasource
+                uid: telemetry-postgres
+              editorMode: code
+              format: table
+              rawQuery: true
+              rawSql: |
+                SELECT (payload->>'co2_ppm')::double precision AS value
+                FROM mqtt_messages
+                WHERE topic = 'apartment/room/air-quality'
+                  AND payload ? 'co2_ppm'
+                ORDER BY received_at DESC
+                LIMIT 1
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [1000]
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions

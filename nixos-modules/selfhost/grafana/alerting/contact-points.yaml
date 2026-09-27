@@ -1,0 +1,14 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: ntfy-co2
+    receivers:
+      - uid: ntfy-co2
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: https://ntfy.$NTFY_DOMAIN/co2-alerts?template=grafana
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: $NTFY_CO2_TOKEN

@@ -14,6 +14,8 @@ let
         };
     };
 
+    ntfyPublisherTokenKey = "ntfy/publishers/grafana-co2/token";
+
     grafanaSecret = {
         sopsFile = ../../../secrets/shared/selfhost.yaml;
         owner = "grafana";
@@ -50,6 +52,19 @@ in
         sops.secrets = {
             "grafana/admin-password" = grafanaSecret;
             "grafana/secret-key" = grafanaSecret;
+            "${ntfyPublisherTokenKey}" = grafanaSecret;
+            domain.sopsFile = ../../../secrets/shared/selfhost.yaml;
+        };
+
+        sops.templates."grafana-ntfy-env" = {
+            content = ''
+                NTFY_CO2_TOKEN=${config.sops.placeholder."${ntfyPublisherTokenKey}"}
+                NTFY_DOMAIN=${config.sops.placeholder.domain}
+            '';
+            owner = "grafana";
+            group = "grafana";
+            mode = "0400";
+            restartUnits = [ "grafana.service" ];
         };
 
         services.grafana = {
@@ -105,6 +120,10 @@ in
                         };
                     }];
                 };
+                alerting = {
+                    rules.path = ./alerting/rules.yaml;
+                    contactPoints.path = ./alerting/contact-points.yaml;
+                };
             };
         };
 
@@ -123,6 +142,7 @@ in
         systemd.services.grafana = {
             after = [ "telemetry-grafana-db-access.service" ];
             requires = [ "telemetry-grafana-db-access.service" ];
+            serviceConfig.EnvironmentFile = config.sops.templates."grafana-ntfy-env".path;
         };
 
         homelab.traefik.routes = mkIf config.homelab.traefik.enable [{
