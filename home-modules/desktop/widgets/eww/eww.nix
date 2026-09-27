@@ -11,13 +11,14 @@ let
     horizontalMargin = pixels grid.margin.horizontal;
     verticalMargin = pixels grid.margin.vertical;
     place = id: tile: tile // {
-        inherit id;
+        id = "${cfg.page}_${id}";
         x = horizontalMargin + tile.position.col * (unit + horizontalGap);
         y = verticalMargin + tile.position.row * (unit + verticalGap);
         width = tile.size.cols * unit + (tile.size.cols - 1) * horizontalGap;
         height = tile.size.rows * unit + (tile.size.rows - 1) * verticalGap;
     };
-    tiles = lib.mapAttrsToList place cfg.tiles;
+    widgets = (cfg.pages.${cfg.page} or { widgets = {}; }).widgets;
+    tiles = lib.mapAttrsToList place widgets;
     occupied = lib.concatMap (tile:
         lib.concatMap (row:
             map (col: "${toString row}:${toString col}")
@@ -25,7 +26,12 @@ let
             (lib.range tile.position.row (tile.position.row + tile.size.rows - 1))) tiles;
     ewwConfig = "${config.xdg.configHome}/eww-dashboard";
     grafana = import ./grafana { inherit config lib pkgs ewwConfig; };
-    queries = import ./grafana/config.nix { inherit config; };
+    queries = (import ./grafana/config.nix { inherit config; }) // {
+        instances = lib.listToAttrs (map (tile: {
+            name = tile.id;
+            value = { inherit (tile) source template; field = tile.field; };
+        }) tiles);
+    };
     ui = import ./ui { inherit config lib pkgs tiles; inherit (grafana) query period; };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         exec ${pkgs.bash}/bin/bash ${./launch.sh} \
@@ -56,51 +62,66 @@ in {
             };
         };
 
-        tiles = lib.mkOption {
+        page = lib.mkOption { type = lib.types.str; default = "main"; description = "Page to display; workspace selection can be wired here later."; };
+
+        pages = lib.mkOption {
             default = {};
-            description = "Tiles in the selected layout; individual fields can be overridden per host.";
+            description = "Dashboard pages containing independently placed widget instances.";
             type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
-                options = {
-                    key = lib.mkOption { type = lib.types.str; description = "Eww query key and poll name."; };
-                    type = lib.mkOption { type = lib.types.enum [ "chart" "value" ]; };
-                    title = lib.mkOption { type = lib.types.str; };
-                    icon = lib.mkOption { type = lib.types.str; description = "Name of a generated icon PNG."; };
-                    output = lib.mkOption { type = lib.types.str; description = "Eww monitor name."; };
-                    position = lib.mkOption {
-                        type = lib.types.submodule {
-                            options = {
-                                row = lib.mkOption { type = lib.types.int; };
-                                col = lib.mkOption { type = lib.types.int; };
+                options.widgets = lib.mkOption {
+                    default = {};
+                    type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
+                        options = {
+                            source = lib.mkOption { type = lib.types.str; description = "Data source key in the Grafana query configuration."; };
+                            template = lib.mkOption { type = lib.types.enum [ "chart" "value" ]; };
+                            field = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Named source field to show in a value widget; null selects the first."; };
+                            title = lib.mkOption { type = lib.types.str; };
+                            icon = lib.mkOption { type = lib.types.str; description = "Name of a generated icon PNG."; };
+                            output = lib.mkOption { type = lib.types.str; description = "Eww monitor name."; };
+                            position = lib.mkOption {
+                                type = lib.types.submodule {
+                                    options = {
+                                        row = lib.mkOption { type = lib.types.int; };
+                                        col = lib.mkOption { type = lib.types.int; };
+                                    };
+                                };
+                            };
+                            size = lib.mkOption {
+                                type = lib.types.submodule {
+                                    options = {
+                                        rows = lib.mkOption { type = lib.types.int; };
+                                        cols = lib.mkOption { type = lib.types.int; };
+                                    };
+                                };
                             };
                         };
-                    };
-                    size = lib.mkOption {
-                        type = lib.types.submodule {
-                            options = {
-                                rows = lib.mkOption { type = lib.types.int; };
-                                cols = lib.mkOption { type = lib.types.int; };
-                            };
-                        };
-                    };
+                    }));
                 };
             }));
         };
     };
 
     config = lib.mkIf cfg.enable {
-        modules.desktop.widgets.eww.tiles = lib.mkIf (cfg.layout != null)
-            (lib.mapAttrs (_: tile: lib.mapAttrs (_: lib.mkDefault) tile) layouts.${cfg.layout});
+        modules.desktop.widgets.eww.pages.main.widgets = lib.mkIf (cfg.layout != null)
+            (lib.mapAttrs (_: widget: lib.mapAttrs (_: lib.mkDefault) widget) layouts.${cfg.layout});
 
         assertions = [ {
-            assertion = lib.length (lib.unique (map (tile: tile.key) tiles)) == lib.length tiles
+            assertion = builtins.hasAttr cfg.page cfg.pages
+                && lib.all (tile:
+                    (if tile.template == "chart" then builtins.hasAttr tile.source queries.charts
+                     else builtins.hasAttr tile.source queries.values || builtins.hasAttr tile.source queries.charts)
+                    && (tile.field == null || (tile.template == "value" &&
+                        (if builtins.hasAttr tile.source queries.charts then
+                            lib.any (series: series.field == tile.field) queries.charts.${tile.source}.series
+                         else tile.field == "value")))) tiles
                 && lib.all (tile:
                     tile.position.row >= 0 && tile.position.col >= 0
                     && tile.size.rows > 0 && tile.size.cols > 0
                     && tile.position.row + tile.size.rows <= grid.rows
                     && tile.position.col + tile.size.cols <= grid.cols
-                    && (tile.type != "chart" || (tile.size.rows >= 2 && tile.size.cols >= 3))) tiles
+                    && (tile.template != "chart" || (tile.size.rows >= 2 && tile.size.cols >= 3))) tiles
                 && lib.length (lib.unique occupied) == lib.length occupied;
-            message = "Eww tiles must have unique data keys, fit without overlap on the configured grid, and charts need at least 2 rows and 3 columns.";
+            message = "Eww tiles need a source matching their template, must fit without overlap, and trends need at least 2 rows and 3 columns.";
         } ];
 
         sops.secrets = {

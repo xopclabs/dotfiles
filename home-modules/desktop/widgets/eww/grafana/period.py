@@ -10,8 +10,9 @@ import snapshot
 
 def main(key, config_path, cache_path, eww, eww_config, empty_chart=""):
     config = json.loads(Path(config_path).read_text())
-    if key not in config["charts"]:
-        raise ValueError("Unknown chart")
+    widget = config["instances"].get(key)
+    if widget is None or widget["template"] != "chart" or widget["source"] not in config["charts"]:
+        raise ValueError("Unknown chart instance")
     periods = config["periods"]
     if not periods:
         return
