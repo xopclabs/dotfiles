@@ -18,20 +18,8 @@ def load(name, directory):
 
 
 query = load("query", "grafana")
-workspace = load("workspace", "workspace")
-
 
 class DashboardTests(unittest.TestCase):
-    def test_workspace_is_output_specific(self):
-        pages = {"telemetry": "chart", "telemetry-value": "value"}
-        workspaces = [
-            {"id": 1, "name": "telemetry", "output": "eDP-1", "is_active": True},
-            {"id": 2, "name": "telemetry-value", "output": "DP-5", "is_active": True},
-        ]
-        self.assertEqual(workspace.page_for(workspaces, "eDP-1", pages), "chart")
-        workspaces[0]["is_active"] = False
-        self.assertIsNone(workspace.page_for(workspaces, "eDP-1", pages))
-
     def test_all_chart_instances_keep_seven_day_first_and_peak(self):
         week = 7 * 24 * 3600 * 1000
         now = 2 * week

@@ -49,6 +49,19 @@ in {
             widgets.eww = {
                 enable = true;
                 layout = "internal-monitor-dashboard";
+                grid = {
+                    rows = 6;
+                    cols = 11;
+                    unit = "77px";
+                    gap = {
+                        horizontal = "8px";
+                        vertical = "8px";
+                    };
+                    margin = {
+                        horizontal = "16px";
+                        vertical = "20px";
+                    };
+                };
             };
 
             other = {

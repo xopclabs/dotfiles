@@ -30,8 +30,8 @@ let
     '';
 in {
     yuck = builtins.replaceStrings
-        [ "eww-dashboard-query" "eww-dashboard-period" "@ICONS@" ]
-        [ (lib.getExe query) (lib.getExe period) (toString icons) ]
+        [ "eww-dashboard-period" ]
+        [ (lib.getExe period) ]
         (builtins.readFile ./eww.yuck)
         + "\n" + lib.concatMapStringsSep "\n" poll tiles
         + "\n" + lib.concatMapStringsSep "\n" window tiles;
