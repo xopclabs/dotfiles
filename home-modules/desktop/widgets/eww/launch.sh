@@ -49,7 +49,19 @@ fi
 
 # Eww starts referenced defpolls when their windows open. A separate `poll`
 # here can double the first fetch and contend with queries on startup.
-if [[ -z $("$eww" --config "$config" active-windows 9>&-) ]]; then
+active=$("$eww" --config "$config" active-windows 9>&-)
+if [[ -z $active ]]; then
     "$warm" 9>&- || echo "Could not warm Eww chart previews" >&2
-    "$eww" --config "$config" open-many "$@" 9>&-
+fi
+
+# Reloading a config adds window definitions but does not open new windows.
+# Keep existing windows (and their polls) running; open only newly added ones.
+missing=()
+for name in "$@"; do
+    if ! grep -Fqx -- "$name: $name" <<< "$active"; then
+        missing+=("$name")
+    fi
+done
+if (( ${#missing[@]} )); then
+    "$eww" --config "$config" open-many "${missing[@]}" 9>&-
 fi
