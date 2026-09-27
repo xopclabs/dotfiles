@@ -123,8 +123,17 @@ in
                         type = types.str;
                         default = "ntfy/publishers/${name}/token";
                         description = ''
-                            Key on secrets/hosts/<hostname>.yaml holding this publisher's access token.
+                            Key in the configured SOPS file holding this publisher's access token.
                             Generate a value with `ntfy token generate`.
+                        '';
+                    };
+
+                    tokenSopsFile = mkOption {
+                        type = types.nullOr types.path;
+                        default = null;
+                        description = ''
+                            Optional SOPS file for this token. Defaults to the current host's
+                            secrets file; use a shared SOPS file when a remote client also needs it.
                         '';
                     };
                 };
@@ -134,7 +143,7 @@ in
             description = ''
                 Token-only accounts for services that publish notifications, provisioned declaratively alongside the Matrix bot.
                 Each account is given a fresh random password on every restart that is never stored, so the token in sops is its only usable credential.
-                Publishers must live on the same host as ntfy, since their token secrets are declared here.
+                Publisher accounts are provisioned on the ntfy host; their token can be sourced from a shared SOPS file for remote clients.
             '';
         };
     };
@@ -175,7 +184,10 @@ in
                 "${cfg.matrixBot.subscribersSopsKey}".sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
             })
             (mapAttrs' (_: p: nameValuePair p.tokenSopsKey {
-                sopsFile = ../../secrets/hosts/${config.metadata.hostName}.yaml;
+                sopsFile =
+                    if p.tokenSopsFile != null
+                    then p.tokenSopsFile
+                    else ../../secrets/hosts/${config.metadata.hostName}.yaml;
             }) cfg.publishers)
         ];
 
