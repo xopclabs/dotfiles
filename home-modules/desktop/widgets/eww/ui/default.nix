@@ -1,4 +1,4 @@
-{ config, lib, pkgs, tiles, query, period }:
+{ config, lib, pkgs, tiles, query, period, music, visualizer }:
 
 let
     iconFont = "${config.modules.desktop.shells.noctalia.package}/share/noctalia/assets/fonts/noctalia-tabler.ttf";
@@ -9,6 +9,13 @@ let
         magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '' $out/plug.png
         magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '' $out/droplet.png
         magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '𐀡' $out/bolt.png
+    '';
+    feedbackIcons = pkgs.runCommand "eww-music-feedback-icons" {} ''
+        mkdir -p $out
+        for pair in "previous media-skip-backward" "next media-skip-forward" "play media-playback-start" "pause media-playback-pause" "open go-jump"; do
+            set -- $pair
+            sed 's/#2e3436/#eceff4/g' ${pkgs.adwaita-icon-theme}/share/icons/Adwaita/symbolic/actions/"$2"-symbolic.svg > "$out/$1.svg"
+        done
     '';
     plotWidth = tile: tile.width - 56; # 12px padding on each side, 28px axis + 4px gap
     quote = value: builtins.toJSON value;
@@ -24,7 +31,13 @@ let
         (defpoll ${tile.id}_data :interval "60s" :initial ${quote (builtins.toJSON initial)}
           `${lib.getExe query} ${tile.id} ${toString width}`)
     '';
-    window = tile: ''
+    window = tile: if tile.template == "music" then ''
+        (defwindow ${tile.id}
+          :monitor ${quote tile.output}
+          :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
+          :stacking "bottom" :namespace "eww-music-${tile.id}"
+          (music-tile :data music_data :bars music_bars :feedback music_feedback :feedback_icons ${quote (toString feedbackIcons)} :bar_width ${toString (tile.width - 24)} :art_size ${if tile.size.rows >= 4 then "138" else "90"} :large ${if tile.size.rows >= 3 then "true" else "false"}))
+    '' else ''
         (defwindow ${tile.id}
           :monitor ${quote tile.output}
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
@@ -33,10 +46,16 @@ let
     '';
 in {
     yuck = builtins.replaceStrings
-        [ "eww-dashboard-period" ]
-        [ (lib.getExe period) ]
+        [ "eww-dashboard-period" "eww-dashboard-music" "eww update" ]
+        [ (lib.getExe period) (lib.getExe music) "${lib.getExe pkgs.eww} --config ${config.xdg.configHome}/eww-dashboard update" ]
         (builtins.readFile ./eww.yuck)
-        + "\n" + lib.concatMapStringsSep "\n" poll tiles
+        + (if lib.any (tile: tile.template == "music") tiles then ''
+            (defpoll music_data :interval "1s" :initial ${quote (builtins.toJSON { art = ""; title = "Nothing playing"; artist = ""; playing = false; lyrics0 = { previous = ""; current = ""; next = ""; pending = false; }; lyrics1 = { previous = ""; current = ""; next = ""; pending = false; }; lyric_slot = 0; has_lyrics = false; })} `${lib.getExe music}`)
+            (deflisten music_bars :initial ${quote (toString ./empty.svg)} `${lib.getExe visualizer} ${toString ((lib.head (lib.filter (tile: tile.template == "music") tiles)).width - 24)}`)
+            (defvar music_show_visualizer false)
+            (defvar music_feedback "")
+          '' else "")
+        + "\n" + lib.concatMapStringsSep "\n" poll (lib.filter (tile: tile.template != "music") tiles)
         + "\n" + lib.concatMapStringsSep "\n" window tiles;
     scss = ./eww.scss;
 }

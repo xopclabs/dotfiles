@@ -50,7 +50,7 @@ in {
                 enable = true;
                 layout = "internal-monitor-dashboard";
                 grid = {
-                    rows = 6;
+                    rows = 7;
                     cols = 11;
                     unit = "77px";
                     gap = {

@@ -30,3 +30,18 @@ window { background: transparent; }
 }
 .compact .header { margin-top: 6px; }
 .compact .reading { font-size: 22px; }
+.music-tile { min-height: 0; }
+.music-edge { min-height: 6px; }
+.music-art { font-size: 56px; color: #88c0d0; }
+.music-feedback { background: rgba(46, 52, 64, 0.78); border-radius: 32px; padding: 12px; }
+.music-skip-zone:hover { background: rgba(136, 192, 208, 0.08); }
+.music-art-gap { min-height: 8px; }
+.music-title { font-size: 17px; font-weight: bold; }
+.music-artist { font-size: 14px; color: #d8dee9; }
+.music-metadata-gap { min-height: 8px; }
+.music-lower { min-height: 88px; }
+.music-lyrics { min-height: 88px; }
+.music-adjacent { min-height: 22px; font-size: 14px; color: #9aa5b5; }
+.music-current { min-height: 44px; font-size: 18px; color: #ffffff; font-weight: bold; }
+.music-current.pending { color: #9aa5b5; }
+.music-bars { margin-bottom: 24px; }

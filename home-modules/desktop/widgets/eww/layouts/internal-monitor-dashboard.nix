@@ -1,7 +1,7 @@
 let
     output = "eDP-1";
 in {
-    # The open cells are reserved for future music, weather and controls.
+    # Remaining open cells are reserved for weather and controls.
     co2_chart = {
         source = "co2"; template = "chart"; title = "CO₂"; icon = "lungs";
         inherit output;
@@ -37,7 +37,13 @@ in {
         source = "power"; template = "chart"; title = "Active power"; icon = "plug";
         inherit output;
         position = { row = 2; col = 2; };
-        size = { rows = 2; cols = 6; };
+        size = { rows = 2; cols = 5; };
     };
 
+    music = {
+        template = "music"; title = "Music"; icon = "plug";
+        inherit output;
+        position = { row = 2; col = 7; };
+        size = { rows = 4; cols = 4; };
+    };
 }

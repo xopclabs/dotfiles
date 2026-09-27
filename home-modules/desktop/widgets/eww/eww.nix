@@ -30,9 +30,18 @@ let
         instances = lib.listToAttrs (map (tile: {
             name = tile.id;
             value = { inherit (tile) source template; field = tile.field; };
-        }) tiles);
+        }) (lib.filter (tile: tile.template != "music") tiles));
     };
-    ui = import ./ui { inherit config lib pkgs tiles; inherit (grafana) query period; };
+    music = pkgs.writeShellScriptBin "eww-dashboard-music" ''
+        export EWW_BIN=${lib.getExe pkgs.eww}
+        export EWW_DASHBOARD_CONFIG=${ewwConfig}
+        exec ${pkgs.python3}/bin/python3 ${./music.py} "$@"
+    '';
+    visualizer = pkgs.writeShellScriptBin "eww-dashboard-visualizer" ''
+        export PATH=${lib.makeBinPath [ pkgs.pipewire pkgs.cava pkgs.playerctl ]}:"$PATH"
+        exec ${pkgs.python3}/bin/python3 ${./visualizer.py} "$@" ${./music.py}
+    '';
+    ui = import ./ui { inherit config lib pkgs tiles music visualizer; inherit (grafana) query period; };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         exec ${pkgs.bash}/bin/bash ${./launch.sh} \
             ${lib.getExe pkgs.eww} ${ewwConfig} ${pkgs.util-linux}/bin/flock \
@@ -72,8 +81,8 @@ in {
                     default = {};
                     type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
                         options = {
-                            source = lib.mkOption { type = lib.types.str; description = "Data source key in the Grafana query configuration."; };
-                            template = lib.mkOption { type = lib.types.enum [ "chart" "value" ]; };
+                            source = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Grafana source key; unused for music."; };
+                            template = lib.mkOption { type = lib.types.enum [ "chart" "value" "music" ]; };
                             headerAlignment = lib.mkOption {
                                 type = lib.types.nullOr (lib.types.enum [ "left" "center" ]);
                                 default = null;
@@ -113,8 +122,9 @@ in {
         assertions = [ {
             assertion = builtins.hasAttr cfg.page cfg.pages
                 && lib.all (tile:
-                    (if tile.template == "chart" then builtins.hasAttr tile.source queries.charts
-                     else builtins.hasAttr tile.source queries.values || builtins.hasAttr tile.source queries.charts)
+                    (if tile.template == "music" then tile.source == null
+                     else if tile.template == "chart" then tile.source != null && builtins.hasAttr tile.source queries.charts
+                     else tile.source != null && (builtins.hasAttr tile.source queries.values || builtins.hasAttr tile.source queries.charts))
                     && (tile.field == null || (tile.template == "value" &&
                         (if builtins.hasAttr tile.source queries.charts then
                             lib.any (series: series.field == tile.field) queries.charts.${tile.source}.series
@@ -126,7 +136,7 @@ in {
                     && tile.position.col + tile.size.cols <= grid.cols
                     && (tile.template != "chart" || (tile.size.rows >= 2 && tile.size.cols >= 3))) tiles
                 && lib.length (lib.unique occupied) == lib.length occupied;
-            message = "Eww tiles need a source matching their template, must fit without overlap, and trends need at least 2 rows and 3 columns.";
+            message = "Eww tiles need a source matching their template (except music), must fit without overlap, and trends need at least 2 rows and 3 columns.";
         } ];
 
         sops.secrets = {
@@ -141,7 +151,7 @@ in {
             };
         };
 
-        home.packages = [ pkgs.eww grafana.query grafana.period launch ];
+        home.packages = [ pkgs.eww grafana.query grafana.period music visualizer pkgs.playerctl pkgs.cava launch ];
 
         xdg.configFile."eww-dashboard/queries.json".text = builtins.toJSON queries;
         xdg.configFile."eww-dashboard/eww.yuck".text = ui.yuck;
