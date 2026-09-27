@@ -1,9 +1,10 @@
-(defwidget chart-tile [title icon data key plot_width]
+(defwidget chart-tile [title icon data key plot_width header_alignment]
   (box :class "tile chart-tile" :orientation "vertical" :space-evenly false
-    (box :class "header" :space-evenly false
-      (box :class "title" :hexpand true :space-evenly false
-        (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
-        (label :text title))
+    (box :class "header" :hexpand true :space-evenly false
+      (box :class "title-slot" :hexpand true
+        (box :class "title" :hexpand true :halign {header_alignment == "center" ? "center" : "start"} :space-evenly false
+          (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
+          (label :text title)))
       (eventbox :class "period-click" :onclick "eww-dashboard-period ${key}"
         (label :class "period" :text "${data.period}")))
     (box :class "graph" :orientation "horizontal" :space-evenly false
@@ -16,10 +17,16 @@
       (box :hexpand true)
       (label :class "series-two" :visible {data.legend2 != ""} :text {data.legend2}))))
 
-(defwidget value-tile [title icon data compact]
+(defwidget value-tile [title icon data compact header_alignment]
   (box :class {compact ? "tile value-tile compact" : "tile value-tile"} :orientation "vertical" :space-evenly false
-    (box :class "value-title" :halign "center" :space-evenly false
-      (image :class "tile-icon" :path icon :image-width {compact ? 14 : 18} :image-height {compact ? 14 : 18})
-      (label :text title))
-    (label :class "reading" :halign "center" :style "color: ${data.color};" :text {data.value})))
+    (centerbox :class "header" :orientation "horizontal" :hexpand true
+      (box :class "title" :visible {header_alignment == "left"} :space-evenly false
+        (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
+        (label :text title))
+      (box :class "title" :visible {header_alignment == "center"} :space-evenly false
+        (image :class "tile-icon" :path icon :image-width 18 :image-height 18)
+        (label :text title))
+      (box))
+    (label :class "reading" :hexpand true :vexpand true :halign "center" :valign "center"
+      :style "color: ${data.color};" :text {data.value})))
 

@@ -74,6 +74,11 @@ in {
                         options = {
                             source = lib.mkOption { type = lib.types.str; description = "Data source key in the Grafana query configuration."; };
                             template = lib.mkOption { type = lib.types.enum [ "chart" "value" ]; };
+                            headerAlignment = lib.mkOption {
+                                type = lib.types.nullOr (lib.types.enum [ "left" "center" ]);
+                                default = null;
+                                description = "Header alignment; defaults to left for charts and center for values.";
+                            };
                             field = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Named source field to show in a value widget; null selects the first."; };
                             title = lib.mkOption { type = lib.types.str; };
                             icon = lib.mkOption { type = lib.types.str; description = "Name of a generated icon PNG."; };

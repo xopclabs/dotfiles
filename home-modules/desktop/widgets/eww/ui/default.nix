@@ -12,6 +12,9 @@ let
     '';
     plotWidth = tile: tile.width - 56; # 12px padding on each side, 28px axis + 4px gap
     quote = value: builtins.toJSON value;
+    alignment = tile:
+        if tile.headerAlignment != null then tile.headerAlignment
+        else if tile.template == "chart" then "left" else "center";
     poll = tile: let
         initial = if tile.template == "chart" then
             { chart = toString ./empty.svg; high = "—"; low = "—"; legend1 = "—"; legend2 = ""; period = "1h"; }
@@ -26,7 +29,7 @@ let
           :monitor ${quote tile.output}
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
           :stacking "bottom" :namespace "eww-telemetry-${tile.id}"
-          (${if tile.template == "chart" then "chart-tile" else "value-tile"} :title ${quote tile.title} :icon "${icons}/${tile.icon}.png" :data ${tile.id}_data ${if tile.template == "chart" then '':key ${quote tile.id} :plot_width ${toString (plotWidth tile)}'' else '':compact ${if tile.size.rows == 1 then "true" else "false"}''}))
+          (${if tile.template == "chart" then "chart-tile" else "value-tile"} :title ${quote tile.title} :icon "${icons}/${tile.icon}.png" :data ${tile.id}_data :header_alignment ${quote (alignment tile)} ${if tile.template == "chart" then '':key ${quote tile.id} :plot_width ${toString (plotWidth tile)}'' else '':compact ${if tile.size.rows == 1 then "true" else "false"}''}))
     '';
 in {
     yuck = builtins.replaceStrings
