@@ -2,14 +2,15 @@
   "nodes": {
     "agents": {
       "inputs": {
+        "matt-pocock-skills": "matt-pocock-skills",
         "qmd": "qmd"
       },
       "locked": {
-        "lastModified": 1790510190,
-        "narHash": "sha256-Hd/Tfg1+LUV/8x5ZaV+nDP5IrnLmQ44yYxQJ1Xxy4v0=",
+        "lastModified": 1790515971,
+        "narHash": "sha256-O3sic+aP9C786qYWxnbgp5soVgdSm97B9aDk+s/jLyY=",
         "ref": "main",
-        "rev": "1bed041a9ab82286e9f6b0e93afbad3e3cb5267f",
-        "revCount": 19,
+        "rev": "92c585828597b014695d5f83897fd962297c64fd",
+        "revCount": 20,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/agents"
       },
@@ -593,6 +594,22 @@
         "owner": "xopclabs",
         "ref": "nix-flake-testbranch",
         "repo": "lrcget-cli",
+        "type": "github"
+      }
+    },
+    "matt-pocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1789726349,
+        "narHash": "sha256-L3CpIT2DeI+fUFl9fcygojtQo2DzEen69rMD1XqR1vM=",
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mattpocock",
+        "repo": "skills",
         "type": "github"
       }
     },
