@@ -22,8 +22,8 @@ case "$1" in
   ping) test -f "$MOCK_STATE/daemon" ;;
   daemon) sleep 0.15; touch "$MOCK_STATE/daemon" ;;
   kill) rm -f "$MOCK_STATE/daemon" "$MOCK_STATE/windows" ;;
-  active-windows) test ! -f "$MOCK_STATE/windows" || echo co2_chart ;;
-  open-many) touch "$MOCK_STATE/windows" ;;
+  active-windows) test ! -f "$MOCK_STATE/windows" || while read -r name; do echo "$name: $name"; done < "$MOCK_STATE/windows" ;;
+  open-many) shift; printf '%s\\n' "$@" >> "$MOCK_STATE/windows" ;;
   *) exit 1 ;;
 esac
 ''')
@@ -46,11 +46,17 @@ esac
             self.assertEqual(commands.count("warm"), 1)
             self.assertNotIn("poll", commands)
 
+            subprocess.run(cmd + ["prior_avg_power"], env=env, check=True, timeout=8)
+            commands = (tmp / "log").read_text().splitlines()
+            self.assertEqual(commands.count("open-many"), 2)
+            self.assertEqual(commands.count("warm"), 1)
+            self.assertIn("prior_avg_power", (tmp / "windows").read_text().splitlines())
+
             subprocess.run(cmd[:6] + ["--restart"] + cmd[6:], env=env, check=True, timeout=8)
             commands = (tmp / "log").read_text().splitlines()
             self.assertEqual(commands.count("kill"), 1)
             self.assertEqual(commands.count("daemon"), 2)
-            self.assertEqual(commands.count("open-many"), 2)
+            self.assertEqual(commands.count("open-many"), 3)
             self.assertEqual(commands.count("warm"), 2)
 
 

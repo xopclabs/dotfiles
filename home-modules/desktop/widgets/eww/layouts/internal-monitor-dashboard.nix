@@ -6,13 +6,19 @@ in {
         source = "co2"; template = "chart"; title = "CO₂"; icon = "lungs";
         inherit output;
         position = { row = 0; col = 0; };
-        size = { rows = 2; cols = 4; };
+        size = { rows = 2; cols = 5; };
     };
     temperature_chart = {
         source = "temperature"; template = "chart"; title = "Temperature"; icon = "temperature";
         inherit output;
-        position = { row = 0; col = 4; };
-        size = { rows = 2; cols = 6; };
+        position = { row = 0; col = 5; };
+        size = { rows = 2; cols = 4; };
+    };
+    humidity_value = {
+        source = "humidity"; template = "value"; title = "Humidity"; icon = "droplet";
+        inherit output;
+        position = { row = 0; col = 9; };
+        size = { rows = 2; cols = 2; };
     };
 
     today_power = {
@@ -22,7 +28,7 @@ in {
         size = { rows = 1; cols = 2; };
     };
     prior_avg_power = {
-        source = "prior_avg_power"; template = "value"; title = "30d avg · now"; icon = "bolt";
+        source = "prior_avg_power"; template = "value"; title = "Average"; icon = "bolt";
         inherit output;
         position = { row = 3; col = 0; };
         size = { rows = 1; cols = 2; };
@@ -34,10 +40,4 @@ in {
         size = { rows = 2; cols = 6; };
     };
 
-    humidity_value = {
-        source = "humidity"; template = "value"; title = "Humidity"; icon = "droplet";
-        inherit output;
-        position = { row = 4; col = 0; };
-        size = { rows = 2; cols = 2; };
-    };
 }
