@@ -3,6 +3,10 @@
 with lib;
 let
     cfg = config.homelab.reitti;
+    proxyPort = 10809;
+    singBoxPort = config.desktop.singbox.listenPort;
+    dockerGateway = "172.17.0.1";
+    reittiSubnet = "172.18.0.0/16";
 
     watcherScript = pkgs.writeShellScript "reitti-gps-watcher" ''
         set -euo pipefail
@@ -204,6 +208,10 @@ in
                 POSTGIS_USER = "reitti";
                 REDIS_HOST = "reitti-redis";
                 REDIS_PORT = "6379";
+                # Java's tile client uses an HTTP proxy, not SOCKS or HTTP_PROXY.
+                JAVA_TOOL_OPTIONS = "-Dhttps.proxyHost=host.docker.internal -Dhttps.proxyPort=${toString proxyPort} -Dhttp.nonProxyHosts=localhost|127.*|reitti-postgis|reitti-redis";
+                # The Docker profile defaults to a tile-cache container we don't run.
+                REITTI_UI_TILES_CACHE_URL = "";
                 TZ = cfg.timezone;
                 PROCESSING_WAIT_TIME = toString cfg.processingWaitTime;
             } // optionalAttrs (cfg.advertiseUri != "") {
@@ -217,8 +225,70 @@ in
             ];
             extraOptions = [
                 "--network=reitti-net"
+                "--add-host=host.docker.internal:host-gateway"
                 "--pull=always"
             ];
+        };
+
+        # Only Reitti's Docker network can reach the proxy bridge.
+        networking.firewall.extraCommands = ''
+            ${pkgs.iptables}/bin/iptables -C nixos-fw -s ${reittiSubnet} -d ${dockerGateway} -p tcp --dport ${toString proxyPort} -j nixos-fw-accept 2>/dev/null || \
+                ${pkgs.iptables}/bin/iptables -I nixos-fw -s ${reittiSubnet} -d ${dockerGateway} -p tcp --dport ${toString proxyPort} -j nixos-fw-accept
+        '';
+        networking.firewall.extraStopCommands = ''
+            ${pkgs.iptables}/bin/iptables -D nixos-fw -s ${reittiSubnet} -d ${dockerGateway} -p tcp --dport ${toString proxyPort} -j nixos-fw-accept 2>/dev/null || true
+        '';
+
+        # Expose the loopback-only sing-box proxy to Reitti's container.
+        systemd.services.reitti-tile-proxy = {
+            description = "Bridge Reitti tile requests to the local sing-box proxy";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "docker.service" "sing-box.service" ];
+            requires = [ "docker.service" "sing-box.service" ];
+            serviceConfig = {
+                Type = "simple";
+                Restart = "always";
+                RestartSec = "5s";
+            };
+            script = ''
+                GATEWAY=$(${pkgs.docker}/bin/docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')
+                test "$GATEWAY" = ${dockerGateway}
+                exec ${pkgs.python3}/bin/python3 - "$GATEWAY" <<'PY'
+                import asyncio
+                import sys
+
+                async def relay(reader, writer):
+                    try:
+                        while data := await reader.read(65536):
+                            writer.write(data)
+                            await writer.drain()
+                        writer.write_eof()
+                    except (ConnectionError, OSError):
+                        pass
+
+                async def forward(reader, writer):
+                    try:
+                        upstream_reader, upstream_writer = await asyncio.open_connection("127.0.0.1", ${toString singBoxPort})
+                        await asyncio.gather(relay(reader, upstream_writer), relay(upstream_reader, writer))
+                        upstream_writer.close()
+                        await upstream_writer.wait_closed()
+                    finally:
+                        writer.close()
+                        await writer.wait_closed()
+
+                async def main():
+                    server = await asyncio.start_server(forward, sys.argv[1], ${toString proxyPort})
+                    async with server:
+                        await server.serve_forever()
+
+                asyncio.run(main())
+                PY
+            '';
+        };
+
+        systemd.services.docker-reitti = {
+            after = [ "reitti-tile-proxy.service" ];
+            requires = [ "reitti-tile-proxy.service" ];
         };
 
         # Docker network for Reitti services
@@ -238,7 +308,8 @@ in
             };
             script = ''
                 ${pkgs.docker}/bin/docker network inspect reitti-net >/dev/null 2>&1 || \
-                    ${pkgs.docker}/bin/docker network create reitti-net
+                    ${pkgs.docker}/bin/docker network create --subnet=${reittiSubnet} reitti-net
+                test "$(${pkgs.docker}/bin/docker network inspect reitti-net --format '{{(index .IPAM.Config 0).Subnet}}')" = ${reittiSubnet}
             '';
         };
 
