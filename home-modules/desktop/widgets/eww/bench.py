@@ -19,7 +19,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent / "grafana"))
 import grafana.query as dashboard
 
-# Plot widths from layouts/internal-monitor-dashboard.nix (tile width minus 56).
+# Plot widths from the 11x6 grid (tile width minus 56).
 WIDTHS = {"co2": 264, "temperature": 328, "power": 360,
           "humidity": 0, "today_power": 0}
 QUERY = Path(__file__).parent / "grafana/query.py"
