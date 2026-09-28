@@ -57,6 +57,10 @@ in {
                                     mountOptions = defaultMountOptions;
                                     mountpoint = "/home/xopc/games";
                                 };
+                                "@home-music" = {
+                                    mountOptions = defaultMountOptions;
+                                    mountpoint = "/home/xopc/music";
+                                };
                                 "@home-steam" = {
                                     mountOptions = defaultMountOptions;
                                     mountpoint = "/home/xopc/.local/share/Steam";

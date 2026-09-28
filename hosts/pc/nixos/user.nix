@@ -19,9 +19,10 @@
         ];
     };
 
-    # Set correct ownership for games and steam directories
+    # Set correct ownership for games, music and steam directories
     systemd.tmpfiles.rules = [
         "d /home/${config.metadata.user}/games 0755 ${config.metadata.user} users -"
+        "d /home/${config.metadata.user}/music 0755 ${config.metadata.user} users -"
         "d /home/${config.metadata.user}/.local 0755 ${config.metadata.user} users -"
         "d /home/${config.metadata.user}/.local/share 0755 ${config.metadata.user} users -"
         "Z /home/${config.metadata.user}/.local/share - ${config.metadata.user} users -"
