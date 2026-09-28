@@ -422,7 +422,7 @@
                       "editorMode": "code",
                       "format": "time_series",
                       "rawQuery": true,
-                      "rawSql": "WITH samples AS (\n  SELECT COALESCE(measured_at, received_at) AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'apower')::double precision) AS watts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'apower'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device ELSE 'All outlets' END AS metric,\n  sum(watts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
+                      "rawSql": "WITH samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'apower')::double precision) AS watts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'apower'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device ELSE 'All outlets' END AS metric,\n  sum(watts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
                     },
                     "version": "v0"
                   },
@@ -544,7 +544,7 @@
                       "editorMode": "code",
                       "format": "time_series",
                       "rawQuery": true,
-                      "rawSql": "WITH samples AS (\n  SELECT COALESCE(measured_at, received_at) AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'voltage')::double precision) AS volts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'voltage'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device || ' voltage' ELSE 'Average voltage' END AS metric,\n  avg(volts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
+                      "rawSql": "WITH samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'voltage')::double precision) AS volts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'voltage'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device || ' voltage' ELSE 'Average voltage' END AS metric,\n  avg(volts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
                     },
                     "version": "v0"
                   },
