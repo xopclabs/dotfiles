@@ -40,6 +40,8 @@ in
                 CREATE TABLE IF NOT EXISTS mqtt_messages (
                     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                     received_at timestamptz NOT NULL DEFAULT now(),
+                    measured_at timestamptz,
+                    ingress_id uuid,
                     topic text NOT NULL,
                     payload jsonb,
                     payload_text text,
@@ -47,8 +49,24 @@ in
                     retained boolean NOT NULL,
                     CHECK ((payload IS NULL) <> (payload_text IS NULL))
                 );
+                ALTER TABLE mqtt_messages ADD COLUMN IF NOT EXISTS measured_at timestamptz;
+                ALTER TABLE mqtt_messages ADD COLUMN IF NOT EXISTS ingress_id uuid;
+                CREATE UNIQUE INDEX IF NOT EXISTS mqtt_messages_ingress_id_idx ON mqtt_messages (ingress_id);
+                CREATE TABLE IF NOT EXISTS mqtt_dead_letters (
+                    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                    received_at timestamptz NOT NULL DEFAULT now(),
+                    topic text NOT NULL,
+                    payload bytea NOT NULL,
+                    error text NOT NULL,
+                    ingress_id uuid
+                );
+                ALTER TABLE mqtt_dead_letters ADD COLUMN IF NOT EXISTS ingress_id uuid;
+                CREATE UNIQUE INDEX IF NOT EXISTS mqtt_dead_letters_ingress_id_idx ON mqtt_dead_letters (ingress_id);
                 CREATE INDEX IF NOT EXISTS mqtt_messages_topic_received_idx ON mqtt_messages (topic, received_at DESC);
                 CREATE INDEX IF NOT EXISTS mqtt_messages_received_idx ON mqtt_messages (received_at DESC);
+                CREATE INDEX IF NOT EXISTS mqtt_messages_air_sample_time_idx
+                    ON mqtt_messages (COALESCE(measured_at, received_at) DESC)
+                    WHERE topic = 'apartment/room/air-quality';
                 SQL
             '';
         };
