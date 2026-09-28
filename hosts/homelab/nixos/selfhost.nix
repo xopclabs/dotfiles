@@ -323,10 +323,12 @@
             enable = true;
             subdomain = "syncthing.vm.local";
             openDefaultPorts = false;
+            settings.devices.pc.id = "PIMMINM-OZ2RB4W-GFD2RQA-3ZO3QKU-45KEUMG-QX24MBD-FRHD63M-L3P5KAK";
             folders = {
                 music = {
                     path = config.metadata.selfhost.storage.media.musicDir;
                     label = "Music";
+                    devices = [ "pc" ];
                 };
             };
         };

@@ -79,6 +79,16 @@
         lact.enable = true;
         flatpak.enable = true;
         localsend.enable = true;
+        syncthing = {
+            enable = true;
+            devices.homelab.id = "ZSMOZMP-AE5H625-FXHLVUI-WWDAFFR-Y6KZ6S2-6IGEMRT-CEWYQUL-A55LEAA";
+            folders.music = {
+                path = "/home/${config.metadata.user}/music";
+                label = "Music";
+                type = "receiveonly";
+                devices = [ "homelab" ];
+            };
+        };
         ddcutil.enable = true;
         touchUnlock = {
             enable = true;

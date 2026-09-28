@@ -10,6 +10,7 @@
         ./flatpak.nix
         ./yeetmouse.nix
         ./localsend.nix
+        ./syncthing.nix
         ./p81
         ./virtual_webcam.nix
         ./ereader-relay.nix
