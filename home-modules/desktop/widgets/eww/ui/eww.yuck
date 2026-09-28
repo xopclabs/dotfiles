@@ -24,7 +24,7 @@
     (label :class "music-title" :limit-width 32 :wrap true :lines 2 :justify "center" :text {data.title})
     (label :class "music-artist" :limit-width 32 :wrap true :lines 2 :text {data.artist})
     (box :class "music-metadata-gap" :vexpand {!data.has_lyrics || music_show_visualizer})
-    (eventbox :visible large :onclick "eww update music_show_visualizer=${!music_show_visualizer}"
+    (eventbox :visible large :onclick "eww update music_show_visualizer=${data.has_lyrics ? !music_show_visualizer : music_show_visualizer}"
       (box :class "music-lower" :hexpand true :orientation "vertical" :space-evenly false
         (stack :visible {data.has_lyrics && !music_show_visualizer} :selected {data.lyric_slot} :transition "slideup" :same-size true
           (music-lyric-frame :lines {data.lyrics0})
