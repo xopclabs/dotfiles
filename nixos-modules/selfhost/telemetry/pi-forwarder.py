@@ -24,6 +24,9 @@ def spool(path):
         id TEXT PRIMARY KEY, sequence INTEGER NOT NULL UNIQUE,
         topic TEXT NOT NULL, payload BLOB NOT NULL, qos INTEGER NOT NULL, retained INTEGER NOT NULL
     )""")
+    columns = {row[1] for row in db.execute("PRAGMA table_info(messages)")}
+    if "captured_at_epoch" not in columns:
+        db.execute("ALTER TABLE messages ADD COLUMN captured_at_epoch REAL")
     db.execute("CREATE TABLE IF NOT EXISTS counter (value INTEGER NOT NULL)")
     db.execute("INSERT INTO counter SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM counter)")
     db.commit()
@@ -66,8 +69,10 @@ class Forwarder:
         try:
             with self.lock:
                 self.db.execute("UPDATE counter SET value = value + 1")
-                self.db.execute("INSERT INTO messages SELECT ?, value, ?, ?, ?, ? FROM counter",
-                                (identifier, message.topic, message.payload, message.qos, int(message.retain)))
+                self.db.execute("INSERT INTO messages (id, sequence, topic, payload, qos, retained, captured_at_epoch) "
+                                "SELECT ?, value, ?, ?, ?, ?, ? FROM counter",
+                                (identifier, message.topic, message.payload, message.qos,
+                                 int(message.retain), time.time()))
                 self.db.commit()
             # Local broker may forget the delivery now; the copy is fsynced in SQLite.
             result = client.ack(message.mid, message.qos)
@@ -111,13 +116,15 @@ class Forwarder:
             return
         now = time.monotonic()
         with self.lock:
-            rows = self.db.execute("SELECT id, topic, payload, qos, retained FROM messages ORDER BY sequence LIMIT 100").fetchall()
-            for identifier, topic, payload, qos, retained in rows:
+            rows = self.db.execute("SELECT id, topic, payload, qos, retained, captured_at_epoch "
+                                   "FROM messages ORDER BY sequence LIMIT 100").fetchall()
+            for identifier, topic, payload, qos, retained, captured_at_epoch in rows:
                 if now - self.pending.get(identifier, -100) < 10:
                     continue
                 data = json.dumps({"id": identifier, "topic": topic,
                                    "payload": base64.b64encode(payload).decode("ascii"),
-                                   "qos": qos, "retained": bool(retained)}, separators=(",", ":"))
+                                   "qos": qos, "retained": bool(retained),
+                                   "captured_at_epoch": captured_at_epoch}, separators=(",", ":"))
                 result = self.remote.publish("telemetry/forward", data, qos=1)
                 if result.rc != mqtt.MQTT_ERR_SUCCESS:
                     self.connected.clear()

@@ -44,6 +44,26 @@ class ForwarderTests(unittest.TestCase):
             forwarder.db.close()
             self.assertEqual(self.module.spool(path).execute("SELECT count(*) FROM messages").fetchone()[0], 0)
 
+    def test_shelly_capture_time_survives_restart_and_replay(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            path = str(Path(directory) / "queue.sqlite")
+            first = self.module.Forwarder(self.module.spool(path), "local", "remote")
+            first.local.ack.return_value = 0
+            with patch.object(self.module.time, "time", return_value=1700000000):
+                first.on_local_message(first.local, None,
+                                       types.SimpleNamespace(topic="apartment/kitchen/plug/status/switch:0",
+                                                             payload=b'{"apower":42}', qos=0,
+                                                             retain=False, mid=2))
+            first.db.close()
+            second = self.module.Forwarder(self.module.spool(path), "local", "remote")
+            second.connected.set()
+            second.remote.publish.return_value.rc = 0
+            second.send_pending()
+            envelope = json.loads(second.remote.publish.call_args.args[1])
+            self.assertEqual(envelope["captured_at_epoch"], 1700000000)
+            second.db.close()
+
     def test_unacknowledged_messages_survive_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             path = str(Path(directory) / "queue.sqlite")
