@@ -4,6 +4,7 @@
     fetchFromGitHub,
     gradle_9,
     jdk25,
+    runCommand,
     writeText,
 }:
 
@@ -26,10 +27,32 @@ stdenv.mkDerivation (finalAttrs: {
 
     nativeBuildInputs = [ gradle jdk25 ];
 
-    mitmCache = gradle.fetchDeps {
-        pkg = finalAttrs.finalPackage;
-        data = ./deps.json;
-    };
+    # Loom requests Mojang's mutable version list even for a pinned Minecraft release.
+    # Supply a stable, minimal list for 26.2 instead of hashing the changing endpoint.
+    # If regenerating deps.json, remove its version_manifest_v2 entry again.
+    mitmCache = let
+        fetched = gradle.fetchDeps {
+            pkg = finalAttrs.finalPackage;
+            data = ./deps.json;
+        };
+        manifest = writeText "version_manifest_v2.json" (builtins.toJSON {
+            latest = { release = "26.2"; snapshot = "26.2"; };
+            versions = [{
+                id = "26.2";
+                type = "release";
+                url = "https://piston-meta.mojang.com/v1/packages/bc42e43dfe43d65a2f6c2c1dbb322c75134e51fe/26.2.json";
+                time = "2026-09-11T06:44:16+00:00";
+                releaseTime = "2026-06-16T12:03:33+00:00";
+                sha1 = "bc42e43dfe43d65a2f6c2c1dbb322c75134e51fe";
+                complianceLevel = 1;
+            }];
+        });
+    in runCommand "trmt-deps-pinned-manifest" {} ''
+        cp -r ${fetched}/. "$out/"
+        find "$out" -type d -exec chmod u+w {} +
+        mkdir -p "$out/https/piston-meta.mojang.com/mc/game"
+        ln -s ${manifest} "$out/https/piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+    '';
 
     # Loom replaces the jar task; nixpkgs' reproducible-archive init script breaks that.
     gradleInitScript = writeText "empty-init-script.gradle" "";

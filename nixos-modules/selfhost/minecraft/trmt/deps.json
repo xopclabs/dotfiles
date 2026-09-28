@@ -529,9 +529,6 @@
   }
  },
  "https://piston-meta.mojang.com": {
-  "mc/game/version_manifest_v2": {
-   "json": "sha256-iipUC9FUbREQlJPFfCIHhpFBz/FDeVaOB6tKnBqlIys="
-  },
   "v1/packages/bc42e43dfe43d65a2f6c2c1dbb322c75134e51fe/26.2": {
    "json": "sha256-RJ9CpycEmrIj2X7eyh/S3txojR/L4MLIT2oPRQ0Hs1w="
   }
