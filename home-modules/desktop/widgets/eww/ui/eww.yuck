@@ -8,9 +8,9 @@
   (box :class "tile music-tile" :orientation "vertical" :space-evenly false
     (box :class "music-edge")
     (centerbox :class "music-art-row" :hexpand true
-      (eventbox :hexpand true :onclick "eww-dashboard-music previous"
+      (eventbox :hexpand true :timeout "2s" :onclick "eww-dashboard-music previous"
         (box :class "music-skip-zone" :hexpand true :vexpand true :height art_size))
-      (eventbox :class "music-art" :onclick "eww-dashboard-music art-click"
+      (eventbox :class "music-art" :timeout "2s" :onclick "eww-dashboard-music art-click"
         (overlay
           (box
             (image :visible {data.art != ""} :path {data.art} :image-width art_size :image-height art_size)
@@ -18,10 +18,10 @@
           (revealer :transition "crossfade" :duration "180ms" :reveal {feedback != ""} :halign "center" :valign "center"
             (image :class "music-feedback" :path "${feedback_icons}/${feedback == "" ? "play" : feedback}.svg"
               :image-width 36 :image-height 36))))
-      (eventbox :hexpand true :onclick "eww-dashboard-music next"
+      (eventbox :hexpand true :timeout "2s" :onclick "eww-dashboard-music next"
         (box :class "music-skip-zone" :hexpand true :vexpand true :height art_size)))
     (box :class "music-art-gap")
-    (label :class "music-title" :limit-width 32 :wrap true :lines 2 :text {data.title})
+    (label :class "music-title" :limit-width 32 :wrap true :lines 2 :justify "center" :text {data.title})
     (label :class "music-artist" :limit-width 32 :wrap true :lines 2 :text {data.artist})
     (box :class "music-metadata-gap" :vexpand {!data.has_lyrics || music_show_visualizer})
     (eventbox :visible large :onclick "eww update music_show_visualizer=${!music_show_visualizer}"

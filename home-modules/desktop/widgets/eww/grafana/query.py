@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Grafana data and timestamp-preserving SVGs for the Eww dashboard."""
 import json
+import subprocess
 import math
 import os
 from pathlib import Path
@@ -155,5 +156,21 @@ def main(config_path, cache_path, instance, period_path, plot_width):
                           "period": "?", "value": "—", "color": "#d8dee9"}))
 
 
+def listen(*args):
+    command = [sys.executable, __file__, "once", *args]
+    while True:
+        start = time.monotonic()
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=20)
+            if result.returncode == 0 and result.stdout.strip():
+                print(result.stdout.strip().splitlines()[-1], flush=True)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        time.sleep(max(0, 60 - (time.monotonic() - start)))
+
+
 if __name__ == "__main__":
-    main(*sys.argv[1:6])
+    if sys.argv[1] == "listen":
+        listen(*sys.argv[2:7])
+    else:
+        main(*sys.argv[2:7])
