@@ -130,6 +130,18 @@ class IngesterTests(unittest.TestCase):
         self.assertEqual(db.statements[0][1][-1], identifier)
         self.client.publish.assert_called_once_with("telemetry/ack/" + identifier, qos=1)
 
+    def test_forwarded_shelly_uses_pi_capture_time(self):
+        data = {"id": "25e22fd0-2e46-429f-a13b-31d83b7257f0",
+                "topic": "apartment/kitchen/plug/status/switch:0",
+                "payload": base64.b64encode(b'{"apower":42}').decode(),
+                "qos": 0, "retained": False, "captured_at_epoch": 1700000000}
+        self.message.topic = "telemetry/forward"
+        self.message.payload = json.dumps(data).encode()
+        db = Database()
+        with patch.object(self.ingest, "connect_db", return_value=db):
+            self.ingest.on_message(self.client, None, self.message)
+        self.assertEqual(db.statements[0][1][-2].timestamp(), 1700000000)
+
     def test_persistent_manual_ack_session(self):
         with patch.object(self.ingest, "open", create=True) as password, patch.object(self.ingest.os, "environ", {"MQTT_PASSWORD_FILE": "/fake"}):
             password.return_value.__enter__.return_value.read.return_value = "secret"

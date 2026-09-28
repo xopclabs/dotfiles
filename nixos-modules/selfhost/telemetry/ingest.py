@@ -43,7 +43,7 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
 
 def unwrap(message):
     if message.topic != "telemetry/forward":
-        return None, message.topic, message.payload, message.qos, message.retain
+        return None, message.topic, message.payload, message.qos, message.retain, None
     envelope = json.loads(message.payload)
     identifier = str(UUID(envelope["id"]))
     topic = envelope["topic"]
@@ -54,13 +54,16 @@ def unwrap(message):
     retained = envelope["retained"]
     if qos not in (0, 1, 2) or not isinstance(retained, bool):
         raise ValueError("Invalid forwarded MQTT flags")
-    return identifier, topic, payload, qos, retained
+    captured = envelope.get("captured_at_epoch")
+    if captured is not None and (type(captured) not in (int, float) or not 0 < captured < 4102444800):
+        raise ValueError("Invalid capture time")
+    return identifier, topic, payload, qos, retained, captured
 
 
 def on_message(client, userdata, message):
     global db
     try:
-        identifier, topic, raw, qos, retained = unwrap(message)
+        identifier, topic, raw, qos, retained, captured = unwrap(message)
     except (ValueError, KeyError, TypeError, UnicodeDecodeError, binascii.Error):
         log.exception("Invalid telemetry envelope; keeping it in MQTT for investigation")
         raise
@@ -81,7 +84,10 @@ def on_message(client, userdata, message):
                 cur.execute(
                     "INSERT INTO mqtt_messages (topic, payload, payload_text, qos, retained, measured_at, ingress_id) "
                     "VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (ingress_id) DO NOTHING",
-                    (topic, payload, payload_text, qos, retained, measurement_time(topic, value), identifier),
+                    (topic, payload, payload_text, qos, retained,
+                     measurement_time(topic, value) or
+                     (datetime.fromtimestamp(captured, timezone.utc) if captured is not None and
+                      topic.startswith("apartment/") and "/status/switch:" in topic else None), identifier),
                 )
         except (psycopg.DataError, psycopg.IntegrityError) as error:
             log.error("Invalid MQTT message on %s (SQLSTATE %s); storing in dead letters",
