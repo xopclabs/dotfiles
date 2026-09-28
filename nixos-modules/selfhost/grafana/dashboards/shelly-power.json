@@ -1,4 +1,12 @@
 {
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "apartment-power",
+    "namespace": "default",
+    "uid": "2a0d3688-3820-4eaf-b10c-2583520f5fe1"
+  },
+  "spec": {
   "annotations": [
     {
       "kind": "AnnotationQuery",
@@ -938,4 +946,5 @@
       }
     }
   ]
+  }
 }
