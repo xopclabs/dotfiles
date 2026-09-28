@@ -89,17 +89,13 @@
                 WITH bounds AS (
                   SELECT $__timeFrom()::timestamptz AS start_at,
                          $__timeTo()::timestamptz AS end_at
-                ), selected_device AS (
-                  SELECT split_part(topic, '/', 3) AS device,
-                         GREATEST(max((payload->'aenergy'->>'total')::double precision)
-                           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh
+                ), selected_topics AS (
+                  SELECT topic
                   FROM mqtt_messages, bounds
                   WHERE received_at >= bounds.start_at AND received_at <= bounds.end_at
                     AND topic LIKE 'apartment/%/%/status/switch:0'
-                    AND payload ? 'aenergy'
                     AND payload->'aenergy'->>'total' IS NOT NULL
-                  GROUP BY 1
-                  HAVING count(*) >= 2
+                  GROUP BY topic HAVING count(*) >= 2
                 ), windows AS (
                   SELECT n,
                          ((b.start_at AT TIME ZONE 'Europe/Madrid') - n * interval '1 day')
@@ -108,25 +104,31 @@
                            AT TIME ZONE 'Europe/Madrid' AS end_at
                   FROM bounds b CROSS JOIN generate_series(1, 30) AS days(n)
                 ), covered_device AS (
-                  SELECT w.n, split_part(m.topic, '/', 3) AS device,
-                         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)
-                           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh
-                  FROM windows w CROSS JOIN bounds b
-                  JOIN mqtt_messages m ON m.received_at >= w.start_at AND m.received_at <= w.end_at
-                    AND m.topic LIKE 'apartment/%/%/status/switch:0'
-                    AND m.payload ? 'aenergy'
-                    AND m.payload->'aenergy'->>'total' IS NOT NULL
-                  WHERE w.end_at <= b.start_at
-                    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)
-                  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)
-                  HAVING count(*) >= 2
-                    AND min(m.received_at) <= w.start_at + interval '15 minutes'
-                    AND max(m.received_at) >= w.end_at - interval '15 minutes'
+                  SELECT w.n,
+                         GREATEST(last_sample.total - first_sample.total, 0) / 1000.0 AS kwh
+                  FROM windows w CROSS JOIN selected_topics t
+                  JOIN LATERAL (
+                    SELECT received_at, (payload->'aenergy'->>'total')::double precision AS total
+                    FROM mqtt_messages
+                    WHERE topic = t.topic AND received_at >= w.start_at
+                      AND received_at <= w.start_at + interval '15 minutes'
+                      AND payload->'aenergy'->>'total' IS NOT NULL
+                    ORDER BY received_at ASC LIMIT 1
+                  ) first_sample ON true
+                  JOIN LATERAL (
+                    SELECT received_at, (payload->'aenergy'->>'total')::double precision AS total
+                    FROM mqtt_messages
+                    WHERE topic = t.topic AND received_at >= w.end_at - interval '15 minutes'
+                      AND received_at <= w.end_at
+                      AND payload->'aenergy'->>'total' IS NOT NULL
+                    ORDER BY received_at DESC LIMIT 1
+                  ) last_sample ON true
+                  WHERE first_sample.received_at < last_sample.received_at
                 ), complete_windows AS (
                   SELECT n, sum(kwh) AS kwh
                   FROM covered_device
                   GROUP BY n
-                  HAVING count(*) = (SELECT count(*) FROM selected_device)
+                  HAVING count(*) = (SELECT count(*) FROM selected_topics)
                 )
                 SELECT avg(kwh) AS "Prior avg" FROM complete_windows
             '';
