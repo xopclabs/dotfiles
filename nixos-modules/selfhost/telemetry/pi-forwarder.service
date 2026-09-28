@@ -1,0 +1,25 @@
+[Unit]
+Description=Spool apartment MQTT until homelab PostgreSQL acknowledges it
+After=network-online.target mosquitto.service
+Requires=mosquitto.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=telemetry-forwarder
+Group=telemetry-forwarder
+Environment=FORWARDER_DB=/var/lib/telemetry-forwarder/queue.sqlite
+Environment=FORWARDER_LOCAL_PASSWORD_FILE=/etc/telemetry-forwarder/local-password
+Environment=FORWARDER_REMOTE_PASSWORD_FILE=/etc/telemetry-forwarder/remote-password
+ExecStart=/usr/bin/python3 -u /usr/local/libexec/telemetry-forwarder.py
+Restart=always
+RestartSec=5
+StateDirectory=telemetry-forwarder
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/telemetry-forwarder
+
+[Install]
+WantedBy=multi-user.target
