@@ -22,14 +22,14 @@ let
     alignment = tile:
         if tile.headerAlignment != null then tile.headerAlignment
         else if tile.template == "chart" then "left" else "center";
-    poll = tile: let
+    listen = tile: let
         initial = if tile.template == "chart" then
             { chart = toString ./empty.svg; high = "—"; low = "—"; legend1 = "—"; legend2 = ""; period = "1h"; }
         else { value = "—"; color = "#d8dee9"; };
         width = if tile.template == "chart" then plotWidth tile else 0;
     in ''
-        (defpoll ${tile.id}_data :interval "60s" :initial ${quote (builtins.toJSON initial)}
-          `${lib.getExe query} ${tile.id} ${toString width}`)
+        (deflisten ${tile.id}_data :initial ${quote (builtins.toJSON initial)}
+          `${lib.getExe query} listen ${tile.id} ${toString width}`)
     '';
     window = tile: if tile.template == "music" then ''
         (defwindow ${tile.id}
@@ -50,12 +50,12 @@ in {
         [ (lib.getExe period) (lib.getExe music) "${lib.getExe pkgs.eww} --config ${config.xdg.configHome}/eww-dashboard update" ]
         (builtins.readFile ./eww.yuck)
         + (if lib.any (tile: tile.template == "music") tiles then ''
-            (defpoll music_data :interval "1s" :initial ${quote (builtins.toJSON { art = ""; title = "Nothing playing"; artist = ""; playing = false; lyrics0 = { previous = ""; current = ""; next = ""; pending = false; }; lyrics1 = { previous = ""; current = ""; next = ""; pending = false; }; lyric_slot = 0; has_lyrics = false; })} `${lib.getExe music}`)
+            (deflisten music_data :initial ${quote (builtins.toJSON { art = ""; title = "Nothing playing"; artist = ""; playing = false; lyrics0 = { previous = ""; current = ""; next = ""; pending = false; }; lyrics1 = { previous = ""; current = ""; next = ""; pending = false; }; lyric_slot = 0; has_lyrics = false; })} `${lib.getExe music} listen`)
             (deflisten music_bars :initial ${quote (toString ./empty.svg)} `${lib.getExe visualizer} ${toString ((lib.head (lib.filter (tile: tile.template == "music") tiles)).width - 24)}`)
             (defvar music_show_visualizer false)
             (defvar music_feedback "")
           '' else "")
-        + "\n" + lib.concatMapStringsSep "\n" poll (lib.filter (tile: tile.template != "music") tiles)
+        + "\n" + lib.concatMapStringsSep "\n" listen (lib.filter (tile: tile.template != "music") tiles)
         + "\n" + lib.concatMapStringsSep "\n" window tiles;
     scss = ./eww.scss;
 }

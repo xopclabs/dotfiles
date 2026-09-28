@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import concurrent.futures
 import fcntl
 import hashlib
 import json
@@ -17,7 +18,10 @@ CACHE = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))) / "e
 
 
 def playerctl(*args):
-    return subprocess.run(["playerctl", *args], capture_output=True, text=True).stdout.strip()
+    try:
+        return subprocess.run(["playerctl", *args], capture_output=True, text=True, timeout=0.5).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
 
 
 def active_player():
@@ -110,23 +114,58 @@ def album_art(url):
     return str(file)
 
 
-def state():
-    player = active_player()
+def metadata(player):
     separator = "\x1f"
     fields = playerctl("-p", player, "metadata", "--format",
                        "{{artist}}" + separator + "{{title}}" + separator + "{{mpris:artUrl}}") if player else ""
-    artist, title, art_url = (fields.split(separator) + ["", "", ""])[:3]
-    art = album_art(art_url)
+    return (fields.split(separator) + ["", "", ""])[:3]
+
+
+def publish(player, artist, title, art, text):
     try:
         position = float(playerctl("-p", player, "position")) if player else 0
     except ValueError:
         position = 0
-    lines = lyric_lines(lyrics(artist, title), position) if player else lyric_lines("", 0)
-    key = [player, artist, title, lines["index"]]
-    frames = lyric_frames(lines, key)
+    lines = lyric_lines(text, position)
+    frames = lyric_frames(lines, [player, artist, title, lines["index"]])
     print(json.dumps({"player": player, "artist": artist or "No artist", "title": title or "Nothing playing",
                       "art": art, "playing": playerctl("-p", player, "status") == "Playing" if player else False,
-                      "has_lyrics": lines["has_lyrics"], **frames}))
+                      "has_lyrics": lines["has_lyrics"], **frames}), flush=True)
+
+
+def state():
+    player = active_player()
+    artist, title, art_url = metadata(player)
+    publish(player, artist, title, album_art(art_url), lyrics(artist, title))
+
+
+def listen():
+    # Network lookups must not hold up the lyric clock. Never wait for an obsolete track's lookup.
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+    key = None
+    art = text = ""
+    pending = None
+    try:
+        while True:
+            start = time.monotonic()
+            player = active_player()
+            artist, title, art_url = metadata(player)
+            current = (player, artist, title, art_url)
+            if current != key:
+                key = current
+                art = text = ""
+                pending = executor.submit(lambda url, a, t: (album_art(url), lyrics(a, t)),
+                                          art_url, artist, title) if player else None
+            if pending is not None and pending.done():
+                try:
+                    art, text = pending.result()
+                except Exception:
+                    art = text = ""
+                pending = None
+            publish(player, artist, title, art, text)
+            time.sleep(max(0, 0.25 - (time.monotonic() - start)))
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 def feedback(icon):
@@ -138,8 +177,11 @@ def feedback(icon):
     runtime = Path(os.environ.get("XDG_RUNTIME_DIR", str(CACHE)))
     runtime.mkdir(parents=True, exist_ok=True)
     (runtime / "eww-dashboard-music-feedback").write_text(token)
-    subprocess.run([eww, "--config", config, "update", f"music_feedback={icon}"], check=False,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        subprocess.run([eww, "--config", config, "update", f"music_feedback={icon}"], check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=0.5)
+    except (OSError, subprocess.TimeoutExpired):
+        return
     subprocess.Popen([sys.executable, __file__, "feedback-clear", token], start_new_session=True,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -176,13 +218,14 @@ def art_click():
             state_path.write_text(json.dumps({"time": now, "token": token}))
             double = False
     if double:
-        feedback("open")
         focus(active_player())
+        feedback("open")
     else:
         player = active_player()
-        feedback("pause" if player and playerctl("-p", player, "status") == "Playing" else "play")
+        icon = "pause" if player and playerctl("-p", player, "status") == "Playing" else "play"
         subprocess.Popen([sys.executable, __file__, "art-worker", token],
                          start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        feedback(icon)
 
 
 def art_worker(token):
@@ -200,7 +243,20 @@ def art_worker(token):
         state_path.unlink(missing_ok=True)
     player = active_player()
     if player:
-        subprocess.run(["playerctl", "-p", player, "play-pause"], check=False)
+        try:
+            subprocess.run(["playerctl", "-p", player, "play-pause"], check=False, timeout=1)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+
+def skip(direction):
+    player = active_player()
+    if player:
+        try:
+            subprocess.run(["playerctl", "-p", player, direction], check=False, timeout=1)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        feedback(direction)
 
 
 def focus(player):
@@ -219,16 +275,15 @@ def focus(player):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "art-click":
+    if len(sys.argv) > 1 and sys.argv[1] == "listen":
+        listen()
+    elif len(sys.argv) > 1 and sys.argv[1] == "art-click":
         art_click()
     elif len(sys.argv) > 2 and sys.argv[1] == "art-worker":
         art_worker(sys.argv[2])
     elif len(sys.argv) > 2 and sys.argv[1] == "feedback-clear":
         clear_feedback(sys.argv[2])
     elif len(sys.argv) > 1 and sys.argv[1] in ("previous", "next"):
-        player = active_player()
-        if player:
-            feedback(sys.argv[1])
-            subprocess.run(["playerctl", "-p", player, sys.argv[1]], check=False)
+        skip(sys.argv[1])
     else:
         state()

@@ -30,8 +30,8 @@ def stream_serial(player):
     if not player or playerctl("-p", player, "status") != "Playing":
         return None
     try:
-        nodes = json.loads(subprocess.check_output(["pw-dump"], stderr=subprocess.DEVNULL))
-    except (OSError, ValueError, subprocess.CalledProcessError):
+        nodes = json.loads(subprocess.check_output(["pw-dump"], stderr=subprocess.DEVNULL, timeout=0.5))
+    except (OSError, ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return None
     name = player.split(".")[0].lower()
     for node in nodes:
@@ -152,7 +152,7 @@ channels = mono
                         last_emitted = None
                         interval = 1 / 24
                         next_frame = time.monotonic()
-                        deadline = next_frame + 3
+                        deadline = next_frame + 1
                         while recorder.poll() is None and cava.poll() is None:
                             now = time.monotonic()
                             ready, _, _ = select.select([fd, audio_fd], [], [], min(0.1, max(0, next_frame - now)))
@@ -190,9 +190,9 @@ channels = mono
                                     last_emitted = levels[:]
                                 next_frame = max(next_frame + interval, now + interval * 0.5)
                             if now >= deadline:
-                                if serial != stream_serial(active_player()):
+                                if active_player() != player or playerctl("-p", player, "status") != "Playing":
                                     break
-                                deadline = time.monotonic() + 3
+                                deadline = time.monotonic() + 1
                     finally:
                         stop(recorder)
                         recorder.stdout.close()

@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, call, patch
 import xml.etree.ElementTree as ET
 
 HERE = Path(__file__).parent.parent
@@ -18,8 +18,38 @@ def load(name, directory):
 
 
 query = load("query", "grafana")
+music = load("music", ".")
 
 class DashboardTests(unittest.TestCase):
+    def test_grafana_listener_bounds_each_query_and_keeps_publishing(self):
+        from subprocess import TimeoutExpired
+        results = [TimeoutExpired("query", 20), type("Result", (), {"returncode": 0, "stdout": '{"value":"ok"}\n'})()]
+        def run(*args, **kwargs):
+            result = results.pop(0)
+            if isinstance(result, BaseException):
+                raise result
+            return result
+        with patch.object(query.subprocess, "run", side_effect=run) as process, \
+             patch.object(query.time, "sleep", side_effect=[None, KeyboardInterrupt]), \
+             patch("builtins.print") as output:
+            with self.assertRaises(KeyboardInterrupt):
+                query.listen("config", "cache", "tile", "period", "0")
+        self.assertEqual(process.call_count, 2)
+        self.assertEqual(process.call_args.kwargs["timeout"], 20)
+        output.assert_called_once_with('{"value":"ok"}', flush=True)
+
+    def test_skip_dispatches_before_feedback(self):
+        with patch.object(music, "active_player", return_value="Feishin"), \
+             patch.object(music.subprocess, "run") as action, \
+             patch.object(music, "feedback") as feedback:
+            calls = Mock()
+            calls.attach_mock(action, "action")
+            calls.attach_mock(feedback, "feedback")
+            music.skip("next")
+            self.assertEqual(calls.mock_calls[0].args[0][-1], "next")
+            self.assertEqual(calls.mock_calls[1], call.feedback("next"))
+            self.assertEqual(action.call_args.kwargs["timeout"], 1)
+
     def test_all_chart_instances_keep_seven_day_first_and_peak(self):
         week = 7 * 24 * 3600 * 1000
         now = 2 * week
