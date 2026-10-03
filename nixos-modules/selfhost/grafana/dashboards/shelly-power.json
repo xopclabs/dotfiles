@@ -7,944 +7,1035 @@
     "uid": "2a0d3688-3820-4eaf-b10c-2583520f5fe1"
   },
   "spec": {
-  "annotations": [
-    {
-      "kind": "AnnotationQuery",
-      "spec": {
-        "builtIn": true,
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "query": {
-          "datasource": {
-            "name": "-- Grafana --"
-          },
-          "group": "grafana",
-          "kind": "DataQuery",
-          "spec": {},
-          "version": "v0"
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
         }
       }
-    }
-  ],
-  "cursorSync": "Off",
-  "editable": true,
-  "elements": {
-    "panel-2": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "table",
-                      "rawQuery": true,
-                      "rawSql": "WITH samples AS (\n  SELECT COALESCE(measured_at, received_at) AS sample_time, topic, payload\n  FROM mqtt_messages\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n)\nSELECT sum(kwh) AS \"Selected\" FROM selected_device"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "Total energy over the selected dashboard range, summed across outlets with at least two readings.",
-        "id": 2,
-        "links": [],
-        "title": "Selected (kWh)",
-        "vizConfig": {
-          "group": "stat",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "decimals": 2,
-                "unit": "none",
-                "color": {
-                  "mode": "fixed",
-                  "fixedColor": "blue"
-                },
-                "mappings": [],
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "blue",
-                      "value": -1e+308
-                    }
-                  ]
-                }
-              },
-              "overrides": []
-            },
-            "options": {
-              "colorMode": "value",
-              "graphMode": "none",
-              "justifyMode": "center",
-              "orientation": "horizontal",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "showPercentChange": false,
-              "textMode": "value",
-              "wideLayout": true
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    },
-    "panel-4": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "table",
-                      "rawQuery": true,
-                      "rawSql": "WITH bounds AS (\n  SELECT to_timestamp(${__from} / 1000.0) AS start_at,\n         to_timestamp(${__to} / 1000.0) AS end_at\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE COALESCE(measured_at, received_at) >= bounds.start_at AND COALESCE(measured_at, received_at) <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n), windows AS (\n  SELECT n,\n         ((b.start_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS start_at,\n         ((b.end_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS end_at\n  FROM bounds b CROSS JOIN generate_series(1, ${baseline_days:raw}::int) AS days(n)\n  WHERE b.end_at - b.start_at <= interval '1 day'\n  UNION ALL\n  SELECT n,\n         b.start_at - n * (b.end_at - b.start_at) AS start_at,\n         b.end_at - n * (b.end_at - b.start_at) AS end_at\n  FROM bounds b CROSS JOIN LATERAL generate_series(\n    1, floor(EXTRACT(EPOCH FROM (${baseline_days:raw}::int * interval '1 day'))\n             / NULLIF(EXTRACT(EPOCH FROM (b.end_at - b.start_at)), 0))::int\n  ) AS blocks(n)\n  WHERE b.end_at - b.start_at > interval '1 day'\n), covered_device AS (\n  SELECT w.n, split_part(m.topic, '/', 3) AS device,\n         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)\n           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM windows w CROSS JOIN bounds b\n  JOIN mqtt_messages m ON COALESCE(m.measured_at, m.received_at) >= w.start_at AND COALESCE(m.measured_at, m.received_at) <= w.end_at\n    AND m.topic LIKE 'apartment/%/%/status/switch:0'\n    AND m.payload ? 'aenergy'\n    AND m.payload->'aenergy'->>'total' IS NOT NULL\n  WHERE w.end_at <= b.start_at\n    AND (b.end_at - b.start_at <= interval '1 day'\n      OR w.start_at >= b.start_at - ${baseline_days:raw}::int * interval '1 day')\n    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)\n  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)\n  HAVING count(*) >= 2\n    AND min(COALESCE(m.measured_at, m.received_at)) <= w.start_at + interval '15 minutes'\n    AND max(COALESCE(m.measured_at, m.received_at)) >= w.end_at - interval '15 minutes'\n), complete_windows AS (\n  SELECT n, sum(kwh) AS kwh\n  FROM covered_device\n  GROUP BY n\n  HAVING count(*) = (SELECT count(*) FROM selected_device)\n), baseline AS (\n  SELECT avg(kwh) AS kwh FROM complete_windows\n)\nSELECT kwh AS \"Prior avg\" FROM baseline"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "Average total kWh across complete historical periods within the chosen lookback. For ranges up to one day, compares the same local clock times on preceding days; longer ranges use non-overlapping equal-length blocks. A period is excluded if any selected outlet lacks readings within 15 minutes of either boundary. No complete history means no period qualified.",
-        "id": 4,
-        "links": [],
-        "title": "Prior avg (kWh)",
-        "vizConfig": {
-          "group": "stat",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "decimals": 2,
-                "unit": "none",
-                "noValue": "No complete history",
-                "color": {
-                  "mode": "fixed",
-                  "fixedColor": "purple"
-                },
-                "mappings": [
-                  {
-                    "type": "special",
-                    "options": {
-                      "match": "null",
-                      "result": { "text": "No complete history" }
-                    }
-                  }
-                ],
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "purple",
-                      "value": -1e+308
-                    }
-                  ]
-                }
-              },
-              "overrides": []
-            },
-            "options": {
-              "colorMode": "value",
-              "graphMode": "none",
-              "justifyMode": "center",
-              "orientation": "horizontal",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "showPercentChange": false,
-              "textMode": "value",
-              "wideLayout": true
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    },
-    "panel-5": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "table",
-                      "rawQuery": true,
-                      "rawSql": "WITH bounds AS (\n  SELECT to_timestamp(${__from} / 1000.0) AS start_at,\n         to_timestamp(${__to} / 1000.0) AS end_at\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE COALESCE(measured_at, received_at) >= bounds.start_at AND COALESCE(measured_at, received_at) <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n), windows AS (\n  SELECT n,\n         ((b.start_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS start_at,\n         ((b.end_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS end_at\n  FROM bounds b CROSS JOIN generate_series(1, ${baseline_days:raw}::int) AS days(n)\n  WHERE b.end_at - b.start_at <= interval '1 day'\n  UNION ALL\n  SELECT n,\n         b.start_at - n * (b.end_at - b.start_at) AS start_at,\n         b.end_at - n * (b.end_at - b.start_at) AS end_at\n  FROM bounds b CROSS JOIN LATERAL generate_series(\n    1, floor(EXTRACT(EPOCH FROM (${baseline_days:raw}::int * interval '1 day'))\n             / NULLIF(EXTRACT(EPOCH FROM (b.end_at - b.start_at)), 0))::int\n  ) AS blocks(n)\n  WHERE b.end_at - b.start_at > interval '1 day'\n), covered_device AS (\n  SELECT w.n, split_part(m.topic, '/', 3) AS device,\n         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)\n           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM windows w CROSS JOIN bounds b\n  JOIN mqtt_messages m ON COALESCE(m.measured_at, m.received_at) >= w.start_at AND COALESCE(m.measured_at, m.received_at) <= w.end_at\n    AND m.topic LIKE 'apartment/%/%/status/switch:0'\n    AND m.payload ? 'aenergy'\n    AND m.payload->'aenergy'->>'total' IS NOT NULL\n  WHERE w.end_at <= b.start_at\n    AND (b.end_at - b.start_at <= interval '1 day'\n      OR w.start_at >= b.start_at - ${baseline_days:raw}::int * interval '1 day')\n    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)\n  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)\n  HAVING count(*) >= 2\n    AND min(COALESCE(m.measured_at, m.received_at)) <= w.start_at + interval '15 minutes'\n    AND max(COALESCE(m.measured_at, m.received_at)) >= w.end_at - interval '15 minutes'\n), complete_windows AS (\n  SELECT n, sum(kwh) AS kwh\n  FROM covered_device\n  GROUP BY n\n  HAVING count(*) = (SELECT count(*) FROM selected_device)\n), baseline AS (\n  SELECT avg(kwh) AS kwh FROM complete_windows\n), selected AS (\n  SELECT sum(kwh) AS kwh FROM selected_device\n)\nSELECT CASE WHEN pct IS NOT NULL THEN\n    CASE WHEN pct < 0 THEN '-' WHEN pct > 0 THEN '+' ELSE '' END\n    || to_char(abs(pct), 'FM999999990.0') || '%'\n  END AS \"Δ vs avg\"\nFROM (\n  SELECT CASE WHEN baseline.kwh > 0 AND selected.kwh IS NOT NULL\n    THEN round(((selected.kwh / baseline.kwh - 1) * 100.0)::numeric, 1)\n    END AS pct\n  FROM baseline CROSS JOIN selected\n) comparison"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "Percent difference between selected total kWh and the average of complete, equal-length historical periods. Negative means lower consumption. No comparison if no historical period has complete boundary coverage, if selected data is missing, or if the historical average is zero.",
-        "id": 5,
-        "links": [],
-        "title": "Δ vs avg",
-        "vizConfig": {
-          "group": "stat",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "decimals": 1,
-                "unit": "string",
-                "noValue": "No comparison",
-                "color": {
-                  "mode": "thresholds"
-                },
-                "mappings": [
-                  {
-                    "type": "special",
-                    "options": {
-                      "match": "null",
-                      "result": { "text": "No comparison", "color": "white" }
-                    }
-                  },
-                  {
-                    "type": "regex",
-                    "options": {
-                      "pattern": "/^-.*%$/",
-                      "result": { "color": "green" }
-                    }
-                  },
-                  {
-                    "type": "regex",
-                    "options": {
-                      "pattern": "/^\\+.*%$/",
-                      "result": { "color": "red" }
-                    }
-                  },
-                  {
-                    "type": "regex",
-                    "options": {
-                      "pattern": "^0\\.0%$",
-                      "result": { "color": "white" }
-                    }
-                  }
-                ],
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "white",
-                      "value": -1e+308
-                    }
-                  ]
-                }
-              },
-              "overrides": []
-            },
-            "options": {
-              "colorMode": "value",
-              "graphMode": "none",
-              "justifyMode": "center",
-              "orientation": "horizontal",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "^Δ vs avg$",
-                "values": false
-              },
-              "showPercentChange": false,
-              "textMode": "value",
-              "wideLayout": true
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    },
-    "panel-6": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "table",
-                      "rawQuery": true,
-                      "rawSql": "WITH per_device AS (\n  SELECT\n    split_part(topic, '/', 3) AS device,\n    (max((payload->'aenergy'->>'total')::double precision)\n      - min((payload->'aenergy'->>'total')::double precision)) / 1000.0 AS kwh\n  FROM mqtt_messages\n  WHERE COALESCE(measured_at, received_at) >= date_trunc('month', CURRENT_TIMESTAMP)\n    AND COALESCE(measured_at, received_at) <= CURRENT_TIMESTAMP\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1\n)\nSELECT COALESCE(sum(GREATEST(kwh, 0)), 0) AS \"MTD\" FROM per_device"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "Energy used from the start of the current calendar month through now. Independent of the selected dashboard range.",
-        "id": 6,
-        "links": [],
-        "title": "MTD (kWh)",
-        "vizConfig": {
-          "group": "stat",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "decimals": 2,
-                "unit": "none",
-                "color": {
-                  "mode": "fixed",
-                  "fixedColor": "orange"
-                },
-                "mappings": [],
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "orange",
-                      "value": -1e+308
-                    }
-                  ]
-                }
-              },
-              "overrides": []
-            },
-            "options": {
-              "colorMode": "value",
-              "graphMode": "none",
-              "justifyMode": "center",
-              "orientation": "horizontal",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "showPercentChange": false,
-              "textMode": "value",
-              "wideLayout": true
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    },
-    "panel-1": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "time_series",
-                      "rawQuery": true,
-                      "rawSql": "WITH samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'apower')::double precision) AS watts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'apower'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device ELSE 'All outlets' END AS metric,\n  sum(watts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "Active power in the selected time range. By outlet shows one series per outlet; off shows their summed power.",
-        "id": 1,
-        "links": [],
-        "title": "Active power",
-        "vizConfig": {
-          "group": "timeseries",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "palette-classic"
-                },
-                "custom": {
-                  "axisBorderShow": false,
-                  "axisCenteredZero": false,
-                  "axisColorMode": "text",
-                  "axisLabel": "",
-                  "axisPlacement": "auto",
-                  "barAlignment": 0,
-                  "barWidthFactor": 0.6,
-                  "drawStyle": "line",
-                  "fillOpacity": 8,
-                  "gradientMode": "none",
-                  "hideFrom": {
-                    "legend": false,
-                    "tooltip": false,
-                    "viz": false
-                  },
-                  "insertNulls": false,
-                  "lineInterpolation": "linear",
-                  "lineWidth": 2,
-                  "pointSize": 5,
-                  "scaleDistribution": {
-                    "type": "linear"
-                  },
-                  "showPoints": "auto",
-                  "showValues": false,
-                  "spanNulls": false,
-                  "stacking": {
-                    "group": "A",
-                    "mode": "none"
-                  },
-                  "thresholdsStyle": {
-                    "mode": "off"
-                  }
-                },
-                "decimals": 1,
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
-                    }
-                  ]
-                },
-                "unit": "watt"
-              },
-              "overrides": []
-            },
-            "options": {
-              "annotations": {
-                "clustering": -1,
-                "multiLane": false
-              },
-              "legend": {
-                "calcs": [],
-                "displayMode": "list",
-                "enableFacetedFilter": false,
-                "overflow": "ellipsis",
-                "placement": "bottom",
-                "showLegend": true
-              },
-              "tooltip": {
-                "hideZeros": false,
-                "mode": "multi",
-                "sort": "desc"
-              }
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    },
-    "panel-3": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "time_series",
-                      "rawQuery": true,
-                      "rawSql": "WITH samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'voltage')::double precision) AS volts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'voltage'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device || ' voltage' ELSE 'Average voltage' END AS metric,\n  avg(volts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": []
-          }
-        },
-        "description": "Voltage in the selected time range. By outlet shows each outlet; off shows the average voltage across reporting outlets.",
-        "id": 3,
-        "links": [],
-        "title": "Voltage",
-        "vizConfig": {
-          "group": "timeseries",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "palette-classic"
-                },
-                "custom": {
-                  "axisBorderShow": false,
-                  "axisCenteredZero": false,
-                  "axisColorMode": "text",
-                  "axisLabel": "",
-                  "axisPlacement": "auto",
-                  "barAlignment": 0,
-                  "barWidthFactor": 0.6,
-                  "drawStyle": "line",
-                  "fillOpacity": 5,
-                  "gradientMode": "none",
-                  "hideFrom": {
-                    "legend": false,
-                    "tooltip": false,
-                    "viz": false
-                  },
-                  "insertNulls": false,
-                  "lineInterpolation": "linear",
-                  "lineWidth": 1,
-                  "pointSize": 5,
-                  "scaleDistribution": {
-                    "type": "linear"
-                  },
-                  "showPoints": "auto",
-                  "showValues": false,
-                  "spanNulls": false,
-                  "stacking": {
-                    "group": "A",
-                    "mode": "none"
-                  },
-                  "thresholdsStyle": {
-                    "mode": "off"
-                  }
-                },
-                "decimals": 2,
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 80
-                    }
-                  ]
-                },
-                "unit": "volt"
-              },
-              "overrides": []
-            },
-            "options": {
-              "annotations": {
-                "clustering": -1,
-                "multiLane": false
-              },
-              "legend": {
-                "calcs": [],
-                "displayMode": "list",
-                "enableFacetedFilter": false,
-                "overflow": "ellipsis",
-                "placement": "bottom",
-                "showLegend": true
-              },
-              "tooltip": {
-                "hideZeros": false,
-                "mode": "multi",
-                "sort": "desc"
-              }
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    },
-    "panel-7": {
-      "kind": "Panel",
-      "spec": {
-        "data": {
-          "kind": "QueryGroup",
-          "spec": {
-            "queries": [
-              {
-                "kind": "PanelQuery",
-                "spec": {
-                  "hidden": false,
-                  "query": {
-                    "datasource": {
-                      "name": "telemetry-postgres"
-                    },
-                    "group": "grafana-postgresql-datasource",
-                    "kind": "DataQuery",
-                    "spec": {
-                      "editorMode": "code",
-                      "format": "table",
-                      "rawQuery": true,
-                      "rawSql": "WITH bounds AS (\n  SELECT\n    ((CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Madrid')::date - 13) AS first_day,\n    (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Madrid')::date AS today,\n    CURRENT_TIMESTAMP AS now_ts\n), per_device_day AS (\n  SELECT\n    (COALESCE(measured_at, received_at) AT TIME ZONE 'Europe/Madrid')::date AS local_day,\n    split_part(topic, '/', 3) AS device,\n    GREATEST(\n      max((payload->'aenergy'->>'total')::double precision)\n      - min((payload->'aenergy'->>'total')::double precision),\n      0\n    ) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE COALESCE(measured_at, received_at) >= (first_day::timestamp AT TIME ZONE 'Europe/Madrid')\n    AND COALESCE(measured_at, received_at) <= now_ts\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1, 2\n), days AS (\n  SELECT generate_series(first_day, today, interval '1 day')::date AS day\n  FROM bounds\n)\nSELECT\n  CASE\n    WHEN days.day = bounds.today THEN to_char(days.day, 'Dy DD') || ' · now'\n    ELSE to_char(days.day, 'Dy DD')\n  END AS \"Day\",\n  CASE\n    WHEN ${outlet_breakdown:raw} THEN\n      COALESCE((\n        SELECT jsonb_object_agg(\n          p.device,\n          round(p.kwh::numeric, 2)\n          ORDER BY p.device\n        )\n        FROM per_device_day p\n        WHERE p.local_day = days.day\n      ), '{}'::jsonb)::text\n    ELSE\n      jsonb_build_object(\n        'All outlets',\n        round(COALESCE((\n          SELECT sum(p.kwh)\n          FROM per_device_day p\n          WHERE p.local_day = days.day\n        ), 0)::numeric, 2)\n      )::text\n  END AS \"Series\"\nFROM days\nCROSS JOIN bounds\nORDER BY days.day"
-                    },
-                    "version": "v0"
-                  },
-                  "refId": "A"
-                }
-              }
-            ],
-            "queryOptions": {},
-            "transformations": [
-              {
-                "kind": "Transformation",
-                "group": "extractFields",
-                "spec": {
-                  "options": {
-                    "source": "Series",
-                    "format": "json",
-                    "replace": false
-                  }
-                }
-              },
-              {
-                "kind": "Transformation",
-                "group": "organize",
-                "spec": {
-                  "options": {
-                    "excludeByName": {
-                      "Series": true
-                    },
-                    "indexByName": {},
-                    "renameByName": {}
-                  }
-                }
-              }
-            ]
-          }
-        },
-        "description": "Last 14 calendar days, independent of the dashboard time picker. By outlet stacks each outlet; off shows apartment total. Today is partial.",
-        "id": 7,
-        "links": [],
-        "title": "Energy by day · 14d",
-        "vizConfig": {
-          "group": "barchart",
-          "kind": "VizConfig",
-          "spec": {
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "palette-classic"
-                },
-                "custom": {
-                  "axisBorderShow": false,
-                  "axisCenteredZero": false,
-                  "axisColorMode": "text",
-                  "axisLabel": "",
-                  "axisPlacement": "auto",
-                  "fillOpacity": 75,
-                  "gradientMode": "none",
-                  "hideFrom": {
-                    "legend": false,
-                    "tooltip": false,
-                    "viz": false
-                  },
-                  "lineWidth": 1,
-                  "scaleDistribution": {
-                    "type": "linear"
-                  },
-                  "thresholdsStyle": {
-                    "mode": "off"
-                  }
-                },
-                "decimals": 1,
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "suffix:kWh"
-              },
-              "overrides": []
-            },
-            "options": {
-              "orientation": "auto",
-              "xTickLabelRotation": 0,
-              "xTickLabelSpacing": 0,
-              "showValue": "always",
-              "stacking": "normal",
-              "groupWidth": 0.7,
-              "barWidth": 0.82,
-              "barRadius": 0.08,
-              "fullHighlight": false,
-              "tooltip": {
-                "hideZeros": false,
-                "mode": "multi",
-                "sort": "desc"
-              },
-              "legend": {
-                "calcs": [],
-                "displayMode": "list",
-                "placement": "bottom",
-                "showLegend": true
-              },
-              "xField": "Day"
-            }
-          },
-          "version": "13.1.4"
-        }
-      }
-    }
-  },
-  "layout": {
-    "kind": "GridLayout",
-    "spec": {
-      "items": [
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-2"
-            },
-            "height": 4,
-            "width": 6,
-            "x": 0,
-            "y": 0
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-4"
-            },
-            "height": 4,
-            "width": 6,
-            "x": 6,
-            "y": 0
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-5"
-            },
-            "height": 4,
-            "width": 6,
-            "x": 12,
-            "y": 0
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-6"
-            },
-            "height": 4,
-            "width": 6,
-            "x": 18,
-            "y": 0
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-1"
-            },
-            "height": 10,
-            "width": 24,
-            "x": 0,
-            "y": 4
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-7"
-            },
-            "height": 8,
-            "width": 24,
-            "x": 0,
-            "y": 14
-          }
-        },
-        {
-          "kind": "GridLayoutItem",
-          "spec": {
-            "element": {
-              "kind": "ElementReference",
-              "name": "panel-3"
-            },
-            "height": 6,
-            "width": 24,
-            "x": 0,
-            "y": 22
-          }
-        }
-      ]
-    }
-  },
-  "links": [],
-  "liveNow": false,
-  "preload": false,
-  "tags": [
-    "mqtt",
-    "shelly",
-    "telemetry"
-  ],
-  "timeSettings": {
-    "autoRefresh": "10s",
-    "autoRefreshIntervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
     ],
-    "fiscalYearStartMonth": 0,
-    "from": "now/d",
-    "hideTimepicker": false,
-    "timezone": "browser",
-    "to": "now"
-  },
-  "title": "Apartment Power",
-  "variables": [
-    {
-      "kind": "CustomVariable",
-      "spec": {
-        "name": "baseline_days",
-        "query": "7 days : 7, 14 days : 14, 30 days : 30, 90 days : 90",
-        "current": {
-          "text": "30 days",
-          "value": "30"
-        },
-        "options": [
-          { "text": "7 days", "value": "7", "selected": false },
-          { "text": "14 days", "value": "14", "selected": false },
-          { "text": "30 days", "value": "30", "selected": true },
-          { "text": "90 days", "value": "90", "selected": false }
-        ],
-        "multi": false,
-        "includeAll": false,
-        "allowCustomValue": false,
-        "label": "Baseline",
-        "hide": "dontHide",
-        "skipUrlSync": false,
-        "description": "Lookback before the selected period in which to find comparable historical windows."
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH samples AS (\n  SELECT COALESCE(measured_at, received_at) AS sample_time, topic, payload\n  FROM mqtt_messages\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n)\nSELECT sum(kwh) AS \"Selected\" FROM selected_device"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Total energy over the selected dashboard range, summed across outlets with at least two readings.",
+          "id": 2,
+          "links": [],
+          "title": "Selected (kWh)",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "unit": "none",
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "blue"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "blue",
+                        "value": -1e+308
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH bounds AS (\n  SELECT to_timestamp(${__from} / 1000.0) AS start_at,\n         to_timestamp(${__to} / 1000.0) AS end_at\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE COALESCE(measured_at, received_at) >= bounds.start_at AND COALESCE(measured_at, received_at) <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n), windows AS (\n  SELECT n,\n         ((b.start_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS start_at,\n         ((b.end_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS end_at\n  FROM bounds b CROSS JOIN generate_series(1, ${baseline_days:raw}::int) AS days(n)\n  WHERE b.end_at - b.start_at <= interval '1 day'\n  UNION ALL\n  SELECT n,\n         b.start_at - n * (b.end_at - b.start_at) AS start_at,\n         b.end_at - n * (b.end_at - b.start_at) AS end_at\n  FROM bounds b CROSS JOIN LATERAL generate_series(\n    1, floor(EXTRACT(EPOCH FROM (${baseline_days:raw}::int * interval '1 day'))\n             / NULLIF(EXTRACT(EPOCH FROM (b.end_at - b.start_at)), 0))::int\n  ) AS blocks(n)\n  WHERE b.end_at - b.start_at > interval '1 day'\n), covered_device AS (\n  SELECT w.n, split_part(m.topic, '/', 3) AS device,\n         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)\n           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM windows w CROSS JOIN bounds b\n  JOIN mqtt_messages m ON COALESCE(m.measured_at, m.received_at) >= w.start_at AND COALESCE(m.measured_at, m.received_at) <= w.end_at\n    AND m.topic LIKE 'apartment/%/%/status/switch:0'\n    AND m.payload ? 'aenergy'\n    AND m.payload->'aenergy'->>'total' IS NOT NULL\n  WHERE w.end_at <= b.start_at\n    AND (b.end_at - b.start_at <= interval '1 day'\n      OR w.start_at >= b.start_at - ${baseline_days:raw}::int * interval '1 day')\n    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)\n  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)\n  HAVING count(*) >= 2\n    AND min(COALESCE(m.measured_at, m.received_at)) <= w.start_at + interval '15 minutes'\n    AND max(COALESCE(m.measured_at, m.received_at)) >= w.end_at - interval '15 minutes'\n), complete_windows AS (\n  SELECT n, sum(kwh) AS kwh\n  FROM covered_device\n  GROUP BY n\n  HAVING count(*) = (SELECT count(*) FROM selected_device)\n), baseline AS (\n  SELECT avg(kwh) AS kwh FROM complete_windows\n)\nSELECT kwh AS \"Prior avg\" FROM baseline"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Average total kWh across complete historical periods within the chosen lookback. For ranges up to one day, compares the same local clock times on preceding days; longer ranges use non-overlapping equal-length blocks. A period is excluded if any selected outlet lacks readings within 15 minutes of either boundary. No complete history means no period qualified.",
+          "id": 4,
+          "links": [],
+          "title": "Prior avg (kWh)",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "unit": "none",
+                  "noValue": "No complete history",
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "purple"
+                  },
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": { "text": "No complete history" }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "purple",
+                        "value": -1e+308
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH bounds AS (\n  SELECT to_timestamp(${__from} / 1000.0) AS start_at,\n         to_timestamp(${__to} / 1000.0) AS end_at\n), selected_device AS (\n  SELECT split_part(topic, '/', 3) AS device,\n         GREATEST(max((payload->'aenergy'->>'total')::double precision)\n           - min((payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE COALESCE(measured_at, received_at) >= bounds.start_at AND COALESCE(measured_at, received_at) <= bounds.end_at\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n    AND payload->'aenergy'->>'total' IS NOT NULL\n  GROUP BY 1\n  HAVING count(*) >= 2\n), windows AS (\n  SELECT n,\n         ((b.start_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS start_at,\n         ((b.end_at AT TIME ZONE '${__timezone}') - n * interval '1 day')\n           AT TIME ZONE '${__timezone}' AS end_at\n  FROM bounds b CROSS JOIN generate_series(1, ${baseline_days:raw}::int) AS days(n)\n  WHERE b.end_at - b.start_at <= interval '1 day'\n  UNION ALL\n  SELECT n,\n         b.start_at - n * (b.end_at - b.start_at) AS start_at,\n         b.end_at - n * (b.end_at - b.start_at) AS end_at\n  FROM bounds b CROSS JOIN LATERAL generate_series(\n    1, floor(EXTRACT(EPOCH FROM (${baseline_days:raw}::int * interval '1 day'))\n             / NULLIF(EXTRACT(EPOCH FROM (b.end_at - b.start_at)), 0))::int\n  ) AS blocks(n)\n  WHERE b.end_at - b.start_at > interval '1 day'\n), covered_device AS (\n  SELECT w.n, split_part(m.topic, '/', 3) AS device,\n         GREATEST(max((m.payload->'aenergy'->>'total')::double precision)\n           - min((m.payload->'aenergy'->>'total')::double precision), 0) / 1000.0 AS kwh\n  FROM windows w CROSS JOIN bounds b\n  JOIN mqtt_messages m ON COALESCE(m.measured_at, m.received_at) >= w.start_at AND COALESCE(m.measured_at, m.received_at) <= w.end_at\n    AND m.topic LIKE 'apartment/%/%/status/switch:0'\n    AND m.payload ? 'aenergy'\n    AND m.payload->'aenergy'->>'total' IS NOT NULL\n  WHERE w.end_at <= b.start_at\n    AND (b.end_at - b.start_at <= interval '1 day'\n      OR w.start_at >= b.start_at - ${baseline_days:raw}::int * interval '1 day')\n    AND split_part(m.topic, '/', 3) IN (SELECT device FROM selected_device)\n  GROUP BY w.n, w.start_at, w.end_at, split_part(m.topic, '/', 3)\n  HAVING count(*) >= 2\n    AND min(COALESCE(m.measured_at, m.received_at)) <= w.start_at + interval '15 minutes'\n    AND max(COALESCE(m.measured_at, m.received_at)) >= w.end_at - interval '15 minutes'\n), complete_windows AS (\n  SELECT n, sum(kwh) AS kwh\n  FROM covered_device\n  GROUP BY n\n  HAVING count(*) = (SELECT count(*) FROM selected_device)\n), baseline AS (\n  SELECT avg(kwh) AS kwh FROM complete_windows\n), selected AS (\n  SELECT sum(kwh) AS kwh FROM selected_device\n)\nSELECT CASE WHEN pct IS NOT NULL THEN\n    CASE WHEN pct < 0 THEN '-' WHEN pct > 0 THEN '+' ELSE '' END\n    || to_char(abs(pct), 'FM999999990.0') || '%'\n  END AS \"Δ vs avg\"\nFROM (\n  SELECT CASE WHEN baseline.kwh > 0 AND selected.kwh IS NOT NULL\n    THEN round(((selected.kwh / baseline.kwh - 1) * 100.0)::numeric, 1)\n    END AS pct\n  FROM baseline CROSS JOIN selected\n) comparison"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Percent difference between selected total kWh and the average of complete, equal-length historical periods. Negative means lower consumption. No comparison if no historical period has complete boundary coverage, if selected data is missing, or if the historical average is zero.",
+          "id": 5,
+          "links": [],
+          "title": "Δ vs avg",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "unit": "string",
+                  "noValue": "No comparison",
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": { "text": "No comparison", "color": "white" }
+                      }
+                    },
+                    {
+                      "type": "regex",
+                      "options": {
+                        "pattern": "/^-.*%$/",
+                        "result": { "color": "green" }
+                      }
+                    },
+                    {
+                      "type": "regex",
+                      "options": {
+                        "pattern": "/^\\+.*%$/",
+                        "result": { "color": "red" }
+                      }
+                    },
+                    {
+                      "type": "regex",
+                      "options": {
+                        "pattern": "^0\\.0%$",
+                        "result": { "color": "white" }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "white",
+                        "value": -1e+308
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "^Δ vs avg$",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH per_device AS (\n  SELECT\n    split_part(topic, '/', 3) AS device,\n    (max((payload->'aenergy'->>'total')::double precision)\n      - min((payload->'aenergy'->>'total')::double precision)) / 1000.0 AS kwh\n  FROM mqtt_messages\n  WHERE COALESCE(measured_at, received_at) >= date_trunc('month', CURRENT_TIMESTAMP)\n    AND COALESCE(measured_at, received_at) <= CURRENT_TIMESTAMP\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1\n)\nSELECT COALESCE(sum(GREATEST(kwh, 0)), 0) AS \"MTD\" FROM per_device"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Energy used from the start of the current calendar month through now. Independent of the selected dashboard range.",
+          "id": 6,
+          "links": [],
+          "title": "MTD (kWh)",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 2,
+                  "unit": "none",
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "orange"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "orange",
+                        "value": -1e+308
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "WITH samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'apower')::double precision) AS watts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'apower'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device ELSE 'All outlets' END AS metric,\n  sum(watts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Active power in the selected time range. By outlet shows one series per outlet; off shows their summed power.",
+          "id": 1,
+          "links": [],
+          "title": "Active power",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 8,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "watt"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "WITH samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), per_device AS (\n  SELECT\n    $__timeGroupAlias(sample_time, $__interval),\n    split_part(topic, '/', 3) AS device,\n    avg((payload->>'voltage')::double precision) AS volts\n  FROM samples\n  WHERE $__timeFilter(sample_time)\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'voltage'\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  CASE WHEN ${outlet_breakdown:raw} THEN device || ' voltage' ELSE 'Average voltage' END AS metric,\n  avg(volts) AS value\nFROM per_device\nGROUP BY 1, 2\nORDER BY 1, 2"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Voltage in the selected time range. By outlet shows each outlet; off shows the average voltage across reporting outlets.",
+          "id": 3,
+          "links": [],
+          "title": "Voltage",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 5,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "volt"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": { "name": "telemetry-postgres" },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH bounds AS (\n  SELECT (CURRENT_TIMESTAMP AT TIME ZONE '${__timezone}')::date AS end_day\n), samples AS (\n  SELECT CASE WHEN measured_at < received_at - interval '2 minutes'\n              THEN measured_at ELSE received_at END AS sample_time, topic, payload\n  FROM mqtt_messages\n), daily_hour AS (\n  SELECT (sample_time AT TIME ZONE '${__timezone}')::date AS day,\n         EXTRACT(HOUR FROM sample_time AT TIME ZONE '${__timezone}')::int AS hour,\n         split_part(topic, '/', 3) AS device,\n         avg((payload->>'apower')::double precision) AS watts\n  FROM samples CROSS JOIN bounds\n  WHERE sample_time >= ((end_day - ${baseline_days:raw}::int)::timestamp AT TIME ZONE '${__timezone}')\n    AND sample_time < (end_day::timestamp AT TIME ZONE '${__timezone}')\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload->>'apower' IS NOT NULL\n  GROUP BY 1, 2, 3\n), devices AS (\n  SELECT DISTINCT device FROM daily_hour\n), profiles AS (\n  SELECT hour, device AS metric, avg(watts) AS watts\n  FROM daily_hour\n  GROUP BY hour, device\n  UNION ALL\n  SELECT hour, 'All outlets' AS metric, avg(watts) AS watts\n  FROM (\n    SELECT day, hour, sum(watts) AS watts\n    FROM daily_hour\n    GROUP BY day, hour\n    HAVING count(*) = (SELECT count(*) FROM devices)\n  ) complete_hours\n  GROUP BY hour\n)\nSELECT (((CURRENT_TIMESTAMP AT TIME ZONE '${__timezone}')::date + make_time(h.hour, 0, 0)) AT TIME ZONE '${__timezone}') AS \"time\",\n       COALESCE((\n         SELECT jsonb_object_agg(metric, watts ORDER BY metric)\n         FROM profiles p WHERE p.hour = h.hour\n       ), '{}'::jsonb)::text AS \"Series\"\nFROM generate_series(0, 23) AS h(hour)\nORDER BY h.hour"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": { "timeFrom": "now/d", "timeShift": "0d/d", "hideTimeOverride": true },
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "extractFields",
+                  "spec": { "options": { "source": "Series", "format": "json", "replace": false } }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": { "options": { "excludeByName": { "Series": true }, "indexByName": {}, "renameByName": {} } }
+                }
+              ]
+            }
+          },
+          "id": 8,
+          "links": [],
+          "title": "Average daily power profile · baseline",
+          "description": "Hourly average power over the baseline calendar days before today, in the dashboard timezone, displayed on today's full-day axis independently of the time picker. Smooth curves are visual interpolation only; hourly averages are unchanged. Shows each outlet and their combined total; combined averages include only day/hour buckets where all baseline outlets reported.",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": { "mode": "palette-classic" },
+                  "custom": {
+                    "axisPlacement": "auto",
+                    "fillOpacity": 0,
+                    "drawStyle": "line",
+                    "lineInterpolation": "smooth",
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+                    "lineWidth": 2
+                  },
+                  "decimals": 1,
+                  "min": 0,
+                  "unit": "watt"
+                },
+                "overrides": []
+              },
+              "options": {
+                "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" },
+                "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "telemetry-postgres"
+                      },
+                      "group": "grafana-postgresql-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH bounds AS (\n  SELECT\n    ((CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Madrid')::date - 13) AS first_day,\n    (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Madrid')::date AS today,\n    CURRENT_TIMESTAMP AS now_ts\n), per_device_day AS (\n  SELECT\n    (COALESCE(measured_at, received_at) AT TIME ZONE 'Europe/Madrid')::date AS local_day,\n    split_part(topic, '/', 3) AS device,\n    GREATEST(\n      max((payload->'aenergy'->>'total')::double precision)\n      - min((payload->'aenergy'->>'total')::double precision),\n      0\n    ) / 1000.0 AS kwh\n  FROM mqtt_messages, bounds\n  WHERE COALESCE(measured_at, received_at) >= (first_day::timestamp AT TIME ZONE 'Europe/Madrid')\n    AND COALESCE(measured_at, received_at) <= now_ts\n    AND topic LIKE 'apartment/%/%/status/switch:0'\n    AND payload ? 'aenergy'\n  GROUP BY 1, 2\n), days AS (\n  SELECT generate_series(first_day, today, interval '1 day')::date AS day\n  FROM bounds\n)\nSELECT\n  CASE\n    WHEN days.day = bounds.today THEN to_char(days.day, 'Dy DD') || ' · now'\n    ELSE to_char(days.day, 'Dy DD')\n  END AS \"Day\",\n  CASE\n    WHEN ${outlet_breakdown:raw} THEN\n      COALESCE((\n        SELECT jsonb_object_agg(\n          p.device,\n          round(p.kwh::numeric, 2)\n          ORDER BY p.device\n        )\n        FROM per_device_day p\n        WHERE p.local_day = days.day\n      ), '{}'::jsonb)::text\n    ELSE\n      jsonb_build_object(\n        'All outlets',\n        round(COALESCE((\n          SELECT sum(p.kwh)\n          FROM per_device_day p\n          WHERE p.local_day = days.day\n        ), 0)::numeric, 2)\n      )::text\n  END AS \"Series\"\nFROM days\nCROSS JOIN bounds\nORDER BY days.day"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "extractFields",
+                  "spec": {
+                    "options": {
+                      "source": "Series",
+                      "format": "json",
+                      "replace": false
+                    }
+                  }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Series": true
+                      },
+                      "indexByName": {},
+                      "renameByName": {}
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Last 14 calendar days, independent of the dashboard time picker. By outlet stacks each outlet; off shows apartment total. Today is partial.",
+          "id": 7,
+          "links": [],
+          "title": "Energy by day · 14d",
+          "vizConfig": {
+            "group": "barchart",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 75,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "suffix:kWh"
+                },
+                "overrides": []
+              },
+              "options": {
+                "orientation": "auto",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0,
+                "showValue": "always",
+                "stacking": "normal",
+                "groupWidth": 0.7,
+                "barWidth": 0.82,
+                "barRadius": 0.08,
+                "fullHighlight": false,
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "xField": "Day"
+              }
+            },
+            "version": "13.1.4"
+          }
+        }
       }
     },
-    {
-      "kind": "SwitchVariable",
+    "layout": {
+      "kind": "GridLayout",
       "spec": {
-        "name": "outlet_breakdown",
-        "current": "true",
-        "enabledValue": "true",
-        "disabledValue": "false",
-        "label": "By outlet",
-        "hide": "dontHide",
-        "skipUrlSync": true,
-        "description": "Show charts broken down by outlet. Off aggregates power and daily energy across outlets and shows average voltage."
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 32
+            }
+          }
+        ]
       }
-    }
-  ]
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "mqtt",
+      "shelly",
+      "telemetry"
+    ],
+    "timeSettings": {
+      "autoRefresh": "10s",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now/d",
+      "hideTimepicker": false,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "Apartment Power",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "baseline_days",
+          "query": "7 days : 7, 14 days : 14, 30 days : 30, 90 days : 90",
+          "current": {
+            "text": "30 days",
+            "value": "30"
+          },
+          "options": [
+            { "text": "7 days", "value": "7", "selected": false },
+            { "text": "14 days", "value": "14", "selected": false },
+            { "text": "30 days", "value": "30", "selected": true },
+            { "text": "90 days", "value": "90", "selected": false }
+          ],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": false,
+          "label": "Baseline",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "description": "Lookback before the selected period in which to find comparable historical windows."
+        }
+      },
+      {
+        "kind": "SwitchVariable",
+        "spec": {
+          "name": "outlet_breakdown",
+          "current": "true",
+          "enabledValue": "true",
+          "disabledValue": "false",
+          "label": "By outlet",
+          "hide": "dontHide",
+          "skipUrlSync": true,
+          "description": "Show charts broken down by outlet. Off aggregates power and daily energy across outlets and shows average voltage."
+        }
+      }
+    ]
   }
 }
