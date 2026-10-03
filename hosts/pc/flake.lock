@@ -628,21 +628,6 @@
         "type": "github"
       }
     },
-    "zap": {
-      "inputs": {
-        "nixpkgs": "nixpkgs_13"
-      },
-      "locked": {
-        "lastModified": 1790983316,
-        "narHash": "sha256-Orzgj86Jr1s25nXFVYXdmCol7Hdv9SWoIeza1sW1vKo=",
-        "path": "/home/xopc/player",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/xopc/player",
-        "type": "path"
-      }
-    },
     "niri": {
       "inputs": {
         "niri-stable": "niri-stable",
@@ -1744,6 +1729,21 @@
         "owner": "AndyFilter",
         "repo": "YeetMouse",
         "type": "github"
+      }
+    },
+    "zap": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_13"
+      },
+      "locked": {
+        "lastModified": 1790987396,
+        "narHash": "sha256-o4bzSL+BszyIvHRfaNTHL+bUK2mAQfqjLiQQs/xwSwA=",
+        "path": "/home/xopc/player",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/xopc/player",
+        "type": "path"
       }
     }
   },
