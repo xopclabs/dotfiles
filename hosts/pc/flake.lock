@@ -6,11 +6,11 @@
         "qmd": "qmd"
       },
       "locked": {
-        "lastModified": 1790723926,
-        "narHash": "sha256-Ka+jRETCf8yGrlapitpCwYVkUzkcWjLe9ZP2Mff5r0s=",
+        "lastModified": 1790987766,
+        "narHash": "sha256-cqWBJtCyLVOu1XszLJ5awDH9HX0yW4rZimheqWGNLgA=",
         "ref": "main",
-        "rev": "1288561b772e52b4aefd09f3f0030f2f5f0be501",
-        "revCount": 24,
+        "rev": "0a51f66ffdf057ce7091cf653c930c954d7de3bb",
+        "revCount": 25,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/agents"
       },
@@ -1736,8 +1736,8 @@
         "nixpkgs": "nixpkgs_13"
       },
       "locked": {
-        "lastModified": 1790987396,
-        "narHash": "sha256-o4bzSL+BszyIvHRfaNTHL+bUK2mAQfqjLiQQs/xwSwA=",
+        "lastModified": 1791027044,
+        "narHash": "sha256-NcGPNwAD7jDU5xW/NNniOnwJSw+LNimL7JCQijSn9uY=",
         "path": "/home/xopc/player",
         "type": "path"
       },
