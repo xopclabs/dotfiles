@@ -132,6 +132,10 @@ in {
             audio = {
                 feishin.enable = true;
                 kew.enable = true;
+                zap = {
+                    enable = true;
+                    popupOutput = "eDP-1";
+                };
             };
         };
 

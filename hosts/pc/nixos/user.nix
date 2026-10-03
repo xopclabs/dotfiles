@@ -13,6 +13,7 @@
         extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" "tss" ];
         shell = pkgs.zsh;
         isNormalUser = true;
+        uid = 1000;
         hashedPasswordFile = config.sops.secrets.userpass.path;
         openssh.authorizedKeys.keys = [
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/qy9bDzKgpuIyHMalEPhMFgJ9hamF2LhR0kfk+2Et7"
