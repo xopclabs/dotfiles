@@ -8,6 +8,7 @@ in {
     imports = [
         ./feishin.nix
         ./kew.nix
+        ./zap.nix
     ];
 
     options.modules.media.audio = {
