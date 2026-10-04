@@ -23,6 +23,11 @@ class ZapListenerTests(unittest.TestCase):
         self.assertNotIn('${./visualizer.py}', module)
         self.assertIn('(zap-music :state ${tile.id}_data', ui)
         self.assertIn('${musicAssets}/visualize --instance ${tile.id}', ui)
+        self.assertIn('${musicAssets}/listen --channel preview', ui)
+        self.assertIn('(zap-selection-preview :state dashboard_zap_preview', ui)
+        self.assertIn('(overlay', ui)
+        self.assertIn('.music-tile .zap-selection-preview { background: #2e3440; }',
+                      (HERE / 'ui/eww.scss').read_text())
         self.assertIn('(defwidget chart-tile', (HERE / 'ui/eww.yuck').read_text())
         self.assertIn('(defwidget value-tile', (HERE / 'ui/eww.yuck').read_text())
         self.assertNotIn('(defwidget music-tile', (HERE / 'ui/eww.yuck').read_text())
