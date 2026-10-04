@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+args@{ config, lib, pkgs, ... }:
 
 let
     cfg = config.modules.desktop.widgets.eww;
@@ -32,16 +32,19 @@ let
             value = { inherit (tile) source template; field = tile.field; };
         }) (lib.filter (tile: tile.template != "music") tiles));
     };
-    music = pkgs.writeShellScriptBin "eww-dashboard-music" ''
-        export EWW_BIN=${lib.getExe pkgs.eww}
-        export EWW_DASHBOARD_CONFIG=${ewwConfig}
-        exec ${pkgs.python3}/bin/python3 ${./music.py} "$@"
+    zap = args.zap or null;
+    hasMusic = lib.any (tile: tile.template == "music") tiles;
+    zapEnabled = lib.attrByPath [ "programs" "zap" "enable" ] false config;
+    musicAssets = if hasMusic && zap != null && zapEnabled then
+        zap.packages.${pkgs.stdenv.hostPlatform.system}.eww-widgets.withConfig
+            (toString config.xdg.configFile."zap/config.json".source)
+        else null;
+    musicListener = pkgs.writeShellScriptBin "eww-dashboard-zap-listen" ''
+        exec ${pkgs.python3}/bin/python3 ${./zap_listener.py} \
+            --eww ${lib.getExe pkgs.eww} --eww-config ${lib.escapeShellArg ewwConfig} \
+            --assets ${if musicAssets == null then "unused" else musicAssets} "$@"
     '';
-    visualizer = pkgs.writeShellScriptBin "eww-dashboard-visualizer" ''
-        export PATH=${lib.makeBinPath [ pkgs.pipewire pkgs.cava pkgs.playerctl ]}:"$PATH"
-        exec ${pkgs.python3}/bin/python3 ${./visualizer.py} "$@" ${./music.py}
-    '';
-    ui = import ./ui { inherit config lib pkgs tiles music visualizer; inherit (grafana) query period; };
+    ui = import ./ui { inherit config lib pkgs tiles musicAssets musicListener; inherit (grafana) query period; };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         exec ${pkgs.bash}/bin/bash ${./launch.sh} \
             ${lib.getExe pkgs.eww} ${ewwConfig} ${pkgs.util-linux}/bin/flock \
@@ -120,6 +123,14 @@ in {
             (lib.mapAttrs (_: widget: lib.mapAttrs (_: lib.mkDefault) widget) layouts.${cfg.layout});
 
         assertions = [ {
+            assertion = !hasMusic || (zap != null && zapEnabled);
+            message = "Eww music tiles require the zap flake input and enabled programs.zap.";
+        } {
+            assertion = lib.all (tile: tile.template != "music" ||
+                (builtins.match "[A-Za-z_][A-Za-z0-9_-]{0,63}" tile.id != null
+                    && tile.width > 24 && tile.width - 24 <= 2048 && tile.height > 24)) tiles;
+            message = "Eww zap music instances need safe identifiers and usable visualization dimensions.";
+        } {
             assertion = builtins.hasAttr cfg.page cfg.pages
                 && lib.all (tile:
                     (if tile.template == "music" then tile.source == null
@@ -151,7 +162,8 @@ in {
             };
         };
 
-        home.packages = [ pkgs.eww grafana.query grafana.period music visualizer pkgs.playerctl pkgs.cava launch ];
+        home.packages = [ pkgs.eww grafana.query grafana.period launch ]
+            ++ lib.optional hasMusic musicListener;
 
         xdg.configFile."eww-dashboard/queries.json".text = builtins.toJSON queries;
         xdg.configFile."eww-dashboard/eww.yuck".text = ui.yuck;
