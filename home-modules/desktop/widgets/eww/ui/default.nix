@@ -19,6 +19,15 @@ let
         lyrics1 = initialMusic.lyrics0;
         error = ""; feedback = ""; show_visualizer = false; listener_token = "";
     };
+    initialPreview = {
+        schema = 1; visible = false; session_id = ""; selection_revision = 0;
+        entity_id = ""; kind = ""; title = ""; artist = "";
+        art = ""; loading = false; error = "";
+    };
+    previewListen = ''
+        (deflisten dashboard_zap_preview :initial ${quote (builtins.toJSON initialPreview)}
+          `${musicAssets}/listen --channel preview`)
+    '';
     plotWidth = tile: tile.width - 56;
     quote = value: builtins.toJSON value;
     alignment = tile:
@@ -45,11 +54,15 @@ let
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
           :stacking "bottom" :namespace "eww-music-${tile.id}"
           (box :class "tile music-tile"
-            (zap-music :state ${tile.id}_data :instance ${quote tile.id}
-              :width ${toString (tile.width - 24)} :height ${toString (tile.height - 24)}
-              :art_size ${if tile.size.rows >= 4 then "138" else "90"}
-              :bars ${tile.id}_bars :bar_height 72 :show_album false
-              :large ${if tile.size.rows >= 3 then "true" else "false"})))
+            (overlay
+              (zap-music :state ${tile.id}_data :instance ${quote tile.id}
+                :width ${toString (tile.width - 24)} :height ${toString (tile.height - 24)}
+                :art_size ${if tile.size.rows >= 4 then "138" else "90"}
+                :bars ${tile.id}_bars :bar_height 72 :show_album false
+                :large ${if tile.size.rows >= 3 then "true" else "false"})
+              (zap-selection-preview :state dashboard_zap_preview
+                :width ${toString (tile.width - 24)} :height ${toString (tile.height - 24)}
+                :show_label true))))
     '' else ''
         (defwindow ${tile.id}
           :monitor ${quote tile.output}
@@ -62,7 +75,7 @@ in {
         + "\n" + builtins.replaceStrings
             [ "eww-dashboard-period" ] [ (lib.getExe period) ]
             (builtins.readFile ./eww.yuck)
-        + lib.optionalString (musicAssets != null) ("\n" + lib.concatMapStringsSep "\n" musicListen musicTiles)
+        + lib.optionalString (musicAssets != null) ("\n" + previewListen + "\n" + lib.concatMapStringsSep "\n" musicListen musicTiles)
         + "\n" + lib.concatMapStringsSep "\n" listen (lib.filter (tile: tile.template != "music") tiles)
         + "\n" + lib.concatMapStringsSep "\n" window tiles;
     scss = pkgs.writeText "eww-dashboard.scss" (
