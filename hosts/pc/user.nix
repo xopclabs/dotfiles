@@ -39,8 +39,8 @@ in {
                 wallpaperRotate.enable = true;
                 hypridle = {
                     enable = true;
-                    dpmsInternal.timeout = 3 * 60;
-                    dpmsExternal.timeout = 5 * 60;
+                    dpmsInternal.timeout = 15 * 60;
+                    dpmsExternal.timeout = 15 * 60;
                     suspend.timeout = 60 * 60;
                     lock.enable = false;
                 };
