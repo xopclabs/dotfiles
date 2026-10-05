@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock, call, patch
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 HERE = Path(__file__).parent.parent
@@ -18,7 +18,6 @@ def load(name, directory):
 
 
 query = load("query", "grafana")
-music = load("music", ".")
 
 class DashboardTests(unittest.TestCase):
     def test_grafana_listener_bounds_each_query_and_keeps_publishing(self):
@@ -38,17 +37,22 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(process.call_args.kwargs["timeout"], 20)
         output.assert_called_once_with('{"value":"ok"}', flush=True)
 
-    def test_skip_dispatches_before_feedback(self):
-        with patch.object(music, "active_player", return_value="Feishin"), \
-             patch.object(music.subprocess, "run") as action, \
-             patch.object(music, "feedback") as feedback:
-            calls = Mock()
-            calls.attach_mock(action, "action")
-            calls.attach_mock(feedback, "feedback")
-            music.skip("next")
-            self.assertEqual(calls.mock_calls[0].args[0][-1], "next")
-            self.assertEqual(calls.mock_calls[1], call.feedback("next"))
-            self.assertEqual(action.call_args.kwargs["timeout"], 1)
+    def test_picker_uses_consumer_geometry_and_external_renderer(self):
+        module = (HERE / 'eww.nix').read_text()
+        ui = (HERE / 'ui/default.nix').read_text()
+        self.assertIn('inherit (cfg.picker) width height;', module)
+        self.assertIn('picker = cfg.picker;', module)
+        self.assertIn('mode = "external";', module)
+        self.assertIn('config_directory = ewwConfig;', module)
+        self.assertIn('window = "zap_picker";', module)
+        self.assertIn('layout_file = toString pickerProfile;', module)
+        self.assertIn('(defwindow zap_picker [zap_session]', ui)
+        self.assertIn(':focusable "none"', ui)
+        self.assertIn(':width ${toString picker.width} :height ${toString picker.height}', ui)
+        self.assertIn('${musicAssets}/listeners.yuck', ui)
+        self.assertNotIn('playerctl', module)
+        self.assertFalse((HERE / 'music.py').exists())
+        self.assertFalse((HERE / 'visualizer.py').exists())
 
     def test_all_chart_instances_keep_seven_day_first_and_peak(self):
         week = 7 * 24 * 3600 * 1000

@@ -137,6 +137,26 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                     run('close', 'main_music')
                     wait(lambda: not (directory / 'listener.json').exists())
                     self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next'])
+                    # The generated consumer now owns the picker too. Its
+                    # geometry and close operation must preserve sibling tiles.
+                    picker = re.search(r'\(defwindow zap_picker.*?:width "(\d+)px" :height "(\d+)px"',
+                                       source, re.DOTALL)
+                    self.assertIsNotNone(picker)
+                    for session in ('first', 'second'):
+                        run('open', 'zap_picker', '--arg', 'zap_session=' + session)
+                        picker_id = subprocess.check_output(
+                            ['xdotool', 'search', '--name', '^Eww - zap_picker$'],
+                            env=env, text=True, timeout=3).splitlines()[0]
+                        geometry = subprocess.check_output(
+                            ['xdotool', 'getwindowgeometry', '--shell', picker_id],
+                            env=env, text=True, timeout=3)
+                        dimensions = dict(line.split('=', 1) for line in geometry.splitlines())
+                        self.assertEqual((dimensions['WIDTH'], dimensions['HEIGHT']), picker.groups())
+                        run('close', 'zap_picker')
+                        self.assertNotIn('zap_picker:', run('active-windows'))
+                        self.assertIn('chart_stub:', run('active-windows'))
+                        self.assertIsNone(daemon.poll())
+                    self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next'])
                     log.seek(0)
                     logs = log.read()
                     self.assertNotIn('Unknown attribute', logs)

@@ -35,7 +35,7 @@ let
     zap = args.zap or null;
     hasMusic = lib.any (tile: tile.template == "music") tiles;
     zapEnabled = lib.attrByPath [ "programs" "zap" "enable" ] false config;
-    musicAssets = if hasMusic && zap != null && zapEnabled then
+    musicAssets = if zap != null && zapEnabled then
         zap.packages.${pkgs.stdenv.hostPlatform.system}.eww-widgets.withConfig
             (toString config.xdg.configFile."zap/config.json".source)
         else null;
@@ -44,7 +44,15 @@ let
             --eww ${lib.getExe pkgs.eww} --eww-config ${lib.escapeShellArg ewwConfig} \
             --assets ${if musicAssets == null then "unused" else musicAssets} "$@"
     '';
-    ui = import ./ui { inherit config lib pkgs tiles musicAssets musicListener; inherit (grafana) query period; };
+    pickerProfile = pkgs.writeText "zap-picker-layout.json" (builtins.toJSON {
+        schema = 1;
+        inherit (cfg.picker) width height;
+    });
+    ui = import ./ui {
+        inherit config lib pkgs tiles musicAssets musicListener;
+        picker = cfg.picker;
+        inherit (grafana) query period;
+    };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
         exec ${pkgs.bash}/bin/bash ${./launch.sh} \
             ${lib.getExe pkgs.eww} ${ewwConfig} ${pkgs.util-linux}/bin/flock \
@@ -53,6 +61,12 @@ let
 in {
     options.modules.desktop.widgets.eww = {
         enable = lib.mkEnableOption "Eww telemetry widgets";
+
+        picker = {
+            width = lib.mkOption { type = lib.types.ints.between 240 8192; default = 672; description = "Declared zap picker width in logical pixels."; };
+            height = lib.mkOption { type = lib.types.ints.between 180 8192; default = 420; description = "Declared zap picker height in logical pixels."; };
+            y = lib.mkOption { type = lib.types.int; default = 44; description = "Zap picker top offset in logical pixels."; };
+        };
 
         layout = lib.mkOption {
             type = lib.types.nullOr (lib.types.enum (builtins.attrNames layouts));
@@ -118,7 +132,7 @@ in {
         };
     };
 
-    config = lib.mkIf cfg.enable {
+    config = lib.mkIf cfg.enable ({
         modules.desktop.widgets.eww.pages.main.widgets = lib.mkIf (cfg.layout != null)
             (lib.mapAttrs (_: widget: lib.mapAttrs (_: lib.mkDefault) widget) layouts.${cfg.layout});
 
@@ -169,5 +183,12 @@ in {
         xdg.configFile."eww-dashboard/queries.json".text = builtins.toJSON queries;
         xdg.configFile."eww-dashboard/eww.yuck".text = ui.yuck;
         xdg.configFile."eww-dashboard/eww.scss".source = ui.scss;
-    };
+    } // lib.optionalAttrs (zap != null) {
+        programs.zap.settings.popup.renderer = lib.mkIf zapEnabled {
+            mode = "external";
+            config_directory = ewwConfig;
+            window = "zap_picker";
+            layout_file = toString pickerProfile;
+        };
+    });
 }
