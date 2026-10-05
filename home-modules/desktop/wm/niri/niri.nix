@@ -250,6 +250,7 @@ in {
                     "Mod+Alt+C".action.clear-dynamic-cast-target = [];
 
                     # Auxiliary
+                    "Mod+Ctrl+Q".action.power-off-monitors = [];
                     "Ctrl+Alt+Delete".action.quit.skip-confirmation = true;
                     "Ctrl+Shift+B".action.spawn = "bar-restart";
 
