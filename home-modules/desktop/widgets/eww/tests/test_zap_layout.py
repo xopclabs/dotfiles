@@ -40,7 +40,7 @@ class ZapDashboardLayoutTests(unittest.TestCase):
             source = re.sub(r'^\s*:monitor "[^"\n]*"\n', '\n', source, flags=re.MULTILINE)
             # The adapter's consumer path, not the real dashboard daemon, owns this fixture.
             source = source.replace('--instance main_music --layout-file',
-                                    f'--instance main_music --eww-config {root} --layout-file')
+                                    f'--instance main_music --eww-config {root} --layout-file', 1)
             source += '\n(defwindow chart_stub :geometry (geometry :width "120px" :height "80px") (button :timeout "2s" :onclick "touch ' + str(root / 'pointer-check') + '" (label :text "unrelated chart")))'
             (root / 'eww.yuck').write_text(source)
             (root / 'eww.scss').write_text(Path(os.environ['ZAP_DASHBOARD_SCSS']).read_text() +
