@@ -1736,8 +1736,8 @@
         "nixpkgs": "nixpkgs_13"
       },
       "locked": {
-        "lastModified": 1791157568,
-        "narHash": "sha256-DemdwnLarmRDngx5YQqyfs02a2qSEEpfc0XtEJiX9rk=",
+        "lastModified": 1791162840,
+        "narHash": "sha256-n0DOFSWMwRB9NndgRx3VO5TTjw5XqvUoyepli06QFz0=",
         "path": "/home/xopc/player",
         "type": "path"
       },

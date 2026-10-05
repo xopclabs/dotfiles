@@ -21,7 +21,11 @@ class ZapListenerTests(unittest.TestCase):
         self.assertNotIn('pkgs.playerctl', module)
         self.assertNotIn('${./music.py}', module)
         self.assertNotIn('${./visualizer.py}', module)
-        self.assertIn('(zap-music :state ${tile.id}_data', ui)
+        self.assertIn('(zap-music-adaptive :state ${tile.id}_data', ui)
+        self.assertIn('--layout-file ${musicProfile tile}', ui)
+        self.assertIn('musicDimensions tile', ui)
+        self.assertNotIn(':art_size', ui)
+        self.assertNotIn(':large', ui)
         self.assertIn('${musicAssets}/visualize --instance ${tile.id}', ui)
         self.assertIn('${musicAssets}/listen --channel preview', ui)
         self.assertIn('(zap-selection-preview :state dashboard_zap_preview', ui)
@@ -54,14 +58,19 @@ class ZapListenerTests(unittest.TestCase):
             env = {'WINDOW_ACTIVE': str(active), 'CONTROL_LOG': str(root / 'control.log')}
             emitted = []
             children = []
+            commands = []
             original = subprocess.Popen
             def popen(*args, **kwargs):
                 child = original(*args, **kwargs)
                 if args[0][0] == str(root / 'music-listen'):
                     children.append(child)
+                    commands.append(args[0])
                 return child
             with patch.dict(os.environ, env), patch.object(adapter.subprocess, 'Popen', side_effect=popen):
-                adapter.listen(str(eww), str(root), str(root), 'main_music', emit=emitted.append)
+                adapter.listen(str(eww), str(root), str(root), 'main_music', emit=emitted.append,
+                               layout_file=str(root / 'layout with spaces.json'))
+            self.assertEqual(commands, [[str(root / 'music-listen'), '--instance', 'main_music',
+                                       '--layout-file', str(root / 'layout with spaces.json')]])
             self.assertEqual(len(emitted), 1)
             self.assertEqual(json.loads(emitted[0])['title'], 'Fixture MPD track')
             self.assertEqual((root / 'control.log').read_text().splitlines(), ['true', 'false'])

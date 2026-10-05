@@ -42,12 +42,14 @@ def output(raw):
             pass
 
 
-def listen(eww, config, assets, instance, stop=None, emit=output):
+def listen(eww, config, assets, instance, stop=None, emit=output, layout_file=None):
     if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_-]{0,63}', instance):
         raise ValueError('Expected safe Eww music window identifier')
     stop = stop or threading.Event()
-    child = subprocess.Popen([str(Path(assets) / 'music-listen'), '--instance', instance],
-                             stdout=subprocess.PIPE)
+    command = [str(Path(assets) / 'music-listen'), '--instance', instance]
+    if layout_file is not None:
+        command.extend(['--layout-file', layout_file])
+    child = subprocess.Popen(command, stdout=subprocess.PIPE)
     token = mounted = ''
     observed = False
     pending = b''
@@ -122,11 +124,12 @@ def main():
     parser.add_argument('--eww-config', required=True)
     parser.add_argument('--assets', required=True)
     parser.add_argument('--instance', required=True)
+    parser.add_argument('--layout-file')
     args = parser.parse_args()
     stop = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stop.set())
-    listen(args.eww, args.eww_config, args.assets, args.instance, stop)
+    listen(args.eww, args.eww_config, args.assets, args.instance, stop, layout_file=args.layout_file)
 
 
 if __name__ == '__main__':

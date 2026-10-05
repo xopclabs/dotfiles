@@ -128,8 +128,9 @@ in {
         } {
             assertion = lib.all (tile: tile.template != "music" ||
                 (builtins.match "[A-Za-z_][A-Za-z0-9_-]{0,63}" tile.id != null
-                    && tile.width > 24 && tile.width - 24 <= 2048 && tile.height > 24)) tiles;
-            message = "Eww zap music instances need safe identifiers and usable visualization dimensions.";
+                    && tile.width - 24 >= 240 && tile.width - 24 <= 2048
+                    && tile.height - 24 >= 180 && tile.height - 24 <= 8192)) tiles;
+            message = "Eww zap music instances need safe identifiers and declared content profiles of 240–2048 × 180–8192 logical pixels.";
         } {
             assertion = builtins.hasAttr cfg.page cfg.pages
                 && lib.all (tile:
