@@ -56,6 +56,11 @@ let
     musicListen = tile: ''
         (deflisten ${tile.id}_data :initial ${quote (builtins.toJSON initialMusic)}
           `${lib.getExe musicListener} --instance ${tile.id} --layout-file ${musicProfile tile}`)
+        (deflisten ${tile.id}_marquee :initial ${quote (builtins.toJSON {
+            schema = 1; track_key = ""; layout_revision = ""; listener_token = "";
+            artist = ""; album = "";
+        })}
+          `${musicAssets}/music-listen --channel marquee --hide-album --instance ${tile.id} --layout-file ${musicProfile tile}`)
         (deflisten ${tile.id}_bars :initial ${quote (toString emptyImage)}
           `${musicAssets}/visualize --instance ${tile.id} --width ${toString (tile.width - 24)} --height 72`)
     '';
@@ -70,7 +75,7 @@ let
             (overlay
               (zap-music-adaptive :state ${tile.id}_data :instance ${quote tile.id}
                 :width ${toString dimensions.width} :height ${toString dimensions.height}
-                :bars ${tile.id}_bars :show_album false)
+                :bars ${tile.id}_bars :show_album false :marquee ${tile.id}_marquee)
               (zap-selection-preview :state dashboard_zap_preview
                 :width ${toString dimensions.width} :height ${toString dimensions.height}
                 :show_label true))))
