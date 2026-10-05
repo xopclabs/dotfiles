@@ -39,10 +39,13 @@ class ZapDashboardLayoutTests(unittest.TestCase):
             # Test display has no eDP-1; retain generated dimensions/component/commands.
             source = re.sub(r'^\s*:monitor "[^"\n]*"\n', '\n', source, flags=re.MULTILINE)
             # The adapter's consumer path, not the real dashboard daemon, owns this fixture.
-            source = source.replace('--instance main_music`', f'--instance main_music --eww-config {root}`')
+            source = source.replace('--instance main_music --layout-file',
+                                    f'--instance main_music --eww-config {root} --layout-file')
             source += '\n(defwindow chart_stub :geometry (geometry :width "120px" :height "80px") (button :timeout "2s" :onclick "touch ' + str(root / 'pointer-check') + '" (label :text "unrelated chart")))'
             (root / 'eww.yuck').write_text(source)
-            (root / 'eww.scss').write_text(Path(os.environ['ZAP_DASHBOARD_SCSS']).read_text())
+            (root / 'eww.scss').write_text(Path(os.environ['ZAP_DASHBOARD_SCSS']).read_text() +
+                '\n.zap-music-previous-zone { background: #ff0000; }'
+                '\n.zap-music-next-zone { background: #00ff00; }')
             env = {**os.environ, 'XDG_RUNTIME_DIR': str(runtime), 'XDG_CACHE_HOME': str(root / 'cache'),
                    'HOME': str(root), 'GDK_BACKEND': 'x11', 'NO_AT_BRIDGE': '1'}
             command = [os.environ['ZAP_TEST_EWW'], '--config', str(root)]
@@ -82,9 +85,16 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                                                         env=env, text=True, timeout=3).splitlines()[0]
                     geometry = subprocess.check_output(['xdotool', 'getwindowgeometry', '--shell', window_id],
                                                        env=env, text=True, timeout=3)
-                    width = int(re.search(r'^WIDTH=(\d+)$', geometry, re.MULTILINE)[1])
-                    def click_at(x):
-                        subprocess.run(['xdotool', 'mousemove', '--window', window_id, str(x), '87'],
+                    coords = dict(line.split('=', 1) for line in geometry.splitlines())
+                    width = int(coords['WIDTH'])
+                    presentation = state()['presentation']
+                    self.assertEqual(presentation['orientation'], 'vertical')
+                    art_size = presentation['art_size']
+                    # Consumer tile padding plus adaptive component padding.
+                    inset = 24
+                    art_y = inset + art_size // 2
+                    def click_at(x, y=art_y):
+                        subprocess.run(['xdotool', 'mousemove', '--window', window_id, str(x), str(y)],
                                        env=env, check=True, timeout=3)
                         subprocess.run(['xdotool', 'click', '1'], env=env, check=True, timeout=3)
                     click_at(width // 2)
@@ -93,10 +103,30 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                     # Click again while feedback is visible: it must not intercept input.
                     click_at(width // 2)
                     wait(lambda: state()['playing'])
-                    click_at(24)
-                    wait(lambda: mpd.commands[-1] == 'previous')
-                    click_at(width - 24)
-                    wait(lambda: mpd.commands[-1] == 'next')
+                    # Probe actual painted control bounds, not assumed GtkBox allocation.
+                    from gi.repository import Gdk
+                    Gdk.init([])
+                    def control_center(color):
+                        geometry = subprocess.check_output(['xdotool', 'getwindowgeometry', '--shell', window_id],
+                                                           env=env, text=True, timeout=3)
+                        current = dict(line.split('=', 1) for line in geometry.splitlines())
+                        current_width = int(current['WIDTH'])
+                        frame = Gdk.pixbuf_get_from_window(Gdk.get_default_root_window(),
+                            int(current['X']), int(current['Y']), current_width, int(current['HEIGHT']))
+                        pixels = bytes(frame.get_pixels())
+                        stride, channels = frame.get_rowstride(), frame.get_n_channels()
+                        points = [(x, y) for y in range(frame.get_height()) for x in range(current_width)
+                                  if pixels[y * stride + x * channels:y * stride + x * channels + 3] == color]
+                        self.assertTrue(points, 'Music control must be visibly painted')
+                        return tuple((min(p[axis] for p in points) + max(p[axis] for p in points)) // 2
+                                     for axis in (0, 1))
+                    previous = control_center(b'\xff\x00\x00')
+                    following = control_center(b'\x00\xff\x00')
+                    self.assertLess(previous[0], following[0])
+                    click_at(*previous)
+                    wait(lambda: mpd.commands[-1] == 'previous' and state()['feedback'] == 'previous')
+                    click_at(*control_center(b'\x00\xff\x00'))
+                    wait(lambda: mpd.commands[-1] == 'next' and state()['feedback'] == 'next')
                     run('close', 'main_music')
                     wait(lambda: not (directory / 'listener.json').exists() and not list(directory.glob('frames-*')))
                     self.assertFalse(capture_enabled(directory))

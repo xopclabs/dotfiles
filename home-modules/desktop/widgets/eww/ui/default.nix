@@ -10,7 +10,14 @@ let
         magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '' $out/droplet.png
         magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '𐀡' $out/bolt.png
     '';
+    emptyImage = pkgs.writeText "eww-dashboard-empty.svg" (builtins.readFile ./empty.svg);
     musicTiles = lib.filter (tile: tile.template == "music") tiles;
+    musicDimensions = tile: {
+        width = tile.width - 24;
+        height = tile.height - 24;
+    };
+    musicProfile = tile: pkgs.writeText "zap-music-${tile.id}-layout.json"
+        (builtins.toJSON ({ schema = 1; } // musicDimensions tile));
     initialMusic = {
         schema = 1; connected = false; playing = false; track_key = "";
         artist = ""; album = ""; title = "Nothing playing"; art = "";
@@ -18,6 +25,10 @@ let
         lyrics0 = { previous = ""; current = ""; next = ""; pending = false; };
         lyrics1 = initialMusic.lyrics0;
         error = ""; feedback = ""; show_visualizer = false; listener_token = "";
+        presentation = {
+            orientation = "vertical"; art_size = 24; metadata_width = 1;
+            lower_visible = false; lower_height = 0;
+        };
     };
     initialPreview = {
         schema = 1; visible = false; session_id = ""; selection_revision = 0;
@@ -35,7 +46,7 @@ let
         else if tile.template == "chart" then "left" else "center";
     listen = tile: let
         initial = if tile.template == "chart" then
-            { chart = toString ./empty.svg; high = "—"; low = "—"; legend1 = "—"; legend2 = ""; period = "1h"; }
+            { chart = toString emptyImage; high = "—"; low = "—"; legend1 = "—"; legend2 = ""; period = "1h"; }
         else { value = "—"; color = "#d8dee9"; };
         width = if tile.template == "chart" then plotWidth tile else 0;
     in ''
@@ -44,24 +55,24 @@ let
     '';
     musicListen = tile: ''
         (deflisten ${tile.id}_data :initial ${quote (builtins.toJSON initialMusic)}
-          `${lib.getExe musicListener} --instance ${tile.id}`)
-        (deflisten ${tile.id}_bars :initial ${quote (toString ./empty.svg)}
+          `${lib.getExe musicListener} --instance ${tile.id} --layout-file ${musicProfile tile}`)
+        (deflisten ${tile.id}_bars :initial ${quote (toString emptyImage)}
           `${musicAssets}/visualize --instance ${tile.id} --width ${toString (tile.width - 24)} --height 72`)
     '';
-    window = tile: if tile.template == "music" then ''
+    window = tile: if tile.template == "music" then let
+        dimensions = musicDimensions tile;
+    in ''
         (defwindow ${tile.id}
           :monitor ${quote tile.output}
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
           :stacking "bottom" :namespace "eww-music-${tile.id}"
           (box :class "tile music-tile"
             (overlay
-              (zap-music :state ${tile.id}_data :instance ${quote tile.id}
-                :width ${toString (tile.width - 24)} :height ${toString (tile.height - 24)}
-                :art_size ${if tile.size.rows >= 4 then "138" else "90"}
-                :bars ${tile.id}_bars :bar_height 72 :show_album false
-                :large ${if tile.size.rows >= 3 then "true" else "false"})
+              (zap-music-adaptive :state ${tile.id}_data :instance ${quote tile.id}
+                :width ${toString dimensions.width} :height ${toString dimensions.height}
+                :bars ${tile.id}_bars :show_album false)
               (zap-selection-preview :state dashboard_zap_preview
-                :width ${toString (tile.width - 24)} :height ${toString (tile.height - 24)}
+                :width ${toString dimensions.width} :height ${toString dimensions.height}
                 :show_label true))))
     '' else ''
         (defwindow ${tile.id}
