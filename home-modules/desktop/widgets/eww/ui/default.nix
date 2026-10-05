@@ -1,4 +1,4 @@
-{ config, lib, pkgs, tiles, query, period, musicAssets, musicListener }:
+{ config, lib, pkgs, tiles, query, period, musicAssets, musicListener, picker }:
 
 let
     iconFont = "${config.modules.desktop.shells.noctalia.package}/share/noctalia/assets/fonts/noctalia-tabler.ttf";
@@ -35,6 +35,14 @@ let
         entity_id = ""; kind = ""; title = ""; artist = "";
         art = ""; loading = false; error = "";
     };
+    pickerWindow = ''
+        (defwindow zap_picker [zap_session]
+          :geometry (geometry :width "${toString picker.width}px" :height "${toString picker.height}px" :anchor "top center" :y "${toString picker.y}px")
+          :stacking "overlay" :focusable "none" :exclusive false
+          (zap-picker :state zap_picker_state :session zap_session
+            :width ${toString picker.width} :height ${toString picker.height}
+            :marquee zap_picker_marquee))
+    '';
     previewListen = ''
         (deflisten dashboard_zap_preview :initial ${quote (builtins.toJSON initialPreview)}
           `${musicAssets}/listen --channel preview`)
@@ -87,7 +95,11 @@ let
           (${if tile.template == "chart" then "chart-tile" else "value-tile"} :title ${quote tile.title} :icon "${icons}/${tile.icon}.png" :data ${tile.id}_data :header_alignment ${quote (alignment tile)} ${if tile.template == "chart" then '':key ${quote tile.id} :plot_width ${toString (plotWidth tile)}'' else '':compact ${if tile.size.rows == 1 then "true" else "false"}''}))
     '';
 in {
-    yuck = lib.optionalString (musicAssets != null) ''(include "${musicAssets}/widgets.yuck")''
+    yuck = lib.optionalString (musicAssets != null) ''
+        (include "${musicAssets}/widgets.yuck")
+        (include "${musicAssets}/listeners.yuck")
+        ${pickerWindow}
+    ''
         + "\n" + builtins.replaceStrings
             [ "eww-dashboard-period" ] [ (lib.getExe period) ]
             (builtins.readFile ./eww.yuck)

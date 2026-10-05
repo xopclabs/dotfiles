@@ -4,7 +4,7 @@
     inputs = {
         dotfiles.url = "path:../..";
         agents.url = "git+ssh://git@github.com/xopclabs/agents?ref=main";
-        zap.url = "path:/home/xopc/player";
+        zap.url = "git+ssh://git@github.com/xopclabs/zap?ref=main";
     };
 
     outputs = { dotfiles, agents, zap, ... }: {

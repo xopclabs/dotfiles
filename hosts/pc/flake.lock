@@ -1736,14 +1736,18 @@
         "nixpkgs": "nixpkgs_13"
       },
       "locked": {
-        "lastModified": 1791227369,
-        "narHash": "sha256-xfUvP34MBMHsgNcdQlKrZWX5o9t9xRvH4Z0K77zP9oI=",
-        "path": "/home/xopc/player",
-        "type": "path"
+        "lastModified": 1791238465,
+        "narHash": "sha256-AQ5yNZJglu5rSFQC8hBjVYsE0YxLnk6ALqAL9D1NqpA=",
+        "ref": "main",
+        "rev": "a8f0d02e467c601d307e8a24d3b8cd2d0dd22dfd",
+        "revCount": 41,
+        "type": "git",
+        "url": "ssh://git@github.com/xopclabs/zap"
       },
       "original": {
-        "path": "/home/xopc/player",
-        "type": "path"
+        "ref": "main",
+        "type": "git",
+        "url": "ssh://git@github.com/xopclabs/zap"
       }
     }
   },
