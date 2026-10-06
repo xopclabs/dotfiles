@@ -10,12 +10,19 @@ let
     verticalGap = pixels grid.gap.vertical;
     horizontalMargin = pixels grid.margin.horizontal;
     verticalMargin = pixels grid.margin.vertical;
-    place = id: tile: tile // {
+    tilePadding = 12;
+    place = id: tile: let
+        target = if tile.overlay == null then tile else widgets.${tile.overlay} or tile;
+        position = if target.position == null then { row = 0; col = 0; } else target.position;
+        size = if target.size == null then { rows = 0; cols = 0; } else target.size;
+    in tile // {
         id = "${cfg.page}_${id}";
-        x = horizontalMargin + tile.position.col * (unit + horizontalGap);
-        y = verticalMargin + tile.position.row * (unit + verticalGap);
-        width = tile.size.cols * unit + (tile.size.cols - 1) * horizontalGap;
-        height = tile.size.rows * unit + (tile.size.rows - 1) * verticalGap;
+        inherit position size;
+        output = target.output;
+        x = horizontalMargin + position.col * (unit + horizontalGap);
+        y = verticalMargin + position.row * (unit + verticalGap);
+        width = size.cols * unit + (size.cols - 1) * horizontalGap;
+        height = size.rows * unit + (size.rows - 1) * verticalGap;
     };
     widgets = (cfg.pages.${cfg.page} or { widgets = {}; }).widgets;
     tiles = lib.mapAttrsToList place widgets;
@@ -49,13 +56,14 @@ let
         music = map (tile: {
             inherit (tile) id;
             window = tile.id;
-            layout = { inherit (tile) width height inset; };
-            inherit (tile) showAlbum;
+            layout = { inherit (tile) width height; inset = tilePadding; };
+            inherit (tile.settings) showAlbum;
         }) musicTiles;
         previews = map (tile: {
-            inherit (tile) id showLabel;
+            inherit (tile) id;
+            inherit (tile.settings) showLabel;
             window = if tile.overlay == null then tile.id else overlayTarget tile;
-            layout = { inherit (tile) width height inset; };
+            layout = { inherit (tile) width height; inset = tilePadding; };
         }) previewTiles;
         picker = if picker == null then null else {
             inherit (picker) id;
@@ -64,7 +72,7 @@ let
         };
     } else null;
     ui = import ./ui {
-        inherit config lib pkgs tiles zapUi picker isTelemetry overlayTarget;
+        inherit config lib pkgs tiles zapUi picker isTelemetry overlayTarget tilePadding;
         inherit (grafana) query period;
     };
     launch = pkgs.writeShellScriptBin "eww-dashboard" ''
@@ -104,14 +112,22 @@ in {
             type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
                 options.widgets = lib.mkOption {
                     default = {};
-                    type = lib.types.attrsOf (lib.types.submodule ({ ... }: {
+                    type = lib.types.attrsOf (lib.types.submodule ({ config, ... }: {
                         options = {
                             source = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Grafana source key; unused for zap widgets."; };
                             template = lib.mkOption { type = lib.types.enum [ "chart" "value" "zap-music" "zap-picker" "zap-selection-preview" ]; };
-                            overlay = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "For zap-selection-preview, explicitly overlay this page's named zap-music widget instead of creating a window. Geometry must match its target."; };
-                            inset = lib.mkOption { type = lib.types.ints.unsigned; default = 0; description = "Host padding in logical pixels for zap music/preview."; };
-                            showAlbum = lib.mkOption { type = lib.types.bool; default = false; description = "Show the album in zap-music."; };
-                            showLabel = lib.mkOption { type = lib.types.bool; default = false; description = "Show the title in zap-selection-preview."; };
+                            overlay = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "For zap-selection-preview, overlay this page's named zap-music widget and inherit its geometry instead of creating a window."; };
+                            settings = lib.mkOption {
+                                default = {};
+                                description = "Content settings for the selected widget template.";
+                                type = lib.types.submodule {
+                                    options = if config.template == "zap-music" then {
+                                        showAlbum = lib.mkOption { type = lib.types.bool; default = false; description = "Show the playing track's album name."; };
+                                    } else if config.template == "zap-selection-preview" then {
+                                        showLabel = lib.mkOption { type = lib.types.bool; default = false; description = "Show the selected release's title."; };
+                                    } else {};
+                                };
+                            };
                             headerAlignment = lib.mkOption {
                                 type = lib.types.nullOr (lib.types.enum [ "left" "center" ]);
                                 default = null;
@@ -120,22 +136,24 @@ in {
                             field = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Named source field to show in a value widget; null selects the first."; };
                             title = lib.mkOption { type = lib.types.str; default = ""; };
                             icon = lib.mkOption { type = lib.types.str; default = ""; description = "Name of a generated icon PNG."; };
-                            output = lib.mkOption { type = lib.types.str; description = "Eww monitor name."; };
+                            output = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; description = "Eww monitor name; omitted for overlays."; };
                             position = lib.mkOption {
-                                type = lib.types.submodule {
+                                default = null;
+                                type = lib.types.nullOr (lib.types.submodule {
                                     options = {
                                         row = lib.mkOption { type = lib.types.int; };
                                         col = lib.mkOption { type = lib.types.int; };
                                     };
-                                };
+                                });
                             };
                             size = lib.mkOption {
-                                type = lib.types.submodule {
+                                default = null;
+                                type = lib.types.nullOr (lib.types.submodule {
                                     options = {
                                         rows = lib.mkOption { type = lib.types.int; };
                                         cols = lib.mkOption { type = lib.types.int; };
                                     };
-                                };
+                                });
                             };
                         };
                     }));
@@ -153,11 +171,12 @@ in {
             message = "Explicit Eww zap widgets require the zap flake input and enabled programs.zap.";
         } {
             assertion = lib.length pickerTiles <= 1 && lib.all (tile:
-                tile.overlay == null || (tile.template == "zap-selection-preview" && lib.any (target:
-                    target.id == overlayTarget tile && target.output == tile.output
-                    && target.position == tile.position && target.size == tile.size
-                    && target.inset == tile.inset) musicTiles)) tiles;
-            message = "Declare at most one zap-picker; preview overlays must explicitly name a zap-music widget with matching output, geometry and inset.";
+                if tile.overlay == null then tile.output != null && tile.position != null && tile.size != null
+                else tile.template == "zap-selection-preview"
+                    && tile.output == null && tile.position == null && tile.size == null
+                    && builtins.hasAttr tile.overlay widgets
+                    && widgets.${tile.overlay}.template == "zap-music") (builtins.attrValues widgets);
+            message = "Declare at most one zap-picker. Standalone widgets require output, position and size; preview overlays must name a zap-music widget and omit their own geometry.";
         } {
             assertion = builtins.hasAttr cfg.page cfg.pages
                 && lib.all (tile:
