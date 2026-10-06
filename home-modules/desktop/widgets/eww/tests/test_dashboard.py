@@ -40,19 +40,38 @@ class DashboardTests(unittest.TestCase):
     def test_picker_uses_consumer_geometry_and_external_renderer(self):
         module = (HERE / 'eww.nix').read_text()
         ui = (HERE / 'ui/default.nix').read_text()
-        self.assertIn('inherit (cfg.picker) width height;', module)
-        self.assertIn('picker = cfg.picker;', module)
+        self.assertIn('inherit (picker) width height;', module)
+        self.assertIn('picker = if picker == null then null else', module)
+        self.assertNotIn('cfg.picker', module)
         self.assertIn('zapUi.picker.rendererSettings', module)
         self.assertIn('ewwConfigDirectory = ewwConfig;', module)
-        self.assertIn('window = "zap_picker";', module)
+        self.assertIn('window = picker.id;', module)
+        self.assertIn('output = picker.output;', module)
         self.assertNotIn('pickerProfile', module)
-        self.assertIn('(defwindow zap_picker [zap_session]', ui)
+        self.assertIn('(defwindow ${picker.id} [zap_session]', ui)
         self.assertIn(':focusable "none"', ui)
         self.assertIn('${zapUi.picker.widget}', ui)
         self.assertIn('${zapUi.assets}/listeners.yuck', ui)
         self.assertNotIn('playerctl', module)
         self.assertFalse((HERE / 'music.py').exists())
         self.assertFalse((HERE / 'visualizer.py').exists())
+
+    def test_zap_widgets_are_explicit_and_popup_is_not_dashboard_launched(self):
+        module = (HERE / 'eww.nix').read_text()
+        ui = (HERE / 'ui/default.nix').read_text()
+        layout = (HERE / 'layouts/internal-monitor-dashboard.nix').read_text()
+        for template in ('zap-music', 'zap-picker', 'zap-selection-preview'):
+            self.assertIn(f'template = "{template}";', layout)
+        self.assertIn('overlay = "music";', layout)
+        self.assertIn('size = { rows = 4; cols = 7; };', layout)
+        self.assertNotIn('preview = "overlay";', module)
+        self.assertNotIn('template == "music"', module + ui)
+        self.assertIn('tile.template != "zap-picker" && tile.overlay == null', module)
+        self.assertIn('map (tile: tile.id) ordinaryTiles', module)
+        self.assertIn('lib.optionalString (picker != null)', ui)
+        self.assertIn('preview.overlay != null && overlayTarget preview == tile.id', ui)
+        self.assertIn('lib.length pickerTiles <= 1', module)
+        self.assertIn('target.position == tile.position && target.size == tile.size', module)
 
     def test_all_chart_instances_keep_seven_day_first_and_peak(self):
         week = 7 * 24 * 3600 * 1000

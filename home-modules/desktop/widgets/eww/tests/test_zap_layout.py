@@ -151,21 +151,22 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                     self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next'])
                     # The generated consumer now owns the picker too. Its
                     # geometry and close operation must preserve sibling tiles.
-                    picker = re.search(r'\(defwindow zap_picker.*?:width "(\d+)px" :height "(\d+)px"',
+                    picker = re.search(r'\(defwindow main_picker.*?:width "(\d+)px" :height "(\d+)px"',
                                        source, re.DOTALL)
                     self.assertIsNotNone(picker)
+                    self.assertEqual(picker.groups(), ('587', '332'))  # Declared 4 rows × 7 columns.
                     for session in ('first', 'second'):
-                        run('open', 'zap_picker', '--arg', 'zap_session=' + session)
+                        run('open', 'main_picker', '--arg', 'zap_session=' + session)
                         picker_id = subprocess.check_output(
-                            ['xdotool', 'search', '--name', '^Eww - zap_picker$'],
+                            ['xdotool', 'search', '--name', '^Eww - main_picker$'],
                             env=env, text=True, timeout=3).splitlines()[0]
                         geometry = subprocess.check_output(
                             ['xdotool', 'getwindowgeometry', '--shell', picker_id],
                             env=env, text=True, timeout=3)
                         dimensions = dict(line.split('=', 1) for line in geometry.splitlines())
                         self.assertEqual((dimensions['WIDTH'], dimensions['HEIGHT']), picker.groups())
-                        run('close', 'zap_picker')
-                        self.assertNotIn('zap_picker:', run('active-windows'))
+                        run('close', 'main_picker')
+                        self.assertNotIn('main_picker:', run('active-windows'))
                         self.assertIn('chart_stub:', run('active-windows'))
                         self.assertIsNone(daemon.poll())
                     self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next'])

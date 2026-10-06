@@ -1,4 +1,4 @@
-{ config, lib, pkgs, tiles, query, period, zapUi, picker }:
+{ config, lib, pkgs, tiles, query, period, zapUi, picker, isTelemetry, overlayTarget }:
 
 let
     iconFont = "${config.modules.desktop.shells.noctalia.package}/share/noctalia/assets/fonts/noctalia-tabler.ttf";
@@ -11,9 +11,9 @@ let
         magick -size 48x48 xc:none -fill '#eceff4' -font ${iconFont} -pointsize 38 -gravity center -annotate +0+0 '𐀡' $out/bolt.png
     '';
     emptyImage = pkgs.writeText "eww-dashboard-empty.svg" (builtins.readFile ./empty.svg);
-    pickerWindow = ''
-        (defwindow zap_picker [zap_session]
-          :geometry (geometry :width "${toString picker.width}px" :height "${toString picker.height}px" :anchor "top center" :y "${toString picker.y}px")
+    pickerWindow = lib.optionalString (picker != null) ''
+        (defwindow ${picker.id} [zap_session]
+          :geometry (geometry :x "${toString picker.x}px" :y "${toString picker.y}px" :width "${toString picker.width}px" :height "${toString picker.height}px" :anchor "top left")
           :stacking "overlay" :focusable "none" :exclusive false
           ${zapUi.picker.widget})
     '';
@@ -31,13 +31,24 @@ let
         (deflisten ${tile.id}_data :initial ${quote (builtins.toJSON initial)}
           `${lib.getExe query} listen ${tile.id} ${toString width}`)
     '';
-    window = tile: if tile.template == "music" then ''
+    musicWidget = tile: let
+        previews = lib.filter (preview: preview.overlay != null && overlayTarget preview == tile.id) tiles;
+        widget = zapUi.music.${tile.id}.widget;
+    in if previews == [] then widget else ''(overlay ${widget} ${lib.concatMapStringsSep " " (preview: zapUi.previews.${preview.id}.widget) previews})'';
+    window = tile: if tile.template == "zap-picker" || tile.overlay != null then "" else if tile.template == "zap-music" then ''
         (defwindow ${tile.id}
           :monitor ${quote tile.output}
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
           :stacking "bottom" :namespace "eww-music-${tile.id}"
-          (box :class "tile music-tile"
-            ${zapUi.music.${tile.id}.widget}))
+          (box :class "tile music-tile" :style "padding: ${toString tile.inset}px;"
+            ${musicWidget tile}))
+    '' else if tile.template == "zap-selection-preview" then ''
+        (defwindow ${tile.id}
+          :monitor ${quote tile.output}
+          :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
+          :stacking "bottom" :namespace "eww-zap-preview-${tile.id}"
+          (box :style "padding: ${toString tile.inset}px;"
+            ${zapUi.previews.${tile.id}.widget}))
     '' else ''
         (defwindow ${tile.id}
           :monitor ${quote tile.output}
@@ -54,7 +65,7 @@ in {
         + "\n" + builtins.replaceStrings
             [ "eww-dashboard-period" ] [ (lib.getExe period) ]
             (builtins.readFile ./eww.yuck)
-        + "\n" + lib.concatMapStringsSep "\n" listen (lib.filter (tile: tile.template != "music") tiles)
+        + "\n" + lib.concatMapStringsSep "\n" listen (lib.filter isTelemetry tiles)
         + "\n" + lib.concatMapStringsSep "\n" window tiles;
     scss = pkgs.writeText "eww-dashboard.scss" (
         lib.optionalString (zapUi != null) ''@import "${zapUi.assets}/widgets.scss";''
