@@ -31,6 +31,9 @@ window { background: transparent; }
 .compact .header { margin-top: 6px; }
 .compact .reading { font-size: 22px; }
 .music-tile { min-height: 0; }
+// Lift artwork toward the header's lowercase glyphs. Preserve the total
+// inset so the expanding lyric panel does not gain space between its rows.
+.music-tile .zap-music { padding: 4px 12px 20px; }
 .music-tile .zap-selection-preview { background: #2e3440; }
 .music-edge { min-height: 6px; }
 .music-art { font-size: 56px; color: #88c0d0; }
