@@ -121,7 +121,10 @@ in
                     }];
                 };
                 alerting = {
-                    rules.path = ./alerting/rules.yaml;
+                    rules.path = pkgs.runCommand "grafana-alert-rules.yaml" {} ''
+                        ${pkgs.yq-go}/bin/yq eval-all '. as $item ireduce ({}; . *+ $item)' \
+                            ${./alerting/rules.yaml} ${./alerting/logger-health.yaml} > "$out"
+                    '';
                     contactPoints.path = ./alerting/contact-points.yaml;
                 };
             };
