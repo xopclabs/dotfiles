@@ -3,7 +3,7 @@ window { background: transparent; }
 .tile {
   background: #2e3440;
   color: #eceff4;
-  padding: 12px;
+  padding: @TILE_PADDING@px;
   min-height: 132px;
   border-radius: 0;
 }

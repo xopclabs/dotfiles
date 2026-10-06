@@ -48,8 +48,7 @@ in {
     };
     music = {
         template = "zap-music";
-        inset = 12;
-        showAlbum = false;
+        settings.showAlbum = false;
         inherit output;
         position = { row = 2; col = 7; };
         size = { rows = 4; cols = 4; };
@@ -57,10 +56,6 @@ in {
     selection_preview = {
         template = "zap-selection-preview";
         overlay = "music";
-        inset = 12;
-        showLabel = false;
-        inherit output;
-        position = { row = 2; col = 7; };
-        size = { rows = 4; cols = 4; };
+        settings.showLabel = false;
     };
 }

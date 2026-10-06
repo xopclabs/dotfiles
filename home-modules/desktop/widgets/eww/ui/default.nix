@@ -1,4 +1,4 @@
-{ config, lib, pkgs, tiles, query, period, zapUi, picker, isTelemetry, overlayTarget }:
+{ config, lib, pkgs, tiles, query, period, zapUi, picker, isTelemetry, overlayTarget, tilePadding }:
 
 let
     iconFont = "${config.modules.desktop.shells.noctalia.package}/share/noctalia/assets/fonts/noctalia-tabler.ttf";
@@ -40,14 +40,14 @@ let
           :monitor ${quote tile.output}
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
           :stacking "bottom" :namespace "eww-music-${tile.id}"
-          (box :class "tile music-tile" :style "padding: ${toString tile.inset}px;"
+          (box :class "tile music-tile"
             ${musicWidget tile}))
     '' else if tile.template == "zap-selection-preview" then ''
         (defwindow ${tile.id}
           :monitor ${quote tile.output}
           :geometry (geometry :x "${toString tile.x}px" :y "${toString tile.y}px" :width "${toString tile.width}px" :height "${toString tile.height}px" :anchor "top left")
           :stacking "bottom" :namespace "eww-zap-preview-${tile.id}"
-          (box :style "padding: ${toString tile.inset}px;"
+          (box :style "padding: ${toString tilePadding}px;"
             ${zapUi.previews.${tile.id}.widget}))
     '' else ''
         (defwindow ${tile.id}
@@ -69,5 +69,5 @@ in {
         + "\n" + lib.concatMapStringsSep "\n" window tiles;
     scss = pkgs.writeText "eww-dashboard.scss" (
         lib.optionalString (zapUi != null) ''@import "${zapUi.assets}/widgets.scss";''
-        + "\n" + builtins.readFile ./eww.scss);
+        + "\n" + builtins.replaceStrings [ "@TILE_PADDING@" ] [ (toString tilePadding) ] (builtins.readFile ./eww.scss));
 }
