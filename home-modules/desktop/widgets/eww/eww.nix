@@ -57,7 +57,7 @@ let
             inherit (tile) id;
             window = tile.id;
             layout = { inherit (tile) width height; inset = tilePadding; };
-            inherit (tile.settings) showAlbum;
+            inherit (tile.settings) showAlbum volumeStep;
         }) musicTiles;
         previews = map (tile: {
             inherit (tile) id;
@@ -123,6 +123,7 @@ in {
                                 type = lib.types.submodule {
                                     options = if config.template == "zap-music" then {
                                         showAlbum = lib.mkOption { type = lib.types.bool; default = false; description = "Show the playing track's album name."; };
+                                        volumeStep = lib.mkOption { type = lib.types.ints.between 1 100; default = 2; description = "MPD volume percentage points per accepted music scroll event."; };
                                     } else if config.template == "zap-selection-preview" then {
                                         showLabel = lib.mkOption { type = lib.types.bool; default = false; description = "Show the selected release's title."; };
                                     } else {};
