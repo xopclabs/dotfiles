@@ -18,11 +18,12 @@ class ZapDashboardLayoutTests(unittest.TestCase):
         from zap.music_presentation import capture_enabled
         class MPD:
             state = 'play'
+            volume = 50
             commands = []
             def object(self, name):
                 if name == 'status':
                     return {'state': self.state, 'songid': '1', 'elapsed': '3', 'duration': '120',
-                            'playlistlength': '1', 'playlist': '1'}
+                            'playlistlength': '1', 'playlist': '1', 'volume': str(self.volume)}
                 return {'id': '1', 'file': 'fixture', 'artist': '', 'title': 'Fixture track', 'album': 'Fixture release'}
             def command(self, name, *args):
                 self.commands.append(name)
@@ -30,6 +31,8 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                     self.state = 'pause' if args == ('1',) else 'play'
                 elif name == 'play':
                     self.state = 'play'
+                elif name == 'volume':
+                    self.volume = max(0, min(100, self.volume + int(args[0])))
                 return []
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -139,6 +142,22 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                     wait(lambda: mpd.commands[-1] == 'previous' and state()['feedback'] == 'previous')
                     click_at(*control_center(b'\x00\xff\x00'))
                     wait(lambda: mpd.commands[-1] == 'next' and state()['feedback'] == 'next')
+                    # Exercise the exported config-bound scroll command, not a
+                    # discrete X11 wheel event (Eww consumes smooth deltas).
+                    widget_source = (integration / 'widgets.yuck').read_text()
+                    control = re.search(r'(/nix/store/[^"\s]+/music-control)', widget_source).group(1)
+                    before_volume = backend.core.state()
+                    run('update', 'zap_preview_state=' + json.dumps({
+                        'visible': True, 'kind': 'album', 'title': 'Selection',
+                        'artist': 'Fixture', 'art': ''}))
+                    for direction, expected in (('up', 52), ('down', 50)):
+                        subprocess.run([control, '--instance', 'main_music', '--token', first_token,
+                            '--direction', direction, 'volume-scroll'], env=env, check=True, timeout=3)
+                        wait(lambda: state()['volume'] == expected and state()['feedback_text'] == f'{expected}%')
+                    after_volume = backend.core.state()
+                    for key in ('playlist_version', 'queue_length', 'current', 'status', 'elapsed'):
+                        self.assertEqual(after_volume[key], before_volume[key])
+                    run('update', 'zap_preview_state=' + json.dumps({'visible': False}))
                     run('close', 'main_music')
                     wait(lambda: not (directory / 'listener.json').exists() and not list(directory.glob('frames-*')))
                     self.assertFalse(capture_enabled(directory))
@@ -148,7 +167,7 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                     wait(lambda: state()['listener_token'] != first_token and capture_enabled(directory))
                     run('close', 'main_music')
                     wait(lambda: not (directory / 'listener.json').exists())
-                    self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next'])
+                    self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next', 'volume', 'volume'])
                     # The generated consumer now owns the picker too. Its
                     # geometry and close operation must preserve sibling tiles.
                     picker = re.search(r'\(defwindow main_picker.*?:width "(\d+)px" :height "(\d+)px"',
@@ -169,7 +188,7 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                         self.assertNotIn('main_picker:', run('active-windows'))
                         self.assertIn('chart_stub:', run('active-windows'))
                         self.assertIsNone(daemon.poll())
-                    self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next'])
+                    self.assertEqual(mpd.commands, ['pause', 'pause', 'previous', 'next', 'volume', 'volume'])
                     log.seek(0)
                     logs = log.read()
                     self.assertNotIn('Unknown attribute', logs)
