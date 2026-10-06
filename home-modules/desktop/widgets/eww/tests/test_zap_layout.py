@@ -39,8 +39,20 @@ class ZapDashboardLayoutTests(unittest.TestCase):
             # Test display has no eDP-1; retain generated dimensions/component/commands.
             source = re.sub(r'^\s*:monitor "[^"\n]*"\n', '\n', source, flags=re.MULTILINE)
             # The adapter's consumer path, not the real dashboard daemon, owns this fixture.
-            source = source.replace('--instance main_music --layout-file',
-                                    f'--instance main_music --eww-config {root} --layout-file', 1)
+            integration = Path(re.search(r'\(include "([^"]+)/listeners.yuck"\)', source).group(1))
+            import shlex
+            listeners = (integration / 'listeners.yuck').read_text()
+            for wrapper in integration.iterdir():
+                if wrapper.name.endswith(('_state', '_marquee', '_bars')):
+                    lines = wrapper.read_text().splitlines()
+                    args = shlex.split(lines[1])
+                    args[args.index('--eww-config') + 1] = str(root)
+                    copied = root / wrapper.name
+                    copied.write_text(lines[0] + '\n' + shlex.join(args) + '\n')
+                    copied.chmod(0o755)
+                    listeners = listeners.replace(str(wrapper), str(copied))
+            (root / 'listeners.yuck').write_text(listeners)
+            source = source.replace(str(integration / 'listeners.yuck'), str(root / 'listeners.yuck'))
             source += '\n(defwindow chart_stub :geometry (geometry :width "120px" :height "80px") (button :timeout "2s" :onclick "touch ' + str(root / 'pointer-check') + '" (label :text "unrelated chart")))'
             (root / 'eww.yuck').write_text(source)
             (root / 'eww.scss').write_text(Path(os.environ['ZAP_DASHBOARD_SCSS']).read_text() +
@@ -63,7 +75,7 @@ class ZapDashboardLayoutTests(unittest.TestCase):
                                   + '\n' + (root / 'eww.log').read_text())
                     time.sleep(.03)
             def state():
-                return json.loads(run('get', 'main_music_data'))
+                return json.loads(run('get', 'zap_instance_main_music_state'))
             mpd = MPD()
             backend = Server(str(runtime / 'zap/api.sock'), Core(mpd))
             worker = threading.Thread(target=backend.serve_forever, daemon=True)

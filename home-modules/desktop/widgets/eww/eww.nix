@@ -35,21 +35,25 @@ let
     zap = args.zap or null;
     hasMusic = lib.any (tile: tile.template == "music") tiles;
     zapEnabled = lib.attrByPath [ "programs" "zap" "enable" ] false config;
-    musicAssets = if zap != null && zapEnabled then
-        zap.packages.${pkgs.stdenv.hostPlatform.system}.eww-widgets.withConfig
-            (toString config.xdg.configFile."zap/config.json".source)
-        else null;
-    musicListener = pkgs.writeShellScriptBin "eww-dashboard-zap-listen" ''
-        exec ${pkgs.python3}/bin/python3 ${./zap_listener.py} \
-            --eww ${lib.getExe pkgs.eww} --eww-config ${lib.escapeShellArg ewwConfig} \
-            --assets ${if musicAssets == null then "unused" else musicAssets} "$@"
-    '';
-    pickerProfile = pkgs.writeText "zap-picker-layout.json" (builtins.toJSON {
-        schema = 1;
-        inherit (cfg.picker) width height;
-    });
+    zapUi = if zap != null && zapEnabled then zap.lib.mkEwwIntegration {
+        inherit pkgs;
+        configFile = toString config.xdg.configFile."zap/config.json".source;
+        ewwConfigDirectory = ewwConfig;
+        music = map (tile: {
+            inherit (tile) id;
+            window = tile.id;
+            layout = { inherit (tile) width height; inset = 12; };
+            showAlbum = false;
+            preview = "overlay";
+        }) (lib.filter (tile: tile.template == "music") tiles);
+        picker = {
+            id = "zap_picker";
+            window = "zap_picker";
+            layout = { inherit (cfg.picker) width height; };
+        };
+    } else null;
     ui = import ./ui {
-        inherit config lib pkgs tiles musicAssets musicListener;
+        inherit config lib pkgs tiles zapUi;
         picker = cfg.picker;
         inherit (grafana) query period;
     };
@@ -140,12 +144,6 @@ in {
             assertion = !hasMusic || (zap != null && zapEnabled);
             message = "Eww music tiles require the zap flake input and enabled programs.zap.";
         } {
-            assertion = lib.all (tile: tile.template != "music" ||
-                (builtins.match "[A-Za-z_][A-Za-z0-9_-]{0,63}" tile.id != null
-                    && tile.width - 24 >= 240 && tile.width - 24 <= 2048
-                    && tile.height - 24 >= 180 && tile.height - 24 <= 8192)) tiles;
-            message = "Eww zap music instances need safe identifiers and declared content profiles of 240–2048 × 180–8192 logical pixels.";
-        } {
             assertion = builtins.hasAttr cfg.page cfg.pages
                 && lib.all (tile:
                     (if tile.template == "music" then tile.source == null
@@ -177,18 +175,12 @@ in {
             };
         };
 
-        home.packages = [ pkgs.eww grafana.query grafana.period launch ]
-            ++ lib.optional hasMusic musicListener;
+        home.packages = [ pkgs.eww grafana.query grafana.period launch ];
 
         xdg.configFile."eww-dashboard/queries.json".text = builtins.toJSON queries;
         xdg.configFile."eww-dashboard/eww.yuck".text = ui.yuck;
         xdg.configFile."eww-dashboard/eww.scss".source = ui.scss;
     } // lib.optionalAttrs (zap != null) {
-        programs.zap.settings.popup.renderer = lib.mkIf zapEnabled {
-            mode = "external";
-            config_directory = ewwConfig;
-            window = "zap_picker";
-            layout_file = toString pickerProfile;
-        };
+        programs.zap.settings.popup.renderer = lib.mkIf zapEnabled zapUi.picker.rendererSettings;
     });
 }
