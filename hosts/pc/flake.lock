@@ -6,11 +6,11 @@
         "qmd": "qmd"
       },
       "locked": {
-        "lastModified": 1791227799,
-        "narHash": "sha256-nzYMcrUuXKW7uSPOXC8aDy2ALU+BWBLx7NtcOqkfAQk=",
+        "lastModified": 1791348411,
+        "narHash": "sha256-Fe0OqE1b5wSEILNlovPzINUaISRgf4Ezr2RAqC9joTc=",
         "ref": "main",
-        "rev": "c399515076ed60b967fa62b5d7dcff0c40a611c2",
-        "revCount": 26,
+        "rev": "c264ee99f2e4cbe022db4f7ff1d919f17ef20be3",
+        "revCount": 28,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/agents"
       },
@@ -1736,11 +1736,11 @@
         "nixpkgs": "nixpkgs_13"
       },
       "locked": {
-        "lastModified": 1791247338,
-        "narHash": "sha256-ZlNdeoZbqbbwTkMzAkPBHmvYV9FjZbItbyK/KKgtBy8=",
+        "lastModified": 1791600769,
+        "narHash": "sha256-h07cYqG+PrKm0oymc6McJBOUD0gEx5Y78vu+goD+UDw=",
         "ref": "main",
-        "rev": "a8a8108315e88bde8934928341470622b68c8459",
-        "revCount": 46,
+        "rev": "1c3a31fa61bfb690698ab479b3e8d2f9f368bcd8",
+        "revCount": 67,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/zap"
       },
