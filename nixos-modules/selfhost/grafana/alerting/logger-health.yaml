@@ -1,0 +1,261 @@
+apiVersion: 1
+
+groups:
+
+  - orgId: 1
+    name: logger-health-alerts
+    folder: Telemetry
+    interval: 1m
+    rules:
+      - uid: logger-air-stale
+        title: Air sensor is not reporting
+        condition: B
+        for: 0s
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: Air sensor has stopped reporting telemetry.
+          description: No new readings for 30 minutes. Recovery requires at least two non-retained readings spanning five minutes after reporting resumes.
+        labels:
+          severity: warning
+          logger: air
+        notification_settings:
+          receiver: ntfy-co2
+          group_by: [grafana_folder, alertname, logger]
+          group_wait: 0s
+          group_interval: 1m
+          repeat_interval: 8h
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: telemetry-postgres
+            model:
+              datasource:
+                type: grafana-postgresql-datasource
+                uid: telemetry-postgres
+              editorMode: code
+              format: table
+              rawQuery: true
+              rawSql: |
+                WITH readings AS (
+                  SELECT received_at,
+                    lag(received_at) OVER (ORDER BY received_at) AS previous_at
+                  FROM mqtt_messages
+                  WHERE topic = 'apartment/room/air-quality'
+                    AND received_at > now() - interval '65 minutes'
+                    AND NOT retained
+                    AND payload ? 'co2_ppm'
+                ), sessions AS (
+                  SELECT received_at,
+                    sum(CASE WHEN previous_at IS NULL
+                      OR received_at - previous_at >= interval '30 minutes'
+                      THEN 1 ELSE 0 END) OVER (ORDER BY received_at) AS session_id
+                  FROM readings
+                )
+                SELECT CASE WHEN max(received_at) > now() - interval '30 minutes'
+                  AND count(DISTINCT received_at) >= 2
+                  AND max(received_at) - min(received_at) >= interval '5 minutes'
+                  THEN 0 ELSE 1 END AS value
+                FROM sessions
+                WHERE session_id = (SELECT max(session_id) FROM sessions)
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [1]
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+      - uid: logger-pc-stale
+        title: PC plug is not reporting
+        condition: B
+        for: 0s
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: PC plug has stopped reporting telemetry.
+          description: No new readings for 30 minutes. Recovery requires at least two non-retained readings spanning five minutes after reporting resumes.
+        labels:
+          severity: warning
+          logger: pc
+        notification_settings:
+          receiver: ntfy-co2
+          group_by: [grafana_folder, alertname, logger]
+          group_wait: 0s
+          group_interval: 1m
+          repeat_interval: 8h
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: telemetry-postgres
+            model:
+              datasource:
+                type: grafana-postgresql-datasource
+                uid: telemetry-postgres
+              editorMode: code
+              format: table
+              rawQuery: true
+              rawSql: |
+                WITH readings AS (
+                  SELECT received_at,
+                    lag(received_at) OVER (ORDER BY received_at) AS previous_at
+                  FROM mqtt_messages
+                  WHERE topic = 'apartment/room/pc/status/switch:0'
+                    AND received_at > now() - interval '65 minutes'
+                    AND NOT retained
+                    AND payload ? 'apower'
+                ), sessions AS (
+                  SELECT received_at,
+                    sum(CASE WHEN previous_at IS NULL
+                      OR received_at - previous_at >= interval '30 minutes'
+                      THEN 1 ELSE 0 END) OVER (ORDER BY received_at) AS session_id
+                  FROM readings
+                )
+                SELECT CASE WHEN max(received_at) > now() - interval '30 minutes'
+                  AND count(DISTINCT received_at) >= 2
+                  AND max(received_at) - min(received_at) >= interval '5 minutes'
+                  THEN 0 ELSE 1 END AS value
+                FROM sessions
+                WHERE session_id = (SELECT max(session_id) FROM sessions)
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [1]
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+      - uid: logger-ac-stale
+        title: AC plug is not reporting
+        condition: B
+        for: 0s
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: AC plug has stopped reporting telemetry.
+          description: No new readings for 30 minutes. Recovery requires at least two non-retained readings spanning five minutes after reporting resumes.
+        labels:
+          severity: warning
+          logger: ac
+        notification_settings:
+          receiver: ntfy-co2
+          group_by: [grafana_folder, alertname, logger]
+          group_wait: 0s
+          group_interval: 1m
+          repeat_interval: 8h
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: telemetry-postgres
+            model:
+              datasource:
+                type: grafana-postgresql-datasource
+                uid: telemetry-postgres
+              editorMode: code
+              format: table
+              rawQuery: true
+              rawSql: |
+                WITH readings AS (
+                  SELECT received_at,
+                    lag(received_at) OVER (ORDER BY received_at) AS previous_at
+                  FROM mqtt_messages
+                  WHERE topic = 'apartment/room/ac/status/switch:0'
+                    AND received_at > now() - interval '65 minutes'
+                    AND NOT retained
+                    AND payload ? 'apower'
+                ), sessions AS (
+                  SELECT received_at,
+                    sum(CASE WHEN previous_at IS NULL
+                      OR received_at - previous_at >= interval '30 minutes'
+                      THEN 1 ELSE 0 END) OVER (ORDER BY received_at) AS session_id
+                  FROM readings
+                )
+                SELECT CASE WHEN max(received_at) > now() - interval '30 minutes'
+                  AND count(DISTINCT received_at) >= 2
+                  AND max(received_at) - min(received_at) >= interval '5 minutes'
+                  THEN 0 ELSE 1 END AS value
+                FROM sessions
+                WHERE session_id = (SELECT max(session_id) FROM sessions)
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ""
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [1]
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions

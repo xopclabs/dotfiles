@@ -6,11 +6,11 @@
         "qmd": "qmd"
       },
       "locked": {
-        "lastModified": 1790723926,
-        "narHash": "sha256-Ka+jRETCf8yGrlapitpCwYVkUzkcWjLe9ZP2Mff5r0s=",
+        "lastModified": 1791348411,
+        "narHash": "sha256-Fe0OqE1b5wSEILNlovPzINUaISRgf4Ezr2RAqC9joTc=",
         "ref": "main",
-        "rev": "1288561b772e52b4aefd09f3f0030f2f5f0be501",
-        "revCount": 24,
+        "rev": "c264ee99f2e4cbe022db4f7ff1d919f17ef20be3",
+        "revCount": 28,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/agents"
       },
@@ -983,6 +983,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_13": {
+      "locked": {
+        "lastModified": 1789006805,
+        "narHash": "sha256-xB8mKMOx1IA9vTDNLmJZ6n4wCMq/cuWBBOzGCRnqxrU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "8ce4ef6cb6f871616146b9fe26d2a5ae594e94fe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "8ce4ef6cb6f871616146b9fe26d2a5ae594e94fe",
+        "type": "github"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1785141334,
@@ -1326,7 +1342,8 @@
     "root": {
       "inputs": {
         "agents": "agents",
-        "dotfiles": "dotfiles"
+        "dotfiles": "dotfiles",
+        "zap": "zap"
       }
     },
     "rtf-tokenize": {
@@ -1712,6 +1729,25 @@
         "owner": "AndyFilter",
         "repo": "YeetMouse",
         "type": "github"
+      }
+    },
+    "zap": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_13"
+      },
+      "locked": {
+        "lastModified": 1791600769,
+        "narHash": "sha256-h07cYqG+PrKm0oymc6McJBOUD0gEx5Y78vu+goD+UDw=",
+        "ref": "main",
+        "rev": "1c3a31fa61bfb690698ab479b3e8d2f9f368bcd8",
+        "revCount": 67,
+        "type": "git",
+        "url": "ssh://git@github.com/xopclabs/zap"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "ssh://git@github.com/xopclabs/zap"
       }
     }
   },

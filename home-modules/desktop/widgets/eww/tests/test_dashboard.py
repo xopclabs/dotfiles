@@ -1,9 +1,12 @@
 import importlib.util
+import json
+import os
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock, call, patch
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 HERE = Path(__file__).parent.parent
@@ -18,7 +21,6 @@ def load(name, directory):
 
 
 query = load("query", "grafana")
-music = load("music", ".")
 
 class DashboardTests(unittest.TestCase):
     def test_grafana_listener_bounds_each_query_and_keeps_publishing(self):
@@ -38,17 +40,111 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(process.call_args.kwargs["timeout"], 20)
         output.assert_called_once_with('{"value":"ok"}', flush=True)
 
-    def test_skip_dispatches_before_feedback(self):
-        with patch.object(music, "active_player", return_value="Feishin"), \
-             patch.object(music.subprocess, "run") as action, \
-             patch.object(music, "feedback") as feedback:
-            calls = Mock()
-            calls.attach_mock(action, "action")
-            calls.attach_mock(feedback, "feedback")
-            music.skip("next")
-            self.assertEqual(calls.mock_calls[0].args[0][-1], "next")
-            self.assertEqual(calls.mock_calls[1], call.feedback("next"))
-            self.assertEqual(action.call_args.kwargs["timeout"], 1)
+    def test_picker_uses_consumer_geometry_and_external_renderer(self):
+        module = (HERE / 'eww.nix').read_text()
+        ui = (HERE / 'ui/default.nix').read_text()
+        self.assertIn('inherit (picker) width height;', module)
+        self.assertIn('picker = if picker == null then null else', module)
+        self.assertNotIn('cfg.picker', module)
+        self.assertIn('zapUi.picker.rendererSettings', module)
+        self.assertIn('ewwConfigDirectory = ewwConfig;', module)
+        self.assertIn('window = picker.id;', module)
+        self.assertIn('output = picker.output;', module)
+        self.assertNotIn('pickerProfile', module)
+        self.assertIn('(defwindow ${picker.id} [zap_session]', ui)
+        self.assertIn(':focusable "none"', ui)
+        self.assertIn('${zapUi.picker.widget}', ui)
+        self.assertIn('${zapUi.assets}/listeners.yuck', ui)
+        self.assertNotIn('playerctl', module)
+        self.assertFalse((HERE / 'music.py').exists())
+        self.assertFalse((HERE / 'visualizer.py').exists())
+
+    def test_zap_widgets_are_explicit_and_popup_is_not_dashboard_launched(self):
+        module = (HERE / 'eww.nix').read_text()
+        ui = (HERE / 'ui/default.nix').read_text()
+        layout = (HERE / 'layouts/internal-monitor-dashboard.nix').read_text()
+        for template in ('zap-music', 'zap-picker', 'zap-selection-preview'):
+            self.assertIn(f'template = "{template}";', layout)
+        self.assertIn('overlay = "music";', layout)
+        self.assertIn('size = { rows = 4; cols = 7; };', layout)
+        self.assertNotIn('preview = "overlay";', module)
+        self.assertNotIn('template == "music"', module + ui)
+        self.assertIn('tile.template != "zap-picker" && tile.overlay == null', module)
+        self.assertIn('map (tile: tile.id) ordinaryTiles', module)
+        self.assertIn('lib.optionalString (picker != null)', ui)
+        self.assertIn('preview.overlay != null && overlayTarget preview == tile.id', ui)
+        self.assertIn('lib.length pickerTiles <= 1', module)
+        self.assertIn('tile.output == null && tile.position == null && tile.size == null', module)
+        self.assertIn('output = target.output;', module)
+        self.assertIn('inherit (tile.settings) showAlbum volumeStep;', module)
+        self.assertIn('volumeStep = lib.mkOption { type = lib.types.ints.between 1 100; default = 2;', module)
+        self.assertIn('inherit (tile.settings) showLabel;', module)
+        self.assertNotIn('inset = lib.mkOption', module)
+        self.assertIn('inset = tilePadding;', module)
+        self.assertIn('settings.showAlbum = false;', layout)
+        preview = layout.split('selection_preview = {', 1)[1]
+        for field in ('position =', 'size =', 'inherit output', 'inset ='):
+            self.assertNotIn(field, preview)
+        self.assertIn('settings.showLabel = false;', preview)
+        self.assertIn('[ "@TILE_PADDING@" ] [ (toString tilePadding) ]', ui)
+
+    @unittest.skipUnless(os.environ.get('ZAP_TEST_CONSUMER_FLAKE') and os.environ.get('ZAP_TEST_ZAP_SOURCE'),
+                         'Set consumer wrapper and local zap source for Nix layout contract checks')
+    def test_nix_widget_settings_and_overlay_geometry(self):
+        command = ['nix', 'eval', os.environ['ZAP_TEST_CONSUMER_FLAKE'] + '#nixosConfigurations.pc',
+                   '--override-input', 'dotfiles', 'path:' + str(HERE.parents[3]),
+                   '--override-input', 'zap', 'path:' + os.environ['ZAP_TEST_ZAP_SOURCE'],
+                   '--no-write-lock-file', '--json']
+        cases = [
+            ('overlay', 'original', True),
+            ('settings', 'original // { music = original.music // { settings.showAlbum = true; }; selection_preview = original.selection_preview // { settings.showLabel = true; }; }', True),
+            ('target-resize', 'original // { music = original.music // { size = { rows = 5; cols = 4; }; }; }', True),
+            ('standalone', 'original // { selection_preview = original.selection_preview // { overlay = null; output = "eDP-1"; position = { row = 4; col = 0; }; size = { rows = 3; cols = 7; }; }; }', True),
+            ('no-preview', 'builtins.removeAttrs original [ "selection_preview" ]', True),
+            ('no-zap', 'lib.filterAttrs (_: w: lib.elem w.template [ "chart" "value" ]) original', True),
+            ('overlay-geometry', 'original // { selection_preview = original.selection_preview // { size = { rows = 4; cols = 4; }; }; }', False),
+            ('missing-target', 'original // { selection_preview = original.selection_preview // { overlay = "missing"; }; }', False),
+            ('wrong-target', 'original // { selection_preview = original.selection_preview // { overlay = "picker"; }; }', False),
+            ('missing-geometry', 'original // { music = original.music // { position = null; }; }', False),
+            ('wrong-setting', 'original // { music = original.music // { settings.showLabel = true; }; }', False),
+            ('legacy-inset', 'original // { music = original.music // { inset = 12; }; }', False),
+            ('legacy-showAlbum', 'original // { music = original.music // { showAlbum = true; }; }', False),
+        ]
+        for name, widgets, valid in cases:
+            with self.subTest(name=name):
+                result_expr = 'yuck = c.xdg.configFile."eww-dashboard/eww.yuck".text;' if valid else ''
+                expression = '''system: let
+                    lib = system.pkgs.lib;
+                    original = system.config.home-manager.users.xopc.modules.desktop.widgets.eww.pages.main.widgets;
+                    c = (system.extendModules { modules = [ { home-manager.users.xopc.modules.desktop.widgets.eww = {
+                        layout = lib.mkForce null; pages.main.widgets = lib.mkForce (''' + widgets + ''');
+                    }; } ]; }).config.home-manager.users.xopc;
+                    in { failures = builtins.filter (a: !a.assertion) c.assertions; ''' + result_expr + ' }'
+                result = subprocess.run(command + ['--apply', expression], capture_output=True, text=True, timeout=180)
+                if not valid:
+                    self.assertTrue(result.returncode != 0 or json.loads(result.stdout)['failures'],
+                                    'Invalid layout/settings must be rejected')
+                    continue
+                self.assertEqual(result.returncode, 0, result.stderr)
+                value = json.loads(result.stdout)
+                self.assertEqual(value['failures'], [])
+                yuck = value['yuck']
+                if name in ('overlay', 'target-resize', 'settings'):
+                    self.assertIn('(overlay (zap-music ', yuck)
+                    self.assertNotIn('(defwindow main_selection_preview', yuck)
+                    height = 393 if name == 'target-resize' else 308
+                    self.assertEqual(yuck.count(f':width 308 :height {height}'), 2)
+                if name == 'settings':
+                    self.assertIn(':show_album true', yuck)
+                    self.assertIn(':show_label true', yuck)
+                if name == 'standalone':
+                    self.assertIn('(defwindow main_selection_preview', yuck)
+                    self.assertNotIn('(overlay (zap-music ', yuck)
+                if name == 'no-preview':
+                    self.assertNotIn('(zap-selection-preview ', yuck)
+                if name == 'no-zap':
+                    self.assertNotIn('(zap-', yuck)
+                    self.assertNotIn('/widgets.yuck', yuck)
 
     def test_all_chart_instances_keep_seven_day_first_and_peak(self):
         week = 7 * 24 * 3600 * 1000
