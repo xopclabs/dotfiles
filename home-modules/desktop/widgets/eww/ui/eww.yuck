@@ -1,38 +1,3 @@
-(defwidget music-lyric-frame [lines]
-  (box :class "music-lyrics" :orientation "vertical" :space-evenly false
-    (label :class "music-adjacent" :hexpand true :halign "center" :justify "center" :limit-width 50 :lines 1 :truncate true :text {lines.previous})
-    (label :class {lines.pending ? "music-current pending" : "music-current"} :hexpand true :halign "center" :justify "center" :limit-width 55 :lines 2 :wrap true :text {lines.current})
-    (label :class "music-adjacent" :hexpand true :halign "center" :justify "center" :limit-width 50 :lines 1 :truncate true :text {lines.next})))
-
-(defwidget music-tile [data bars large art_size bar_width feedback feedback_icons]
-  (box :class "tile music-tile" :orientation "vertical" :space-evenly false
-    (box :class "music-edge")
-    (centerbox :class "music-art-row" :hexpand true
-      (eventbox :hexpand true :timeout "2s" :onclick "eww-dashboard-music previous"
-        (box :class "music-skip-zone" :hexpand true :vexpand true :height art_size))
-      (eventbox :class "music-art" :timeout "2s" :onclick "eww-dashboard-music art-click"
-        (overlay
-          (box
-            (image :visible {data.art != ""} :path {data.art} :image-width art_size :image-height art_size)
-            (label :visible {data.art == ""} :text "♫"))
-          (revealer :transition "crossfade" :duration "180ms" :reveal {feedback != ""} :halign "center" :valign "center"
-            (image :class "music-feedback" :path "${feedback_icons}/${feedback == "" ? "play" : feedback}.svg"
-              :image-width 36 :image-height 36))))
-      (eventbox :hexpand true :timeout "2s" :onclick "eww-dashboard-music next"
-        (box :class "music-skip-zone" :hexpand true :vexpand true :height art_size)))
-    (box :class "music-art-gap")
-    (label :class "music-title" :limit-width 32 :wrap true :lines 2 :justify "center" :text {data.title})
-    (label :class "music-artist" :limit-width 32 :wrap true :lines 2 :text {data.artist})
-    (box :class "music-metadata-gap" :vexpand {!data.has_lyrics || music_show_visualizer})
-    (eventbox :visible large :onclick "eww update music_show_visualizer=${data.has_lyrics ? !music_show_visualizer : music_show_visualizer}"
-      (box :class "music-lower" :hexpand true :orientation "vertical" :space-evenly false
-        (stack :visible {data.has_lyrics && !music_show_visualizer} :selected {data.lyric_slot} :transition "slideup" :same-size true
-          (music-lyric-frame :lines {data.lyrics0})
-          (music-lyric-frame :lines {data.lyrics1}))
-        (image :class "music-bars" :visible {!data.has_lyrics || music_show_visualizer}
-          :path bars :image-width bar_width :image-height 72)))
-    (box :class "music-edge" :vexpand {data.has_lyrics && !music_show_visualizer})))
-
 (defwidget chart-tile [title icon data key plot_width header_alignment]
   (box :class "tile chart-tile" :orientation "vertical" :space-evenly false
     (box :class "header" :hexpand true :space-evenly false

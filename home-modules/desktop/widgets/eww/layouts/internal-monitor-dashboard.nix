@@ -40,10 +40,22 @@ in {
         size = { rows = 2; cols = 5; };
     };
 
+    picker = {
+        template = "zap-picker";
+        inherit output;
+        position = { row = 2; col = 0; };
+        size = { rows = 4; cols = 7; };
+    };
     music = {
-        template = "music"; title = "Music"; icon = "plug";
+        template = "zap-music";
+        settings.showAlbum = false;
         inherit output;
         position = { row = 2; col = 7; };
         size = { rows = 4; cols = 4; };
+    };
+    selection_preview = {
+        template = "zap-selection-preview";
+        overlay = "music";
+        settings.showLabel = false;
     };
 }
