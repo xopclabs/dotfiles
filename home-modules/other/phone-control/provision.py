@@ -31,15 +31,18 @@ def provision(serial, port):
     pair = json.loads(raw)
     identity = '\n'.join(pair[key] for key in ('url', 'pin', 'token'))
     digest = hashlib.sha256(identity.encode()).hexdigest().encode()
-    # Never put credentials in command arguments, shared storage, or logs.
-    adb('content', 'write', '--uri', URI, data=raw)
-    for _ in range(20):
-        if digest in adb('content', 'query', '--uri', URI):
-            subprocess.run(['systemctl', '--user', 'start', 'phone-notification-relay.service'],
-                           capture_output=True, check=True, timeout=15)
-            return
-        time.sleep(0.1)
-    raise RuntimeError('Helper did not accept provisioning')
+    # Query first: unchanged pairings need no write or second verification.
+    if digest not in adb('content', 'query', '--uri', URI):
+        # Never put credentials in command arguments, shared storage, or logs.
+        adb('content', 'write', '--uri', URI, data=raw)
+        for _ in range(20):
+            if digest in adb('content', 'query', '--uri', URI):
+                break
+            time.sleep(0.1)
+        else:
+            raise RuntimeError('Helper did not accept provisioning')
+    subprocess.run(['systemctl', '--user', 'start', 'phone-notification-relay.service'],
+                   capture_output=True, check=True, timeout=15)
 
 
 if __name__ == '__main__':

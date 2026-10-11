@@ -132,12 +132,18 @@ if [[ -n "$pin_file" ]]; then
     fi
 fi
 
-# HTTPS remains independent after this one trusted-ADB provisioning step.
+# Notification setup must not delay the scrcpy window or retain its session lock.
+# A separate lock avoids overlapping provisioning if a session is reopened quickly.
 if [[ -n "${relay_provision:-}" ]]; then
-    if ! python3 "$relay_provision" "$serial" "$relay_port" >"$log" 2>&1; then
-        notify-send --app-name='Phone Control' --icon=smartphone --urgency=critical \
-            'Notification setup failed' 'Update the phone helper and check Wi-Fi. Phone control will still open.' || true
-    fi
+    (
+        exec 9>&-
+        exec 8>"$runtime_dir/phone-control-relay.lock"
+        flock -n 8 || exit 0
+        if ! python3 "$relay_provision" "$serial" "$relay_port" 8>&- >/dev/null 2>&1; then
+            notify-send --app-name='Phone Control' --icon=smartphone --urgency=critical \
+                'Notification setup failed' 'Update the phone helper and check Wi-Fi. Phone control will still open.' 8>&- || true
+        fi
+    ) &
 fi
 
 if SDL_APP_ID=phone-control scrcpy --serial="$serial" --window-title='Phone Control' --window-width=499 --window-height=1072 --keyboard=uhid --turn-screen-off --keep-active "$@" >"$log" 2>&1; then
