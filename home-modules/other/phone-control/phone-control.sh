@@ -15,8 +15,21 @@ runtime_dir="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/phone-control-$UID}"
 mkdir -p "$runtime_dir"
 exec 9>"$runtime_dir/phone-control.lock"
 if ! flock -n 9; then
-    notify-send --app-name='Phone Control' --icon=smartphone \
-        'Phone Control' 'A phone-control session is already running.' || true
+    # The first launch may still be connecting/unlocking. Give its window up to
+    # ten seconds to appear, without starting another session or showing a popup.
+    if [[ -n "${NIRI_SOCKET:-}" ]] && command -v niri >/dev/null 2>&1; then
+        for ((attempt = 0; attempt < 40; attempt++)); do
+            if window_id=$(niri msg --json windows 2>/dev/null | jq -er '
+                [.[] | select(.app_id == "phone-control" and .title == "Phone Control")]
+                | first | .id // empty
+            ' 2>/dev/null); then
+                if niri msg action focus-window --id "$window_id" >/dev/null 2>&1; then
+                    exit 0
+                fi
+            fi
+            sleep 0.25
+        done
+    fi
     exit 0
 fi
 
@@ -37,7 +50,9 @@ for ((attempt = 0; attempt < 12; attempt++)); do
     if ! devices=$(adb devices 2>"$log"); then
         fail 'Could not list ADB devices.'
     fi
-    mapfile -t phones < <(printf '%s\n' "$devices" | awk '
+    # ADB separates serial and state with a tab. mDNS names can contain spaces
+    # (for example, a collision suffix " (2)"), so whitespace splitting is unsafe.
+    mapfile -t phones < <(printf '%s\n' "$devices" | awk -F '\t' '
         $2 == "device" && $1 ~ /\._adb-tls-connect\._tcp$/ {
             print $1
         }

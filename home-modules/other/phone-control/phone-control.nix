@@ -12,6 +12,9 @@ let
             pkgs.coreutils
             pkgs.gawk
             pkgs.util-linux
+            pkgs.jq
+        ] ++ lib.optionals config.modules.desktop.wm.niri.enable [
+            config.programs.niri.package
         ] ++ lib.optionals cfg.notifications.enable [
             pkgs.python3
         ];
