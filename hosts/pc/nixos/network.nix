@@ -7,6 +7,7 @@
             enable = true;
         };
         firewall.allowedTCPPorts = [ 22 ];
+        firewall.interfaces.wlp7s0.allowedTCPPorts = [ 9843 ];
     };
 
     services.openssh = {

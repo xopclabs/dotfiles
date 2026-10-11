@@ -11,6 +11,7 @@ in {
         ./mangohud.nix
         ./androidcam.nix
         ./phone-control/phone-control.nix
+        ./phone-control/relay.nix
         ./autofirma.nix
         ./sops-age-key.nix
     ];

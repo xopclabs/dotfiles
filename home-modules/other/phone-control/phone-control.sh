@@ -1,8 +1,7 @@
 # Never trace secret reads or PIN submission, even if invoked with bash -x.
 set +x
 umask 077
-# Injected by the Nix wrapper; neither variable contains the PIN.
-expected_serial="${expected_serial:-}"
+# Injected by the Nix wrapper; this path does not contain the PIN.
 pin_file="${pin_file:-}"
 
 fail() {
@@ -39,17 +38,11 @@ for ((attempt = 0; attempt < 12; attempt++)); do
         fail 'Could not list ADB devices.'
     fi
     mapfile -t phones < <(printf '%s\n' "$devices" | awk '
-        $2 == "device" && ($1 ~ /\._adb-tls-connect\._tcp$/ || $1 ~ /:[0-9]+$/) {
+        $2 == "device" && $1 ~ /\._adb-tls-connect\._tcp$/ {
             print $1
         }
     ')
     for candidate in "${phones[@]}"; do
-        if [[ -n "$expected_serial" ]]; then
-            if ! actual_serial=$(adb -s "$candidate" shell getprop ro.serialno 2>"$log"); then
-                continue
-            fi
-            [[ "${actual_serial//$'\r'/}" == "$expected_serial" ]] || continue
-        fi
         [[ -z "$serial" ]] || fail 'Multiple matching wireless phones are connected. Disconnect the others, then try again.'
         serial="$candidate"
     done
@@ -72,7 +65,6 @@ lock_state() {
 }
 
 if [[ -n "$pin_file" ]]; then
-    [[ -n "$expected_serial" ]] || fail 'Automatic unlock requires a configured phone serial; no PIN was sent.'
     state=$(lock_state)
     if [[ "$state" == 1 ]]; then
         if ! size=$(adb -s "$serial" shell wm size 2>"$log" | awk '/size:/ {size = $NF} END {print size}'); then
@@ -122,6 +114,14 @@ if [[ -n "$pin_file" ]]; then
             sleep 0.05
         done
         [[ "$unlocked" == true ]] || fail 'The phone did not unlock. Check it manually; the PIN will not be retried automatically.'
+    fi
+fi
+
+# HTTPS remains independent after this one trusted-ADB provisioning step.
+if [[ -n "${relay_provision:-}" ]]; then
+    if ! python3 "$relay_provision" "$serial" "$relay_port" >"$log" 2>&1; then
+        notify-send --app-name='Phone Control' --icon=smartphone --urgency=critical \
+            'Notification setup failed' 'Update the phone helper and check Wi-Fi. Phone control will still open.' || true
     fi
 fi
 

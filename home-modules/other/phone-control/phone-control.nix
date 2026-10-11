@@ -12,10 +12,13 @@ let
             pkgs.coreutils
             pkgs.gawk
             pkgs.util-linux
+        ] ++ lib.optionals cfg.notifications.enable [
+            pkgs.python3
         ];
         text = ''
-            expected_serial=${escapeShellArg (if cfg.deviceSerial == null then "" else cfg.deviceSerial)}
             pin_file=${escapeShellArg (if cfg.autoUnlock then config.sops.secrets."phone-control/pin".path else "")}
+            relay_provision=${escapeShellArg (if cfg.notifications.enable then "${./provision.py}" else "")}
+            relay_port=${toString cfg.notifications.port}
         '' + builtins.readFile ./phone-control.sh;
     };
 in
@@ -23,23 +26,10 @@ in
     options.modules.other.phoneControl = {
         enable = mkEnableOption "wireless scrcpy phone-control launcher (requires ADB with mDNS support)";
 
-        deviceSerial = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = "Phone's ro.serialno; required for automatic unlock, independent of Wi-Fi IP and port";
-        };
-
         autoUnlock = mkEnableOption "unlock the selected phone using the phone-control/pin sops secret before opening scrcpy";
     };
 
     config = mkIf cfg.enable {
-        assertions = [
-            {
-                assertion = !cfg.autoUnlock || (cfg.deviceSerial != null && cfg.deviceSerial != "");
-                message = "Phone Control automatic unlock requires deviceSerial to prevent sending the PIN to another phone.";
-            }
-        ];
-
         sops.secrets."phone-control/pin" = mkIf cfg.autoUnlock {
             mode = "0400";
             path = "${config.xdg.configHome}/phone-control/pin";

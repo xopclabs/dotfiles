@@ -18,7 +18,13 @@ in {
         desktop = {
             shells.noctalia = {
                 enable = true;
-                settings.notification.monitors = oledMonitor.connectors;
+                settings.notification = {
+                    monitors = config.metadata.hardware.monitors.gem12.connectors;
+                    position = "bottom_center";
+                    prefer_app_monitor = lib.mkForce false;
+                    scale = 1.25;
+                    background_opacity = 1.0;
+                };
                 weather.enable = true;
             };
 
@@ -152,7 +158,7 @@ in {
             androidcam.enable = true;
             phoneControl = {
                 enable = true;
-                deviceSerial = "REDACTED_DEVICE_SERIAL";
+                notifications.enable = true;
                 autoUnlock = true;
             };
             autofirma.enable = false;

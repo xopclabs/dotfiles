@@ -72,16 +72,25 @@ let
     };
     manifest = ''
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="dev.phonecontrol.debugginghelper" android:versionCode="4" android:versionName="0.4">
+            package="dev.phonecontrol.debugginghelper" android:versionCode="10" android:versionName="0.10">
             <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
             ${pkgs.lib.concatMapStrings (permission: ''
                 <uses-permission android:name="android.permission.${permission}" />
             '') [
-                "WRITE_SECURE_SETTINGS" "ACCESS_WIFI_STATE" "ACCESS_NETWORK_STATE"
+                "INTERNET" "WRITE_SECURE_SETTINGS" "ACCESS_WIFI_STATE" "ACCESS_NETWORK_STATE"
                 "ACCESS_FINE_LOCATION" "ACCESS_COARSE_LOCATION" "ACCESS_BACKGROUND_LOCATION"
                 "POST_NOTIFICATIONS" "RECEIVE_BOOT_COMPLETED" "FOREGROUND_SERVICE"
                 "FOREGROUND_SERVICE_SPECIAL_USE"
             ]}
+            <queries>
+                <package android:name="com.android.dialer" />
+                <package android:name="com.android.messaging" />
+                <package android:name="io.heckel.ntfy" />
+                <intent>
+                    <action android:name="android.intent.action.MAIN" />
+                    <category android:name="android.intent.category.LAUNCHER" />
+                </intent>
+            </queries>
             <application android:label="Phone Control" android:allowBackup="false"
                 android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
                 android:supportsRtl="true" android:theme="@style/HelperTheme">
@@ -91,6 +100,15 @@ let
                         <category android:name="android.intent.category.LAUNCHER" />
                     </intent-filter>
                 </activity>
+                <provider android:name=".PairingProvider"
+                    android:authorities="dev.phonecontrol.debugginghelper.pairing"
+                    android:exported="true" android:grantUriPermissions="false" />
+                <service android:name=".RelayListener" android:exported="true"
+                    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+                    <intent-filter>
+                        <action android:name="android.service.notification.NotificationListenerService" />
+                    </intent-filter>
+                </service>
                 <service android:name=".RecoveryService" android:exported="false"
                     android:foregroundServiceType="specialUse">
                     <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
@@ -123,6 +141,8 @@ let
             -classpath ${sdk}/platforms/android-36/android.jar -d helper.jar
         cat > rules.pro <<'EOF'
         -keep class dev.phonecontrol.debugginghelper.MainActivity { public protected *; }
+        -keep class dev.phonecontrol.debugginghelper.PairingProvider { public protected *; }
+        -keep class dev.phonecontrol.debugginghelper.RelayListener { public protected *; }
         -keep class dev.phonecontrol.debugginghelper.RecoveryService { public protected *; }
         -keep class dev.phonecontrol.debugginghelper.BootReceiver { public protected *; }
         -dontwarn org.jetbrains.annotations.**
