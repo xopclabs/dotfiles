@@ -13,6 +13,7 @@
     };
 
     config.desktop = {
+
         wireguard = {
             enable = true;
             peers = {
@@ -73,6 +74,11 @@
                     authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG/PeLsYIZpqtxxQk0+4DMQ6YqDmcQ0Kx/Zxg8r5Jm96 deck-controller-reconnect";
                 };
             };
+        };
+
+        adb = {
+            enable = true;
+            mdnsInterfaces = [ "wlp7s0" ];
         };
 
         lutris.enable = true;

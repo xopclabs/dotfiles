@@ -150,6 +150,11 @@ in {
             minecraft.enable = true;
             mangohud.enable = true;
             androidcam.enable = true;
+            phoneControl = {
+                enable = true;
+                deviceSerial = "REDACTED_DEVICE_SERIAL";
+                autoUnlock = true;
+            };
             autofirma.enable = false;
         };
     };

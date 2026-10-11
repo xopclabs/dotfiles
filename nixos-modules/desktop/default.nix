@@ -2,6 +2,7 @@
 
 {
     imports = [
+        ./adb.nix
         ./xray.nix
         ./singbox.nix
         ./wireguard.nix
