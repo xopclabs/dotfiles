@@ -10,7 +10,7 @@ in {
         ./minecraft.nix
         ./mangohud.nix
         ./androidcam.nix
-        ./phone-control.nix
+        ./phone-control/phone-control.nix
         ./autofirma.nix
         ./sops-age-key.nix
     ];
