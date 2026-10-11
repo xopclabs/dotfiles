@@ -103,10 +103,18 @@ class MainActivity : Activity() {
     private lateinit var detail: TextView
     private lateinit var result: TextView
     private lateinit var enable: Button
-    private lateinit var relayPreview: TextView
-    private val previewTick = object : Runnable {
+    private lateinit var relayStatus: TextView
+    private lateinit var selectedApps: TextView
+    private lateinit var relayAccess: Button
+    private lateinit var permissionStatus: TextView
+    private lateinit var grantPermissions: Button
+    private lateinit var backgroundLocation: Button
+    private lateinit var pages: List<View>
+    private lateinit var tabs: List<Button>
+    private var selectedTab = 0
+    private val statusTick = object : Runnable {
         override fun run() {
-            relayPreview.text = RelayListener.preview(this@MainActivity)
+            refresh()
             handler.postDelayed(this, 1_000)
         }
     }
@@ -121,20 +129,17 @@ class MainActivity : Activity() {
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val scroll = ScrollView(this).apply {
-            isFillViewport = true
-            isVerticalScrollBarEnabled = false
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             setBackgroundColor(color("background"))
-            addView(layout)
         }
-        setContentView(scroll)
-        scroll.setOnApplyWindowInsetsListener { _, insets ->
+        setContentView(layout)
+        layout.setOnApplyWindowInsetsListener { _, insets ->
             val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
             layout.setPadding(dp(20) + bars.left, dp(24) + bars.top, dp(20) + bars.right, dp(24) + bars.bottom)
             insets
         }
-        scroll.requestApplyInsets()
+        layout.requestApplyInsets()
         fun space(parent: LinearLayout, height: Int = 12) = parent.addView(View(this),
             LinearLayout.LayoutParams(1, dp(height)))
         fun label(parent: LinearLayout, text: String, size: Float = 14f, strong: Boolean = false) = TextView(this).apply {
@@ -145,11 +150,11 @@ class MainActivity : Activity() {
             setLineSpacing(dp(3).toFloat(), 1f)
             parent.addView(this)
         }
-        fun card(title: String) = LinearLayout(this).apply {
+        fun card(parent: LinearLayout, title: String) = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(20), dp(20), dp(20))
             background = rounded(color("surface"))
-            layout.addView(this, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
+            parent.addView(this, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
             label(this, title, 18f, true)
             space(this, 12)
         }
@@ -157,6 +162,8 @@ class MainActivity : Activity() {
             this.text = text
             textSize = 14f
             isAllCaps = false
+            stateListAnimator = null
+            elevation = 0f
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             minHeight = dp(48)
             minimumHeight = dp(48)
@@ -190,37 +197,68 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(dp(56), dp(56)).apply { marginEnd = dp(16) })
         val heading = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; header.addView(this) }
         label(heading, "Phone Control", 27f, true)
-        label(heading, "Ready when you need it", 14f)
-        space(layout, 24)
-        val connection = card("Wireless debugging")
+        space(layout, 20)
+        val navigation = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            background = rounded(color("accent_surface"), 16)
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            layout.addView(this, LinearLayout.LayoutParams(-1, -2))
+        }
+        tabs = listOf("Connection", "Notifications", "Settings").mapIndexed { index, title ->
+            Button(this).apply {
+                text = title
+                isAllCaps = false
+                stateListAnimator = null
+                elevation = 0f
+                textSize = 12f
+                typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                minWidth = 0
+                minimumWidth = 0
+                minHeight = dp(48)
+                minimumHeight = dp(48)
+                setPadding(dp(4), 0, dp(4), 0)
+                setOnClickListener { selectTab(index) }
+                navigation.addView(this, LinearLayout.LayoutParams(0, dp(48), 1f))
+            }
+        }
+        space(layout, 16)
+        val pageHost = FrameLayout(this).apply {
+            layout.addView(this, LinearLayout.LayoutParams(-1, 0, 1f))
+        }
+        val content = List(3) {
+            LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        }
+        pages = content.map { body ->
+            ScrollView(this).apply {
+                isFillViewport = true
+                isVerticalScrollBarEnabled = false
+                addView(body)
+                pageHost.addView(this, FrameLayout.LayoutParams(-1, -1))
+            }
+        }
+        val connection = card(content[0], "Wireless debugging")
         status = label(connection, "", 23f, true)
         detail = label(connection, "", 13f)
-        space(connection, 8)
-        label(connection, "Encrypted access for your paired PC. A setting being on doesn't confirm a PC connection.")
         result = label(connection, "").apply {
             setTextColor(color("accent"))
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         }
         enable = button(connection, "Enable debugging", true) {
-            handler.removeCallbacksAndMessages(null)
             result.text = try {
                 setAdb(true)
-                repeat(10) { handler.postDelayed({ refresh() }, it * 500L) }
-                "Write accepted. Verify the PC reconnects."
+                ""
             } catch (_: SecurityException) {
-                "Permission denied. Grant WRITE_SECURE_SETTINGS from ADB first."
-            } catch (e: RuntimeException) { "Write failed: ${e.javaClass.simpleName}" }
+                "ADB permission needed."
+            } catch (_: RuntimeException) { "Could not enable debugging." }
+            refresh()
         }
-        button(connection, "Refresh status") { refresh() }
         button(connection, "Developer settings") { open(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) }
-        val recovery = card("Automatic recovery")
+        val recovery = card(content[2], "Automatic recovery")
         val auto = toggle(recovery, "Recover on trusted connections", "automatic")
-        label(recovery, "Alerts only if debugging stays off on a trusted connection. Starts after the first unlock following a reboot.")
         space(recovery)
         label(recovery, "Trusted Wi-Fi", 14f, true)
-        label(recovery, "One exact network name per line. Stored only on this phone.", 13f)
         val names = EditText(this).apply {
-            hint = "Trusted SSIDs, one per line"
+            hint = "Wi-Fi names, one per line"
             minLines = 2
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                 InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
@@ -234,49 +272,74 @@ class MainActivity : Activity() {
             recovery.addView(this, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12); bottomMargin = dp(12) })
         }
         val hotspot = toggle(recovery, "Trust this phone's hotspot", "own_hotspot")
-        label(recovery, "Experimental · Android may reject debugging in hotspot-only mode.", 13f)
-        button(recovery, "Save settings", true) {
+        label(recovery, "Hotspot recovery is experimental.", 12f)
+        button(recovery, "Save", true) {
             save(names, hotspot, auto)
         }
-        val relay = card("Notification relay · local preview")
-        label(relay, "Selected alerts are queued in encrypted private phone storage until the paired PC displays them. Delivery waits while its internal display is off. No content logs. Android may redact sensitive content.")
-        button(relay, "Allow notification access") {
+        val relay = card(content[1], "Notification relay")
+        relayStatus = label(relay, "", 23f, true)
+        selectedApps = label(relay, "", 13f)
+        button(relay, "Choose apps", true) { selectRelayApps() }
+        relayAccess = button(relay, "Allow notification access") {
             open(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
-        button(relay, "Select apps") { selectRelayApps() }
-        label(relay, "Select Phone, Messaging, and ntfy, then receive a test notification or incoming call. This preview reads currently active notifications, including updates and removals.", 13f)
-        label(relay, "Your trusted PC configures this automatically over ADB when you open Phone Control. Delivery then works without debugging. Unpairing lasts until the next PC setup.", 13f)
-        button(relay, "Unpair PC") {
-            preferences.edit().remove("relay_pair").remove("relay_queue").apply()
-            RelayListener.clearQueue()
+        val pairing = card(content[1], "Paired PC")
+        label(pairing, "Set up automatically when you launch Phone Control on your PC.", 13f)
+        button(pairing, "Unpair") {
+            AlertDialog.Builder(this).setTitle("Unpair PC?")
+                .setMessage("Clears queued notifications. Launching Phone Control on the PC pairs it again.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Unpair") { _, _ ->
+                    preferences.edit().remove("relay_pair").remove("relay_queue").apply()
+                    RelayListener.clearQueue()
+                    refresh()
+                }.show()
         }
-        relayPreview = label(relay, "", 14f)
-        val setup = card("Permissions & privacy")
-        label(setup, "Android needs location access to read Wi-Fi names in the background. " +
-            "This app never reads coordinates. Internet access is used for the paired notification receiver.")
-        val controls = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            visibility = if (arrayOf(ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION,
-                POST_NOTIFICATIONS).all { granted(it) }) View.GONE else View.VISIBLE
+        val setup = card(content[2], "Permissions")
+        permissionStatus = label(setup, "", 13f)
+        grantPermissions = button(setup, "Grant permissions") {
+            requestPermissions(arrayOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, POST_NOTIFICATIONS), 1)
         }
-        button(setup, "Manage permissions") {
-            controls.visibility = if (controls.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        backgroundLocation = button(setup, "Background location") {
+            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
-        button(setup, "Background notification settings") {
+        button(setup, "App permissions") {
+            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        }
+        button(setup, "Background notification") {
             open(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
                 .putExtra(Settings.EXTRA_CHANNEL_ID, "recovery"))
         }
-        setup.addView(controls)
-        button(controls, "Allow Wi-Fi detection & notifications") {
-            requestPermissions(arrayOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, POST_NOTIFICATIONS), 1)
+        button(content[2], "About & privacy") {
+            AlertDialog.Builder(this).setTitle("Phone Control")
+                .setMessage("Trusted Wi-Fi names control automatic debugging recovery, not network identity. " +
+                    "Recovery starts after the first unlock following a reboot.\n\n" +
+                    "Location access is used only to read Wi-Fi names. Coordinates are never read.\n\n" +
+                    "Selected notifications are encrypted on this phone and sent over HTTPS to your paired PC. " +
+                    "Delivery waits for the PC display. No notification content logs. " +
+                    "Android may hide sensitive content.")
+                .setPositiveButton("Close", null).show()
         }
-        button(controls, "Location → Allow all the time") {
-            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        selectTab(state?.getInt("tab") ?: 0)
+        refresh()
+    }
+
+    private fun selectTab(index: Int) {
+        selectedTab = index.coerceIn(pages.indices)
+        pages.forEachIndexed { i, page -> page.visibility = if (i == selectedTab) View.VISIBLE else View.GONE }
+        tabs.forEachIndexed { i, tab ->
+            val active = i == selectedTab
+            tab.isSelected = active
+            tab.setTextColor(color(if (active) "surface" else "accent"))
+            tab.background = RippleDrawable(ColorStateList.valueOf(color("border")),
+                rounded(color(if (active) "accent" else "accent_surface"), 12), null)
         }
-        space(layout, 4)
-        label(layout, "For reliable reconnection, use a stable per-network MAC on home Wi-Fi. " +
-            "Trusted names are a convenience boundary, not proof of network identity.", 12f)
+    }
+
+    override fun onSaveInstanceState(state: Bundle) {
+        state.putInt("tab", selectedTab)
+        super.onSaveInstanceState(state)
     }
 
     private fun selectRelayApps() {
@@ -337,10 +400,11 @@ class MainActivity : Activity() {
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
-        AlertDialog.Builder(this).setTitle("Apps to preview").setView(content)
+        AlertDialog.Builder(this).setTitle("Choose apps").setView(content)
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Save") { _, _ ->
                 preferences.edit().putStringSet("relay_apps", selected).apply()
+                refresh()
             }.show()
     }
 
@@ -357,7 +421,7 @@ class MainActivity : Activity() {
                     .putBoolean("own_hotspot", hotspot.isChecked).putBoolean("automatic", auto.isChecked).apply()
                 try {
                     if (auto.isChecked) startRecovery() else stopService(Intent(this, RecoveryService::class.java))
-                    result.text = "Settings saved. Automatic recovery is ${if (auto.isChecked) "active" else "off"}."
+                    result.text = "Saved."
                 } catch (e: RuntimeException) {
                     preferences.edit().putBoolean("automatic", false).apply()
                     auto.isChecked = false
@@ -376,18 +440,37 @@ class MainActivity : Activity() {
 
     private fun refresh() {
         val allowed = granted(WRITE_SECURE_SETTINGS)
-        status.text = if (adbEnabled()) "Setting is on" else "Setting is off"
-        status.setTextColor(color(if (adbEnabled()) "accent" else "muted"))
-        detail.text = if (allowed) "ADB permission granted · ${if (automatic) "Auto recovery active" else "Manual recovery"}"
-            else "One-time ADB permission required"
+        val enabled = adbEnabled()
+        status.text = if (enabled) "Enabled" else "Disabled"
+        status.setTextColor(color(if (enabled) "accent" else "muted"))
+        detail.text = if (!allowed) "ADB permission needed"
+            else if (automatic) "Automatic recovery on" else "Automatic recovery off"
         enable.isEnabled = allowed
+        enable.visibility = if (enabled) View.GONE else View.VISIBLE
+        result.visibility = if (result.text.isNullOrEmpty()) View.GONE else View.VISIBLE
+        relayStatus.text = RelayListener.status(this)
+        val count = preferences.getStringSet("relay_apps", emptySet())?.size ?: 0
+        selectedApps.text = when (count) {
+            0 -> "No apps selected"
+            1 -> "1 app selected"
+            else -> "$count apps selected"
+        }
+        val access = getSystemService(NotificationManager::class.java)
+            .isNotificationListenerAccessGranted(ComponentName(this, RelayListener::class.java))
+        relayAccess.visibility = if (access) View.GONE else View.VISIBLE
+        val ready = arrayOf(WRITE_SECURE_SETTINGS, ACCESS_FINE_LOCATION,
+            ACCESS_BACKGROUND_LOCATION, POST_NOTIFICATIONS).all { granted(it) }
+        permissionStatus.text = if (ready) "All granted" else "Setup needed for automatic recovery"
+        grantPermissions.visibility = if (granted(ACCESS_FINE_LOCATION) && granted(POST_NOTIFICATIONS))
+            View.GONE else View.VISIBLE
+        backgroundLocation.visibility = if (granted(ACCESS_BACKGROUND_LOCATION)) View.GONE else View.VISIBLE
     }
 
     override fun onResume() {
         super.onResume()
         refresh()
-        handler.removeCallbacks(previewTick)
-        handler.post(previewTick)
+        handler.removeCallbacks(statusTick)
+        handler.post(statusTick)
     }
     override fun onPause() { handler.removeCallbacksAndMessages(null); super.onPause() }
 }
@@ -596,22 +679,16 @@ class RelayListener : NotificationListenerService() {
             }
         }
 
-        fun preview(context: Context): String {
-            val selected = context.preferences.getStringSet("relay_apps", emptySet()) ?: emptySet()
-            val service = listener ?: return "Listener disconnected. Enable notification access in Android settings."
-            return try {
-                val active = service.activeNotifications.filter {
-                    service.relayEligible(it.packageName, it.notification, selected) &&
-                        it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0
-                }
-                if (active.isEmpty()) service.delivery + "\nNo selected notifications active."
-                else service.delivery + "\n\n" + active.joinToString("\n\n────────\n\n") {
-                    val item = extract(it)
-                    listOf(it.packageName, item.getString("title"), item.getString("body"))
-                        .filter { text -> text.isNotEmpty() }.joinToString("\n")
-                }
-            } catch (_: RuntimeException) {
-                "Active notifications unavailable. Check notification access."
+        fun status(context: Context): String {
+            if (context.preferences.getString("relay_pair", null) == null) return "Not paired"
+            val service = listener ?: return "Notification access needed"
+            return when {
+                service.delivery.startsWith("PC synchronized") -> "Connected"
+                service.delivery.startsWith("PC display off") -> "Waiting for PC display"
+                service.delivery.startsWith("Delivering backlog") -> "Sending notifications"
+                service.delivery.startsWith("PC rejected") -> "Pairing needs attention"
+                service.delivery.startsWith("Queue storage unavailable") -> "Storage unavailable"
+                else -> "Connecting…"
             }
         }
 

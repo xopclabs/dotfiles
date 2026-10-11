@@ -72,7 +72,7 @@ let
     };
     manifest = ''
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="dev.phonecontrol.debugginghelper" android:versionCode="10" android:versionName="0.10">
+            package="dev.phonecontrol.debugginghelper" android:versionCode="11" android:versionName="0.11">
             <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
             ${pkgs.lib.concatMapStrings (permission: ''
                 <uses-permission android:name="android.permission.${permission}" />
