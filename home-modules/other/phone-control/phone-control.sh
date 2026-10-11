@@ -3,6 +3,15 @@ set +x
 umask 077
 # Injected by the Nix wrapper; this path does not contain the PIN.
 pin_file="${pin_file:-}"
+monitor=false
+scrcpy_args=()
+for argument in "$@"; do
+    if [[ "$argument" == --monitor ]]; then
+        monitor=true
+    else
+        scrcpy_args+=("$argument")
+    fi
+done
 
 fail() {
     printf '%s\n' "$1" >&2
@@ -24,6 +33,9 @@ if ! flock -n 9; then
                 | first | .id // empty
             ' 2>/dev/null); then
                 if niri msg action focus-window --id "$window_id" >/dev/null 2>&1; then
+                    if $monitor; then
+                        printf '%s\n' 'Existing session focused. Close it and relaunch with --monitor to enable telemetry.'
+                    fi
                     exit 0
                 fi
             fi
@@ -146,8 +158,15 @@ if [[ -n "${relay_provision:-}" ]]; then
     ) &
 fi
 
-if SDL_APP_ID=phone-control scrcpy --serial="$serial" --window-title='Phone Control' --window-width=499 --window-height=1072 --keyboard=uhid --turn-screen-off --keep-active "$@" >"$log" 2>&1; then
-    exit 0
+scrcpy_command=(scrcpy --serial="$serial" --window-title='Phone Control' --window-width=499 --window-height=1072 --keyboard=uhid --turn-screen-off --keep-active --video-codec=h265 --video-bit-rate=16M --max-size=2340 "${scrcpy_args[@]}")
+if $monitor; then
+    if SDL_APP_ID=phone-control python3 "$monitor_script" "$serial" -- "${scrcpy_command[@]}" 2>&1 | tee --ignore-interrupts "$log"; then
+        exit 0
+    fi
+else
+    if SDL_APP_ID=phone-control "${scrcpy_command[@]}" >"$log" 2>&1; then
+        exit 0
+    fi
 fi
 cat "$log" >&2
 fail 'The phone-control session failed. Check Wi-Fi and Wireless debugging, then try again.'

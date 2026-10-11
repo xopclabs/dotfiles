@@ -13,15 +13,16 @@ let
             pkgs.gawk
             pkgs.util-linux
             pkgs.jq
+            pkgs.python3
+            pkgs.iproute2
         ] ++ lib.optionals config.modules.desktop.wm.niri.enable [
             config.programs.niri.package
-        ] ++ lib.optionals cfg.notifications.enable [
-            pkgs.python3
         ];
         text = ''
             pin_file=${escapeShellArg (if cfg.autoUnlock then config.sops.secrets."phone-control/pin".path else "")}
             relay_provision=${escapeShellArg (if cfg.notifications.enable then "${./provision.py}" else "")}
             relay_port=${toString cfg.notifications.port}
+            monitor_script=${escapeShellArg "${./monitor.py}"}
         '' + builtins.readFile ./phone-control.sh;
     };
 in
