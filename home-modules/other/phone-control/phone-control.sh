@@ -125,7 +125,7 @@ if [[ -n "$pin_file" ]]; then
     fi
 fi
 
-if SDL_APP_ID=phone-control scrcpy --serial="$serial" --window-title='Phone Control' --window-width=499 --window-height=1072 --turn-screen-off "$@" >"$log" 2>&1; then
+if SDL_APP_ID=phone-control scrcpy --serial="$serial" --window-title='Phone Control' --window-width=499 --window-height=1072 --keyboard=uhid --turn-screen-off "$@" >"$log" 2>&1; then
     exit 0
 fi
 cat "$log" >&2
