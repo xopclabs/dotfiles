@@ -641,9 +641,16 @@ class RelayListener : NotificationListenerService() {
                         backlog.put("events", remaining)
                         saveQueue()
                     }
-                    delivery = if (!response.getBoolean("ready")) "PC display off · ${remaining.length()} queued"
+                    val ready = response.getBoolean("ready")
+                    delivery = if (!ready) "PC display off · ${remaining.length()} queued"
                         else if (remaining.length() > 0) "Delivering backlog · ${remaining.length()} queued"
                         else "PC synchronized · queue empty"
+                    // Drain remaining batches promptly, but only after actual progress.
+                    // Offline/display-off/no-ack responses keep the normal retry interval.
+                    if (ready && remaining.length() < retained.length() &&
+                        remaining.length() > 0 && !sender.isShutdown) {
+                        sender.execute { safely { deliver() } }
+                    }
                 } else delivery = "PC rejected delivery (${connection.responseCode})"
             } finally { connection.disconnect() }
         } catch (error: Exception) {

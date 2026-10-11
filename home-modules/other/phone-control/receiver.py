@@ -90,7 +90,6 @@ def main():
     delivered = sqlite3.connect(state / 'delivered.sqlite', check_same_thread=False)
     delivered.execute('CREATE TABLE IF NOT EXISTS delivered (id TEXT PRIMARY KEY)')
     delivered.commit()
-    next_popup = 0.0
     icon_directory = tempfile.TemporaryDirectory(prefix='phone-relay-icons-',
                                                 dir=os.environ.get('RUNTIME_DIRECTORY',
                                                                    os.environ.get('XDG_RUNTIME_DIR', f'/run/user/{os.getuid()}')))
@@ -137,13 +136,12 @@ def main():
                             raise ValueError()
                 acked = []
                 with lock:
-                    nonlocal next_popup
                     ready = display_awake(args.display)
                     for item in items:
                         if delivered.execute('SELECT 1 FROM delivered WHERE id = ?', (item['id'],)).fetchone():
                             acked.append(item['id'])
                             continue
-                        if not ready or time.monotonic() < next_popup:
+                        if not ready:
                             continue
                         icon = 'smartphone'
                         if item.get('icon'):
@@ -157,7 +155,6 @@ def main():
                         delivered.execute('INSERT INTO delivered (id) VALUES (?)', (item['id'],))
                         delivered.commit()
                         acked.append(item['id'])
-                        next_popup = time.monotonic() + 15
                     # Icons remain readable for the lifetime of the popup, not as permanent history.
                     for path in Path(icon_directory.name).iterdir():
                         if time.time() - path.stat().st_mtime > 60:
