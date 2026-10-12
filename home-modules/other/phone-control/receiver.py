@@ -229,15 +229,18 @@ def main():
                 self.send_error(503)
 
         def setup(self):
+            # Handshake inside the request worker, with a timeout already set.
+            # Wrapping the listening socket handshakes in accept(), which can
+            # block every client indefinitely before this worker even starts.
+            self.request.settimeout(15)
+            self.request = tls.wrap_socket(self.request, server_side=True)
             super().setup()
-            self.connection.settimeout(15)
 
     server = ThreadingHTTPServer((args.bind, args.port), Handler)
     server.daemon_threads = True
     tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     tls.minimum_version = ssl.TLSVersion.TLSv1_2
     tls.load_cert_chain(state / 'cert.pem', state / 'key.pem')
-    server.socket = tls.wrap_socket(server.socket, server_side=True)
     print('Phone notification receiver ready', flush=True)
     def stop(signum, frame):
         raise SystemExit(0)
