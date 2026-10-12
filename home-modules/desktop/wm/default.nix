@@ -88,7 +88,9 @@ in {
                 priorities = wmPriorities;
             };
             programs.zsh.shellAliases = mkIf (config.modules.desktop.wm.default != null) {
-                startx = config.modules.desktop.wm.default;
+                startx = if config.modules.desktop.wm.default == "niri"
+                    then "niri-session"
+                    else config.modules.desktop.wm.default;
             };
         }
         (mkIf (cfg.hyprland.enable || cfg.niri.enable) {
