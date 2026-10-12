@@ -72,12 +72,12 @@ let
     };
     manifest = ''
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="dev.phonecontrol.debugginghelper" android:versionCode="12" android:versionName="0.12">
+            package="dev.phonecontrol.debugginghelper" android:versionCode="13" android:versionName="0.13">
             <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
             ${pkgs.lib.concatMapStrings (permission: ''
                 <uses-permission android:name="android.permission.${permission}" />
             '') [
-                "INTERNET" "WRITE_SECURE_SETTINGS" "ACCESS_WIFI_STATE" "ACCESS_NETWORK_STATE"
+                "BLUETOOTH_CONNECT" "INTERNET" "WRITE_SECURE_SETTINGS" "ACCESS_WIFI_STATE" "ACCESS_NETWORK_STATE"
                 "ACCESS_FINE_LOCATION" "ACCESS_COARSE_LOCATION" "ACCESS_BACKGROUND_LOCATION"
                 "POST_NOTIFICATIONS" "RECEIVE_BOOT_COMPLETED" "FOREGROUND_SERVICE"
                 "FOREGROUND_SERVICE_SPECIAL_USE"

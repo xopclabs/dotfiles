@@ -53,6 +53,57 @@ def display_awake(display, root=Path('/sys/class/drm')):
     return False
 
 
+class CallProtection:
+    """Only reconnect a headset this receiver disconnected; unknown state fails closed."""
+    def __init__(self, state, address):
+        self.address = address
+        self.marker = state / 'call-protection-owned'
+        self.idle_since = None
+        self.last_update = 0
+        self.lock = threading.Lock()
+
+    def command(self, action):
+        result = subprocess.run(['bluetoothctl', action, self.address],
+                                capture_output=True, text=True, timeout=8)
+        if result.returncode:
+            raise RuntimeError('Bluetooth call protection command failed')
+        return result.stdout
+
+    def update(self, active):
+        if not self.address:
+            return
+        with self.lock:
+            now = time.monotonic()
+            if now - self.last_update > 6:
+                self.idle_since = None
+            self.last_update = now
+            if active is None:
+                self.idle_since = None
+            elif active:
+                self.idle_since = None
+                if not self.marker.exists():
+                    if 'Connected: yes' in self.command('info'):
+                        # Persist ownership before disconnect, including across service restarts.
+                        self.marker.touch(mode=0o600)
+                        try:
+                            self.command('disconnect')
+                        except Exception:
+                            self.marker.unlink(missing_ok=True)
+                            raise
+                else:
+                    # Reassert protection if another client reconnects during the call.
+                    if 'Connected: yes' in self.command('info'):
+                        self.command('disconnect')
+            elif self.marker.exists():
+                now = time.monotonic()
+                if self.idle_since is None:
+                    self.idle_since = now
+                elif now - self.idle_since >= 3:
+                    self.command('connect')
+                    self.marker.unlink()
+                    self.idle_since = None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--state', default=str(Path.home() / '.local/share/phone-notification-relay'))
@@ -61,6 +112,7 @@ def main():
     parser.add_argument('--pair', metavar='HTTPS_URL')
     parser.add_argument('--reuse', action='store_true', help='Reuse existing credentials when provisioning over ADB')
     parser.add_argument('--display', default='eDP-1')
+    parser.add_argument('--call-headset', default='', help='PC Bluetooth address to protect during phone calls')
     args = parser.parse_args()
     state = Path(args.state)
     os.umask(0o077)
@@ -94,6 +146,7 @@ def main():
                                                 dir=os.environ.get('RUNTIME_DIRECTORY',
                                                                    os.environ.get('XDG_RUNTIME_DIR', f'/run/user/{os.getuid()}')))
     lock = threading.Lock()
+    protection = CallProtection(state, args.call_headset)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -134,6 +187,11 @@ def main():
                                 or not 0 < int.from_bytes(png[16:20], 'big') <= 128
                                 or not 0 < int.from_bytes(png[20:24], 'big') <= 128):
                             raise ValueError()
+                call_state = payload.get('call_active')
+                if call_state is not None and type(call_state) is not bool:
+                    raise ValueError()
+                # Independent of desktop display readiness and notification delivery.
+                protection.update(call_state)
                 acked = []
                 with lock:
                     ready = display_awake(args.display)
@@ -167,7 +225,7 @@ def main():
                 self.wfile.write(response)
             except (ValueError, TypeError, KeyError, UnicodeError, binascii.Error):
                 self.send_error(400)
-            except (RuntimeError, OSError, asyncio.TimeoutError):
+            except (RuntimeError, OSError, asyncio.TimeoutError, subprocess.TimeoutExpired):
                 self.send_error(503)
 
         def setup(self):

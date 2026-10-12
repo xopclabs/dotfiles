@@ -1,6 +1,9 @@
 package dev.phonecontrol.debugginghelper
 
 import android.Manifest.permission.*
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothProfile
 import android.app.*
 import android.content.*
 import android.content.pm.PackageManager
@@ -276,6 +279,13 @@ class MainActivity : Activity() {
         button(recovery, "Save", true) {
             save(names, hotspot, auto)
         }
+        val protection = card(content[2], "Call protection")
+        val protect = toggle(protection, "Disconnect PC Qudelix during calls", "protect_calls")
+        label(protection, "Uses the paired PC relay, independently of screen control. Requires Nearby devices permission.", 13f)
+        protect.setOnCheckedChangeListener { _, checked ->
+            preferences.edit().putBoolean("protect_calls", checked).apply()
+            if (checked && !granted(BLUETOOTH_CONNECT)) requestPermissions(arrayOf(BLUETOOTH_CONNECT), 2)
+        }
         val relay = card(content[1], "Notification relay")
         relayStatus = label(relay, "", 23f, true)
         selectedApps = label(relay, "", 13f)
@@ -298,7 +308,7 @@ class MainActivity : Activity() {
         val setup = card(content[2], "Permissions")
         permissionStatus = label(setup, "", 13f)
         grantPermissions = button(setup, "Grant permissions") {
-            requestPermissions(arrayOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, POST_NOTIFICATIONS), 1)
+            requestPermissions(arrayOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, POST_NOTIFICATIONS, BLUETOOTH_CONNECT), 1)
         }
         backgroundLocation = button(setup, "Background location") {
             open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
@@ -478,6 +488,22 @@ class MainActivity : Activity() {
 class RelayListener : NotificationListenerService() {
     private val sender = Executors.newSingleThreadScheduledExecutor()
     private val pending = java.util.concurrent.atomic.AtomicBoolean(false)
+    @Volatile private var headset: BluetoothHeadset? = null
+    private val bluetoothListener = object : BluetoothProfile.ServiceListener {
+        override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+            headset = proxy as? BluetoothHeadset
+            changed()
+        }
+        override fun onServiceDisconnected(profile: Int) { headset = null }
+    }
+    private fun callProtectionState(): Any {
+        if (!preferences.getBoolean("protect_calls", false)) return false
+        if (!granted(BLUETOOTH_CONNECT)) return JSONObject.NULL
+        return try {
+            val profile = headset ?: return JSONObject.NULL
+            profile.connectedDevices.any { it.name == "Qudelix-5K" && profile.isAudioConnected(it) }
+        } catch (_: SecurityException) { JSONObject.NULL }
+    }
     private val icons = mutableMapOf<String, String>()
 
     private fun appIcon(pkg: String): String = icons.getOrPut(pkg) {
@@ -569,7 +595,13 @@ class RelayListener : NotificationListenerService() {
 
     override fun onCreate() {
         super.onCreate()
-        sender.scheduleWithFixedDelay({ safely { deliver() } }, 0, 15, TimeUnit.SECONDS)
+        sender.scheduleWithFixedDelay({
+            if (headset == null && granted(BLUETOOTH_CONNECT)) {
+                try { BluetoothAdapter.getDefaultAdapter()?.getProfileProxy(this, bluetoothListener, BluetoothProfile.HEADSET) }
+                catch (_: SecurityException) { }
+            }
+            safely { deliver() }
+        }, 0, 2, TimeUnit.SECONDS)
     }
 
     private fun changed() {
@@ -613,7 +645,8 @@ class RelayListener : NotificationListenerService() {
             if (queueDirty) saveQueue()
             val batch = JSONArray()
             for (index in 0 until minOf(retained.length(), 8)) batch.put(retained.getJSONObject(index))
-            val bytes = JSONObject().put("version", 2).put("events", batch).toString().toByteArray(Charsets.UTF_8)
+            val bytes = JSONObject().put("version", 2).put("events", batch)
+                .put("call_active", callProtectionState()).toString().toByteArray(Charsets.UTF_8)
             val connection = URL(pair.getString("url")).openConnection() as HttpsURLConnection
             try {
                 connection.sslSocketFactory = tls.socketFactory
@@ -723,6 +756,8 @@ class RelayListener : NotificationListenerService() {
     override fun onDestroy() {
         connected = false
         sender.shutdownNow()
+        headset?.let { BluetoothAdapter.getDefaultAdapter()?.closeProfileProxy(BluetoothProfile.HEADSET, it) }
+        headset = null
         if (listener === this) listener = null
         super.onDestroy()
     }

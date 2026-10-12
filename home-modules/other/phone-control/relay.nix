@@ -5,7 +5,7 @@ let
     cfg = config.modules.other.phoneControl.notifications;
     receiver = pkgs.writeShellApplication {
         name = "phone-notification-receiver";
-        runtimeInputs = [ (pkgs.python3.withPackages (p: [ p.dbus-next ])) pkgs.openssl ];
+        runtimeInputs = [ (pkgs.python3.withPackages (p: [ p.dbus-next ])) pkgs.openssl pkgs.bluez ];
         text = ''
             exec python3 ${./receiver.py} "$@"
         '';
@@ -17,6 +17,11 @@ in {
             type = types.str;
             default = "0.0.0.0";
             description = "Receiver listen address; restrict access with the host firewall";
+        };
+        callHeadset = mkOption {
+            type = types.strMatching "^$|^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$";
+            default = "";
+            description = "PC Bluetooth headset address to disconnect during helper-reported phone calls; empty disables protection";
         };
         display = mkOption {
             type = types.str;
@@ -40,7 +45,7 @@ in {
                 ConditionPathExists = "%h/.local/share/phone-notification-relay/token";
             };
             Service = {
-                ExecStart = "${receiver}/bin/phone-notification-receiver --bind ${escapeShellArg cfg.bind} --port ${toString cfg.port} --display ${escapeShellArg cfg.display}";
+                ExecStart = "${receiver}/bin/phone-notification-receiver --bind ${escapeShellArg cfg.bind} --port ${toString cfg.port} --display ${escapeShellArg cfg.display} --call-headset ${escapeShellArg cfg.callHeadset}";
                 Restart = "on-failure";
                 RestartSec = 5;
                 UMask = "0077";

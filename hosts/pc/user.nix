@@ -159,6 +159,7 @@ in {
             phoneControl = {
                 enable = true;
                 notifications.enable = true;
+                notifications.callHeadset = "98:8E:79:01:2A:27";
                 autoUnlock = true;
             };
             autofirma.enable = false;
