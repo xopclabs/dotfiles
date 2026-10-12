@@ -2,6 +2,7 @@
 
 let
     cfg = config.modules.desktop.wm.niri;
+    expandAgentCageRules = config.lib.agents.expandAgentCageRules or (rules: rules);
     hardwareCfg = config.metadata.hardware;
     monitors = hardwareCfg.monitors;
     internalMonitors = lib.filter (mon: mon.internal) (lib.attrValues monitors);
@@ -354,7 +355,7 @@ in {
                     "telemetry-value" = { name = "telemetry-value"; open-on-output = output_internal; };
                 };
 
-                window-rules = [
+                window-rules = expandAgentCageRules [
                     # Window size preferences
                     # Noctalia settings
                     {

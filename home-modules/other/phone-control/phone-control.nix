@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.modules.other.phoneControl;
+    expandAgentCageRules = config.lib.agents.expandAgentCageRules or (rules: rules);
     phoneControl = pkgs.writeShellApplication {
         name = "phone-control";
         runtimeInputs = [
@@ -39,12 +40,12 @@ in
             path = "${config.xdg.configHome}/phone-control/pin";
         };
 
-        programs.niri.settings.window-rules = mkIf config.modules.desktop.wm.niri.enable [
+        programs.niri.settings.window-rules = mkIf config.modules.desktop.wm.niri.enable (expandAgentCageRules [
             {
                 matches = [ { app-id = "^phone-control$"; title = "^Phone Control$"; } ];
                 default-column-width = { fixed = 499; };
             }
-        ];
+        ]);
 
         home.packages = [ phoneControl ];
         xdg.desktopEntries.phone-control = {
