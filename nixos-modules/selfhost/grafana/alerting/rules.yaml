@@ -15,10 +15,12 @@ groups:
         annotations:
           summary: No apartment telemetry has reached PostgreSQL for five minutes.
           description: Check mqtt-telemetry-ingester and the MQTT broker on homelab.
+          resolved_summary: Telemetry ingestion resumed
+          resolved_description: Apartment telemetry is reaching PostgreSQL again.
         labels:
           severity: warning
         notification_settings:
-          receiver: ntfy-co2
+          receiver: ntfy-telemetry
           repeat_interval: 1h
         data:
           - refId: A
@@ -70,14 +72,16 @@ groups:
               refId: B
               type: classic_conditions
       - uid: co2-high-1000ppm
-        title: CO2 at or above 1000 ppm
+        title: CO2 high
         condition: B
-        for: 2m
+        for: 0s
         noDataState: OK
         execErrState: Error
         annotations:
-          summary: CO2 has stayed at or above 1000 ppm for 2 minutes.
-          description: Check ventilation in the apartment.
+          summary: 'CO₂: {{ printf "%.0f" $values.C.Value }} ppm'
+          description: 'Elevated for {{ printf "%.0f" $values.D.Value }} minutes. Open a window.'
+          resolved_summary: CO₂ back to normal
+          resolved_description: CO₂ dropped below 800 ppm.
         labels:
           severity: warning
         notification_settings:
@@ -97,14 +101,39 @@ groups:
               editorMode: code
               format: table
               rawQuery: true
+              rawSql: __CO2_STATE_SQL__
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: C
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: telemetry-postgres
+            model:
+              datasource: {type: grafana-postgresql-datasource, uid: telemetry-postgres}
+              editorMode: code
+              format: table
+              rawQuery: true
               rawSql: |
                 SELECT (payload->>'co2_ppm')::double precision AS value
                 FROM mqtt_messages
                 WHERE topic = 'apartment/room/air-quality'
-                  AND payload ? 'co2_ppm'
-                ORDER BY received_at DESC
-                LIMIT 1
-              refId: A
+                  AND NOT retained AND payload ? 'co2_ppm'
+                ORDER BY received_at DESC, id DESC LIMIT 1
+              refId: C
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: D
+            queryType: ""
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: telemetry-postgres
+            model:
+              datasource: {type: grafana-postgresql-datasource, uid: telemetry-postgres}
+              editorMode: code
+              format: table
+              rawQuery: true
+              rawSql: __CO2_DURATION_SQL__
+              refId: D
               intervalMs: 1000
               maxDataPoints: 43200
           - refId: B
@@ -116,7 +145,7 @@ groups:
             model:
               conditions:
                 - evaluator:
-                    params: [1000]
+                    params: [1]
                     type: gte
                   operator:
                     type: and

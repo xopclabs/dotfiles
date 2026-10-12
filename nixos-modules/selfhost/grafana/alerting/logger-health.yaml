@@ -14,13 +14,15 @@ groups:
         noDataState: Alerting
         execErrState: Error
         annotations:
-          summary: Air sensor has stopped reporting telemetry.
-          description: No new readings for 30 minutes. Recovery requires at least two non-retained readings spanning five minutes after reporting resumes.
+          summary: Air sensor offline
+          resolved_summary: Air sensor back online
+          resolved_description: Fresh readings have resumed for at least five minutes.
+          description: No readings for 30 minutes, or reporting has not yet been stable for five minutes.
         labels:
           severity: warning
           logger: air
         notification_settings:
-          receiver: ntfy-co2
+          receiver: ntfy-telemetry
           group_by: [grafana_folder, alertname, logger]
           group_wait: 0s
           group_interval: 1m
@@ -98,13 +100,15 @@ groups:
         noDataState: Alerting
         execErrState: Error
         annotations:
-          summary: PC plug has stopped reporting telemetry.
-          description: No new readings for 30 minutes. Recovery requires at least two non-retained readings spanning five minutes after reporting resumes.
+          summary: PC plug offline
+          resolved_summary: PC plug back online
+          resolved_description: Fresh readings have resumed for at least five minutes.
+          description: No readings for 30 minutes, or reporting has not yet been stable for five minutes.
         labels:
           severity: warning
           logger: pc
         notification_settings:
-          receiver: ntfy-co2
+          receiver: ntfy-telemetry
           group_by: [grafana_folder, alertname, logger]
           group_wait: 0s
           group_interval: 1m
@@ -182,13 +186,15 @@ groups:
         noDataState: Alerting
         execErrState: Error
         annotations:
-          summary: AC plug has stopped reporting telemetry.
-          description: No new readings for 30 minutes. Recovery requires at least two non-retained readings spanning five minutes after reporting resumes.
+          summary: AC plug offline
+          resolved_summary: AC plug back online
+          resolved_description: Fresh readings have resumed for at least five minutes.
+          description: No readings for 30 minutes, or reporting has not yet been stable for five minutes.
         labels:
           severity: warning
           logger: ac
         notification_settings:
-          receiver: ntfy-co2
+          receiver: ntfy-telemetry
           group_by: [grafana_folder, alertname, logger]
           group_wait: 0s
           group_interval: 1m

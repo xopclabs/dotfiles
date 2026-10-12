@@ -63,8 +63,8 @@
             subdomain = "ntfy";
             matrixBot.enable = true;
             publishers.grafana-co2 = {
-                topics = [ "co2-alerts" ];
-                label = "Grafana CO2 alerts";
+                topics = [ "co2-alerts" "telemetry-alerts" ];
+                label = "Grafana telemetry alerts";
                 tokenSopsFile = ../../../secrets/shared/selfhost.yaml;
             };
         };

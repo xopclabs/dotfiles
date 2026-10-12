@@ -8,7 +8,44 @@ contactPoints:
         type: webhook
         disableResolveMessage: false
         settings:
-          url: https://ntfy.$NTFY_DOMAIN/co2-alerts?template=grafana
+          url: https://ntfy.$NTFY_DOMAIN
           httpMethod: POST
           authorization_scheme: Bearer
           authorization_credentials: $NTFY_CO2_TOKEN
+          payload:
+            vars:
+              topic: co2-alerts
+              firingTag: warning
+            template: &payload |
+              {{- $$title := "" -}}{{- $$message := "" -}}
+              {{- range .Alerts -}}
+                {{- $$heading := .Annotations.summary -}}
+                {{- $$body := .Annotations.description -}}
+                {{- if eq .Status "resolved" -}}
+                  {{- $$heading = .Annotations.resolved_summary -}}
+                  {{- $$body = .Annotations.resolved_description -}}
+                {{- end -}}
+                {{- if not $$heading }}{{ $$heading = .Labels.alertname }}{{ end -}}
+                {{- if not $$body }}{{ $$body = "Check Grafana for details." }}{{ end -}}
+                {{- if $$title }}{{ $$title = printf "%s · %s" $$title $$heading }}{{ else }}{{ $$title = $$heading }}{{ end -}}
+                {{- if $$message }}{{ $$message = printf "%s\n%s" $$message $$body }}{{ else }}{{ $$message = $$body }}{{ end -}}
+              {{- end -}}
+              {{- $$tag := .Vars.firingTag -}}
+              {{- if eq .Status "resolved" }}{{ $$tag = "white_check_mark" }}{{ end -}}
+              {{- coll.Dict "topic" .Vars.topic "title" $$title "message" $$message "tags" (coll.Slice $$tag) "click" (index .Alerts 0).GeneratorURL | data.ToJSON -}}
+  - orgId: 1
+    name: ntfy-telemetry
+    receivers:
+      - uid: ntfy-telemetry
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: https://ntfy.$NTFY_DOMAIN
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: $NTFY_CO2_TOKEN
+          payload:
+            vars:
+              topic: telemetry-alerts
+              firingTag: satellite_antenna
+            template: *payload

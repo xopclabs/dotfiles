@@ -122,8 +122,15 @@ in
                 };
                 alerting = {
                     rules.path = pkgs.runCommand "grafana-alert-rules.yaml" {} ''
+                        export CO2_SQL="$(< ${./alerting/co2.sql})"
                         ${pkgs.yq-go}/bin/yq eval-all '. as $item ireduce ({}; . *+ $item)' \
-                            ${./alerting/rules.yaml} ${./alerting/logger-health.yaml} > "$out"
+                            ${./alerting/rules.yaml} ${./alerting/logger-health.yaml} \
+                            | ${pkgs.yq-go}/bin/yq '
+                                (.groups[].rules[].data[].model.rawSql | select(. == "__CO2_STATE_SQL__")) =
+                                    ("SELECT state AS value FROM (" + (strenv(CO2_SQL) | sub(";\\s*$", "")) + ") AS co2") |
+                                (.groups[].rules[].data[].model.rawSql | select(. == "__CO2_DURATION_SQL__")) =
+                                    ("SELECT minutes AS value FROM (" + (strenv(CO2_SQL) | sub(";\\s*$", "")) + ") AS co2")
+                            ' > "$out"
                     '';
                     contactPoints.path = ./alerting/contact-points.yaml;
                 };
