@@ -10,16 +10,11 @@
         neededForUsers = true;
     };
     users.users.${config.metadata.user} = {
-        extraGroups = [ "input" "wheel" "networkmanager" "storage" "adbusers" "docker" "tss" ];
+        extraGroups = [ "wheel" "networkmanager" "docker" ];
         shell = pkgs.zsh;
         isNormalUser = true;
         hashedPasswordFile = config.sops.secrets.userpass.path;
     };
-
-    # Set correct ownership for games and steam directories
-    systemd.tmpfiles.rules = [
-        "d /home/${config.metadata.user}/games 0755 ${config.metadata.user} users -"
-    ];
 
     # Set up locales (timezone and keyboard layout)
     i18n.defaultLocale = "en_US.UTF-8";

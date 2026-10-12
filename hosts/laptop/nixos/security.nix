@@ -8,10 +8,6 @@
             extraRules = [{
                 commands = [
                     {
-                        command = "${pkgs.systemd}/bin/systemctl suspend";
-                        options = [ "NOPASSWD" ];
-                    }
-                    {
                         command = "${pkgs.systemd}/bin/reboot";
                         options = [ "NOPASSWD" ];
                     }
@@ -24,15 +20,11 @@
             }];
         };
         protectKernelImage = false;
-        # Swaylock
-        pam.services.hyprlock.text = "auth include login";
-        polkit.enable = true;
     };
     services.clamav = {
         daemon.enable = false;
         updater.enable = false;
     };
-    services.gnome.gnome-keyring.enable = true;
 
     sops = {
         defaultSopsFile = ../../../secrets/shared/personal.yaml;

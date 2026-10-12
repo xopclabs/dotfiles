@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 {
     # Nix settings, auto cleanup and enable flakes
@@ -17,6 +17,8 @@
         '';
     };
     nixpkgs.config.allowUnfree = true;
+    environment.defaultPackages = [ pkgs.sudo pkgs.vim ];
+    environment.systemPackages = map lib.lowPrio [ pkgs.curl pkgs.gitMinimal ];
 
     boot = {
         tmp.cleanOnBoot = true;
@@ -58,37 +60,9 @@
         # Remove NVIDIA VGA/3D controller devices
         ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
 
-        # Steno stuff
-        # Allow read/write to ttyACM0 serial port
-        KERNEL=="ttyACM0", MODE="0666"
-        # Allow uinput as non-root user (in input group)
-        KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
-        # Sweep keyboard plover-HID non-root access. 
-        SUBSYSTEM=="hidraw", ATTRS{driver}=="hid-generic", MODE="0660", GROUP="input"
-
-        # Prevent lid waking up from suspend
-        ACTION=="add" SUBSYSTEM=="pci" ATTR{vendor}=="0x8086" ATTR{device}=="0x9d2f" ATTR{power/wakeup}="disabled"
-
-        # Fix washed out colors on HDMI with Intel graphics
-        ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card0 107 connector 103 1"
-        ACTION=="add", SUBSYSTEM=="module", KERNEL=="i915", RUN+="${pkgs.libdrm.bin}/bin/proptest -M i915 -D /dev/dri/card1 107 connector 103 1"
-
         # Limit battery charge to 80%
         SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add", ATTR{charge_control_end_threshold}="80"
     '';
-
-    # Enable quicksync
-    environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; }; # Force intel-media-driver
-    hardware = {
-        graphics = {
-            enable = true;
-            extraPackages = with pkgs; [
-              intel-media-driver
-              intel-vaapi-driver
-              libdrm.bin
-            ];
-        };
-    };
 
     # NFS share client
     fileSystems."/mnt/nas" = {
@@ -97,17 +71,13 @@
         options = [ "x-systemd.automount" "noauto" ];
     };
 
-    # Battery?
-    services.upower.enable = true;
-    # Automounting
-    services.gvfs.enable = true;
-    services.devmon.enable = true;
-    services.udisks2.enable = true;
-
-    # Hibernate
+    # Keep the server awake, including with the lid closed.
     powerManagement.enable = true;
     systemd.sleep.settings.Sleep = {
-        HibernateDelaySec = "3h";
+        AllowSuspend = "no";
+        AllowHibernation = "no";
+        AllowHybridSleep = "no";
+        AllowSuspendThenHibernate = "no";
     };
     
     # Ignore power button presses, disable suspend on lid close
@@ -135,7 +105,6 @@
     };
 
     services.thermald.enable = true;
-    services.power-profiles-daemon.enable = true;
 
     # Do not touch
     system.stateVersion = "24.11";
