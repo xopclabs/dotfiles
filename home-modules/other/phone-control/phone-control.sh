@@ -48,7 +48,8 @@ fi
 log=$(mktemp "$runtime_dir/phone-control.XXXXXX")
 trap 'rm -f "$log"; unset pin' EXIT
 
-if ! adb start-server >"$log" 2>&1; then
+# The persistent ADB server must not inherit the launcher session lock.
+if ! adb start-server 9>&- >"$log" 2>&1; then
     fail 'Could not start ADB. Run phone-control in a terminal to diagnose it.'
 fi
 if ! adb mdns check >"$log" 2>&1; then
