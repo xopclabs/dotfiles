@@ -5,6 +5,9 @@
     security = {
         sudo = {
             enable = true;
+            extraConfig = ''
+                Defaults timestamp_type=tty
+            '';
             extraRules = [{
                 commands = [
                     {

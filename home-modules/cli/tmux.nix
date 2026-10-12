@@ -36,6 +36,14 @@ let
         export PATH=${lib.makeBinPath [ pkgs.tmux pkgs.procps pkgs.gnused pkgs.gnugrep ]}:$PATH
         ${builtins.readFile ./scripts/tmux-clean-empty.sh}
     '';
+    tmux-agent-sudo = pkgs.writeShellScriptBin "tmux-agent-sudo" ''
+        export PATH=${lib.makeBinPath [ pkgs.tmux pkgs.coreutils ]}:$PATH
+        export TMUX_AGENT_SUDO_RED='#${strings.toLower config.colorScheme.palette.base08}'
+        export TMUX_AGENT_SUDO_BLUE='#${strings.toLower config.colorScheme.palette.base0D}'
+        export TMUX_AGENT_SUDO_YELLOW='#${strings.toLower config.colorScheme.palette.base09}'
+        export TMUX_AGENT_SUDO_SHELL='${pkgs.zsh}/bin/zsh'
+        ${builtins.readFile ./scripts/tmux-agent-sudo.sh}
+    '';
 in {
     options.modules.cli.tmux = { 
         enable = mkEnableOption "tmux";
@@ -56,6 +64,7 @@ in {
             tmux
             tmuxinator
             tmux-clean-empty
+            tmux-agent-sudo
         ];
 
         programs.tmux = {
@@ -148,6 +157,7 @@ in {
                 bind d kill-pane
                 bind q detach-client
                 bind b new-window
+                bind a run-shell -b '${tmux-agent-sudo}/bin/tmux-agent-sudo'
 
                 # Shift arrow to switch windows
                 bind -n S-Left  previous-window
