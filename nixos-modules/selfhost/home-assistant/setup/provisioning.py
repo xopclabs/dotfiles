@@ -129,7 +129,51 @@ def reconcile_mqtt(api, password, sleep=time.sleep):
     raise RuntimeError('MQTT entry did not load')
 
 
-def provision(api, username, owner_password, mqtt_password, sleep=time.sleep):
+def reconcile_users(api, users):
+    existing = api.ws('config/auth/list')
+    for username, config in users.items():
+        password = config['password']
+        if not password:
+            raise RuntimeError('Empty managed user password')
+        matches = [user for user in existing if user.get('username') == username]
+        if len(matches) > 1:
+            raise RuntimeError('Ambiguous managed account')
+        if matches:
+            user = matches[0]
+            if user.get('is_owner') or user.get('system_generated'):
+                raise RuntimeError('Refusing to adopt owner or system account')
+            desired = {'name': config['name'], 'group_ids': ['system-users'], 'local_only': True}
+            if any(user.get(key) != value for key, value in desired.items()):
+                api.ws('config/auth/update', user_id=user['id'], **desired)
+        else:
+            # Never adopt an unrelated same-display-name account or duplicate a partial create.
+            partial = [user for user in existing if user.get('name') == config['name']]
+            if partial:
+                if len(partial) != 1 or partial[0].get('username') is not None or partial[0].get('credentials'):
+                    raise RuntimeError('Conflicting managed account identity')
+                user = partial[0]
+                if user.get('is_owner') or user.get('system_generated') or user.get('group_ids') != ['system-users']:
+                    raise RuntimeError('Unsafe partial managed account')
+            else:
+                user = api.ws('config/auth/create', name=config['name'],
+                              group_ids=['system-users'], local_only=True)['user']
+            api.ws('config/auth_provider/homeassistant/create', user_id=user['id'],
+                   username=username, password=password)
+        # Existing credentials must match; don't silently reset passwords or invalidate tokens.
+        remote = ProvisionAPI(api.base)
+        tokens = login(remote, username, password)
+        try:
+            current = remote.ws('auth/current_user')
+            if current.get('is_admin') or current.get('is_owner') or current['id'] != user['id']:
+                raise RuntimeError('Managed account permission verification failed')
+        finally:
+            remote.request('/auth/token', {'action': 'revoke', 'token': tokens['refresh_token']}, form=True)
+            remote.token = None
+    if users:
+        print('Managed local-only non-admin HA accounts verified; identities preserved.')
+
+
+def provision(api, username, owner_password, mqtt_password, sleep=time.sleep, users=None):
     for attempt in range(90):
         try:
             api.request('/api/')
@@ -154,6 +198,7 @@ def provision(api, username, owner_password, mqtt_password, sleep=time.sleep):
             sleep(2)
         else:
             raise RuntimeError('HA did not reach running state')
+        reconcile_users(api, users or {})
         reconcile_proxy(api, sleep)
         reconcile_mqtt(api, mqtt_password, sleep)
         print('HA provisioning complete; account and device identities preserved.')
@@ -166,9 +211,12 @@ def provision(api, username, owner_password, mqtt_password, sleep=time.sleep):
 
 def main():
     credentials = Path(os.environ['CREDENTIALS_DIRECTORY'])
+    users = json.loads(os.environ.get('HA_MANAGED_USERS', '{}'))
+    for user in users.values():
+        user['password'] = (credentials / user.pop('credential')).read_text().strip()
     provision(ProvisionAPI('http://127.0.0.1:8123'), os.environ['HA_OWNER_USERNAME'],
               (credentials / 'owner-password').read_text().strip(),
-              (credentials / 'mqtt-password').read_text().strip())
+              (credentials / 'mqtt-password').read_text().strip(), users=users)
 
 
 if __name__ == '__main__':
