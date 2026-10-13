@@ -196,6 +196,8 @@ class Controller:
             elif command == 'fan':
                 candidate.fan = value
             elif command in ('temperature', 'temp_up', 'temp_down'):
+                if state.mode in ('dry', 'fan_only'):
+                    raise ValueError('Temperature adjustment is unavailable in dry and fan modes')
                 number = float(value) if command == 'temperature' else state.temperature + (1 if command == 'temp_up' else -1)
                 if not math.isfinite(number) or not float(number).is_integer():
                     raise ValueError('Temperature must be an integer')
@@ -255,7 +257,9 @@ def discovery(device_id, mode=None):
     add('climate', 'climate', None, {
         'modes': ['off', 'auto', 'cool', 'heat', 'dry', 'fan_only'],
         'mode_command_topic': BASE + '/command/mode', 'mode_state_topic': BASE + '/state/mode',
-        'temperature_command_topic': BASE + '/command/temperature', 'temperature_state_topic': BASE + '/state/temperature',
+        **({'temperature_command_topic': BASE + '/command/temperature'}
+           if mode not in ('dry', 'fan_only') else {}),
+        'temperature_state_topic': BASE + '/state/temperature',
         'fan_mode_command_topic': BASE + '/command/fan', 'fan_mode_state_topic': BASE + '/state/fan',
         'fan_mode_command_template': "{{ {'low': '1', 'medium': '2', 'high': '3'}.get(value, value) }}",
         'fan_mode_state_template': "{{ {'1': 'low', '2': 'medium', '3': 'high'}.get(value, value) }}",
@@ -328,16 +332,16 @@ def main():
             raise RuntimeError('Zigbee2MQTT offline; refusing IR command')
         publish('zigbee2mqtt/' + args.device + '/set', json.dumps(mqtt_payload(code)), retain=False)
 
-    announced_fan_modes = None
+    announced_climate_config = None
 
     def changed(current):
-        nonlocal announced_fan_modes
+        nonlocal announced_climate_config
         configs = discovery(args.device, current.mode)
         climate_topic = 'homeassistant/climate/bodner_ac/climate/config'
-        fan_modes = configs[climate_topic]['fan_modes']
-        if fan_modes != announced_fan_modes:
-            publish(climate_topic, json.dumps(configs[climate_topic]))
-            announced_fan_modes = fan_modes
+        climate_config = configs[climate_topic]
+        if climate_config != announced_climate_config:
+            publish(climate_topic, json.dumps(climate_config))
+            announced_climate_config = climate_config
         temporary = path.with_suffix('.tmp')
         temporary.write_text(json.dumps(asdict(current), indent=2))
         temporary.replace(path)
@@ -421,7 +425,7 @@ def main():
                     configs = discovery(args.device, state.mode)
                     for topic, config in configs.items():
                         publish(topic, json.dumps(config))
-                    announced_fan_modes = configs['homeassistant/climate/bodner_ac/climate/config']['fan_modes']
+                    announced_climate_config = configs['homeassistant/climate/bodner_ac/climate/config']
                     changed(state)
                     publish(BASE + '/availability', 'online')
                 else:
