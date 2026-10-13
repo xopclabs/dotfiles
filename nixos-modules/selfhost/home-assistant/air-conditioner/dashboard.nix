@@ -8,17 +8,6 @@ let
         tap_action.action = "toggle";
         grid_options = { columns = 6; rows = 1; };
     };
-    press = entity: name: icon: {
-        type = "button";
-        inherit entity name icon;
-        show_state = false;
-        icon_height = "24px";
-        tap_action = {
-            action = "perform-action";
-            perform_action = "button.press";
-            target.entity_id = entity;
-        };
-    };
 in
 {
     title = "Air Conditioner";
@@ -73,11 +62,17 @@ in
                     grid_options.columns = 12;
                 }
                 {
-                    type = "horizontal-stack";
-                    cards = [
-                        (press "button.bodner_ac_direct" "DIRECT" "mdi:arrow-up-down")
-                        (press "button.bodner_ac_cancel" "Stop" "mdi:stop")
-                    ];
+                    type = "button";
+                    entity = "button.bodner_ac_direct";
+                    name = "Step";
+                    icon = "mdi:arrow-up-down";
+                    show_state = false;
+                    icon_height = "24px";
+                    tap_action = {
+                        action = "perform-action";
+                        perform_action = "button.press";
+                        target.entity_id = "button.bodner_ac_direct";
+                    };
                     grid_options.columns = 12;
                 }
                 {

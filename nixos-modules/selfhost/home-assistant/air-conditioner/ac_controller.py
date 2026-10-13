@@ -223,7 +223,7 @@ class Controller:
 BUTTONS = {
     'power_on': 'Power on', 'power_off': 'Power off',
     'temp_up': 'Temperature +', 'temp_down': 'Temperature −',
-    'direct': 'DIRECT step', 'cancel': 'Cancel vane adjustment',
+    'direct': 'Step', 'cancel': 'Cancel vane adjustment',
     'sync_top_down': 'Sync: just moved down from top',
     'sync_bottom_up': 'Sync: just moved up from bottom',
     'invalidate': 'Remote used: invalidate estimates',
