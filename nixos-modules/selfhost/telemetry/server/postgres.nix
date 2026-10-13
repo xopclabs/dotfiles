@@ -2,7 +2,7 @@
 
 with lib;
 let
-    cfg = config.homelab.telemetry;
+    cfg = config.homelab.telemetry.server;
 in
 {
     config = mkIf cfg.enable {

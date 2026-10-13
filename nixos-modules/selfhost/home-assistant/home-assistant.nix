@@ -40,11 +40,6 @@ in
             default = "REDACTED_COUNTRY";
             description = "Home Assistant country (ISO 3166-1 alpha-2).";
         };
-        mqttSopsFile = mkOption {
-            type = types.path;
-            default = ../../../secrets/shared/selfhost.yaml;
-            description = "Sops file containing smart-home/mqtt-ha and smart-home/mqtt-zigbee2mqtt.";
-        };
     };
 
     config = mkIf cfg.enable {

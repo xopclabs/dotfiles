@@ -24,7 +24,7 @@ in
         };
         sopsFile = lib.mkOption {
             type = lib.types.path;
-            default = cfg.mqttSopsFile;
+            default = ../../../../secrets/shared/selfhost.yaml;
             description = "Sops file containing smart-home/ha-owner-password.";
         };
     };

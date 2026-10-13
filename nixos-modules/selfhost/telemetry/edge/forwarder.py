@@ -40,13 +40,13 @@ class Forwarder:
         self.pending = {}
         self.connected = threading.Event()
         self.local = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
-                                 client_id="apartment-pi-spool", clean_session=False,
+                                 client_id=os.environ.get("FORWARDER_CLIENT_PREFIX", "apartment-pi") + "-spool", clean_session=False,
                                  protocol=mqtt.MQTTv311, manual_ack=True)
-        self.local.username_pw_set("telemetry-forwarder", local_password)
+        self.local.username_pw_set(os.environ.get("FORWARDER_LOCAL_USERNAME", "telemetry-forwarder"), local_password)
         self.local.on_connect = self.on_local_connect
         self.local.on_message = self.on_local_message
         self.remote = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
-                                  client_id="apartment-pi-ledger", clean_session=False,
+                                  client_id=os.environ.get("FORWARDER_CLIENT_PREFIX", "apartment-pi") + "-ledger", clean_session=False,
                                   protocol=mqtt.MQTTv311)
         self.remote.username_pw_set("apartment-bridge", remote_password)
         self.remote.on_connect = self.on_remote_connect
@@ -135,7 +135,7 @@ class Forwarder:
 
     def run(self):
         self.local.connect("127.0.0.1", 1883, 60)
-        self.remote.connect_async("10.250.250.1", 1883, 60)
+        self.remote.connect_async(os.environ.get("FORWARDER_REMOTE_HOST", "10.250.250.1"), 1883, 60)
         self.local.loop_start()
         self.remote.loop_start()
         while True:

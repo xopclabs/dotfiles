@@ -165,7 +165,7 @@
         };
 
         # Log dashboards and home automation
-        telemetry.enable = true;
+        telemetry.server.enable = true;
         grafana = {
             enable = true;
             subdomain = "grafana.vm.local";

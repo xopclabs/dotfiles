@@ -8,7 +8,8 @@ with lib;
         ./home-assistant/home-assistant.nix
         ./pihole-unbound/pihole-unbound.nix
         ./postgres.nix
-        ./telemetry
+        ./mosquitto.nix
+        ./telemetry/telemetry.nix
         ./traccar.nix
         ./nextcloud.nix
         ./minecraft/minecraft.nix

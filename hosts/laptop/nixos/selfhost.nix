@@ -5,6 +5,10 @@
 
     homelab = {
         home-assistant.enable = true;
+        telemetry.edge = {
+            enable = true;
+            deviceAddress = "192.168.1.155";
+        };
 
         traefik = {
             enable = true;

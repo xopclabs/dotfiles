@@ -5,6 +5,19 @@ let
 in
 {
     config = lib.mkIf cfg.enable {
+        services.mosquitto.enable = true;
+        sops.secrets."smart-home/mqtt-zigbee2mqtt" = {
+            sopsFile = ../../../secrets/shared/selfhost.yaml;
+            restartUnits = [ "mosquitto.service" "zigbee2mqtt.service" ];
+        };
+        homelab.mosquitto.listeners.local = {
+            address = "127.0.0.1";
+            users.zigbee2mqtt = {
+                passwordFile = config.sops.secrets."smart-home/mqtt-zigbee2mqtt".path;
+                acl = [ "readwrite zigbee2mqtt/#" "readwrite homeassistant/#" ];
+            };
+        };
+
         services.zigbee2mqtt = {
             enable = true;
             settings = {
