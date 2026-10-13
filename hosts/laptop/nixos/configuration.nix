@@ -14,5 +14,6 @@
         ./hardware-configuration.nix
         ./btrfs.nix
         ./ssh.nix
+        ./selfhost.nix
     ];
 }

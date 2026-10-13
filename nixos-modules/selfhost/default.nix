@@ -5,6 +5,7 @@ with lib;
     imports = [
         ./fail2ban.nix
         ./traefik.nix
+        ./home-assistant/home-assistant.nix
         ./pihole-unbound/pihole-unbound.nix
         ./postgres.nix
         ./telemetry
