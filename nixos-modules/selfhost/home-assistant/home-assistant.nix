@@ -35,14 +35,20 @@ in
             default = "192.168.1.0/24";
             description = "Trusted IPv4 LAN subnet; IPv6 ingress remains closed.";
         };
-        country = mkOption {
-            type = types.strMatching "[A-Z]{2}";
-            default = "REDACTED_COUNTRY";
-            description = "Home Assistant country (ISO 3166-1 alpha-2).";
-        };
     };
 
     config = mkIf cfg.enable {
+        sops.secrets."smart-home/ha-country".sopsFile = ../../../secrets/shared/selfhost.yaml;
+        sops.templates."home-assistant-secrets.yaml" = {
+            content = ''
+                country: "${config.sops.placeholder."smart-home/ha-country"}"
+            '';
+            owner = "hass";
+            group = "hass";
+            mode = "0400";
+            restartUnits = [ "home-assistant.service" ];
+        };
+
         services.home-assistant = {
             enable = true;
             extraComponents = [ "default_config" "mqtt" "met" ];
@@ -50,7 +56,7 @@ in
                 default_config = { };
                 homeassistant = {
                     unit_system = "metric";
-                    country = cfg.country;
+                    country = "!secret country";
                 };
                 automation = "!include automations.yaml";
                 script = "!include scripts.yaml";
@@ -63,6 +69,14 @@ in
             after = [ "mosquitto.service" ];
             wants = [ "mosquitto.service" ];
             preStart = mkBefore ''
+                secrets=${escapeShellArg config.sops.templates."home-assistant-secrets.yaml".path}
+                if [ -e secrets.yaml ] || [ -L secrets.yaml ]; then
+                    if [ "$(readlink secrets.yaml || true)" != "$secrets" ]; then
+                        echo "Refusing to replace unmanaged HA secrets.yaml; migrate its entries into SOPS first" >&2
+                        exit 1
+                    fi
+                fi
+                ln -sfn "$secrets" secrets.yaml
                 for file in automations.yaml scenes.yaml; do
                     if [ ! -e "$file" ]; then printf '[]\n' > "$file"; fi
                 done
