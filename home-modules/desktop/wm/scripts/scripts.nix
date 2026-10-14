@@ -30,7 +30,24 @@ let
             pkill -SIGINT wf-recorder
         else
             echo "Starting wf-recorder..."
-            wf-recorder -g "$(slurp)" -f ~/screenshots/$(date +'%Y-%m-%d_%H-%M-%S').mkv &
+            geometry=$(slurp) || exit 1
+            sink=$(${pkgs.pulseaudio}/bin/pactl get-default-sink) || exit 1
+            # The boot VGA Radeon is the iGPU on our hybrid AMD systems.
+            gpu=
+            for node in /sys/class/drm/renderD*/device; do
+                if [[ $(< "$node/vendor") == 0x1002 && $(< "$node/boot_vga") == 1 ]]; then
+                    gpu="/dev/dri/$(basename "$(dirname "$node")")"
+                    break
+                fi
+            done
+            if [[ -z $gpu ]]; then
+                echo "No primary Radeon GPU found for VAAPI encoding." >&2
+                exit 1
+            fi
+            mkdir -p ~/screenshots
+            wf-recorder --audio-backend=pulse --audio="$sink.monitor" -C aac \
+                -c hevc_vaapi -d "$gpu" -F 'scale_vaapi=format=nv12' \
+                -g "$geometry" -f ~/screenshots/$(date +'%Y-%m-%d_%H-%M-%S').mp4 &
         fi
     '';
 
