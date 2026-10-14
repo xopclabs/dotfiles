@@ -6,6 +6,8 @@ in {
     query = pkgs.writeShellScriptBin "eww-dashboard-query" ''
         cache="''${XDG_CACHE_HOME:-$HOME/.cache}/eww-dashboard"
         export PYTHONPATH=${./.}
+        export EWW_TIMEDATECTL=${pkgs.systemd}/bin/timedatectl
+        export PYTHONTZPATH=${pkgs.tzdata}/share/zoneinfo
         if [ "$1" = listen ]; then
             shift
             mode=listen

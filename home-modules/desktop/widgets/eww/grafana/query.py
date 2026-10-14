@@ -9,6 +9,7 @@ import sys
 import time
 import urllib.request
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import snapshot
 
@@ -67,13 +68,38 @@ def extract_points(frames, field_name=None, fill_missing=False, synthetic_time=N
     return sorted(points)
 
 
+def system_timezone():
+    """Read the runtime system timezone, never a build-time location."""
+    localtime = str(Path("/etc/localtime").resolve())
+    if "/zoneinfo/" in localtime:
+        name = localtime.split("/zoneinfo/", 1)[1]
+    else:
+        result = subprocess.run(
+            [os.environ.get("EWW_TIMEDATECTL", "timedatectl"), "show", "--property=Timezone", "--value"],
+            check=True, capture_output=True, text=True, timeout=5,
+        )
+        name = result.stdout.strip()
+    try:
+        return ZoneInfo(name)
+    except (ValueError, KeyError) as exc:
+        raise ValueError("Cannot determine the system timezone") from exc
+
+
 def query(config, tile, period_ms):
     now = int(time.time() * 1000)
     start = now - period_ms
+    sql = tile["sql"]
+    if "@timezone@" in sql or tile.get("range") == "today":
+        timezone = system_timezone()
+        sql = sql.replace("@timezone@", timezone.key.replace("'", "''"))
+        if tile.get("range") == "today":
+            local_now = datetime.fromtimestamp(now / 1000, timezone)
+            start = int(local_now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
+            period_ms = max(1000, now - start)
     result = request(config, "/api/ds/query", {
         "from": str(start), "to": str(now), "queries": [{
             "datasource": {"uid": config["datasource_uid"], "type": "grafana-postgresql-datasource"},
-            "refId": "A", "rawSql": tile["sql"], "format": tile.get("format", "time_series"),
+            "refId": "A", "rawSql": sql, "format": tile.get("format", "time_series"),
             "rawQuery": True, "editorMode": "code",
             "intervalMs": max(1000, period_ms // 120), "maxDataPoints": 120,
         }],
@@ -93,9 +119,6 @@ def read_source(config, key, period_index, template):
         period_ms = 24 * 3600 * 1000
     elif chart:
         period_ms = period["ms"]
-    elif definition.get("range") == "today":
-        now = datetime.now()
-        period_ms = max(1000, int((now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds() * 1000))
     else:
         period_ms = 24 * 3600 * 1000
     frames, start, end = query(config, definition, period_ms)
@@ -143,7 +166,7 @@ def main(config_path, cache_path, instance, period_path, plot_width):
             current = snapshot.index(cache_dir, instance) % len(config["periods"])
             result = snapshot.read(cache_dir, instance, current) or result
         print(json.dumps(result))
-    except (OSError, ValueError, KeyError, StopIteration, IndexError, TypeError) as exc:
+    except (OSError, ValueError, KeyError, StopIteration, IndexError, TypeError, subprocess.SubprocessError) as exc:
         print(f"dashboard {instance}: {exc}", file=sys.stderr)
         if "config" in locals() and config.get("instances", {}).get(instance, {}).get("template") == "chart":
             current = snapshot.index(Path(cache_path), instance) % len(config["periods"])

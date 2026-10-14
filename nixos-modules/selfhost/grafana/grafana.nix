@@ -23,10 +23,14 @@ let
         mode = "0400";
     };
 
+    dashboardDefinitions = import ./dashboards.nix;
     dashboards = pkgs.runCommand "grafana-dashboards" {
         nativeBuildInputs = [ pkgs.jq ];
     } ''
-        cp -r ${./dashboards} "$out"
+        mkdir -p "$out"
+        ${concatStringsSep "\n" (mapAttrsToList (name: dashboard: ''
+            cp ${pkgs.writeText name (builtins.toJSON dashboard)} "$out/${name}"
+        '') dashboardDefinitions)}
         find "$out" -type f -name '*.json' -exec jq empty {} +
     '';
 
