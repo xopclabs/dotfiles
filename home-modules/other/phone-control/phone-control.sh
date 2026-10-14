@@ -57,8 +57,8 @@ if ! adb mdns check >"$log" 2>&1; then
 fi
 
 serial=''
-# ADB discovers and authenticates previously paired phones via mDNS.
-# Only select wireless transports; do not accidentally open a USB webcam phone.
+# Accept mDNS and explicit IP transports, never USB devices. If automatic
+# connection fails, try advertised TLS endpoints (including collision names).
 for ((attempt = 0; attempt < 12; attempt++)); do
     if ! devices=$(adb devices 2>"$log"); then
         fail 'Could not list ADB devices.'
@@ -66,7 +66,9 @@ for ((attempt = 0; attempt < 12; attempt++)); do
     # ADB separates serial and state with a tab. mDNS names can contain spaces
     # (for example, a collision suffix " (2)"), so whitespace splitting is unsafe.
     mapfile -t phones < <(printf '%s\n' "$devices" | awk -F '\t' '
-        $2 == "device" && $1 ~ /\._adb-tls-connect\._tcp$/ {
+        $2 == "device" && ($1 ~ /\._adb-tls-connect\._tcp$/ ||
+            $1 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$/ ||
+            $1 ~ /^\[[0-9a-fA-F:%.]+\]:[0-9]+$/) {
             print $1
         }
     ')
@@ -75,6 +77,14 @@ for ((attempt = 0; attempt < 12; attempt++)); do
         serial="$candidate"
     done
     [[ -z "$serial" ]] || break
+    if ((attempt == 0)); then
+        mapfile -t endpoints < <(adb mdns services 2>"$log" | awk '
+            $(NF - 1) == "_adb-tls-connect._tcp" { print $NF }
+        ' | sort -u)
+        for endpoint in "${endpoints[@]}"; do
+            timeout 3 adb connect "$endpoint" 9>&- >"$log" 2>&1 || true
+        done
+    fi
     sleep 1
 done
 
