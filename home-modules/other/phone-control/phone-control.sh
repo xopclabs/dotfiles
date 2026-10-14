@@ -72,9 +72,23 @@ for ((attempt = 0; attempt < 12; attempt++)); do
             print $1
         }
     ')
+    phone_identity=''
     for candidate in "${phones[@]}"; do
-        [[ -z "$serial" ]] || fail 'Multiple matching wireless phones are connected. Disconnect the others, then try again.'
-        serial="$candidate"
+        # ADB may expose the same phone through both an IP endpoint and mDNS
+        # aliases. Probe each transport before comparing device identities.
+        if ! identity=$(timeout 3 adb -s "$candidate" shell getprop ro.serialno 9>&- 2>"$log"); then
+            continue
+        fi
+        identity=${identity//$'\r'/}
+        [[ -n "$identity" && "$identity" != unknown ]] || fail 'Could not identify a wireless phone safely. Check its ADB connection, then try again.'
+        if [[ -n "$phone_identity" && "$identity" != "$phone_identity" ]]; then
+            fail 'Multiple different wireless phones are connected. Disconnect the others, then try again.'
+        fi
+        phone_identity="$identity"
+        # Prefer a responsive mDNS alias over an explicit IP/port connection.
+        if [[ -z "$serial" || ( "$serial" != *._adb-tls-connect._tcp && "$candidate" == *._adb-tls-connect._tcp ) ]]; then
+            serial="$candidate"
+        fi
     done
     [[ -z "$serial" ]] || break
     if ((attempt == 0)); then
