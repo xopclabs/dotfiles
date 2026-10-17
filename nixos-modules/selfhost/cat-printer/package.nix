@@ -10,9 +10,6 @@ python3Packages.buildPythonApplication {
     dependencies = with python3Packages; [
         aiohttp bleak pillow markdown-it-py fonttools regex
     ];
-    nativeCheckInputs = with python3Packages; [
-        pytestCheckHook pytest-asyncio pytest-aiohttp
-    ];
     CATPRINTER_FONT_DIR = "${dejavu_fonts}/share/fonts/truetype";
     CATPRINTER_EMOJI_FONT = "${noto-fonts-monochrome-emoji}/share/fonts/noto/NotoEmoji.ttf";
     makeWrapperArgs = [

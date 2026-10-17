@@ -21,7 +21,7 @@ class InvalidContent(ValueError):
 
 @dataclass(frozen=True)
 class Options:
-    rotation: int = 180
+    rotation: int = 0
     font_size: int = 24
     dither: str = "floyd-steinberg"
     align: str = "left"

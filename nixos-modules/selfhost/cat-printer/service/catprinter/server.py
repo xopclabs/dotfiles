@@ -1,6 +1,7 @@
 """HTTP API: POST /v1/jobs or /v1/jobs/image; POST /v1/preview[/image].
 
-Markdown requests: {"markdown":"# Hello", "options":{"rotation":180}}.
+Markdown requests: {"markdown":"# Hello", "options":{"rotation":0}}.
+Rotation defaults to 0 for text and images; use 180 explicitly to flip.
 Images: raw PNG/JPEG/WebP body; rendering options are query parameters.
 GET /v1/status, GET /v1/jobs[/id], DELETE /v1/jobs/id.
 POST /v1/maintenance: {"enabled":true}. No endpoints fetch remote content.

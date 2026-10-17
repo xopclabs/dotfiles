@@ -5,7 +5,10 @@ import http.client
 import json
 import os
 import re
+import shlex
+import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -57,6 +60,36 @@ def endpoint(value):
     return value.rstrip("/")
 
 
+def edit_input(plain=False):
+    editor = os.environ.get("VISUAL") or os.environ.get("EDITOR") or "vim"
+    try:
+        command = shlex.split(editor)
+    except ValueError as exc:
+        raise ClientError("Invalid VISUAL/EDITOR command") from exc
+    if not command:
+        raise ClientError("VISUAL/EDITOR command is empty")
+    with tempfile.TemporaryDirectory(prefix="catprint-") as directory:
+        path = os.path.join(directory, "print.txt" if plain else "print.md")
+        with open(path, "xb"):
+            pass
+        # Editor UI goes to the controlling terminal, never the job-ID stdout.
+        with open("/dev/tty", "r+b", buffering=0) as terminal:
+            result = subprocess.run(
+                [*command, path],
+                stdin=terminal,
+                stdout=terminal,
+                stderr=terminal,
+                check=False,
+            )
+        if result.returncode != 0:
+            raise ClientError("Editor exited unsuccessfully; nothing queued")
+        with open(path, "rb") as source:
+            raw = source.read(MAX_BODY + 1)
+    if not raw or not raw.decode("utf-8-sig", errors="replace").strip():
+        return None
+    return raw
+
+
 def read_input(args, stdin):
     if args.text is not None:
         if args.file is not None:
@@ -65,11 +98,13 @@ def read_input(args, stdin):
     elif args.file not in (None, "-"):
         with open(args.file, "rb") as source:
             raw = source.read(MAX_BODY + 1)
+    elif args.file is None and stdin.isatty():
+        raw = edit_input(args.plain)
+        if raw is None:
+            return None
     else:
         if stdin.isatty():
-            raise ClientError(
-                "Provide quoted text, --file PATH, or pipe text/image bytes"
-            )
+            raise ClientError("--file - requires piped stdin")
         raw = stdin.buffer.read(MAX_BODY + 1)
     if not raw:
         raise ClientError("Input is empty")
@@ -78,7 +113,7 @@ def read_input(args, stdin):
     return raw
 
 
-def encode_input(raw, plain=False):
+def encode_input(raw, plain=False, rotation=0):
     mime = None
     if raw.startswith(b"\x89PNG\r\n\x1a\n"):
         mime = "image/png"
@@ -89,7 +124,7 @@ def encode_input(raw, plain=False):
     if mime:
         if plain:
             raise ClientError("--plain is only for text")
-        return "/v1/jobs/image", mime, raw
+        return f"/v1/jobs/image?rotation={rotation}", mime, raw
     if not plain and raw.startswith((b"%PDF-", b"GIF87a", b"GIF89a")):
         raise ClientError(
             "Unsupported document/image format; use UTF-8 text or PNG/JPEG/WebP"
@@ -118,7 +153,9 @@ def encode_input(raw, plain=False):
             raise ClientError(
                 "Plain text plus literal-text framing exceeds 32,000 characters"
             )
-    body = json.dumps({"markdown": text}, ensure_ascii=False).encode("utf-8")
+    body = json.dumps(
+        {"markdown": text, "options": {"rotation": rotation}}, ensure_ascii=False
+    ).encode("utf-8")
     return "/v1/jobs", "application/json", body
 
 
@@ -221,17 +258,28 @@ def wait_for_job(api, job, seconds, stderr):
 def parser():
     result = argparse.ArgumentParser(
         description="Enqueue text or PNG/JPEG/WebP on the cat printer HTTP API.",
-        epilog="Examples: catprint 'Hello **world**'; wl-paste --type image/png | catprint; "
+        epilog="Bare catprint opens VISUAL/EDITOR (fallback: vim). Save and exit to submit; "
+        "nonzero editor exit or an empty buffer submits nothing. "
+        "Examples: catprint 'Hello **world**'; wl-paste --type image/png | catprint; "
         "wl-paste --type text | catprint --plain. stdout contains only the job ID.",
     )
     result.add_argument(
-        "text", nargs="?", help="quoted Markdown text (otherwise read stdin)"
+        "text",
+        nargs="?",
+        help="quoted Markdown text (otherwise pipe input or open an editor)",
     )
     result.add_argument(
         "-f", "--file", help="text/image file, or - for stdin; detect type from bytes"
     )
     result.add_argument(
         "--plain", action="store_true", help="render text literally instead of Markdown"
+    )
+    result.add_argument(
+        "--rotation",
+        type=int,
+        choices=(0, 180),
+        default=0,
+        help="rotate text/images by this many degrees (default: 0)",
     )
     result.add_argument(
         "--url",
@@ -279,7 +327,11 @@ def main(argv=None, stdin=None, stdout=None, stderr=None):
                 "Idempotency key must be 1–128 printable ASCII characters without spaces"
             )
         api = API(args.url)
-        path, mime, body = encode_input(read_input(args, stdin), args.plain)
+        raw = read_input(args, stdin)
+        if raw is None:
+            print("catprint: empty buffer; nothing queued.", file=stderr)
+            return 0
+        path, mime, body = encode_input(raw, args.plain, args.rotation)
         submitted = True
         job = api.request(
             path,
@@ -313,6 +365,9 @@ def main(argv=None, stdin=None, stdout=None, stderr=None):
                 )
         return 1
     except KeyboardInterrupt:
+        if not submitted:
+            print("catprint: interrupted; nothing queued.", file=stderr)
+            return 130
         print("catprint: interrupted; an accepted job is NOT cancelled.", file=stderr)
         if submitted and job_id is None:
             print(
