@@ -27,6 +27,10 @@
             nh.enable = true;
             tldr.enable = true;
             scripts.enable = true;
+            catprint = {
+                enable = true;
+                url = "http://127.0.0.1:8858";
+            };
         };
         editors.nvim.enable = true;
         fileManagers.yazi.enable = true;

@@ -11,6 +11,11 @@
                 passwordSecret = "smart-home/ha-esp32-remote-password";
             };
         };
+        cat-printer = {
+            enable = true;
+            deviceAddress = "DD:12:29:32:E0:F1";
+            lanAccess.enable = true;
+        };
         telemetry.edge = {
             enable = true;
             deviceAddress = "192.168.1.155";

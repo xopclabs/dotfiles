@@ -36,6 +36,7 @@ with lib;
         ./vaultwarden.nix
         ./wallpaper-generator.nix
         ./auto-update.nix
+        ./cat-printer/cat-printer.nix
     ];
 }
 

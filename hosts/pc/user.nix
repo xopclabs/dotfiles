@@ -101,6 +101,7 @@ in {
             nh.enable = true;
             tldr.enable = true;
             scripts.enable = true;
+            catprint.enable = true;
         };
 
         terminals = {

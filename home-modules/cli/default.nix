@@ -16,6 +16,7 @@ in {
 
         ./awscli.nix
         ./btop.nix
+        ./catprint
         ./git.nix
         ./gpg.nix
         ./nh.nix

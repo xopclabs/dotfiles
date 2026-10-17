@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "catprinter-service"
+version = "0.1.0"
+description = "Single-owner MX10 BLE printer HTTP appliance"
+requires-python = ">=3.12"
+dependencies = ["aiohttp", "bleak", "Pillow>=12", "markdown-it-py", "fonttools", "regex"]
+
+[project.scripts]
+catprinter-service = "catprinter.server:main"
+
+[tool.setuptools.packages.find]
+include = ["catprinter*"]

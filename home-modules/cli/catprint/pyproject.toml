@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "catprint"
+version = "0.1.0"
+description = "Text and image client for the cat printer HTTP API"
+requires-python = ">=3.11"
+
+[project.scripts]
+catprint = "catprint:main"
+
+[tool.setuptools]
+py-modules = ["catprint"]
