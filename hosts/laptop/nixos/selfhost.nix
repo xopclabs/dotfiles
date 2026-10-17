@@ -1,4 +1,4 @@
-{ ... }:
+{ config, ... }:
 
 {
     imports = [ ../../../nixos-modules/selfhost/default.nix ];
@@ -6,6 +6,7 @@
     homelab = {
         home-assistant = {
             enable = true;
+            vpnAccess.telemetry = [ "10.250.250.1/32" ];
             provisioning.users.esp32-remote = {
                 name = "ESP32 Remote";
                 passwordSecret = "smart-home/ha-esp32-remote-password";
@@ -18,7 +19,7 @@
         };
         telemetry.edge = {
             enable = true;
-            deviceAddress = "192.168.1.155";
+            deviceAddress = config.metadata.network.ipv4;
         };
 
         traefik = {

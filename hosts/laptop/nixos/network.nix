@@ -7,7 +7,7 @@
             enable = true;
         };
         wireless.enable = true;
-        firewall.interfaces.wlp2s0.allowedTCPPorts = [ 1883 ];
+        firewall.interfaces.${config.metadata.network.interface}.allowedTCPPorts = [ 1883 ];
         wg-quick.interfaces.telemetry = {
             autostart = true;
             configFile = config.sops.secrets."vpn/telemetry".path;

@@ -4,6 +4,12 @@
     metadata = {
         user = "xopc";
         hostName = "laptop";
+        network = {
+            interface = "wlp2s0";
+            ipv4 = "192.168.1.155";
+            subnet = "192.168.1.0/24";
+            defaultGateway = "192.168.1.1";
+        };
 
         hardware = {
             monitors = {

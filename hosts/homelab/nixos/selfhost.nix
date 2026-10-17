@@ -177,6 +177,12 @@
             subdomain = "vm.local";
             services = [
                 {
+                    title = "Home Assistant";
+                    subdomain = "home.laptop.remote";
+                    icon = "si:homeassistant";
+                    group = "Services";
+                }
+                {
                     title = "Proxmox";
                     subdomain = "proxmox.local";
                     icon = "si:proxmox";

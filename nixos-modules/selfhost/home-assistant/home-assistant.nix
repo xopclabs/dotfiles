@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.homelab.home-assistant;
+    network = config.metadata.network;
 in
 {
     imports = [
@@ -25,15 +26,10 @@ in
             default = "home.laptop.remote";
             description = "Private Home Assistant subdomain.";
         };
-        lanInterface = mkOption {
-            type = types.str;
-            default = "wlp2s0";
-            description = "Interface accepting private LAN access.";
-        };
-        lanSubnet = mkOption {
-            type = types.str;
-            default = "192.168.1.0/24";
-            description = "Trusted IPv4 LAN subnet; IPv6 ingress remains closed.";
+        vpnAccess = mkOption {
+            type = types.attrsOf (types.listOf (types.strMatching "[0-9.]+/[0-9]+"));
+            default = { };
+            description = "Trusted IPv4 HTTPS sources keyed by VPN interface.";
         };
     };
 
@@ -97,15 +93,19 @@ in
             wildcardCert = true;
         } ];
         services.traefik.dynamicConfigOptions.http.middlewares.home-assistant-private.ipAllowList.sourceRange = [
-            cfg.lanSubnet "127.0.0.1/32"
-        ];
+            network.subnet "127.0.0.1/32"
+        ] ++ concatLists (attrValues cfg.vpnAccess);
 
-        # Insert before normal accepts: even globally opened proxy ports must not
-        # admit public IPv4 or IPv6 traffic to this private-only host.
+        # Insert before normal accepts so globally opened proxy ports remain private.
         networking.firewall.extraCommands = ''
             iptables -I nixos-fw 1 -p tcp -m multiport --dports 80,443,8123 -j DROP
-            iptables -I nixos-fw 1 -i ${escapeShellArg cfg.lanInterface} -s ${escapeShellArg cfg.lanSubnet} -p tcp -m multiport --dports 80,443,8123 -j nixos-fw-accept
+            iptables -I nixos-fw 1 -i ${escapeShellArg network.interface} -s ${escapeShellArg network.subnet} -p tcp -m multiport --dports 80,443,8123 -j nixos-fw-accept
             iptables -I nixos-fw 1 -i lo -p tcp -m multiport --dports 80,443,8123 -j nixos-fw-accept
+            ${concatStrings (mapAttrsToList (interface: networks:
+                concatMapStrings (network: ''
+                    iptables -I nixos-fw 1 -i ${escapeShellArg interface} -s ${escapeShellArg network} -p tcp --dport 443 -j nixos-fw-accept
+                '') networks
+            ) cfg.vpnAccess)}
             ip6tables -I nixos-fw 1 -p tcp -m multiport --dports 80,443,8123 -j DROP
             ip6tables -I nixos-fw 1 -i lo -p tcp -m multiport --dports 80,443,8123 -j nixos-fw-accept
         '';

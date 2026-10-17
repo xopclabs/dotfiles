@@ -18,6 +18,16 @@ with lib;
         };
 
         network = {
+            interface = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "Primary LAN interface.";
+            };
+            subnet = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "Primary IPv4 LAN subnet in CIDR notation.";
+            };
             ipv4 = mkOption {
                 type = types.str;
                 default = null;

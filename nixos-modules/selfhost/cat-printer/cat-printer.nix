@@ -3,6 +3,7 @@
 with lib;
 let
     cfg = config.homelab.cat-printer;
+    network = config.metadata.network;
     package = pkgs.callPackage ./package.nix { };
     privateNetworks = [ "127.0.0.1/32" "192.168.0.0/16" "10.0.0.0/8" "172.16.0.0/12" ];
     mkPrivateRoute = name: subdomain: {
@@ -22,16 +23,6 @@ in
         };
         lanAccess = {
             enable = mkEnableOption "direct HTTP access from the trusted LAN";
-            interface = mkOption {
-                type = types.strMatching "[a-zA-Z0-9_.-]+";
-                default = "wlp2s0";
-                description = "Interface accepting direct LAN HTTP requests.";
-            };
-            subnet = mkOption {
-                type = types.strMatching "[0-9.]+/[0-9]+";
-                default = "192.168.1.0/24";
-                description = "Trusted IPv4 source subnet for unauthenticated HTTP.";
-            };
         };
         deviceAddress = mkOption {
             type = types.strMatching "([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}";
@@ -97,7 +88,7 @@ in
                 RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
                 CapabilityBoundingSet = "";
                 IPAddressDeny = "any";
-                IPAddressAllow = [ "localhost" ] ++ optional cfg.lanAccess.enable cfg.lanAccess.subnet;
+                IPAddressAllow = [ "localhost" ] ++ optional cfg.lanAccess.enable network.subnet;
                 LimitCORE = 0;
                 MemoryMax = "512M";
                 TasksMax = 32;
@@ -122,7 +113,7 @@ in
                 iptables -I nixos-fw 1 -i ${escapeShellArg interface} -s ${escapeShellArg network} -p tcp --dport 443 -j nixos-fw-accept
             '') cfg.allowedNetworks
         ) cfg.vpnInterfaces + optionalString cfg.lanAccess.enable ''
-            iptables -I nixos-fw 1 -i ${escapeShellArg cfg.lanAccess.interface} -s ${escapeShellArg cfg.lanAccess.subnet} -p tcp --dport ${toString cfg.port} -j nixos-fw-accept
+            iptables -I nixos-fw 1 -i ${escapeShellArg network.interface} -s ${escapeShellArg network.subnet} -p tcp --dport ${toString cfg.port} -j nixos-fw-accept
         '');
     };
 }
