@@ -130,7 +130,7 @@
                 };
                 pavel-laptop = {
                     publicKey = "5dHbRApQLj6rgDGmLrX/FByKnaZajACCxVajx/IelVQ=";
-                    allowedIPs = [ "10.250.250.11/32" ];
+                    allowedIPs = [ "10.250.250.11/32" "192.168.1.155/32" ];
                 };
                 tv = {
                     publicKey = "HrTCQLCg8TBAm/9+VfiOijQ17jRO18DrSyj+a/cpgDw=";

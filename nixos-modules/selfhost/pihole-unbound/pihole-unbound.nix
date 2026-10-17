@@ -118,6 +118,7 @@ in
         localZones = mkOption {
             type = types.attrsOf types.str;
             default = {
+                "laptop.remote" = "laptop";
                 "vm.local" = "homelab";
                 "local" = "homelab";
                 "pi.local" = "pi";

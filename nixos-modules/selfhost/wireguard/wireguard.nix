@@ -259,6 +259,10 @@ in
                     "    ${pkgs.iproute2}/bin/ip route replace ${net} dev ${cfg.externalInterface} table 100"
                 ) cfg.localNetworks}
                 
+                ${concatMapStringsSep "\n" (net:
+                    "    ${pkgs.iproute2}/bin/ip route replace ${net} dev wg0 table 100"
+                ) (unique (concatMap (peer: peer.allowedIPs) (attrValues cfg.peers)))}
+
                 # tun2socks 2.7 uses pflag: `-device tun0` is `-d evice`, not tun0.
                 exec ${pkgs.tun2socks}/bin/tun2socks --device tun0 --proxy socks5://${cfg.socks5Proxy.host}:${toString cfg.socks5Proxy.port}
             '';
