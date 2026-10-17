@@ -183,6 +183,12 @@
                     group = "Services";
                 }
                 {
+                    title = "Catprinter";
+                    subdomain = "catprinter.laptop.remote";
+                    icon = "mdi:printer";
+                    group = "Services";
+                }
+                {
                     title = "Proxmox";
                     subdomain = "proxmox.local";
                     icon = "si:proxmox";

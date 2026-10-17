@@ -12,5 +12,8 @@ dependencies = ["aiohttp", "bleak", "Pillow>=12", "markdown-it-py", "fonttools",
 [project.scripts]
 catprinter-service = "catprinter.server:main"
 
+[tool.setuptools.package-data]
+catprinter = ["static/*"]
+
 [tool.setuptools.packages.find]
 include = ["catprinter*"]

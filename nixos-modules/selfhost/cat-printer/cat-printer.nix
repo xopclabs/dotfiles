@@ -15,11 +15,11 @@ let
 in
 {
     options.homelab.cat-printer = {
-        enable = mkEnableOption "private MX10 printer HTTP appliance";
+        enable = mkEnableOption "private MX10 printer web UI and API";
         subdomain = mkOption {
             type = types.str;
             default = "catprinter.laptop.remote";
-            description = "Private printer API subdomain; no public alias is created.";
+            description = "Private HTTPS subdomain for the printer web UI and API; no public alias is created.";
         };
         lanAccess = {
             enable = mkEnableOption "direct HTTP access from the trusted LAN";
@@ -62,7 +62,7 @@ in
         };
 
         systemd.services.cat-printer = {
-            description = "MX10 printer API and BLE keepalive";
+            description = "MX10 printer web UI, API and BLE keepalive";
             wantedBy = [ "multi-user.target" ];
             wants = [ "bluetooth.service" ];
             after = [ "bluetooth.service" "network.target" ];
@@ -95,7 +95,14 @@ in
             };
         };
 
+        # Serve the UI and API through the same private HTTPS origin.
         homelab.traefik.routes = [ (mkPrivateRoute "cat-printer" cfg.subdomain) ];
+        homelab.glance.services = mkIf config.homelab.glance.enable [ {
+            title = "Catprinter";
+            subdomain = cfg.subdomain;
+            icon = "mdi:printer";
+            group = "Services";
+        } ];
         services.traefik.dynamicConfigOptions.http.middlewares = {
             cat-printer-private.ipAllowList.sourceRange = cfg.allowedNetworks;
             cat-printer-limit.rateLimit = {

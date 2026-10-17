@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catprinter</title>
+    <link rel="stylesheet" href="/ui/static/style.css" />
+    <script src="/ui/static/app.js" defer></script>
+  </head>
+  <body>
+    <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-printer" viewBox="0 0 24 24">
+        <path
+          d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+        />
+        <path d="M6 14h12v8H6zM18 12h.01" />
+      </symbol>
+      <symbol id="i-markdown" viewBox="0 0 24 24">
+        <path d="M4 19V5l5 7 5-7v14M18 15l3 3 3-3M21 6v12" />
+      </symbol>
+      <symbol id="i-image" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <circle cx="8" cy="8" r="1" />
+        <path d="m21 15-5-5L5 21" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path
+          d="M12 16V3m-5 5 5-5 5 5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"
+        />
+      </symbol>
+      <symbol id="i-left" viewBox="0 0 24 24">
+        <path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" />
+      </symbol>
+      <symbol id="i-right" viewBox="0 0 24 24">
+        <path d="M21 10a9 9 0 1 0-2 8M21 4v6h-6" />
+      </symbol>
+      <symbol id="i-flip" viewBox="0 0 24 24">
+        <path
+          d="M3 10a9 9 0 0 1 15-5l3 3M21 2v6h-6M21 14a9 9 0 0 1-15 5l-3-3M3 22v-6h6"
+        />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8 12 3 3 5-6" />
+      </symbol>
+      <symbol id="i-warning" viewBox="0 0 24 24">
+        <path
+          d="m10.3 3.8-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.2l-8-14a2 2 0 0 0-3.4 0ZM12 9v4m0 4h.01"
+        />
+      </symbol>
+      <symbol id="i-offline" viewBox="0 0 24 24">
+        <path
+          d="m3 3 18 18M8.5 8.5A8 8 0 0 1 20 10M4 10l1-1m3 5a6 6 0 0 1 4-2m4 2h.01M12 18h.01"
+        />
+      </symbol>
+      <symbol id="i-loader" viewBox="0 0 24 24">
+        <path d="M21 12a9 9 0 1 1-9-9" />
+      </symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24">
+        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-font-up" viewBox="0 0 24 24">
+        <path d="m3 20 6-16 6 16M5 15h8m4-8 3-3 3 3m-3-3v9" />
+      </symbol>
+      <symbol id="i-font-down" viewBox="0 0 24 24">
+        <path d="m3 20 6-16 6 16M5 15h8m4-5 3 3 3-3m-3 3V4" />
+      </symbol>
+      <symbol id="i-align-left" viewBox="0 0 24 24">
+        <path d="M3 5h18M3 10h12M3 15h18M3 20h12" />
+      </symbol>
+      <symbol id="i-align-center" viewBox="0 0 24 24">
+        <path d="M3 5h18M6 10h12M3 15h18M6 20h12" />
+      </symbol>
+      <symbol id="i-align-right" viewBox="0 0 24 24">
+        <path d="M3 5h18M9 10h12M3 15h18M9 20h12" />
+      </symbol>
+      <symbol id="i-type" viewBox="0 0 24 24">
+        <path d="M4 5V3h16v2M12 3v18m-4 0h8" />
+      </symbol>
+    </svg>
+    <header>
+      <h1>
+        <svg class="icon" aria-hidden="true"><use href="#i-printer" /></svg
+        >Catprinter
+      </h1>
+      <span
+        id="status"
+        class="indicator"
+        role="status"
+        tabindex="0"
+        data-tone="busy"
+      >
+        <svg class="icon" aria-hidden="true">
+          <use id="status-icon" href="#i-loader" />
+        </svg>
+        <span class="tooltip" id="status-text">Connecting…</span>
+      </span>
+    </header>
+    <main>
+      <section class="editor" aria-label="Print content">
+        <div class="tabs" role="tablist" aria-label="Content type">
+          <button
+            id="markdown-tab"
+            role="tab"
+            aria-selected="true"
+            aria-controls="markdown-panel"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-markdown" /></svg
+            >Markdown
+          </button>
+          <button
+            id="image-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="image-panel"
+            tabindex="-1"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-image" /></svg
+            >Image
+          </button>
+        </div>
+        <div id="markdown-panel" role="tabpanel" aria-labelledby="markdown-tab">
+          <div
+            class="controls markdown-controls"
+            role="group"
+            aria-label="Markdown options"
+          >
+            <label class="font-control" title="Font size"
+              ><svg class="icon" aria-hidden="true"><use href="#i-type" /></svg
+              ><span class="sr">Font size</span
+              ><input
+                id="font"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]{2}"
+                required
+                value="24"
+            /></label>
+            <div
+              class="font-buttons"
+              role="group"
+              aria-label="Adjust font size"
+            >
+              <button
+                id="font-up"
+                class="icon-button"
+                title="Increase font size"
+                aria-label="Increase font size"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-font-up" />
+                </svg>
+              </button>
+              <button
+                id="font-down"
+                class="icon-button"
+                title="Decrease font size"
+                aria-label="Decrease font size"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-font-down" />
+                </svg>
+              </button>
+            </div>
+            <label class="alignment-control" title="Alignment"
+              ><svg class="icon" aria-hidden="true">
+                <use id="align-icon" href="#i-align-left" /></svg
+              ><span class="sr">Alignment</span
+              ><select id="align" aria-label="Alignment">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select></label
+            >
+            <label class="toggle icon-button" title="Flip 180°"
+              ><input id="flip" type="checkbox" class="sr" /><svg
+                class="icon"
+                aria-hidden="true"
+              >
+                <use href="#i-flip" /></svg
+              ><span class="sr">Flip 180°</span></label
+            >
+          </div>
+          <label class="sr" for="markdown">Markdown</label>
+          <textarea
+            id="markdown"
+            placeholder="Type or paste Markdown…"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div
+          id="image-panel"
+          role="tabpanel"
+          aria-labelledby="image-tab"
+          hidden
+        >
+          <div class="image-settings" role="group" aria-label="Image options">
+            <div
+              class="rotation-controls"
+              role="group"
+              aria-label="Rotate image"
+            >
+              <button
+                id="rotate-left"
+                class="icon-button"
+                title="Rotate counterclockwise 90°"
+                aria-label="Rotate counterclockwise 90°"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-left" />
+                </svg>
+              </button>
+              <button
+                id="rotate"
+                class="icon-button"
+                title="Rotate clockwise 90°"
+                aria-label="Rotate clockwise 90°"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-right" />
+                </svg>
+              </button>
+            </div>
+            <label class="dither-control"
+              >Dithering<select id="dither">
+                <option value="floyd-steinberg">Floyd–Steinberg</option>
+                <option value="threshold">None</option>
+              </select></label
+            >
+            <label class="slider"
+              >Black point<input
+                id="black"
+                type="range"
+                min="0"
+                max="254"
+                value="0"
+              /><output id="black-value">0</output></label
+            >
+            <label class="slider" id="threshold-label" hidden
+              >Threshold<input
+                id="threshold"
+                type="range"
+                min="0"
+                max="255"
+                value="128"
+              /><output id="threshold-value">128</output></label
+            >
+          </div>
+          <label
+            id="drop"
+            title="Choose or drop a PNG, JPEG or WebP image · up to 8 MiB / 16 MP"
+          >
+            <input
+              id="file"
+              class="sr"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+            />
+            <img id="original" alt="Selected source image" hidden />
+            <span id="upload-prompt"
+              ><svg class="icon" aria-hidden="true">
+                <use href="#i-upload" /></svg
+              ><span>Choose image</span></span
+            >
+          </label>
+          <div class="image-toolbar">
+            <span id="filename" title="No image selected"></span>
+          </div>
+        </div>
+      </section>
+      <section class="preview-panel" aria-label="Print preview">
+        <div class="preview-heading">
+          <h2>
+            <svg class="icon" aria-hidden="true"><use href="#i-eye" /></svg
+            >Preview
+          </h2>
+          <span id="length"></span>
+        </div>
+        <div id="paper-area">
+          <span id="placeholder" aria-label="No preview yet"
+            ><svg class="icon" aria-hidden="true">
+              <use href="#i-image" /></svg></span
+          ><img id="preview" alt="Monochrome print preview" hidden />
+        </div>
+        <div class="print-toolbar">
+          <span id="message" class="indicator" role="status" tabindex="0" hidden
+            ><svg class="icon" aria-hidden="true">
+              <use id="message-icon" href="#i-check" /></svg
+            ><span class="tooltip" id="message-text"></span
+          ></span>
+          <button id="print" class="primary" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-printer" /></svg
+            ><span>Print</span>
+          </button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

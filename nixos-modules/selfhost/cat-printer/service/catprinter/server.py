@@ -9,9 +9,12 @@ POST /v1/maintenance: {"enabled":true}. No endpoints fetch remote content.
 
 import argparse
 import asyncio
+import hashlib
 import json
 import logging
+import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from aiohttp import web
 from .protocol import Transport
@@ -25,16 +28,25 @@ RENDER_SLOTS = web.AppKey("render_slots", asyncio.Semaphore)
 
 @web.middleware
 async def safety(request, handler):
-    # No browser UI in v1. Reject browser-origin mutations, including simple
-    # cross-site forms, rather than trusting CORS to prevent paper-wasting CSRF.
-    if request.method not in ("GET", "HEAD"):
-        if request.headers.get("Origin") or request.headers.get("Sec-Fetch-Site") in (
-            "cross-site",
-            "same-site",
-        ):
-            return web.json_response(
-                {"error": "Browser-origin mutations are disabled"}, status=403
+    browser = bool(
+        request.headers.get("Origin") or request.headers.get("Sec-Fetch-Site")
+    )
+    origin = request.headers.get("Origin")
+    foreign = request.headers.get("Sec-Fetch-Site") in ("cross-site", "same-site")
+    if origin:
+        try:
+            parsed = urlsplit(origin)
+            foreign = (
+                foreign
+                or parsed.scheme not in ("http", "https")
+                or parsed.netloc != request.host
             )
+        except ValueError:
+            foreign = True
+    if (request.path.startswith("/v1/") and browser) or (
+        request.path.startswith("/ui/api/") and foreign
+    ):
+        return web.json_response({"error": "Browser access denied"}, status=403)
     try:
         response = await handler(request)
     except Rejected as exc:
@@ -55,6 +67,11 @@ async def safety(request, handler):
         response = web.json_response({"error": "Internal service error"}, status=500)
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' blob:; object-src 'none'; "
+        "base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    )
     return response
 
 
@@ -98,7 +115,12 @@ async def render_request(request):
 async def submit(request):
     service = request.app[SERVICE]
     key = request.headers.get("Idempotency-Key")
-    client = request.headers.get("X-Printer-Client", "app")
+    owner = browser_owner(request) if request.path.startswith("/ui/api/") else None
+    client = owner or request.headers.get("X-Printer-Client", "app")
+    if owner and key:
+        if not 1 <= len(key) <= 128:
+            raise InvalidContent("Invalid idempotency key")
+        key = hashlib.sha256((owner + key).encode()).hexdigest()
     if len(client) > 64 or (key is not None and not 1 <= len(key) <= 128):
         raise InvalidContent("Invalid client label or idempotency key")
     previous = service.history.by_key(key)
@@ -128,7 +150,11 @@ async def preview(request):
 
 
 async def status(request):
-    return web.json_response(request.app[SERVICE].status())
+    value = request.app[SERVICE].status()
+    if request.path.startswith("/ui/api/"):
+        browser_owner(request)
+        value = {key: value[key] for key in ("available", "state", "connected")}
+    return web.json_response(value)
 
 
 async def health(request):
@@ -136,7 +162,8 @@ async def health(request):
 
 
 async def jobs(request):
-    return web.json_response(request.app[SERVICE].history.list())
+    owner = browser_owner(request) if request.path.startswith("/ui/api/") else None
+    return web.json_response(request.app[SERVICE].history.list(owner))
 
 
 async def job(request):
@@ -147,7 +174,28 @@ async def job(request):
 
 
 async def cancel(request):
+    if request.path.startswith("/ui/api/"):
+        owner = browser_owner(request)
+        value = request.app[SERVICE].history.get(request.match_info["id"])
+        if value is None or value["client"] != owner:
+            raise web.HTTPNotFound()
     return web.json_response(request.app[SERVICE].cancel(request.match_info["id"]))
+
+
+def browser_owner(request):
+    token = request.headers.get("X-Browser-Identity", "")
+    if not re.fullmatch(r"[a-f0-9]{64}", token):
+        raise web.HTTPForbidden()
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+async def browser_preview(request):
+    browser_owner(request)
+    return await preview(request)
+
+
+async def index(request):
+    return web.FileResponse(Path(__file__).parent / "static" / "index.html")
 
 
 async def maintenance(request):
@@ -165,6 +213,15 @@ def create_app(service, renderer):
     app[RENDER_SLOTS] = asyncio.Semaphore(1)
     app.add_routes(
         [
+            web.get("/", index),
+            web.get("/ui/api/status", status),
+            web.get("/ui/api/jobs", jobs),
+            web.delete("/ui/api/jobs/{id}", cancel),
+            web.post("/ui/api/jobs", submit),
+            web.post("/ui/api/jobs/image", submit),
+            web.post("/ui/api/preview", browser_preview),
+            web.post("/ui/api/preview/image", browser_preview),
+            web.static("/ui/static/", Path(__file__).parent / "static"),
             web.get("/healthz", health),
             web.get("/v1/status", status),
             web.get("/v1/jobs", jobs),

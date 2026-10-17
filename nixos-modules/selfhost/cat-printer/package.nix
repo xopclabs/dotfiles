@@ -16,6 +16,11 @@ python3Packages.buildPythonApplication {
         "--set CATPRINTER_FONT_DIR ${dejavu_fonts}/share/fonts/truetype"
         "--set CATPRINTER_EMOJI_FONT ${noto-fonts-monochrome-emoji}/share/fonts/noto/NotoEmoji.ttf"
     ];
+    postInstall = ''
+        for asset in index.html style.css app.js; do
+            test -s "$out/${python3Packages.python.sitePackages}/catprinter/static/$asset"
+        done
+    '';
     pythonImportsCheck = [ "catprinter.server" ];
 
     meta = {

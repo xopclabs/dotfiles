@@ -99,12 +99,17 @@ class History:
             else None
         )
 
-    def list(self):
+    def list(self, client=None):
         self.prune()
+        query = "SELECT * FROM jobs"
+        parameters = ()
+        if client is not None:
+            query += " WHERE client=?"
+            parameters = (client,)
         return [
             self.decode(row)
             for row in self.db.execute(
-                "SELECT * FROM jobs ORDER BY created DESC LIMIT 100"
+                query + " ORDER BY created DESC LIMIT 100", parameters
             )
         ]
 
