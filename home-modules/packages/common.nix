@@ -30,7 +30,7 @@ in {
             gnupg 
             zip
             unzip 
-	    _7zz
+	        _7zz
             lm_sensors
             lowdown 
             zk
@@ -49,7 +49,7 @@ in {
             ncdu
             openspec
             gh
-	    rsync
+	        rsync
         ];
     };
 }
