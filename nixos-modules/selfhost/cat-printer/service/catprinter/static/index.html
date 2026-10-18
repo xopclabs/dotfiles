@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Catprinter</title>
+    <meta name="theme-color" content="#eceff4" />
+    <link rel="manifest" href="/ui/static/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/ui/static/icon.png" />
     <link rel="stylesheet" href="/ui/static/style.css" />
     <script src="/ui/static/app.js" defer></script>
   </head>
@@ -249,19 +252,20 @@
           </div>
           <label
             id="drop"
-            title="Choose or drop a PNG, JPEG or WebP image · up to 8 MiB / 16 MP"
+            title="Choose, drop, or paste images in print order · each up to 16 MP · combined up to 50 cm"
           >
             <input
               id="file"
               class="sr"
               type="file"
+              multiple
               accept="image/png,image/jpeg,image/webp"
             />
             <img id="original" alt="Selected source image" hidden />
             <span id="upload-prompt"
               ><svg class="icon" aria-hidden="true">
                 <use href="#i-upload" /></svg
-              ><span>Choose image</span></span
+              ><span>Choose or paste images</span></span
             >
           </label>
           <div class="image-toolbar">

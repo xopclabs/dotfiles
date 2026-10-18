@@ -12,7 +12,9 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import re
+import socket
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -198,6 +200,12 @@ async def index(request):
     return web.FileResponse(Path(__file__).parent / "static" / "index.html")
 
 
+async def service_worker(request):
+    response = web.FileResponse(Path(__file__).parent / "static" / "sw.js")
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 async def maintenance(request):
     value = await json_body(request)
     if set(value) != {"enabled"} or type(value["enabled"]) is not bool:
@@ -214,6 +222,7 @@ def create_app(service, renderer):
     app.add_routes(
         [
             web.get("/", index),
+            web.get("/sw.js", service_worker),
             web.get("/ui/api/status", status),
             web.get("/ui/api/jobs", jobs),
             web.delete("/ui/api/jobs/{id}", cancel),
@@ -246,6 +255,20 @@ def create_app(service, renderer):
     return app
 
 
+def inherited_socket():
+    if (
+        os.environ.get("LISTEN_PID") != str(os.getpid())
+        or os.environ.get("LISTEN_FDS") != "1"
+    ):
+        raise RuntimeError("Expected exactly one systemd listening socket")
+    listener = socket.socket(fileno=3)
+    if listener.family != socket.AF_INET or not listener.getsockopt(
+        socket.SOL_SOCKET, socket.SO_ACCEPTCONN
+    ):
+        raise RuntimeError("Expected an IPv4 TCP listener")
+    return listener
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--address", required=True)
@@ -255,15 +278,20 @@ def main():
         "--listen-address", choices=["127.0.0.1", "0.0.0.0"], default="127.0.0.1"
     )
     parser.add_argument("--state-dir", default="/var/lib/cat-printer")
+    parser.add_argument("--socket-activation", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
     history = History(Path(args.state_dir) / "jobs.sqlite3")
     service = Service(Transport(args.address, args.adapter), history)
-    # Direct LAN access is opt-in and must be source-filtered by the host.
+    # The NixOS service inherits its listener without permission to create IP sockets.
+    listener = (
+        {"sock": inherited_socket()}
+        if args.socket_activation
+        else {"host": args.listen_address, "port": args.port}
+    )
     web.run_app(
         create_app(service, Renderer()),
-        host=args.listen_address,
-        port=args.port,
+        **listener,
         access_log=None,
         shutdown_timeout=10,
     )

@@ -189,7 +189,9 @@ for (const [id, degrees] of [
     changed();
   };
 }
-async function loadImage(file) {
+async function loadImage(files) {
+  files = [...files];
+  if (!files.length) return;
   const generation = ++imageGeneration;
   bitmap?.close();
   bitmap = null;
@@ -198,10 +200,37 @@ async function loadImage(file) {
   $("upload-prompt").hidden = false;
   changed();
   try {
-    if (!file || !["image/png", "image/jpeg", "image/webp"].includes(file.type))
-      throw new Error("Choose a PNG, JPEG or WebP image.");
-    if (file.size > 8 * 1024 * 1024) throw new Error("Image exceeds 8 MiB.");
-    const decoded = await createImageBitmap(file);
+    const strip = document.createElement("canvas");
+    strip.width = 384;
+    const parts = [];
+    let height = 0;
+    try {
+      for (const file of files) {
+        if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
+          throw new Error("Choose PNG, JPEG or WebP images.");
+        const part = await createImageBitmap(file);
+        parts.push(part);
+        if (part.width * part.height > 16000000)
+          throw new Error("Image exceeds 16 megapixels.");
+        height += Math.max(1, Math.round((part.height * 384) / part.width));
+        if (height > 3852)
+          throw new Error("Combined images exceed the 50 cm print limit.");
+        if (generation !== imageGeneration) return;
+      }
+      strip.height = height;
+      const ctx = strip.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, 384, height);
+      let y = 0;
+      for (const part of parts) {
+        const rows = Math.max(1, Math.round((part.height * 384) / part.width));
+        ctx.drawImage(part, 0, y, 384, rows);
+        y += rows;
+      }
+    } finally {
+      for (const part of parts) part.close();
+    }
+    const decoded = await createImageBitmap(strip);
     if (generation !== imageGeneration) {
       decoded.close();
       return;
@@ -211,9 +240,12 @@ async function loadImage(file) {
       throw new Error("Image exceeds 16 megapixels.");
     }
     bitmap = decoded;
-    $("filename").textContent = file.name;
-    $("filename").title = file.name;
-    originalUrl = URL.createObjectURL(file);
+    const names = files.map((file) => file.name).join(" → ");
+    $("filename").textContent = names;
+    $("filename").title = names;
+    const source = await new Promise((resolve) => strip.toBlob(resolve));
+    if (generation !== imageGeneration) return;
+    originalUrl = URL.createObjectURL(source);
     $("original").src = originalUrl;
     $("original").hidden = false;
     $("upload-prompt").hidden = true;
@@ -225,7 +257,7 @@ async function loadImage(file) {
     notice("error", error.message);
   }
 }
-$("file").onchange = () => loadImage($("file").files[0]);
+$("file").onchange = () => loadImage($("file").files);
 for (const event of ["dragenter", "dragover"])
   $("drop").addEventListener(event, (e) => {
     e.preventDefault();
@@ -235,8 +267,39 @@ $("drop").ondragleave = () => $("drop").classList.remove("drag");
 $("drop").ondrop = (e) => {
   e.preventDefault();
   $("drop").classList.remove("drag");
-  loadImage(e.dataTransfer.files[0]);
+  loadImage(e.dataTransfer.files);
 };
+function pastedImage(data) {
+  const files = [...data.files];
+  if (!files.some((file) => file.type.startsWith("image/"))) {
+    for (const item of data.items) {
+      if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
+      const pasted = item.getAsFile();
+      if (!pasted) continue;
+      files.push(
+        pasted.type
+          ? pasted
+          : new File([pasted], pasted.name, { type: item.type }),
+      );
+    }
+  }
+  return files.filter((item) => item.type.startsWith("image/"));
+}
+window.addEventListener("paste", (event) => {
+  const data = event.clipboardData;
+  if (!data) return;
+  const files = pastedImage(data);
+  if (!files.length) return;
+  if (
+    mode === "markdown" &&
+    event.target === $("markdown") &&
+    data.getData("text/plain")
+  )
+    return;
+  event.preventDefault();
+  if (mode !== "image") selectTab("image");
+  loadImage(files);
+});
 async function imageBody() {
   const canvas = document.createElement("canvas");
   const sideways = rotation % 180 !== 0;
@@ -385,8 +448,53 @@ async function refresh() {
   }
   printState();
 }
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+}
+async function openSharedContent() {
+  const url = new URL(location.href);
+  const token = url.searchParams.get("share");
+  if (!token) return;
+  url.searchParams.delete("share");
+  history.replaceState(null, "", url);
+  try {
+    if (!/^[a-f0-9-]{36}$/.test(token))
+      throw new Error(
+        "Could not receive shared content. Please share it again.",
+      );
+    const cache = await caches.open("catprinter-incoming-shares");
+    const key = new URL("/share-target/" + token, location.origin);
+    const response = await cache.match(key);
+    await cache.delete(key);
+    if (
+      !response ||
+      Date.now() - Number(response.headers.get("X-Share-Created")) > 3600000
+    )
+      throw new Error("Shared content expired. Please share it again.");
+    const data = await response.formData();
+    const images = data
+      .getAll("images")
+      .filter((file) => file instanceof File && file.size);
+    const text = ["title", "text", "url"]
+      .map((name) => data.get(name))
+      .filter((value) => typeof value === "string" && value.trim());
+    const content = [...new Set(text)].join("\n\n");
+    if (content) $("markdown").value = content;
+    if (images.length) {
+      selectTab("image");
+      await loadImage(images);
+    } else if (content) {
+      selectTab("markdown");
+    } else {
+      throw new Error("No supported text or images were shared.");
+    }
+  } catch (error) {
+    notice("error", error.message);
+  }
+}
 changed();
 refresh();
+openSharedContent();
 setInterval(() => {
   if (!document.hidden) refresh();
 }, 10000);

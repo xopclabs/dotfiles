@@ -61,13 +61,24 @@ in
             powerOnBoot = true;
         };
 
+        systemd.sockets.cat-printer = {
+            wantedBy = [ "sockets.target" ];
+            listenStreams = [ "${if cfg.lanAccess.enable then "0.0.0.0" else "127.0.0.1"}:${toString cfg.port}" ];
+            socketConfig = {
+                NoDelay = true;
+                IPAddressDeny = "any";
+                IPAddressAllow = [ "localhost" ] ++ optional cfg.lanAccess.enable network.subnet;
+            };
+        };
         systemd.services.cat-printer = {
             description = "MX10 printer web UI, API and BLE keepalive";
             wantedBy = [ "multi-user.target" ];
             wants = [ "bluetooth.service" ];
-            after = [ "bluetooth.service" "network.target" ];
+            requires = [ "cat-printer.socket" ];
+            after = [ "cat-printer.socket" "bluetooth.service" "network.target" ];
             serviceConfig = {
-                ExecStart = "${lib.getExe package} --address ${cfg.deviceAddress} --adapter ${cfg.adapter} --port ${toString cfg.port} --listen-address ${if cfg.lanAccess.enable then "0.0.0.0" else "127.0.0.1"}";
+                ExecStart = "${lib.getExe package} --address ${cfg.deviceAddress} --adapter ${cfg.adapter} --socket-activation";
+                Sockets = [ "cat-printer.socket" ];
                 DynamicUser = true;
                 StateDirectory = "cat-printer";
                 StateDirectoryMode = "0700";
@@ -85,10 +96,13 @@ in
                 ProtectControlGroups = true;
                 ProtectClock = true;
                 RestrictSUIDSGID = true;
-                RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+                PrivateNetwork = true;
+                RestrictNamespaces = true;
+                SystemCallArchitectures = "native";
+                LockPersonality = true;
+                RestrictAddressFamilies = [ "AF_UNIX" ];
                 CapabilityBoundingSet = "";
                 IPAddressDeny = "any";
-                IPAddressAllow = [ "localhost" ] ++ optional cfg.lanAccess.enable network.subnet;
                 LimitCORE = 0;
                 MemoryMax = "512M";
                 TasksMax = 32;
