@@ -6,6 +6,11 @@
     ];
     
     config.homelab = {
+        cat-printer.share = {
+            ingress.enable = true;
+            relayAddress = "10.13.13.7";
+        };
+
         # Essentials
         fail2ban = {
             enable = true;
@@ -102,6 +107,10 @@
                 mom = {
                     publicKey = "ciuO1DyKt1wBNkIxEPWKyLlDLamXE1ozOx8DzTR5E20=";
                     allowedIPs = [ "10.13.13.5/32" ];
+                };
+                laptop = {
+                    publicKey = "VHMBB2baqDwjBInECiaVyukKisLM4QljEU80aw3xBG8=";
+                    allowedIPs = [ "10.13.13.7/32" ];
                 };
                 dad = {
                     publicKey = "AlZDosZZo7I/UAumgtE4PMcAkGn6XyHDKeQMIZ5/mw8=";

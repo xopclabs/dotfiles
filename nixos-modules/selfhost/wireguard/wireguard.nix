@@ -96,8 +96,8 @@ in
                         example = "10.13.13.2/24";
                         description = ''
                             Local IP address (with prefix length) for this client tunnel.
-                            Use a /24 (or wider) prefix so that the tunnel subnet becomes
-                            reachable via a kernel-installed connected route.
+                            The prefix supplies a connected route. With /32 addresses,
+                            set routeAllTraffic to install the explicit peer.allowedIPs routes.
                         '';
                     };
 
@@ -121,7 +121,8 @@ in
                             must respond via the original interface.
 
                             When true, routes for `peer.allowedIPs` are installed in the
-                            main routing table, which will replace the default route if
+                            main routing table (including narrow subnet/host routes),
+                            which will replace the default route only if
                             `0.0.0.0/0` is included.
                         '';
                     };
@@ -161,29 +162,26 @@ in
             description = ''
                 Outbound WireGuard client tunnels (this host connects out as a
                 client to a remote server). Each entry creates a separate
-                `wg-<name>` interface and runs alongside the server `wg0`
-                interface defined by `peers`.
+                `wg-<name>` interface independently of the server enable flag.
+                Server `wg0`, NAT, forwarding and interface trust require `enable`.
             '';
         };
     };
     
-    config = mkIf cfg.enable {
-        environment.systemPackages = with pkgs; [
-            wireguard-tools
-            sops
-            qrrs
-            generate-wg-client
-        ] ++ (if cfg.socks5Proxy != null && cfg.socks5Proxy.enable then [ pkgs.tun2socks ] else []);
+    config = mkIf (cfg.enable || cfg.clients != { }) {
+        environment.systemPackages = [ pkgs.wireguard-tools ]
+            ++ optionals cfg.enable [ pkgs.sops pkgs.qrrs generate-wg-client ]
+            ++ optional (cfg.enable && cfg.socks5Proxy != null && cfg.socks5Proxy.enable) pkgs.tun2socks;
 
         sops.secrets = mkMerge [
-            {
+            (mkIf cfg.enable {
                 "wg/privatekey" = {
                     sopsFile = ../../../secrets/hosts/${config.metadata.hostName}.yaml;
                     owner = "root";
                     group = "root";
                     mode = "0400";
                 };
-            }
+            })
             (mapAttrs' (name: _: {
                 name = "wg/peers/${name}/presharedkey"; 
                 value = { 
@@ -192,7 +190,7 @@ in
                     group = "root"; 
                     mode = "0400"; 
                 }; 
-                } ) cfg.peers)
+                } ) (if cfg.enable then cfg.peers else { }))
             (mapAttrs' (name: _: {
                 name = "wg/clients/${name}/privatekey";
                 value = {
@@ -226,7 +224,7 @@ in
         ];
 
         # tun2socks service for routing traffic through SOCKS5 proxy
-        systemd.services.tun2socks = mkIf (cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
+        systemd.services.tun2socks = mkIf (cfg.enable && cfg.socks5Proxy != null && cfg.socks5Proxy.enable) {
             description = "tun2socks SOCKS5 tunnel";
             # Table 100 pins 10.250.250.0/24 to wg0, so this must start after it.
             after = [ "network-online.target" "wireguard-wg0.service" ];
@@ -276,7 +274,7 @@ in
         };
 
         networking.wireguard.interfaces = mkMerge [
-            {
+            (mkIf cfg.enable {
                 "wg0" = {
                     ips = [ cfg.serverIP ];
                     listenPort = cfg.listenPort;
@@ -304,7 +302,7 @@ in
 
                     peers = mapAttrsToList mkPeer cfg.peers;
                 };
-            }
+            })
             (mapAttrs' (name: clientCfg: nameValuePair "wg-${name}" {
                 ips = [ clientCfg.address ];
                 privateKeyFile = config.sops.secrets."wg/clients/${name}/privatekey".path;
@@ -334,10 +332,10 @@ in
         ];
 
         # Enable IPv4 forwarding system‑wide.
-        boot.kernel.sysctl."net.ipv4.ip_forward" = true;
+        boot.kernel.sysctl."net.ipv4.ip_forward" = mkIf cfg.enable true;
 
         # Masquerade wireguard traffic as lan traffic
-        networking.nat = {
+        networking.nat = mkIf cfg.enable {
             enable = true;
             externalInterface = cfg.externalInterface;
             internalInterfaces = [ "wg0" ];
@@ -346,9 +344,9 @@ in
         # Allow wireguard traffic and trust wg0 interface for forwarding to LAN.
         # Also open UDP for any client tunnels that explicitly set a listenPort
         # (typically not needed since outbound clients use ephemeral ports).
-        networking.firewall.allowedUDPPorts = [ cfg.listenPort ]
+        networking.firewall.allowedUDPPorts = optional cfg.enable cfg.listenPort
             ++ (mapAttrsToList (_: c: c.listenPort) (filterAttrs (_: c: c.listenPort != null) cfg.clients));
-        networking.firewall.trustedInterfaces = [ "wg0" ];
+        networking.firewall.trustedInterfaces = mkIf cfg.enable [ "wg0" ];
     };
 }
 

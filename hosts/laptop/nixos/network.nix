@@ -8,18 +8,9 @@
         };
         wireless.enable = true;
         firewall.interfaces.${config.metadata.network.interface}.allowedTCPPorts = [ 1883 ];
-        wg-quick.interfaces.telemetry = {
-            autostart = true;
-            configFile = config.sops.secrets."vpn/telemetry".path;
-        };
-    };
-    sops.secrets."vpn/telemetry" = {
-        sopsFile = ../../../secrets/hosts/laptop.yaml;
-        path = "/etc/wireguard/telemetry.conf";
-        restartUnits = [ "wg-quick-telemetry.service" ];
     };
     systemd.services = lib.mkIf config.homelab.telemetry.edge.enable {
-        telemetry-forwarder.wants = [ "wg-quick-telemetry.service" ];
+        telemetry-forwarder.wants = [ "wireguard-wg-telemetry.service" ];
     };
 
     sops.secrets."networkmanager/home" = {

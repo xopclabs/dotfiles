@@ -158,7 +158,7 @@ class Service:
             remote_wake_supported=False,
         )
 
-    def submit(self, image, options, client="app", key=None):
+    def submit(self, image, options, client="app", key=None, *, job_id=None):
         if key:
             previous = self.history.by_key(key)
             if previous:
@@ -167,7 +167,8 @@ class Service:
             raise Rejected(503, "Printer unavailable; no job was queued")
         if len(self.pending) >= self.queue_size:
             raise Rejected(429, "Printer queue full")
-        job_id = str(uuid.uuid4())
+        if job_id is None:
+            job_id = str(uuid.uuid4())
         self.history.add(job_id, image.height, client, options, key)
         self.images[job_id] = image
         self.pending.append((job_id, time.monotonic()))

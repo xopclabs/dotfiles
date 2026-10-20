@@ -7,7 +7,7 @@ name = "catprinter-service"
 version = "0.1.0"
 description = "Single-owner MX10 BLE printer HTTP appliance"
 requires-python = ">=3.12"
-dependencies = ["aiohttp", "bleak", "Pillow>=12", "markdown-it-py", "fonttools", "regex"]
+dependencies = ["aiohttp", "bleak", "Pillow>=12", "markdown-it-py", "fonttools", "regex", "pylibdmtx", "packaging"]
 
 [project.scripts]
 catprinter-service = "catprinter.server:main"

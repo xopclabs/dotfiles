@@ -14,6 +14,8 @@ let
     };
 in
 {
+    imports = [ ./share.nix ];
+
     options.homelab.cat-printer = {
         enable = mkEnableOption "private MX10 printer web UI and API";
         subdomain = mkOption {
@@ -77,7 +79,8 @@ in
             requires = [ "cat-printer.socket" ];
             after = [ "cat-printer.socket" "bluetooth.service" "network.target" ];
             serviceConfig = {
-                ExecStart = "${lib.getExe package} --address ${cfg.deviceAddress} --adapter ${cfg.adapter} --socket-activation";
+                ExecStart = "${lib.getExe package} --address ${cfg.deviceAddress} --adapter ${cfg.adapter} --socket-activation"
+                    + optionalString cfg.share.enable " --public-expires-at ${toString cfg.share.expiresAt}";
                 Sockets = [ "cat-printer.socket" ];
                 DynamicUser = true;
                 StateDirectory = "cat-printer";

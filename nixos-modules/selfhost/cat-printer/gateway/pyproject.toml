@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "catprinter-share"
+version = "0.1.0"
+description = "Expiring fixed-destination public Catprinter gateway"
+requires-python = ">=3.12"
+dependencies = ["aiohttp"]
+
+[project.scripts]
+catprinter-share = "catprinter_share:main"
+
+[tool.setuptools.packages.find]
+include = ["catprinter_share*"]

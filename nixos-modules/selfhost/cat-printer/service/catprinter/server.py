@@ -10,15 +10,20 @@ POST /v1/maintenance: {"enabled":true}. No endpoints fetch remote content.
 import argparse
 import asyncio
 import hashlib
+import ipaddress
 import json
 import logging
 import os
 import re
 import socket
+import secrets
+import time
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from aiohttp import web
+from .footer import with_job_barcode
 from .protocol import Transport
 from .render import InvalidContent, Options, Renderer, png
 from .service import History, Rejected, Service
@@ -26,6 +31,54 @@ from .service import History, Rejected, Service
 SERVICE = web.AppKey("service", Service)
 RENDERER = web.AppKey("renderer", Renderer)
 RENDER_SLOTS = web.AppKey("render_slots", asyncio.Semaphore)
+PUBLIC_EXPIRY = web.AppKey("public_expiry", int)
+PUBLIC_GET_PATHS = frozenset(
+    (
+        "/",
+        "/sw.js",
+        "/ui/api/status",
+        "/ui/static/manifest.webmanifest",
+        "/ui/static/icon.png",
+        "/ui/static/icon-512.png",
+        "/ui/static/app.js",
+        "/ui/static/style.css",
+    )
+)
+PUBLIC_POST_PATHS = frozenset(
+    (
+        "/ui/api/preview",
+        "/ui/api/preview/image",
+        "/ui/api/jobs",
+        "/ui/api/jobs/image",
+    )
+)
+
+
+def public_request(request):
+    listener = request.transport.get_extra_info("socket")
+    return listener is not None and listener.family == socket.AF_UNIX
+
+
+def check_public_expiry(request):
+    if public_request(request) and time.time() >= request.app[PUBLIC_EXPIRY]:
+        raise web.HTTPGone(text="Printer sharing has expired")
+
+
+@web.middleware
+async def public_boundary(request, handler):
+    if public_request(request):
+        check_public_expiry(request)
+        paths = (
+            PUBLIC_GET_PATHS
+            if request.method in ("GET", "HEAD")
+            else PUBLIC_POST_PATHS if request.method == "POST" else ()
+        )
+        if (
+            request.path not in paths
+            or request.raw_path.split("?", 1)[0] != request.path
+        ):
+            raise web.HTTPNotFound()
+    return await handler(request)
 
 
 @web.middleware
@@ -87,7 +140,7 @@ async def json_body(request):
     return value
 
 
-async def render_request(request):
+async def render_request(request, footer=None):
     if request.app[RENDER_SLOTS].locked():
         raise Rejected(429, "Renderer busy")
     async with request.app[RENDER_SLOTS]:
@@ -111,6 +164,8 @@ async def render_request(request):
             image = await asyncio.to_thread(
                 renderer.markdown, value.get("markdown"), options
             )
+        if footer is not None:
+            image = await asyncio.to_thread(with_job_barcode, image, *footer)
         return image, options
 
 
@@ -132,8 +187,23 @@ async def submit(request):
         return web.json_response(previous, status=200)
     if not service.available:
         raise Rejected(503, "Printer unavailable; no job was queued")
-    image, options = await render_request(request)
-    result = service.submit(image, options, client, key)
+    job_id, footer = None, None
+    if public_request(request):
+        try:
+            client_ip = str(
+                ipaddress.ip_address(request.headers.get("X-Catprinter-Client-IP", ""))
+            )
+        except ValueError:
+            raise web.HTTPBadRequest(text="Invalid public client IP")
+        # This is the persisted job ID, not a separate barcode lookup token.
+        job_id = f"{secrets.randbelow(10**20):020d}"
+        while service.history.get(job_id) is not None:
+            job_id = f"{secrets.randbelow(10**20):020d}"
+        timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+        footer = (job_id, client_ip, timestamp)
+    image, options = await render_request(request, footer)
+    check_public_expiry(request)
+    result = service.submit(image, options, client, key, job_id=job_id)
     return web.json_response(
         result, status=202, headers={"Location": "/v1/jobs/" + result["id"]}
     )
@@ -215,10 +285,13 @@ async def maintenance(request):
     )
 
 
-def create_app(service, renderer):
-    app = web.Application(middlewares=[safety], client_max_size=8 * 1024 * 1024)
+def create_app(service, renderer, public_expires_at=0):
+    app = web.Application(
+        middlewares=[safety, public_boundary], client_max_size=8 * 1024 * 1024
+    )
     app[SERVICE], app[RENDERER] = service, renderer
     app[RENDER_SLOTS] = asyncio.Semaphore(1)
+    app[PUBLIC_EXPIRY] = public_expires_at
     app.add_routes(
         [
             web.get("/", index),
@@ -255,18 +328,19 @@ def create_app(service, renderer):
     return app
 
 
-def inherited_socket():
-    if (
-        os.environ.get("LISTEN_PID") != str(os.getpid())
-        or os.environ.get("LISTEN_FDS") != "1"
+def inherited_sockets(public_enabled=False):
+    count = 2 if public_enabled else 1
+    if os.environ.get("LISTEN_PID") != str(os.getpid()) or os.environ.get(
+        "LISTEN_FDS"
+    ) != str(count):
+        raise RuntimeError(f"Expected {count} systemd listening sockets")
+    listeners = [socket.socket(fileno=fd) for fd in range(3, 3 + count)]
+    expected = [socket.AF_INET, socket.AF_UNIX] if public_enabled else [socket.AF_INET]
+    if sorted(s.family for s in listeners) != sorted(expected) or any(
+        not s.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN) for s in listeners
     ):
-        raise RuntimeError("Expected exactly one systemd listening socket")
-    listener = socket.socket(fileno=3)
-    if listener.family != socket.AF_INET or not listener.getsockopt(
-        socket.SOL_SOCKET, socket.SO_ACCEPTCONN
-    ):
-        raise RuntimeError("Expected an IPv4 TCP listener")
-    return listener
+        raise RuntimeError("Unexpected systemd listener families or socket types")
+    return listeners
 
 
 def main():
@@ -279,18 +353,19 @@ def main():
     )
     parser.add_argument("--state-dir", default="/var/lib/cat-printer")
     parser.add_argument("--socket-activation", action="store_true")
+    parser.add_argument("--public-expires-at", type=int, default=0)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
     history = History(Path(args.state_dir) / "jobs.sqlite3")
     service = Service(Transport(args.address, args.adapter), history)
     # The NixOS service inherits its listener without permission to create IP sockets.
     listener = (
-        {"sock": inherited_socket()}
+        {"sock": inherited_sockets(bool(args.public_expires_at))}
         if args.socket_activation
         else {"host": args.listen_address, "port": args.port}
     )
     web.run_app(
-        create_app(service, Renderer()),
+        create_app(service, Renderer(), args.public_expires_at),
         **listener,
         access_log=None,
         shutdown_timeout=10,
