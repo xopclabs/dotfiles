@@ -146,7 +146,7 @@ async def preview(request):
         content_type="image/png",
         headers={
             "X-Print-Rows": str(image.height),
-            "X-Paper-Length-MM": str(round((image.height + 148) / 8, 1)),
+            "X-Paper-Length-MM": str(round((image.height + 100) / 8, 1)),
         },
     )
 

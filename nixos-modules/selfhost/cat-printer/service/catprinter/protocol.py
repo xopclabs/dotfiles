@@ -87,7 +87,6 @@ def build_job(image):
         frame(0xA6, LATTICE_START),
     ]
     blank = frame(0xA2, bytes(48))
-    parts.append(blank * 48)
     pixels = list(image.get_flattened_data())
     for y in range(image.height):
         parts.append(bitmap_row(pixels[y * WIDTH : (y + 1) * WIDTH]))

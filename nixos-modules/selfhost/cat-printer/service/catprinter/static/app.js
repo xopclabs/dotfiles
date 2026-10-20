@@ -213,7 +213,7 @@ async function loadImage(files) {
         if (part.width * part.height > 16000000)
           throw new Error("Image exceeds 16 megapixels.");
         height += Math.max(1, Math.round((part.height * 384) / part.width));
-        if (height > 3852)
+        if (height > 3900)
           throw new Error("Combined images exceed the 50 cm print limit.");
         if (generation !== imageGeneration) return;
       }

@@ -10,8 +10,8 @@ from markdown_it import MarkdownIt
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 WIDTH = 384
-MAX_ROWS = 4000  # 50 cm at 8 dots/mm, including pre/post feed.
-CONTENT_ROWS = MAX_ROWS - 148
+MAX_ROWS = 4000  # 50 cm at 8 dots/mm, including trailing feed.
+CONTENT_ROWS = MAX_ROWS - 100
 Image.MAX_IMAGE_PIXELS = 16_000_000
 
 
