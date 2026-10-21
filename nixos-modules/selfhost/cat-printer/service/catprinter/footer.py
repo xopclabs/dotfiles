@@ -2,11 +2,19 @@
 
 import os
 import threading
+from dataclasses import replace
 
 import regex
 from PIL import Image, ImageDraw, ImageOps
 
 from .render import CONTENT_ROWS, WIDTH, InvalidContent, font
+
+
+def render_public_job(render, content, options, footer):
+    """Compose in reading orientation, then rotate content and footer together."""
+    image = render(content, replace(options, rotation=0))
+    image = with_job_barcode(image, *footer)
+    return image.transpose(Image.Transpose.ROTATE_180) if options.rotation else image
 
 
 def with_job_barcode(image, job_id, client_ip=None, timestamp=None):

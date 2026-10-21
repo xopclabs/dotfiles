@@ -131,22 +131,46 @@ class Service:
 
     @property
     def available(self):
+        """Ready to start a physical print, not merely to accept a queued job."""
         t = self.transport
         recent = time.monotonic() - t.last_reply <= self.interval + 10
         return (
             not self.maintenance
             and t.connected
             and self.health == "ready"
-            and (self.active is not None or recent)
+            and self.active is None
+            and recent
             and t.flags is not None
-            and not t.flags & 0x0F
-            and (self.active is not None or not t.flags & 0x80)
+            and not t.flags & 0x8F
         )
+
+    @property
+    def accepting_jobs(self):
+        """Accept during printing/reconnects; faults or failed probes close admission."""
+        t = self.transport
+        recent = time.monotonic() - t.last_reply <= self.interval + 10
+        return (
+            not self.maintenance
+            and self.health in ("ready", "busy")
+            and not (t.flags is not None and t.flags & 0x0F)
+            and (self.active is not None or (recent and t.flags is not None))
+        )
+
+    def check_submission(self):
+        if not self.accepting_jobs:
+            raise Rejected(503, "Printer unavailable; no job was queued")
+        if len(self.pending) >= self.queue_size:
+            raise Rejected(429, "Printer queue full")
 
     def status(self):
         return dict(
             available=self.available,
-            state="maintenance" if self.maintenance else self.health,
+            accepting_jobs=self.accepting_jobs and len(self.pending) < self.queue_size,
+            state=(
+                "maintenance"
+                if self.maintenance
+                else "printing" if self.active else self.health
+            ),
             connected=self.transport.connected,
             flags=self.transport.flags,
             seconds_since_reply=round(time.monotonic() - self.transport.last_reply, 1)
@@ -154,6 +178,7 @@ class Service:
             else None,
             active_job=self.active,
             queued=len(self.pending),
+            queue_full=len(self.pending) >= self.queue_size,
             last_error=self.last_error,
             remote_wake_supported=False,
         )
@@ -163,10 +188,7 @@ class Service:
             previous = self.history.by_key(key)
             if previous:
                 return previous
-        if not self.available:
-            raise Rejected(503, "Printer unavailable; no job was queued")
-        if len(self.pending) >= self.queue_size:
-            raise Rejected(429, "Printer queue full")
+        self.check_submission()
         if job_id is None:
             job_id = str(uuid.uuid4())
         self.history.add(job_id, image.height, client, options, key)
@@ -251,9 +273,9 @@ class Service:
                 "fault" if flags & 0x0F else "busy" if flags & 0x80 else "ready"
             )
             self.last_error = "printer_fault" if flags & 0x0F else None
-            if flags & 0x8F:
+            if flags & 0x0F:
                 self.fail_pending("printer_unavailable")
-            return self.interval
+            return 2 if flags & 0x80 else self.interval
         except Exception:
             self.health, self.last_error = "unavailable", "no_status_response"
             self.fail_pending("printer_unavailable")
@@ -272,14 +294,20 @@ class Service:
                 continue
             self.released.clear()
             if self.pending:
-                job_id, queued = self.pending.popleft()
-                if time.monotonic() - queued > self.expiry:
+                while (
+                    self.pending and time.monotonic() - self.pending[0][1] > self.expiry
+                ):
+                    job_id, _ = self.pending.popleft()
                     self.finish(job_id, "expired", "queue_expired")
+                if not self.pending:
                     continue
                 if not self.available:
-                    self.finish(job_id, "failed", "printer_unavailable")
-                    self.fail_pending("printer_unavailable")
+                    delay = await self.probe()
+                    if not self.available:
+                        await self.wait(delay)
+                    # Recheck expiry, cancellations and maintenance after yielding.
                     continue
+                job_id, _ = self.pending.popleft()
                 self.active = job_id
                 self.history.set(job_id, "preparing")
                 try:
@@ -290,7 +318,6 @@ class Service:
                     self.finish(job_id, outcome)
                     if outcome == "sent":
                         self.health = "busy"
-                        self.fail_pending("completion_unconfirmed")
                 except asyncio.CancelledError:
                     state = self.history.get(job_id)["state"]
                     self.finish(

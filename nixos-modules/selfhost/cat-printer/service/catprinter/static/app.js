@@ -22,7 +22,7 @@ let revision = 0,
   controller,
   previewUrl,
   originalUrl;
-let available = false,
+let acceptingJobs = false,
   submitting = false,
   imageGeneration = 0;
 const fields = [
@@ -104,7 +104,7 @@ async function api(path, options = {}) {
 }
 function printState() {
   $("print").disabled =
-    !available || submitting || readyRevision !== revision || !prepared;
+    !acceptingJobs || submitting || readyRevision !== revision || !prepared;
 }
 function changed() {
   revision++;
@@ -407,7 +407,15 @@ async function updatePreview() {
 }
 $("print").onclick = async () => {
   if ($("print").disabled) return;
-  const request = prepared;
+  const request = { ...prepared };
+  // Reverse the physical feed only; keep the preview in reading orientation.
+  if (request.type === "application/json") {
+    const content = JSON.parse(request.body);
+    content.options.rotation = (content.options.rotation + 180) % 360;
+    request.body = JSON.stringify(content);
+  } else {
+    request.suffix += "&rotation=180";
+  }
   submitting = true;
   printState();
   notice("busy", "Submitting print…");
@@ -421,7 +429,7 @@ $("print").onclick = async () => {
       },
     });
     await response.json();
-    notice("success", "Print submitted.");
+    notice("success", "Accepted into print queue.");
     await refresh();
   } catch (error) {
     notice(
@@ -436,14 +444,23 @@ $("print").onclick = async () => {
 async function refresh() {
   try {
     const status = await (await api("status")).json();
-    available = status.available;
+    acceptingJobs = status.accepting_jobs;
+    const queued = status.queued ? ` · ${status.queued} queued` : "";
     indicator(
       "status",
-      available ? "success" : "offline",
-      available ? "Printer ready" : `Printer unavailable · ${status.state}`,
+      status.queue_full
+        ? "error"
+        : acceptingJobs
+          ? (status.available ? "success" : "busy")
+          : "offline",
+      status.queue_full
+        ? `Print queue full${queued}`
+        : acceptingJobs
+          ? `${status.available ? "Printer ready" : "Printer busy"}${queued}`
+          : `Queue unavailable · ${status.state}${queued}`,
     );
   } catch {
-    available = false;
+    acceptingJobs = false;
     indicator("status", "offline", "Printer service unavailable");
   }
   printState();

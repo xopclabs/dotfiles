@@ -23,7 +23,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from aiohttp import web
-from .footer import with_job_barcode
+from .footer import render_public_job
 from .protocol import Transport
 from .render import InvalidContent, Options, Renderer, png
 from .service import History, Rejected, Service
@@ -155,17 +155,17 @@ async def render_request(request, footer=None):
             options = Options.parse(options)
             async with asyncio.timeout(15):
                 raw = await request.read()
-            image = await asyncio.to_thread(renderer.image, raw, options)
+            render, content = renderer.image, raw
         else:
             value = await json_body(request)
             if value.keys() - {"markdown", "options"}:
                 raise InvalidContent("Unknown request fields")
             options = Options.parse(value.get("options", {}))
-            image = await asyncio.to_thread(
-                renderer.markdown, value.get("markdown"), options
-            )
+            render, content = renderer.markdown, value.get("markdown")
         if footer is not None:
-            image = await asyncio.to_thread(with_job_barcode, image, *footer)
+            image = await asyncio.to_thread(render_public_job, render, content, options, footer)
+        else:
+            image = await asyncio.to_thread(render, content, options)
         return image, options
 
 
@@ -185,8 +185,7 @@ async def submit(request):
         # Keys identify submissions, not reprint requests. To reprint, submit
         # the content again with a NEW key; no retained payload exists.
         return web.json_response(previous, status=200)
-    if not service.available:
-        raise Rejected(503, "Printer unavailable; no job was queued")
+    service.check_submission()
     job_id, footer = None, None
     if public_request(request):
         try:
@@ -225,7 +224,17 @@ async def status(request):
     value = request.app[SERVICE].status()
     if request.path.startswith("/ui/api/"):
         browser_owner(request)
-        value = {key: value[key] for key in ("available", "state", "connected")}
+        value = {
+            key: value[key]
+            for key in (
+                "available",
+                "accepting_jobs",
+                "state",
+                "connected",
+                "queued",
+                "queue_full",
+            )
+        }
     return web.json_response(value)
 
 

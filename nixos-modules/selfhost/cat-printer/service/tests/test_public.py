@@ -69,6 +69,23 @@ class PublicPrintingTests(unittest.IsolatedAsyncioTestCase):
         self.assertRegex(job["id"], r"^[0-9a-f-]{36}$")
         self.assertEqual(self.service.images[job["id"]].size, self.image.size)
 
+    async def test_busy_public_api_acknowledges_queued_submission(self):
+        self.service.health = "busy"
+        self.service.transport.flags = 0x80
+        response = await self.public.get(
+            "http://localhost/ui/api/status", headers=self.headers
+        )
+        status = await response.json()
+        self.assertFalse(status["available"])
+        self.assertTrue(status["accepting_jobs"])
+        response = await self.public.post(
+            "http://localhost/ui/api/jobs/image", data=self.body, headers=self.headers
+        )
+        self.assertEqual(response.status, 202)
+        job = await response.json()
+        self.assertEqual(job["state"], "queued")
+        self.assertEqual(len(self.service.pending), 1)
+
     async def test_public_footer_matches_persisted_job(self):
         response = await self.public.post(
             "http://localhost/ui/api/jobs/image", data=self.body, headers=self.headers
@@ -83,6 +100,22 @@ class PublicPrintingTests(unittest.IsolatedAsyncioTestCase):
             decode(printed.convert("RGB"), timeout=1000)[0].data.decode(), job["id"]
         )
         self.assertEqual(self.history.get(job["id"])["rows"], printed.height)
+
+    async def test_public_rotation_includes_footer_before_content(self):
+        response = await self.public.post(
+            "http://localhost/ui/api/jobs/image?rotation=180",
+            data=self.body,
+            headers=self.headers,
+        )
+        self.assertEqual(response.status, 202)
+        job = await response.json()
+        printed = self.service.images[job["id"]]
+        self.assertEqual(printed.size, (384, 64))
+        self.assertEqual(printed.crop((0, 56, 384, 64)).tobytes(), self.image.tobytes())
+        self.assertNotEqual(printed.crop((0, 0, 384, 8)).tobytes(), self.image.tobytes())
+        upright = printed.transpose(Image.Transpose.ROTATE_180)
+        self.assertEqual(upright.crop((0, 0, 384, 8)).tobytes(), self.image.tobytes())
+        self.assertEqual(decode(printed.convert("RGB"), timeout=1000)[0].data.decode(), job["id"])
 
     async def test_public_socket_cannot_access_private_api(self):
         for method, path in (
