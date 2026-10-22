@@ -17,6 +17,9 @@ GET_PATHS = frozenset(
         "/ui/static/icon.png",
         "/ui/static/icon-512.png",
         "/ui/static/app.js",
+        "/ui/static/image-decode.js",
+        "/ui/static/heic-to.js",
+        "/ui/static/heic-to.LICENSE",
         "/ui/static/style.css",
         "/ui/api/status",
     )

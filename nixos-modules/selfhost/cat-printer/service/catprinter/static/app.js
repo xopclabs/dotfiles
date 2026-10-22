@@ -1,6 +1,19 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 const storageKey = "catprinter-v1";
+const queueStorageKey = "catprinter-queued-v1";
+let lastQueuedPrint = null,
+  lastSubmissionAttempt = null;
+function readLastQueuedPrint() {
+  try {
+    const value = JSON.parse(localStorage.getItem(queueStorageKey) || "null");
+    lastQueuedPrint = typeof value === "string" && /^[a-f0-9]{64}$/.test(value)
+      ? value : null;
+    // Discard the old history format; retain only the latest submission.
+    if (Array.isArray(value)) localStorage.removeItem(queueStorageKey);
+  } catch {}
+}
+readLastQueuedPrint();
 const randomToken = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(32)), (x) =>
     x.toString(16).padStart(2, "0"),
@@ -20,8 +33,9 @@ let revision = 0,
   prepared = null,
   timer,
   controller,
-  previewUrl,
-  originalUrl;
+  previewUrl;
+let photoUrls = [],
+  imageLoading = false;
 let acceptingJobs = false,
   submitting = false,
   imageGeneration = 0;
@@ -103,8 +117,40 @@ async function api(path, options = {}) {
   return response;
 }
 function printState() {
+  const duplicate = prepared && lastQueuedPrint === prepared.fingerprint;
   $("print").disabled =
-    !acceptingJobs || submitting || readyRevision !== revision || !prepared;
+    !acceptingJobs ||
+    submitting ||
+    readyRevision !== revision ||
+    !prepared ||
+    duplicate;
+  $("print-label").textContent = submitting
+    ? "Sending…"
+    : duplicate ? "Already queued" : "Print";
+}
+window.addEventListener("storage", (event) => {
+  if (event.key !== queueStorageKey) return;
+  readLastQueuedPrint();
+  printState();
+});
+async function fingerprint(request) {
+  const settings =
+    mode === "image"
+      ? [rotation, $("dither").value, $("black").value, $("threshold").value]
+      : [];
+  const bytes = await new Blob([
+    JSON.stringify([request.type, request.suffix, settings]),
+    request.body,
+  ]).arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (x) =>
+    x.toString(16).padStart(2, "0"),
+  ).join("");
+}
+function previewBusy(busy, text = "Preparing preview…") {
+  $("preview-loading").hidden = !busy;
+  $("preview-loading-text").textContent = text;
+  $("paper-area").setAttribute("aria-busy", String(busy));
 }
 function changed() {
   revision++;
@@ -115,6 +161,10 @@ function changed() {
   $("preview").classList.add("stale");
   $("length").textContent = "";
   notice();
+  previewBusy(
+    mode === "image" ? imageLoading || !!bitmap : !!$("markdown").value.trim(),
+    mode === "image" && imageLoading ? "Preparing photos…" : "Preparing preview…",
+  );
   const fontSize = Number($("font").value);
   $("font-up").disabled = fontSize >= 40;
   $("font-down").disabled = fontSize <= 16;
@@ -195,27 +245,65 @@ async function loadImage(files) {
   const generation = ++imageGeneration;
   bitmap?.close();
   bitmap = null;
-  if (originalUrl) URL.revokeObjectURL(originalUrl);
-  $("original").hidden = true;
-  $("upload-prompt").hidden = false;
+  for (const url of photoUrls) URL.revokeObjectURL(url);
+  photoUrls = [];
+  $("photos").replaceChildren();
+  $("photos").hidden = false;
+  $("upload-prompt").hidden = true;
+  const names = files.map((file) => file.name).join(" → ");
+  $("filename").textContent = names;
+  $("filename").title = names;
+  const photos = files.map((file) => {
+    const tile = document.createElement("div");
+    tile.className = "photo";
+    const image = document.createElement("img");
+    image.alt = file.name;
+    const state = document.createElement("span");
+    state.className = "photo-status";
+    state.append($("preview-loading").querySelector("svg").cloneNode(true));
+    state.append(document.createTextNode("Preparing " + file.name + "…"));
+    image.onload = () => { image.hidden = false; state.hidden = true; };
+    image.onerror = () => { image.hidden = true; };
+    const url = URL.createObjectURL(file);
+    photoUrls.push(url);
+    image.src = url; // Show native formats before preprocessing or preview requests.
+    tile.append(image, state);
+    $("photos").append(tile);
+    return { image, state };
+  });
+  imageLoading = true;
   changed();
+  // Give the selected photos and loading state a frame to paint before decoding.
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   try {
     const strip = document.createElement("canvas");
     strip.width = 384;
     const parts = [];
     let height = 0;
     try {
-      for (const file of files) {
-        if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
-          throw new Error("Choose PNG, JPEG or WebP images.");
-        const part = await createImageBitmap(file);
-        parts.push(part);
-        if (part.width * part.height > 16000000)
-          throw new Error("Image exceeds 16 megapixels.");
-        height += Math.max(1, Math.round((part.height * 384) / part.width));
-        if (height > 3900)
-          throw new Error("Combined images exceed the 50 cm print limit.");
+      const { decodeImage } = await import("./image-decode.js");
+      for (const [index, file] of files.entries()) {
         if (generation !== imageGeneration) return;
+        const part = await decodeImage(file);
+        try {
+          if (generation !== imageGeneration) return;
+          const rows = Math.max(1, Math.round((part.height * 384) / part.width));
+          height += rows;
+          if (height > 3900)
+            throw new Error("Combined images exceed the 50 cm print limit.");
+          const thumbnail = document.createElement("canvas");
+          thumbnail.width = 384;
+          thumbnail.height = rows;
+          thumbnail.getContext("2d").drawImage(part, 0, 0, 384, rows);
+          parts.push(await createImageBitmap(thumbnail));
+          const blob = await new Promise((resolve) => thumbnail.toBlob(resolve));
+          if (generation !== imageGeneration) return;
+          const url = URL.createObjectURL(blob);
+          photoUrls.push(url);
+          photos[index].image.src = url;
+        } finally {
+          part.close();
+        }
       }
       strip.height = height;
       const ctx = strip.getContext("2d");
@@ -235,25 +323,16 @@ async function loadImage(files) {
       decoded.close();
       return;
     }
-    if (decoded.width * decoded.height > 16000000) {
-      decoded.close();
-      throw new Error("Image exceeds 16 megapixels.");
-    }
     bitmap = decoded;
-    const names = files.map((file) => file.name).join(" → ");
-    $("filename").textContent = names;
-    $("filename").title = names;
-    const source = await new Promise((resolve) => strip.toBlob(resolve));
-    if (generation !== imageGeneration) return;
-    originalUrl = URL.createObjectURL(source);
-    $("original").src = originalUrl;
-    $("original").hidden = false;
-    $("upload-prompt").hidden = true;
+    imageLoading = false;
     changed();
   } catch (error) {
     if (generation !== imageGeneration) return;
-    $("filename").textContent = "";
-    $("filename").title = "No image selected";
+    imageLoading = false;
+    previewBusy(false);
+    for (const photo of photos) {
+      if (!photo.state.hidden) photo.state.textContent = "Could not prepare photo";
+    }
     notice("error", error.message);
   }
 }
@@ -270,8 +349,10 @@ $("drop").ondrop = (e) => {
   loadImage(e.dataTransfer.files);
 };
 function pastedImage(data) {
+  const isImage = (file) =>
+    file.type.startsWith("image/") || /\.(heic|heif|hif)$/i.test(file.name || "");
   const files = [...data.files];
-  if (!files.some((file) => file.type.startsWith("image/"))) {
+  if (!files.some(isImage)) {
     for (const item of data.items) {
       if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
       const pasted = item.getAsFile();
@@ -283,7 +364,7 @@ function pastedImage(data) {
       );
     }
   }
-  return files.filter((item) => item.type.startsWith("image/"));
+  return files.filter(isImage);
 }
 window.addEventListener("paste", (event) => {
   const data = event.clipboardData;
@@ -338,17 +419,20 @@ async function imageBody() {
 }
 async function updatePreview() {
   const current = revision;
+  if (mode === "image" && imageLoading) return;
   if (
     (mode === "markdown" && !$("markdown").value.trim()) ||
     (mode === "image" && !bitmap)
   ) {
     $("preview").hidden = true;
     $("placeholder").hidden = false;
+    previewBusy(false);
     return;
   }
+  previewBusy(true);
   controller = new AbortController();
   const signal = controller.signal;
-  notice("busy", "Rendering preview…");
+  notice();
   try {
     let request;
     if (mode === "markdown") {
@@ -377,6 +461,7 @@ async function updatePreview() {
         type: "image/png",
       };
     }
+    request.fingerprint = await fingerprint(request);
     if (current !== revision || signal.aborted) return;
     const response = await api("preview" + request.suffix, {
       method: "POST",
@@ -395,7 +480,12 @@ async function updatePreview() {
     $("length").textContent = `${response.headers.get("X-Paper-Length-MM")} mm`;
     prepared = request;
     readyRevision = current;
-    notice();
+    notice(
+      "success",
+      lastQueuedPrint === request.fingerprint
+        ? "Already added to queue. Change the image or settings to send another print."
+        : "",
+    );
   } catch (error) {
     if (current === revision && error.name !== "AbortError") {
       notice("error", error.message);
@@ -403,11 +493,17 @@ async function updatePreview() {
         timer = setTimeout(updatePreview, 800);
     }
   }
+  if (current === revision) previewBusy(false);
   printState();
 }
-$("print").onclick = async () => {
+async function submitPrint() {
+  readLastQueuedPrint();
+  printState();
   if ($("print").disabled) return;
   const request = { ...prepared };
+  if (lastSubmissionAttempt?.fingerprint !== request.fingerprint)
+    lastSubmissionAttempt = { fingerprint: request.fingerprint, key: randomToken() };
+  const submissionKey = lastSubmissionAttempt.key;
   // Reverse the physical feed only; keep the preview in reading orientation.
   if (request.type === "application/json") {
     const content = JSON.parse(request.body);
@@ -425,11 +521,19 @@ $("print").onclick = async () => {
       body: request.body,
       headers: {
         "Content-Type": request.type,
-        "Idempotency-Key": randomToken(),
+        // A lost response can safely be retried with the same request key.
+        "Idempotency-Key": submissionKey,
       },
     });
     await response.json();
-    notice("success", "Accepted into print queue.");
+    lastQueuedPrint = request.fingerprint;
+    lastSubmissionAttempt = null;
+    try {
+      localStorage.setItem(queueStorageKey, JSON.stringify(lastQueuedPrint));
+    } catch {
+      // Still block duplicates in this tab when persistent storage is unavailable.
+    }
+    notice("success", "Added to queue! Your print will start automatically.");
     await refresh();
   } catch (error) {
     notice(
@@ -440,7 +544,11 @@ $("print").onclick = async () => {
     submitting = false;
     printState();
   }
-};
+}
+$("print").onclick = () =>
+  navigator.locks
+    ? navigator.locks.request("catprinter-submit", submitPrint)
+    : submitPrint();
 async function refresh() {
   try {
     const status = await (await api("status")).json();

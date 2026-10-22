@@ -70,6 +70,17 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("Authorization", headers)
         self.assertNotIn("Cookie", headers)
 
+    async def test_lazy_image_decoder_assets_reach_backend(self):
+        for asset in ("image-decode.js", "heic-to.js", "heic-to.LICENSE"):
+            path = "/ui/static/" + asset
+            for method in ("GET", "HEAD"):
+                response = await self.gateway.request(method, path)
+                self.assertEqual(response.status, 200, path)
+                self.assertEqual(self.calls[-1][:2], (method, path))
+        response = await self.gateway.get("/ui/static/not-allowed.js")
+        self.assertEqual(response.status, 404)
+        self.assertEqual(len(self.calls), 6)
+
     async def test_private_routes_and_wrong_methods_never_reach_backend(self):
         for method, path in (
             ("GET", "/v1/jobs"),

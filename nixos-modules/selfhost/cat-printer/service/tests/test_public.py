@@ -138,6 +138,23 @@ class PublicPrintingTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status, 400)
         self.assertEqual(self.history.list(), [])
 
+    async def test_large_images_are_private_only(self):
+        body = png(Image.new("1", (5000, 4000), 1))  # 20 MP, small wire payload.
+        for endpoint, expected in (("preview", 200), ("jobs", 202)):
+            response = await self.client.post(
+                f"/v1/{endpoint}/image",
+                data=body,
+                headers={"Content-Type": "image/png"},
+            )
+            self.assertEqual(response.status, expected)
+            response = await self.public.post(
+                f"http://localhost/ui/api/{endpoint}/image",
+                data=body,
+                headers=self.headers,
+            )
+            self.assertEqual(response.status, 400)
+        self.assertEqual(len(self.service.pending), 1)
+
     async def test_public_preview_remains_content_only(self):
         response = await self.public.post(
             "http://localhost/ui/api/preview/image",
@@ -170,6 +187,22 @@ class PublicPrintingTests(unittest.IsolatedAsyncioTestCase):
         html = await response.text()
         for asset in re.findall(r'(?:src|href)="(/ui/static/[^"#]+)"', html):
             self.assertIn(asset, PUBLIC_GET_PATHS)
+
+    async def test_public_image_decoder_and_csp(self):
+        for asset in ("image-decode.js", "heic-to.js"):
+            response = await self.public.get("http://localhost/ui/static/" + asset)
+            self.assertEqual(response.status, 200)
+            policy = response.headers["Content-Security-Policy"]
+            self.assertIn("worker-src 'self' blob:", policy)
+            self.assertNotIn("unsafe-eval", policy)
+            self.assertNotIn("unsafe-inline", policy)
+        response = await self.public.get(
+            "http://localhost/ui/static/manifest.webmanifest"
+        )
+        manifest = await response.json()
+        accepted = manifest["share_target"]["params"]["files"][0]["accept"]
+        self.assertIn("image/*", accepted)
+        self.assertIn(".heic", accepted)
 
     async def test_expired_public_socket_fails_closed_private_stays_available(self):
         client = TestClient(

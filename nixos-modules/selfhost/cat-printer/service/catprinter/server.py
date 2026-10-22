@@ -19,13 +19,14 @@ import socket
 import secrets
 import time
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from aiohttp import web
 from .footer import render_public_job
 from .protocol import Transport
-from .render import InvalidContent, Options, Renderer, png
+from .render import InvalidContent, Options, PUBLIC_IMAGE_PIXELS, Renderer, png
 from .service import History, Rejected, Service
 
 SERVICE = web.AppKey("service", Service)
@@ -41,6 +42,9 @@ PUBLIC_GET_PATHS = frozenset(
         "/ui/static/icon.png",
         "/ui/static/icon-512.png",
         "/ui/static/app.js",
+        "/ui/static/image-decode.js",
+        "/ui/static/heic-to.js",
+        "/ui/static/heic-to.LICENSE",
         "/ui/static/style.css",
     )
 )
@@ -124,7 +128,7 @@ async def safety(request, handler):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; img-src 'self' blob:; object-src 'none'; "
+        "default-src 'self'; img-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; "
         "base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
     )
     return response
@@ -155,7 +159,11 @@ async def render_request(request, footer=None):
             options = Options.parse(options)
             async with asyncio.timeout(15):
                 raw = await request.read()
-            render, content = renderer.image, raw
+            render = partial(
+                renderer.image,
+                max_pixels=PUBLIC_IMAGE_PIXELS if public_request(request) else None,
+            )
+            content = raw
         else:
             value = await json_body(request)
             if value.keys() - {"markdown", "options"}:

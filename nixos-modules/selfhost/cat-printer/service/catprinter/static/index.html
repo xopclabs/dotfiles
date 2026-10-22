@@ -237,8 +237,8 @@
                 type="range"
                 min="0"
                 max="254"
-                value="0"
-              /><output id="black-value">0</output></label
+                value="30"
+              /><output id="black-value">30</output></label
             >
             <label class="slider" id="threshold-label" hidden
               >Threshold<input
@@ -252,16 +252,16 @@
           </div>
           <label
             id="drop"
-            title="Choose, drop, or paste images in print order · each up to 16 MP · combined up to 50 cm"
+            title="Choose, drop, or paste images in print order · combined up to 50 cm"
           >
             <input
               id="file"
               class="sr"
               type="file"
               multiple
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*,.heic,.heif,.hif"
             />
-            <img id="original" alt="Selected source image" hidden />
+            <div id="photos" hidden></div>
             <span id="upload-prompt"
               ><svg class="icon" aria-hidden="true">
                 <use href="#i-upload" /></svg
@@ -281,7 +281,11 @@
           </h2>
           <span id="length"></span>
         </div>
-        <div id="paper-area">
+        <div id="paper-area" aria-busy="false">
+          <div id="preview-loading" role="status" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#i-loader" /></svg>
+            <span id="preview-loading-text">Preparing preview…</span>
+          </div>
           <span id="placeholder" aria-label="No preview yet"
             ><svg class="icon" aria-hidden="true">
               <use href="#i-image" /></svg></span
@@ -295,7 +299,7 @@
           ></span>
           <button id="print" class="primary" disabled>
             <svg class="icon" aria-hidden="true"><use href="#i-printer" /></svg
-            ><span>Print</span>
+            ><span id="print-label">Print</span>
           </button>
         </div>
       </section>

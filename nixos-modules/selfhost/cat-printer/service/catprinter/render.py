@@ -12,7 +12,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 WIDTH = 384
 MAX_ROWS = 4000  # 50 cm at 8 dots/mm, including trailing feed.
 CONTENT_ROWS = MAX_ROWS - 100
-Image.MAX_IMAGE_PIXELS = 16_000_000
+# Enforce the public upload limit explicitly; private uploads may be larger.
+Image.MAX_IMAGE_PIXELS = None
+PUBLIC_IMAGE_PIXELS = 16_000_000
 
 
 class InvalidContent(ValueError):
@@ -91,7 +93,7 @@ class Renderer:
         )
         return image.convert("1", dither=Image.Dither.NONE)
 
-    def image(self, raw, options):
+    def image(self, raw, options, *, max_pixels=None):
         try:
             with Image.open(io.BytesIO(raw)) as source:
                 if (
@@ -99,7 +101,7 @@ class Renderer:
                     or getattr(source, "n_frames", 1) != 1
                 ):
                     raise InvalidContent("Upload a single PNG, JPEG, or WebP image")
-                if source.width * source.height > Image.MAX_IMAGE_PIXELS:
+                if max_pixels is not None and source.width * source.height > max_pixels:
                     raise InvalidContent("Image exceeds 16 megapixels")
                 source.load()
                 image = ImageOps.exif_transpose(source).convert("RGBA")
