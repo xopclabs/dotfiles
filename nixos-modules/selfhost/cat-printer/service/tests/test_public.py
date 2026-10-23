@@ -3,12 +3,14 @@ import tempfile
 import time
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from aiohttp import ClientSession, UnixConnector, web
 from aiohttp.test_utils import TestClient, TestServer
 from PIL import Image
 from pylibdmtx.pylibdmtx import decode
 
+from catprinter.footer import render_public_job, with_job_barcode
 from catprinter.render import Renderer, png
 from catprinter.server import PUBLIC_GET_PATHS, create_app
 from catprinter.service import History, Service
@@ -100,6 +102,28 @@ class PublicPrintingTests(unittest.IsolatedAsyncioTestCase):
             decode(printed.convert("RGB"), timeout=1000)[0].data.decode(), job["id"]
         )
         self.assertEqual(self.history.get(job["id"])["rows"], printed.height)
+
+    async def test_public_location_reaches_printed_footer(self):
+        with patch("catprinter.server.render_public_job", wraps=render_public_job) as render:
+            response = await self.public.post(
+                "http://localhost/ui/api/jobs/image", data=self.body,
+                headers=dict(self.headers, **{"X-Catprinter-Location": "Madrid, Spain"}),
+            )
+            self.assertEqual(response.status, 202)
+            job = await response.json()
+        footer = render.call_args.args[3]
+        self.assertEqual(footer[-1], "Madrid, Spain")
+        expected = with_job_barcode(self.image, *footer)
+        self.assertEqual(self.service.images[job["id"]].tobytes(), expected.tobytes())
+
+    def test_long_location_does_not_prevent_footer_rendering(self):
+        image = with_job_barcode(
+            self.image, "12345678901234567890", "2001:4860:4860::8888",
+            "2026-10-22 12:00:00 CEST", "A" * 160,
+        )
+        self.assertEqual(image.height, self.image.height + 56)
+        self.assertEqual(decode(image.convert("RGB"), timeout=1000)[0].data.decode(),
+                         "12345678901234567890")
 
     async def test_public_rotation_includes_footer_before_content(self):
         response = await self.public.post(

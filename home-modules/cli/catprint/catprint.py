@@ -278,8 +278,8 @@ def parser():
         "--rotation",
         type=int,
         choices=(0, 180),
-        default=0,
-        help="rotate text/images by this many degrees (default: 0)",
+        default=180,
+        help="rotate text/images by this many degrees (default: 180, reversed feed)",
     )
     result.add_argument(
         "--url",

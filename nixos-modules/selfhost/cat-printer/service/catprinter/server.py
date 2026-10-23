@@ -207,7 +207,10 @@ async def submit(request):
         while service.history.get(job_id) is not None:
             job_id = f"{secrets.randbelow(10**20):020d}"
         timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
-        footer = (job_id, client_ip, timestamp)
+        location = request.headers.get("X-Catprinter-Location", "")
+        if len(location) > 162 or not location.isprintable():
+            location = ""
+        footer = (job_id, client_ip, timestamp, location or "Location unavailable")
     image, options = await render_request(request, footer)
     check_public_expiry(request)
     result = service.submit(image, options, client, key, job_id=job_id)

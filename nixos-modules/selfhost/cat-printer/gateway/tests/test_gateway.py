@@ -1,11 +1,12 @@
 import asyncio
 import tempfile
 import unittest
+from unittest.mock import AsyncMock
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
-from catprinter_share import create_app
+from catprinter_share import GEOLOCATION, create_app
 
 
 class GatewayTests(unittest.IsolatedAsyncioTestCase):
@@ -69,6 +70,21 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(headers["X-Catprinter-Client-IP"], "203.0.113.9")
         self.assertNotIn("Authorization", headers)
         self.assertNotIn("Cookie", headers)
+
+    async def test_location_header_is_relay_generated_for_jobs_only(self):
+        locator = self.gateway.server.app[GEOLOCATION]
+        locator.lookup = AsyncMock(return_value="Madrid, Spain")
+        headers = {
+            "X-Forwarded-For": "8.8.8.8",
+            "X-Catprinter-Location": "Spoofed location",
+        }
+        response = await self.gateway.post("/ui/api/jobs/image", headers=headers)
+        self.assertEqual(response.status, 200)
+        self.assertEqual(self.calls[-1][2]["X-Catprinter-Location"], "Madrid, Spain")
+        response = await self.gateway.post("/ui/api/preview/image", headers=headers)
+        self.assertEqual(response.status, 200)
+        self.assertNotIn("X-Catprinter-Location", self.calls[-1][2])
+        locator.lookup.assert_awaited_once_with("8.8.8.8")
 
     async def test_lazy_image_decoder_assets_reach_backend(self):
         for asset in ("image-decode.js", "heic-to.js", "heic-to.LICENSE"):

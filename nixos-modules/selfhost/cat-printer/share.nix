@@ -104,21 +104,30 @@ in
                     RestrictSUIDSGID = true;
                     RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" ];
                     CapabilityBoundingSet = "";
-                    IPAddressDeny = "any";
-                    IPAddressAllow = [ cfg.ingressAddress ];
+                    # Outbound traffic is constrained by the owner firewall below;
+                    # GeoIP needs DNS and HTTPS, not only the ingress peer.
                     LimitCORE = 0;
                     MemoryMax = "128M";
                     TasksMax = 32;
                     UMask = "0077";
                 };
             };
-            # The backend uses a Unix socket. No new outbound IP connections are needed.
+            # The backend stays on a Unix socket. Allow DNS and public HTTPS for
+            # the fixed-origin GeoIP lookup, but no new connections to LAN services.
             networking.firewall.extraCommands = mkAfter ''
                 iptables-restore --noflush <<'RULES'
                 *filter
                 :${chain} - [0:0]
                 -F ${chain}
                 -A ${chain} -m conntrack --ctstate ESTABLISHED -j ACCEPT
+                -A ${chain} -p udp --dport 53 -j ACCEPT
+                -A ${chain} -p tcp --dport 53 -j ACCEPT
+                ${lib.concatMapStringsSep "\n" (network: "-A ${chain} -d ${network} -j REJECT") [
+                    "0.0.0.0/8" "10.0.0.0/8" "100.64.0.0/10" "127.0.0.0/8"
+                    "169.254.0.0/16" "172.16.0.0/12" "192.168.0.0/16"
+                    "224.0.0.0/4" "240.0.0.0/4"
+                ]}
+                -A ${chain} -p tcp --dport 443 -j ACCEPT
                 -A ${chain} -j REJECT
                 COMMIT
                 RULES

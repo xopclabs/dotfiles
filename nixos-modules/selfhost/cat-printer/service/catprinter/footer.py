@@ -17,7 +17,7 @@ def render_public_job(render, content, options, footer):
     return image.transpose(Image.Transpose.ROTATE_180) if options.rotation else image
 
 
-def with_job_barcode(image, job_id, client_ip=None, timestamp=None):
+def with_job_barcode(image, job_id, client_ip=None, timestamp=None, location=None):
     """Append a machine-readable footer last on the physical paper feed."""
     from pylibdmtx.pylibdmtx import encode as encode_datamatrix
 
@@ -48,14 +48,19 @@ def with_job_barcode(image, job_id, client_ip=None, timestamp=None):
         text_width = symbol_x - quiet - 8
         text = Image.new("L", (symbol_x - quiet, footer_rows), 255)
         draw = ImageDraw.Draw(text)
-        for value, y in ((client_ip, 8), (timestamp, 30)):
+        ip_line = f"{client_ip} · {location}" if location else client_ip
+        for value, y in ((ip_line, 8), (timestamp, 30)):
             size = 16
             f = font(font_path, size, threading.get_ident())
             while f.getlength(value) > text_width and size > 8:
                 size -= 1
                 f = font(font_path, size, threading.get_ident())
             if f.getlength(value) > text_width:
-                raise InvalidContent("Footer text exceeds available width")
+                if not location or value != ip_line:
+                    raise InvalidContent("Footer text exceeds available width")
+                while value and f.getlength(value + "…") > text_width:
+                    value = value[:-1]
+                value += "…"
             draw.text((8, y), value, font=f, fill=0, anchor="lt")
         text = text.point(lambda p: 255 if p >= 160 else 0).convert("1")
         result.paste(text, (0, image.height))

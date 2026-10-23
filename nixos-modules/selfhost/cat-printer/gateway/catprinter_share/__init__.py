@@ -4,11 +4,15 @@ import argparse
 import asyncio
 import ipaddress
 import logging
+import socket
 import time
 
-from aiohttp import ClientError, ClientSession, ClientTimeout, UnixConnector, web
+from aiohttp import ClientError, ClientSession, ClientTimeout, TCPConnector, UnixConnector, web
+
+from .geolocation import Geolocation
 
 LIMIT = 8 * 1024 * 1024
+GEOLOCATION = web.AppKey("geolocation", Geolocation)
 GET_PATHS = frozenset(
     (
         "/",
@@ -130,6 +134,10 @@ def create_app(printer_socket, expires_at, trusted_proxy, clock=time.time):
             if key in request.headers
         }
         headers["X-Catprinter-Client-IP"] = request["client_ip"]
+        if request.method == "POST" and request.path in ("/ui/api/jobs", "/ui/api/jobs/image"):
+            location = await request.app[GEOLOCATION].lookup(request["client_ip"])
+            if location:
+                headers["X-Catprinter-Location"] = location
         headers["Host"] = request.host
         headers["Accept-Encoding"] = "identity"
         async with request.app[session_key].request(
@@ -169,7 +177,11 @@ def create_app(printer_socket, expires_at, trusted_proxy, clock=time.time):
             auto_decompress=False,
         ) as client:
             app[session_key] = client
-            yield
+            async with ClientSession(
+                connector=TCPConnector(family=socket.AF_INET), trust_env=False,
+            ) as lookup_client:
+                app[GEOLOCATION] = Geolocation(lookup_client)
+                yield
 
     app = web.Application(middlewares=[access, gate], client_max_size=LIMIT)
     app.cleanup_ctx.append(session)
