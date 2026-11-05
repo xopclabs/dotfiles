@@ -77,6 +77,9 @@ in
     zramSwap.enable = false;
 
     services.udev.extraRules = ''
+        # STM32 DFU bootloader access for EdgeTX Buddy
+        SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="df11", MODE="0660", GROUP="users"
+
         # Steno stuff
         # Allow read/write to ttyACM0 serial port
         KERNEL=="ttyACM0", MODE="0666"
