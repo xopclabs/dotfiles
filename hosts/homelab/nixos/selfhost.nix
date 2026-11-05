@@ -124,14 +124,6 @@
                     publicKey = "dgkPzUZ+R3ODZWzY46DROU7VOOvuvndJucQlWEu0UV0=";
                     allowedIPs = [ "10.250.250.4/32" ];
                 };
-                pavel-deck = {
-                    publicKey = "x3dOhPW67b4CzC8mdXXhP5RhruapLnoS+DyvcZ/dGGg=";
-                    allowedIPs = [ "10.250.250.10/32" ];
-                };
-                pavel-laptop = {
-                    publicKey = "5dHbRApQLj6rgDGmLrX/FByKnaZajACCxVajx/IelVQ=";
-                    allowedIPs = [ "10.250.250.11/32" "192.168.1.155/32" ];
-                };
                 tv = {
                     publicKey = "HrTCQLCg8TBAm/9+VfiOijQ17jRO18DrSyj+a/cpgDw=";
                     allowedIPs = [ "10.250.250.5/32" ];
@@ -152,9 +144,21 @@
                     publicKey = "fKfKXEK6U7RZtaYLrmLG8UCbR4o3xvT1joS8hEZUGHU=";
                     allowedIPs = [ "10.250.250.9/32" ];
                 };
+                pavel-deck = {
+                    publicKey = "x3dOhPW67b4CzC8mdXXhP5RhruapLnoS+DyvcZ/dGGg=";
+                    allowedIPs = [ "10.250.250.10/32" ];
+                };
+                pavel-laptop = {
+                    publicKey = "5dHbRApQLj6rgDGmLrX/FByKnaZajACCxVajx/IelVQ=";
+                    allowedIPs = [ "10.250.250.11/32" "192.168.1.155/32" ];
+                };
                 apartment-pi = {
                     publicKey = "dq3knp1EIUCPihHuhIb/ntNFaIzDS40AnAwhYlamj0s=";
                     allowedIPs = [ "10.250.250.12/32" ];
+                };
+                mom-second-phone = {
+                    publicKey = "iEjBLq2XswdkmqnkQvABSiqUIgrieA+NId1bKk5sN20=";
+                    allowedIPs = [ "10.250.250.13/32" ];
                 };
             };
             socks5Proxy = {
