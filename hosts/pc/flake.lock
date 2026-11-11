@@ -1736,11 +1736,11 @@
         "nixpkgs": "nixpkgs_13"
       },
       "locked": {
-        "lastModified": 1791600769,
-        "narHash": "sha256-h07cYqG+PrKm0oymc6McJBOUD0gEx5Y78vu+goD+UDw=",
+        "lastModified": 1794419336,
+        "narHash": "sha256-7jjRXDr7vjTM+oz/sv7BYrx36USLJD4KHNAYHq8Z4m0=",
         "ref": "main",
-        "rev": "1c3a31fa61bfb690698ab479b3e8d2f9f368bcd8",
-        "revCount": 67,
+        "rev": "0b52abc90a87dee98ec45d83f52f80f68cb5f587",
+        "revCount": 68,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/zap"
       },
