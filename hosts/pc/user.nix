@@ -134,6 +134,13 @@ in {
         };
 
         media = {
+            ffmpeg = {
+                enable = true;
+                acceleration = {
+                    igpu = "0000:c8:00.0";
+                    egpu = "0000:03:00.0";
+                };
+            };
             video.mpv.enable = true;
             video.vlc.enable = true;
             audio = {

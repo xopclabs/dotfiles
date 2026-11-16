@@ -85,7 +85,6 @@ in {
             pkgs.grim 
             pkgs.slurp 
             pkgs.imagemagick 
-            pkgs.ffmpeg
             pkgs.wev
             pkgs.wf-recorder 
             pkgs.adwaita-icon-theme

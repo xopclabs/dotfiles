@@ -97,6 +97,7 @@ in {
         };
 
         media = {
+            ffmpeg.enable = true;
             video.mpv.enable = true;
             video.vlc.enable = true;
             audio = {
