@@ -99,6 +99,14 @@ def input_info(config, source):
     return streams[0]['codec_name'], 10 if fmt in {'yuv420p10le', 'p010le'} else 8
 
 
+def cuda_probe(config, args):
+    p = subprocess.run([config['ffmpeg'], '-hide_banner', '-nostdin', '-v', 'error',
+                        '-init_hw_device', 'cuda=gpu:' + str(config['cudaDevice']),
+                        '-filter_hw_device', 'gpu', *args],
+                       capture_output=True, text=True, timeout=30)
+    return p.returncode == 0, p.stderr.strip()
+
+
 def prepare(config, args):
     # Explicit encoders and information commands retain FFmpeg's original behaviour.
     selected = any(a in VIDEO_OPTIONS and i + 1 < len(args) and args[i + 1] in CODECS
@@ -132,9 +140,10 @@ def prepare(config, args):
         return args, None
     if any(opt in {'-c', '-codec'} for _, opt, _ in ts):
         fail('combine video acceleration with separate audio/subtitle codec options')
-    if any(opt and opt.split(':')[0] in {'-crf', '-preset', '-tune'}
-           for _, opt, _ in ts):
-        fail('software encoder tuning cannot be translated to VA-API')
+    backend = config['type']
+    software_options = {'-crf', '-preset', '-tune'} if backend == 'vaapi' else {'-crf'}
+    if any(opt and opt.split(':')[0] in software_options for _, opt, _ in ts):
+        fail('software encoder tuning cannot be translated to ' + backend)
     filters = [(i, value) for i, opt, value in ts if opt in FILTER_OPTIONS]
     if len(filters) > 1 or any(i < inp for i, _ in filters):
         fail('use one output video filter chain')
@@ -157,34 +166,55 @@ def prepare(config, args):
         bits = 10 if fmt in {'p010le', 'yuv420p10le'} else 8
     if codec == 'h264' and bits != 8:
         fail('H.264 hardware output requires 8-bit pixels')
-    nodes = sorted(glob.glob('/dev/dri/renderD*'))
-    igpu = resolve_device(config['igpu'])
-    egpu = resolve_device(config['egpu'])
-    if not igpu and not egpu:
-        if len(nodes) != 1:
-            fail('set modules.media.ffmpeg.acceleration.igpu and .egpu for multiple GPUs')
-        igpu = egpu = nodes[0]
-    preferred = [igpu, egpu] if codec == 'av1' else [egpu, igpu]
-    device = None
-    info = ''
-    for candidate in dict.fromkeys(p for p in preferred if p):
-        candidate_info = capabilities(config, candidate)
-        if supports(candidate_info, codec, bits, 'VAEntrypointEncSlice'):
-            device, info = candidate, candidate_info
-            break
-    if not device:
-        fail('no configured GPU supports the requested encoder/profile')
     explicit_decoder = any(opt in VIDEO_OPTIONS and i < inp for i, opt, _ in ts)
-    gpu_decode = (codec != 'h264' and not vf and not explicit_decoder and source_bits == bits
-                  and supports(info, source_codec, source_bits, 'VAEntrypointVLD'))
+    gpu_decode = not vf and not explicit_decoder and source_bits == bits
     fmt = 'p010le' if bits == 10 else 'nv12'
+    if backend == 'vaapi':
+        nodes = sorted(glob.glob('/dev/dri/renderD*'))
+        igpu = resolve_device(config['igpu'])
+        egpu = resolve_device(config['egpu'])
+        if not igpu and not egpu:
+            if len(nodes) != 1:
+                fail('set modules.media.ffmpeg.acceleration.igpu and .egpu for multiple GPUs')
+            igpu = egpu = nodes[0]
+        preferred = [igpu, egpu] if codec == 'av1' else [egpu, igpu]
+        device = None
+        info = ''
+        for candidate in dict.fromkeys(p for p in preferred if p):
+            candidate_info = capabilities(config, candidate)
+            if supports(candidate_info, codec, bits, 'VAEntrypointEncSlice'):
+                device, info = candidate, candidate_info
+                break
+        if not device:
+            fail('no configured GPU supports the requested encoder/profile')
+        gpu_decode = (gpu_decode and codec != 'h264'
+                      and supports(info, source_codec, source_bits, 'VAEntrypointVLD'))
+        encoder = codec + '_vaapi'
+        decoder_backend = 'VA-API'
+    else:
+        device = str(config['cudaDevice'])
+        encoder = codec + '_nvenc'
+        decoder_backend = 'NVDEC/CUDA'
+        ok, error = cuda_probe(config, [
+            '-f', 'lavfi', '-i', 'color=size=1280x720', '-frames:v', '1',
+            '-vf', 'format=' + fmt + ',hwupload', '-c:v', encoder,
+            '-f', 'null', '-'])
+        if not ok:
+            fail('CUDA device ' + device + ' cannot encode ' + codec
+                 + ' at ' + str(bits) + ' bits: ' + (error.splitlines()[0] if error else 'probe failed'))
+        if gpu_decode:
+            gpu_decode, _ = cuda_probe(config, [
+                '-hwaccel', 'cuda', '-hwaccel_device', 'gpu',
+                '-hwaccel_output_format', 'cuda', '-i', source,
+                '-frames:v', '1', '-an', '-sn', '-vf', 'hwdownload,format=' + fmt,
+                '-f', 'null', '-'])
     additions = []
     if gpu_decode:
-        additions = ['-hwaccel', 'vaapi', '-hwaccel_device', 'gpu',
-                     '-hwaccel_output_format', 'vaapi']
+        additions = ['-hwaccel', backend, '-hwaccel_device', 'gpu',
+                     '-hwaccel_output_format', backend]
     else:
         vf = (vf + ',' if vf else '') + 'format=' + fmt + ',hwupload'
-    rewritten = ['-init_hw_device', 'vaapi=gpu:' + device, '-filter_hw_device', 'gpu']
+    rewritten = ['-init_hw_device', backend + '=gpu:' + device, '-filter_hw_device', 'gpu']
     remove = {i for i, _ in pixel_options + filters + sizes}
     for i, opt, value in ts:
         if i in remove:
@@ -198,9 +228,11 @@ def prepare(config, args):
         elif value is None:
             rewritten.append(opt)
         else:
-            rewritten.extend([opt, codec + '_vaapi' if i == codec_index else value])
-    decoder = source_codec + (' (VA-API on ' + device + ')' if gpu_decode else ' (CPU)')
-    summary = 'decode: ' + decoder + '; encode: ' + codec + '_vaapi (on ' + device + ')'
+            rewritten.extend([opt, encoder if i == codec_index else value])
+    device_label = 'CUDA device ' + device if backend == 'cuda' else device
+    decoder = source_codec + (' (' + decoder_backend + ' on ' + device_label + ')'
+                              if gpu_decode else ' (CPU)')
+    summary = 'decode: ' + decoder + '; encode: ' + encoder + ' (on ' + device_label + ')'
     return rewritten, summary
 
 

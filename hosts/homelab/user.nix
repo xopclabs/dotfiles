@@ -49,6 +49,11 @@
             yazi.enable = true;
         };
 
+        media.ffmpeg = {
+            enable = true;
+            acceleration.type = "cuda";
+        };
+
         packages = {
             common.enable = true;
         };
