@@ -6,11 +6,11 @@
         "qmd": "qmd"
       },
       "locked": {
-        "lastModified": 1794751462,
-        "narHash": "sha256-OnhxqwuF+si3vO60Ov2l81GrJZ0Kg0skWs3uKJjWEC0=",
+        "lastModified": 1795178524,
+        "narHash": "sha256-Z8l0ihg6R7VEO6ZGhX0q4NV4lcNi26f3RmUeBGsTzx8=",
         "ref": "main",
-        "rev": "5698a730784c641183cf6ac12aa744cb1054fb90",
-        "revCount": 38,
+        "rev": "3ba21259983bf7466d1ebfbbadae0cd8a09bfd49",
+        "revCount": 39,
         "type": "git",
         "url": "ssh://git@github.com/xopclabs/agents"
       },
