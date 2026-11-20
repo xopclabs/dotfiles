@@ -378,7 +378,7 @@ in {
                             { app-id = "^[Ss]lack$"; } 
                             { app-id = "^[Ff]irefox$"; } 
                             { app-id = "^(org\\.telegram\\.desktop|Telegram)$"; } 
-                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "Zoom Workplace - .+"; } 
+                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Zoom Workplace( - .*)?$"; }
                         ];
                         default-column-width = { proportion = 0.85; };
                     }
@@ -395,7 +395,7 @@ in {
                     {
                         matches = [ { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; } ];
                         excludes = [
-                            { title = "^Zoom Workplace - "; }
+                            { title = "^Zoom Workplace( - .*)?$"; }
                             { title = "^Meeting$"; }
                             { title = "^Meeting chat$"; }
                             { title = "^(.+)'s Zoom Meeting$"; }
@@ -408,7 +408,7 @@ in {
                         matches = [
                             { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Meeting$"; }
                             { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Meeting chat$"; }
-                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Zoom Workplace - "; }
+                            { app-id = "^(zoom|Zoom|us\\.zoom\\.Zoom)$"; title = "^Zoom Workplace( - .*)?$"; }
                         ];
                         open-floating = false;
                     }
@@ -473,10 +473,6 @@ in {
                 cursor = {
                     theme = cursorTheme;
                     size = cursorSize;
-                };
-
-                debug = lib.optionalAttrs config.modules.desktop.shells.noctalia.enable {
-                    honor-xdg-activation-with-invalid-serial = [];
                 };
 
                 environment = {
