@@ -80,7 +80,6 @@ in
             ] ++ cfg.extraKernelModules;
             services.udev.rules = optionalString cfg.includeKnownInputRules knownInputRules + cfg.extraUdevRules;
             systemd = {
-                enable = true;
                 extraBin.udevadm = "${config.boot.initrd.systemd.package}/bin/udevadm";
                 paths.unl0kr-agent = {
                     wants = udevUnits ++ [ "unl0kr-input-ready.service" ];

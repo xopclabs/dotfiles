@@ -95,7 +95,6 @@ in {
             stablePkgs.libreoffice
             pkgs.python3
             zoom-us
-            pkgs.zotero
 	    pkgs.transmission_4-gtk
             pkgs.android-tools
             pkgs.rclone

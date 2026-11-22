@@ -16,23 +16,55 @@ let
         exec "$gamescope" --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf "$@" >> "$HOME/.cache/start-gamescope-session.log" 2>&1
     '';
     sessionMarker = "jovian-switch-to-desktop";
-    sessionSelect = pkgs.writeShellScript "steamos-session-select" ''
-        set -eu
-        marker="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}/${sessionMarker}"
-        : > "$marker"
-        ${pkgs.systemd}/bin/systemctl --user --no-block stop graphical-session.target
+    sessionSelect = pkgs.runCommandLocal "steamos-session-select" {
+        nativeBuildInputs = [ pkgs.stdenv.cc ];
+    } ''
+        $CC -Wall -Wextra -Werror -O2 -x c -o "$out" - <<'EOF'
+        #include <fcntl.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <unistd.h>
+
+        int main(void) {
+            char marker[4096];
+            const char *runtime = getenv("XDG_RUNTIME_DIR");
+            int length;
+            if (runtime && *runtime) {
+                length = snprintf(marker, sizeof(marker), "%s/${sessionMarker}", runtime);
+            } else {
+                length = snprintf(marker, sizeof(marker), "/run/user/%lu/${sessionMarker}", (unsigned long)getuid());
+            }
+            if (length < 0 || (size_t)length >= sizeof(marker)) {
+                fputs("Runtime directory path is too long\n", stderr);
+                return 1;
+            }
+            int fd = open(marker, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NOFOLLOW, 0600);
+            if (fd < 0) {
+                perror("Creating session marker");
+                return 1;
+            }
+            if (close(fd) < 0) {
+                perror("Closing session marker");
+                return 1;
+            }
+            execl("${pkgs.systemd}/bin/systemctl", "systemctl", "--user", "--no-block",
+                  "stop", "graphical-session.target", (char *)NULL);
+            perror("Starting systemctl");
+            return 1;
+        }
+        EOF
     '';
     ttyGamescopeSession = pkgs.writeShellScriptBin "start-gamescope-session" ''
         set -eu
         marker="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}/${sessionMarker}"
         ${pkgs.coreutils}/bin/rm -f "$marker"
-        ${pkgs.gamescope-session}/bin/start-gamescope-session
+        ${pkgs.jovianPackages.gamescope-session}/bin/start-gamescope-session
         if [ -e "$marker" ]; then
             ${pkgs.coreutils}/bin/rm -f "$marker"
             exec ${pkgs.niri}/bin/niri-session
         fi
     '';
-    gamescopeSession = if cfg.jovian.autoStart then pkgs.gamescope-session else ttyGamescopeSession;
+    gamescopeSession = if cfg.jovian.autoStart then pkgs.jovianPackages.gamescope-session else ttyGamescopeSession;
     switchToGamescope = pkgs.writeShellScriptBin "switch-to-gamescope-session" ''
         ${pkgs.systemd}/bin/systemctl --user import-environment PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET
         ${pkgs.systemd}/bin/systemctl --user unset-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY
@@ -176,7 +208,7 @@ in
             serviceConfig = {
                 ExecStart = mkForce [
                     ""
-                    "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.gamescope-session}/lib/steamos/gamescope-session"
+                    "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.jovianPackages.gamescope-session}/lib/steamos/gamescope-session"
                 ];
                 TimeoutStartSec = 45;
             };
