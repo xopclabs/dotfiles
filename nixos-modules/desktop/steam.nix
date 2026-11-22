@@ -15,6 +15,7 @@ let
         echo "Starting Steam under gamescope: $gamescope --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf $*" >> "$HOME/.cache/start-gamescope-session.log"
         exec "$gamescope" --steam -f -- ${pkgs.steam}/bin/steam -tenfoot -pipewire-dmabuf "$@" >> "$HOME/.cache/start-gamescope-session.log" 2>&1
     '';
+    jovianGamescopeSession = pkgs.jovianPackages.gamescope-session or pkgs.gamescope-session;
     sessionMarker = "jovian-switch-to-desktop";
     sessionSelect = pkgs.runCommandLocal "steamos-session-select" {
         nativeBuildInputs = [ pkgs.stdenv.cc ];
@@ -58,13 +59,13 @@ let
         set -eu
         marker="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}/${sessionMarker}"
         ${pkgs.coreutils}/bin/rm -f "$marker"
-        ${pkgs.jovianPackages.gamescope-session}/bin/start-gamescope-session
+        ${jovianGamescopeSession}/bin/start-gamescope-session
         if [ -e "$marker" ]; then
             ${pkgs.coreutils}/bin/rm -f "$marker"
             exec ${pkgs.niri}/bin/niri-session
         fi
     '';
-    gamescopeSession = if cfg.jovian.autoStart then pkgs.jovianPackages.gamescope-session else ttyGamescopeSession;
+    gamescopeSession = if cfg.jovian.autoStart then jovianGamescopeSession else ttyGamescopeSession;
     switchToGamescope = pkgs.writeShellScriptBin "switch-to-gamescope-session" ''
         ${pkgs.systemd}/bin/systemctl --user import-environment PATH XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET
         ${pkgs.systemd}/bin/systemctl --user unset-environment DISPLAY WAYLAND_DISPLAY XAUTHORITY
@@ -208,7 +209,7 @@ in
             serviceConfig = {
                 ExecStart = mkForce [
                     ""
-                    "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${pkgs.jovianPackages.gamescope-session}/lib/steamos/gamescope-session"
+                    "${pkgs.coreutils}/bin/env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY ${jovianGamescopeSession}/lib/steamos/gamescope-session"
                 ];
                 TimeoutStartSec = 45;
             };

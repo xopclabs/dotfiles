@@ -13,6 +13,7 @@
         ./audio.nix
         ./security.nix
         ./gui.nix
+        ./gamescope-panel-idle/gamescope-panel-idle.nix
         ./remote-builds.nix
 
         ./programs.nix
