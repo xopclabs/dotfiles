@@ -59,6 +59,7 @@
         waybar.inputs.nixpkgs.follows = "nixpkgs";
 
         noctalia.url = "github:noctalia-dev/noctalia/cachix";
+        noctalia.inputs.nixpkgs.follows = "nixpkgs";
 
         shadowing.url = "github:xopclabs/shadowing";
         shadowing.inputs.nixpkgs.follows = "nixpkgs";
