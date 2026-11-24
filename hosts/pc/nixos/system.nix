@@ -83,6 +83,10 @@ in
         # Steno stuff
         # Allow read/write to ttyACM0 serial port
         KERNEL=="ttyACM0", MODE="0666"
+
+        # Grant Betaflight USB serial access regardless of the assigned port number.
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", ATTRS{manufacturer}=="Betaflight", OWNER="xopc", MODE="0660"
+
         # Allow uinput as non-root user (in input group)
         KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
         # Sweep keyboard plover-HID non-root access.
