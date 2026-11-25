@@ -52,8 +52,8 @@ private fun Context.setAdb(enabled: Boolean) =
 // Android apps (including those with notification access) cannot use this endpoint.
 class PairingProvider : ContentProvider() {
     override fun onCreate() = true
-    private fun authorize(uri: Uri) {
-        check(Binder.getCallingUid() == 2000 && uri.path == "/pair") { "ADB shell only" }
+    private fun authorize(uri: Uri, path: String = "/pair") {
+        check(Binder.getCallingUid() == 2000 && uri.path == path) { "ADB shell only" }
     }
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         authorize(uri)
@@ -86,6 +86,17 @@ class PairingProvider : ContentProvider() {
     }
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?,
         selectionArgs: Array<out String>?, sortOrder: String?): android.database.Cursor {
+        if (uri.path == "/webcam") {
+            authorize(uri, "/webcam")
+            val prefs = requireNotNull(context).preferences
+            val facing = uri.getQueryParameter("facing")
+            require(facing == "front" || facing == "back")
+            return android.database.MatrixCursor(arrayOf("quality", "fps", "rotation", "mirror")).apply {
+                addRow(arrayOf(prefs.getInt("webcam_${facing}_quality", 1),
+                    prefs.getInt("webcam_${facing}_fps", 30), prefs.getInt("webcam_${facing}_rotation", 0),
+                    if (prefs.getBoolean("webcam_${facing}_mirror", false)) 1 else 0))
+            }
+        }
         authorize(uri)
         val raw = requireNotNull(context).preferences.getString("relay_pair", null)
         val identity = if (raw == null) "" else JSONObject(raw).let {
@@ -115,6 +126,10 @@ class MainActivity : Activity() {
     private lateinit var pages: List<View>
     private lateinit var tabs: List<Button>
     private var selectedTab = 0
+    private var settingsOpen = false
+    private lateinit var navigation: LinearLayout
+    private lateinit var settingsButton: Button
+    private lateinit var headingTitle: TextView
     private val statusTick = object : Runnable {
         override fun run() {
             refresh()
@@ -198,16 +213,27 @@ class MainActivity : Activity() {
             setPadding(dp(12), dp(12), dp(12), dp(12))
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }, LinearLayout.LayoutParams(dp(56), dp(56)).apply { marginEnd = dp(16) })
-        val heading = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; header.addView(this) }
-        label(heading, "Phone Control", 27f, true)
+        val heading = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            header.addView(this, LinearLayout.LayoutParams(0, -2, 1f))
+        }
+        headingTitle = label(heading, "Phone Control", 27f, true)
+        settingsButton = Button(this).apply {
+            textSize = 23f
+            setTextColor(color("accent"))
+            background = RippleDrawable(ColorStateList.valueOf(color("border")), rounded(color("accent_surface"), 14), null)
+            setPadding(0, 0, 0, 0)
+            setOnClickListener { showSettings(!settingsOpen) }
+            header.addView(this, LinearLayout.LayoutParams(dp(48), dp(48)))
+        }
         space(layout, 20)
-        val navigation = LinearLayout(this).apply {
+        navigation = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             background = rounded(color("accent_surface"), 16)
             setPadding(dp(4), dp(4), dp(4), dp(4))
             layout.addView(this, LinearLayout.LayoutParams(-1, -2))
         }
-        tabs = listOf("Connection", "Notifications", "Settings").mapIndexed { index, title ->
+        tabs = listOf("Notifications", "Webcam", "Misc").mapIndexed { index, title ->
             Button(this).apply {
                 text = title
                 isAllCaps = false
@@ -228,7 +254,7 @@ class MainActivity : Activity() {
         val pageHost = FrameLayout(this).apply {
             layout.addView(this, LinearLayout.LayoutParams(-1, 0, 1f))
         }
-        val content = List(3) {
+        val content = List(tabs.size + 1) {
             LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         }
         pages = content.map { body ->
@@ -239,7 +265,8 @@ class MainActivity : Activity() {
                 pageHost.addView(this, FrameLayout.LayoutParams(-1, -1))
             }
         }
-        val connection = card(content[0], "Wireless debugging")
+        val settings = content.last()
+        val connection = card(settings, "Wireless debugging")
         status = label(connection, "", 23f, true)
         detail = label(connection, "", 13f)
         result = label(connection, "").apply {
@@ -256,7 +283,7 @@ class MainActivity : Activity() {
             refresh()
         }
         button(connection, "Developer settings") { open(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) }
-        val recovery = card(content[2], "Automatic recovery")
+        val recovery = card(settings, "Automatic recovery")
         val auto = toggle(recovery, "Recover on trusted connections", "automatic")
         space(recovery)
         label(recovery, "Trusted Wi-Fi", 14f, true)
@@ -281,19 +308,15 @@ class MainActivity : Activity() {
         }
         val protection = card(content[2], "Call protection")
         val protect = toggle(protection, "Disconnect PC Qudelix during calls", "protect_calls")
-        label(protection, "Uses the paired PC relay, independently of screen control. Requires Nearby devices permission.", 13f)
+        label(protection, "Uses the paired PC relay, independently of screen control. Requires Nearby devices permission in Settings.", 13f)
         protect.setOnCheckedChangeListener { _, checked ->
             preferences.edit().putBoolean("protect_calls", checked).apply()
-            if (checked && !granted(BLUETOOTH_CONNECT)) requestPermissions(arrayOf(BLUETOOTH_CONNECT), 2)
         }
-        val relay = card(content[1], "Notification relay")
+        val relay = card(content[0], "Notification relay")
         relayStatus = label(relay, "", 23f, true)
         selectedApps = label(relay, "", 13f)
         button(relay, "Choose apps", true) { selectRelayApps() }
-        relayAccess = button(relay, "Allow notification access") {
-            open(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        }
-        val pairing = card(content[1], "Paired PC")
+        val pairing = card(settings, "Paired PC")
         label(pairing, "Set up automatically when you launch Phone Control on your PC.", 13f)
         button(pairing, "Unpair") {
             AlertDialog.Builder(this).setTitle("Unpair PC?")
@@ -305,7 +328,10 @@ class MainActivity : Activity() {
                     refresh()
                 }.show()
         }
-        val setup = card(content[2], "Permissions")
+        val setup = card(settings, "Permissions")
+        relayAccess = button(setup, "Allow notification access") {
+            open(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
         permissionStatus = label(setup, "", 13f)
         grantPermissions = button(setup, "Grant permissions") {
             requestPermissions(arrayOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, POST_NOTIFICATIONS, BLUETOOTH_CONNECT), 1)
@@ -321,7 +347,7 @@ class MainActivity : Activity() {
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
                 .putExtra(Settings.EXTRA_CHANNEL_ID, "recovery"))
         }
-        button(content[2], "About & privacy") {
+        button(settings, "About & privacy") {
             AlertDialog.Builder(this).setTitle("Phone Control")
                 .setMessage("Trusted Wi-Fi names control automatic debugging recovery, not network identity. " +
                     "Recovery starts after the first unlock following a reboot.\n\n" +
@@ -331,13 +357,41 @@ class MainActivity : Activity() {
                     "Android may hide sensitive content.")
                 .setPositiveButton("Close", null).show()
         }
-        selectTab(state?.getInt("tab") ?: 0)
+        fun webcamChoice(parent: LinearLayout, title: String, key: String, choices: List<Pair<String, Int>>, default: Int) {
+            label(parent, title, 14f, true)
+            val choice = Spinner(this).apply {
+                adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, choices.map { it.first })
+                setSelection(choices.indexOfFirst { it.second == preferences.getInt(key, default) }.coerceAtLeast(0))
+            }
+            parent.addView(choice, LinearLayout.LayoutParams(-1, dp(48)))
+            choice.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    preferences.edit().putInt(key, choices[position].second).apply()
+                }
+            }
+            space(parent)
+        }
+        for ((facing, title) in listOf("front" to "Front camera", "back" to "Rear camera")) {
+            val camera = card(content[1], title)
+            val prefix = "webcam_${facing}_"
+            webcamChoice(camera, "Quality", prefix + "quality",
+                listOf("Low · 500 kbps" to 0, "Balanced · 1 Mbps" to 1, "High · 2 Mbps" to 2), 1)
+            webcamChoice(camera, "Frame rate", prefix + "fps", listOf(15, 24, 30).map { "$it fps" to it }, 30)
+            webcamChoice(camera, "Rotation", prefix + "rotation", listOf(0, 90, 180, 270).map { "$it°" to it }, 0)
+            toggle(camera, "Mirror horizontally", prefix + "mirror").setOnCheckedChangeListener { _, checked ->
+                preferences.edit().putBoolean(prefix + "mirror", checked).apply()
+            }
+        }
+        selectedTab = (state?.getInt("tab") ?: 0).coerceIn(tabs.indices)
+        showSettings(state?.getBoolean("settingsOpen") ?: false)
         refresh()
     }
 
     private fun selectTab(index: Int) {
-        selectedTab = index.coerceIn(pages.indices)
-        pages.forEachIndexed { i, page -> page.visibility = if (i == selectedTab) View.VISIBLE else View.GONE }
+        selectedTab = index.coerceIn(tabs.indices)
+        val pageIndex = if (settingsOpen) pages.lastIndex else selectedTab
+        pages.forEachIndexed { i, page -> page.visibility = if (i == pageIndex) View.VISIBLE else View.GONE }
         tabs.forEachIndexed { i, tab ->
             val active = i == selectedTab
             tab.isSelected = active
@@ -347,8 +401,29 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun showSettings(open: Boolean) {
+        settingsOpen = open
+        headingTitle.text = if (open) "Settings" else "Phone Control"
+        settingsButton.text = if (open) "←" else ""
+        val gear = if (open) null else getDrawable(resources.getIdentifier("ic_settings", "drawable", packageName))?.mutate()?.apply {
+            setTint(color("accent"))
+            setBounds(0, 0, dp(24), dp(24))
+        }
+        settingsButton.setPadding(0, if (open) 0 else dp(12), 0, 0)
+        settingsButton.setCompoundDrawables(null, gear, null, null)
+        settingsButton.contentDescription = if (open) "Back to tabs" else "Settings"
+        navigation.visibility = if (open) View.GONE else View.VISIBLE
+        selectTab(selectedTab)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (settingsOpen) showSettings(false) else super.onBackPressed()
+    }
+
     override fun onSaveInstanceState(state: Bundle) {
         state.putInt("tab", selectedTab)
+        state.putBoolean("settingsOpen", settingsOpen)
         super.onSaveInstanceState(state)
     }
 
