@@ -108,7 +108,7 @@
             ];
         };
 
-        virtual_webcam.enable = true;
+        virtualWebcam.enable = true;
         p81 = {
             enable = true;
             autostart = false;
@@ -117,7 +117,7 @@
             sleepResumeDelaySec = 30;
         };
 
-        ereader_relay = {
+        ereaderRelay = {
             enable = true;
             subdomain = "books.vm.local";
         };

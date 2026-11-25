@@ -78,7 +78,7 @@
         flatpak.enable = true;
         localsend.enable = true;
         ddcutil.enable = true;
-        virtual_webcam.enable = false;
+        virtualWebcam.enable = false;
         p81 = {
             enable = true;
             autostart = false;
@@ -86,7 +86,7 @@
             sleepResumeRecovery = "async-reset";
             sleepResumeDelaySec = 30;
         };
-        ereader_relay = {
+        ereaderRelay = {
             enable = true;
             subdomain = "books.vm.local";
         };

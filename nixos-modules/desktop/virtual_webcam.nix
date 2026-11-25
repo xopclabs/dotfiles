@@ -2,10 +2,10 @@
 
 with lib;
 let
-    cfg = config.desktop.virtual_webcam;
+    cfg = config.desktop.virtualWebcam;
 in
 {
-    options.desktop.virtual_webcam = {
+    options.desktop.virtualWebcam = {
         enable = mkEnableOption "Phone Control virtual webcams";
     };
 

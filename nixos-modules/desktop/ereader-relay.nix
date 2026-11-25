@@ -2,10 +2,10 @@
 
 with lib;
 let
-    cfg = config.desktop.ereader_relay;
+    cfg = config.desktop.ereaderRelay;
 in
 {
-    options.desktop.ereader_relay = {
+    options.desktop.ereaderRelay = {
         enable = mkEnableOption "E-reader BookLore relay proxy";
 
         port = mkOption {
