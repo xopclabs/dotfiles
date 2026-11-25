@@ -63,6 +63,10 @@ in {
                 patched = (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default or pkgs.noctalia).overrideAttrs (old: {
                     patches = (old.patches or []) ++ (import ../../../../patches { inherit lib; }).noctalia;
                 });
+                calendarLocales = pkgs.glibcLocales.override {
+                    allLocales = false;
+                    locales = [ "en_US.UTF-8/UTF-8" "en_GB.UTF-8/UTF-8" ];
+                };
             in pkgs.symlinkJoin {
                 name = "noctalia";
                 paths = [ patched ];
@@ -71,7 +75,9 @@ in {
                 postBuild = ''
                     rm -f $out/bin/noctalia
                     makeWrapper ${lib.getExe patched} $out/bin/noctalia \
-                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil aiMeters.codexbar ]}
+                        --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil aiMeters.codexbar ]} \
+                        --set LOCALE_ARCHIVE ${calendarLocales}/lib/locale/locale-archive \
+                        --set LC_TIME en_GB.UTF-8
                 '';
             };
             description = "The noctalia package to use.";
