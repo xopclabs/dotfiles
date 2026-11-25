@@ -60,7 +60,9 @@ in {
         package = mkOption {
             type = types.nullOr types.package;
             default = let
-                patched = (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default or pkgs.noctalia).overrideAttrs (old: {
+                # Build against the host package set so Noctalia can load the host's EGL driver.
+                upstream = (inputs.noctalia.overlays.default pkgs pkgs).noctalia;
+                patched = upstream.overrideAttrs (old: {
                     patches = (old.patches or []) ++ (import ../../../../patches { inherit lib; }).noctalia;
                 });
                 calendarLocales = pkgs.glibcLocales.override {
@@ -77,6 +79,7 @@ in {
                     makeWrapper ${lib.getExe patched} $out/bin/noctalia \
                         --prefix PATH : ${lib.makeBinPath [ pkgs.ddcutil aiMeters.codexbar ]} \
                         --set LOCALE_ARCHIVE ${calendarLocales}/lib/locale/locale-archive \
+                        --set LOCALE_ARCHIVE_2_27 ${calendarLocales}/lib/locale/locale-archive \
                         --set LC_TIME en_GB.UTF-8
                 '';
             };
