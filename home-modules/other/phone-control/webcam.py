@@ -47,10 +47,31 @@ def read_frames(pipe, frames, received):
 
 
 def connected_phone(identity):
-    result = subprocess.run(['adb', 'devices'], capture_output=True, text=True, timeout=3, check=True)
-    pattern = re.compile(re.escape(identity) + r'(?: \(\d+\))?\._adb-tls-connect\._tcp\tdevice')
-    matches = [line.split('\t')[0] for line in result.stdout.splitlines() if pattern.fullmatch(line)]
-    return matches[0] if len(matches) == 1 else None
+    def adb(*args):
+        return subprocess.run(['adb', *args], capture_output=True, text=True, timeout=3, check=True).stdout
+
+    def devices():
+        return {line.split('\t')[0] for line in adb('devices').splitlines() if line.endswith('\tdevice')}
+
+    service = re.escape(identity) + r'(?: \(\d+\))?'
+    online = devices()
+    named = sorted(serial for serial in online if re.fullmatch(service + r'\._adb-tls-connect\._tcp', serial))
+    if named:
+        return named[0] if len(named) == 1 else None
+
+    # A manually connected wireless transport is listed as an address, not an mDNS name.
+    record = service + r'\s+_adb-tls-connect\._tcp\s+([\d.]+:\d+)'
+    endpoints = sorted(set(re.findall(r'^' + record + r'\s*$', adb('mdns', 'services'), re.MULTILINE)))
+    connected = online.intersection(endpoints)
+    if connected:
+        return next(iter(connected)) if len(connected) == 1 else None
+    for endpoint in endpoints:
+        try:
+            adb('connect', endpoint)
+        except subprocess.SubprocessError:
+            continue
+    connected = devices().intersection(endpoints)
+    return next(iter(connected)) if len(connected) == 1 else None
 
 
 def camera_settings(serial, facing):
