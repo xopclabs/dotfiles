@@ -15,7 +15,7 @@ in
 
         package = mkOption {
             type = types.package;
-            default = pkgs.nextcloud32;
+            default = pkgs.nextcloud33;
             description = "Nextcloud package to use";
         };
 
@@ -27,12 +27,6 @@ in
     };
     
     config = mkIf cfg.enable {
-        sops.secrets."nextcloud/pavel-pass" = {
-            sopsFile = ../../secrets/shared/selfhost.yaml;
-            owner = "nextcloud";
-            group = "nextcloud";
-        };
-
         # Enable PostgreSQL with Nextcloud database
         homelab.postgres = {
             enable = true;
@@ -56,9 +50,6 @@ in
                 dbhost = "/run/postgresql";
                 dbname = "nextcloud";
                 dbuser = "nextcloud";
-                
-                adminuser = "pavel";
-                adminpassFile = config.sops.secrets."nextcloud/pavel-pass".path;
             };
 
             appstoreEnable = false;
