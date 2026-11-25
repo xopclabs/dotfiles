@@ -563,24 +563,19 @@ class RelayListener : NotificationListenerService() {
         if (pkg == packageName) notification.channelId == "failures" else pkg in selected
 
     private fun record(item: StatusBarNotification) {
-        if (preferences.getString("relay_pair", null) == null) return
-        val selected = preferences.getStringSet("relay_apps", emptySet()) ?: emptySet()
-        if (!relayEligible(item.packageName, item.notification, selected) ||
-            item.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
         val event = extract(item)
         val fingerprint = MessageDigest.getInstance("SHA-256").digest(event.toString().toByteArray())
             .joinToString("") { "%02x".format(it.toInt() and 255) }
         val seen = backlog.getJSONObject("seen")
         if (seen.optString(item.key) == fingerprint) return
         val events = backlog.getJSONArray("events")
-        // Keep each content update: a later short missed-call alert must not erase earlier messages.
         event.put("id", java.util.UUID.randomUUID().toString()).put("key", item.key)
             .put("package", item.packageName).put("icon", appIcon(item.packageName)).put("app",
                 try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(item.packageName, 0)).toString() }
                 catch (_: Exception) { item.packageName })
         events.put(event)
         seen.put(item.key, fingerprint)
-        saveQueue()
+        queueDirty = true
     }
 
     private fun safely(action: () -> Unit) {
@@ -630,17 +625,31 @@ class RelayListener : NotificationListenerService() {
             }
             val tls = SSLContext.getInstance("TLS").apply { init(null, arrayOf(trust), null) }
             val selected = preferences.getStringSet("relay_apps", emptySet()) ?: emptySet()
-            activeNotifications.forEach { record(it) }
-            val queued = backlog.getJSONArray("events")
-            val retained = JSONArray()
-            for (index in 0 until queued.length()) {
-                val event = queued.getJSONObject(index)
-                if (event.getString("package") in selected ||
-                    event.getString("package") == packageName) retained.put(event)
+            // Android exposes active notifications, not a universal per-notification read flag.
+            val active = requireNotNull(activeNotifications).filter { item ->
+                relayEligible(item.packageName, item.notification, selected) &&
+                    item.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0
             }
+            val activeKeys = active.map { it.key }.toSet()
+            val seen = backlog.getJSONObject("seen")
+            for (key in seen.keys().asSequence().toList()) {
+                if (key !in activeKeys) {
+                    seen.remove(key)
+                    queueDirty = true
+                }
+            }
+            active.forEach { record(it) }
+            val queued = backlog.getJSONArray("events")
+            val latest = mutableMapOf<String, Int>()
+            for (index in 0 until queued.length()) {
+                val key = queued.getJSONObject(index).getString("key")
+                if (key in activeKeys) latest[key] = index
+            }
+            val retained = JSONArray()
+            for (index in latest.values.sorted()) retained.put(queued.getJSONObject(index))
             if (retained.length() != queued.length()) {
                 backlog.put("events", retained)
-                saveQueue()
+                queueDirty = true
             }
             if (queueDirty) saveQueue()
             val batch = JSONArray()
@@ -696,16 +705,8 @@ class RelayListener : NotificationListenerService() {
         }
     }
 
-    override fun onNotificationPosted(item: StatusBarNotification) {
-        if (!sender.isShutdown) sender.execute { safely { record(item); deliver() } }
-    }
-    override fun onNotificationRemoved(item: StatusBarNotification) {
-        if (!sender.isShutdown) sender.execute { safely {
-            // Removal changes active state, not whether an unseen event deserves delivery.
-            backlog.getJSONObject("seen").remove(item.key)
-            saveQueue()
-        } }
-    }
+    override fun onNotificationPosted(item: StatusBarNotification) = changed()
+    override fun onNotificationRemoved(item: StatusBarNotification) = changed()
 
     companion object {
         private var listener: RelayListener? = null

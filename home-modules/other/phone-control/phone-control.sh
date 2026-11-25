@@ -183,6 +183,11 @@ if [[ -n "${relay_provision:-}" ]]; then
     ) &
 fi
 
+# Use native Wayland so VA-API frames do not pass through Xwayland's EGL import path.
+if [[ -n ${WAYLAND_DISPLAY:-} ]]; then
+    export SDL_VIDEODRIVER="${SDL_VIDEODRIVER:-wayland}"
+fi
+
 scrcpy_command=(scrcpy --serial="$serial" --window-title='Phone Control' --window-width=499 --window-height=1072 --keyboard=uhid --turn-screen-off --keep-active --video-codec=h265 --video-bit-rate=16M --max-size=2340 "${scrcpy_args[@]}")
 if $monitor; then
     if SDL_APP_ID=phone-control python3 "$monitor_script" "$serial" -- "${scrcpy_command[@]}" 2>&1 | tee --ignore-interrupts "$log"; then
