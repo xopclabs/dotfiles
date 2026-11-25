@@ -12,6 +12,7 @@ in {
         ./androidcam.nix
         ./phone-control/phone-control.nix
         ./phone-control/relay.nix
+        ./phone-control/webcam.nix
         ./autofirma.nix
         ./sops-age-key.nix
     ];

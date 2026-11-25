@@ -107,7 +107,8 @@
                 "evdev"
             ];
         };
-        virtual_webcam.enable = false;
+
+        virtual_webcam.enable = true;
         p81 = {
             enable = true;
             autostart = false;
@@ -115,6 +116,7 @@
             sleepResumeRecovery = "async-reset";
             sleepResumeDelaySec = 30;
         };
+
         ereader_relay = {
             enable = true;
             subdomain = "books.vm.local";

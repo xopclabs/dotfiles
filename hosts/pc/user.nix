@@ -168,6 +168,8 @@ in {
                 enable = true;
                 notifications.enable = true;
                 notifications.callHeadset = "98:8E:79:01:2A:27";
+                webcam.enable = true;
+                webcam.phone = "adb-4a8784fd-7wKStb";
                 autoUnlock = true;
             };
             autofirma.enable = false;
