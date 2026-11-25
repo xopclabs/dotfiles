@@ -1,7 +1,8 @@
 { inputs, lib, config, pkgs, ... }:
 with lib;
 let
-    cfg = config.modules.firefox;
+    tstId = "treestyletab@piro.sakura.ne.jp";
+    tstStyleFile = "${config.metadata.repositoryRelPath}/home-modules/browsers/firefox/theme/treestyletab.css";
 in {
     config = {
         programs.firefox = {
@@ -85,7 +86,7 @@ in {
             }
             }
         '';
-        home.file."${config.metadata.repositoryRelPath}/home-modules/browsers/firefox/theme/treestyletab.css".text = with config.colorScheme.palette; ''
+        home.file."${tstStyleFile}".text = with config.colorScheme.palette; ''
                 :root {
                 /* This value should be updated here and in the userChrome.css */
                     --tst-sidepanel-hide-delay: 0s;
@@ -266,9 +267,39 @@ in {
                     outline: unset;
                 }
 
+                :root,
+                body,
+                #background {
+                    background-color: #${base00} !important;
+                }
+
+                .newtab-button-box {
+                    display: none !important;
+                }
+
+                .tab:not(.active, .bundled-active, .highlighted, .split-view, :hover):not([type="group"]) {
+                    background-color: #${base01} !important;
+                }
+
                 #tabbar-container {
                     margin-left: -5px;
                 }
+        '';
+        # Tree Style Tab reads its stylesheet as up to eight base64 chunks from managed storage.
+        home.file.".mozilla/managed-storage/${tstId}.json".source = pkgs.runCommand "treestyletab-managed-storage.json" {
+            nativeBuildInputs = [ pkgs.jq ];
+        } ''
+            jq -n --arg id '${tstId}' --rawfile css '${config.home.file.${tstStyleFile}.source}' '
+                ($css | @base64 | [scan(".{1,6144}")]) as $chunks
+                | if ($chunks | length) > 8 then error("Tree Style Tab stylesheet exceeds storage capacity") else . end
+                | {
+                    name: $id,
+                    description: "Tree Style Tab theme",
+                    type: "storage",
+                    data: (reduce range(8) as $i ({style: "none"};
+                        .["chunkedUserStyleRules\($i)"] = ($chunks[$i] // "")))
+                }
+            ' > "$out"
         '';
         home.file."${config.metadata.repositoryRelPath}/home-modules/browsers/firefox/theme/vimium.css".text = with config.colorScheme.palette; ''
                 :root {

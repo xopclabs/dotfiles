@@ -196,15 +196,28 @@ toolbar#nav-bar toolbarbutton #fxa-avatar-image {
   fill: var(--orbit_color) !important;
 }
 
+#urlbar {
+  --urlbar-border-radius: 0px !important;
+  --urlbar-inner-border-radius: 0px !important;
+  --urlbarview-border-radius: 0px !important;
+  --urlbarview-row-border-radius: 0px !important;
+}
+
+#urlbar-background,
+#urlbar-input-container,
+#urlbar .urlbarView,
+#urlbar .urlbarView-row,
+#urlbar .urlbarView-row-inner {
+  border-radius: 0 !important;
+}
+
 #urlbar.megabar > #urlbar-background {
-  border-radius: 3px !important;
   border: 0px !important;
   background: var(--base_color2) !important;
 }
 
 #urlbar.megabar:not([focused="true"]) > #urlbar-background,
 #urlbar.megabar > #urlbar-input-container {
-  border-radius: 3px !important;
   color: var(--orbit_color) !important;
 }
 
@@ -1293,49 +1306,55 @@ Firefox `userChrome.css` for Tree Style Tab
   transition-delay: 0s !important; /* = immediate */
 }
 
-/* Sidebar sliding auto-reveal */
-
-/* Sidebar min and max width removal */
+/* Keep the browser content and sidebar edges square. */
+#tabbrowser-tabpanels .browserContainer,
+#sidebar-box,
 #sidebar {
-  max-width: none !important;
-  min-width: 0px !important;
+  border-radius: 0 !important;
 }
 
-/* Hide splitter */
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] + #sidebar-splitter {
-  display: none !important;
-}
-/* Hide sidebar header */
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
-  visibility: collapse;
-}
-
-/* Shrink sidebar until hovered */
-:root {
+/* Sidebar sliding auto-reveal. */
+#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] {
   --thin-tab-width: 30px;
   --wide-tab-width: 300px;
-}
-#sidebar-box:not([sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]) {
-  min-width: var(--wide-tab-width) !important;
+  --tst-panel-width: var(--thin-tab-width);
+  --tst-overlay-width: 0px;
+
+  flex: none !important;
+  box-sizing: border-box !important;
+  width: var(--tst-panel-width) !important;
+  min-width: 0 !important;
   max-width: none !important;
-}
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] {
   overflow: hidden !important;
   position: relative !important;
-  transition: all 300ms !important;
-  /*transition: all 0ms 0s !important;*/
-  min-width: var(--thin-tab-width) !important;
-  max-width: var(--thin-tab-width) !important;
-  z-index: 3;
-}
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:hover,
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar {
-  /*transition-delay: 0s !important;*/
-  transition: all 300ms !important;
-  min-width: var(--wide-tab-width) !important;
-  max-width: var(--wide-tab-width) !important;
-  z-index: 3;
-}
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:hover {
-  margin-right: calc((var(--wide-tab-width) - var(--thin-tab-width)) * -1) !important;
+  border: 0 !important;
+  padding: 0 !important;
+  background-color: var(--base_color1) !important;
+  margin-inline: 0 var(--tst-overlay-width) !important;
+  transition: width 300ms, margin-inline-end 300ms !important;
+  z-index: calc(var(--browser-area-z-index-tabbox, 2) + 1) !important;
+
+  &:hover {
+    --tst-panel-width: var(--wide-tab-width);
+    --tst-overlay-width: calc(var(--thin-tab-width) - var(--wide-tab-width));
+  }
+
+  &[sidebar-positionend] {
+    margin-inline: var(--tst-overlay-width) 0 !important;
+    transition: width 300ms, margin-inline-start 300ms !important;
+  }
+
+  & > :is(#sidebar-header, #sidebar-panel-header),
+  & + #sidebar-splitter {
+    display: none !important;
+  }
+
+  & > .sidebar-browser-stack > #sidebar {
+    width: var(--wide-tab-width) !important;
+    min-width: var(--wide-tab-width) !important;
+    max-width: none !important;
+    margin: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }
