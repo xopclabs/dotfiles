@@ -9,7 +9,6 @@ in {
         ./plover.nix
         ./minecraft.nix
         ./mangohud.nix
-        ./androidcam.nix
         ./phone-control/phone-control.nix
         ./phone-control/relay.nix
         ./phone-control/webcam.nix

@@ -115,7 +115,6 @@ in {
             kicad.enable = false;
             plover.enable = false;
             minecraft.enable = true;
-            androidcam.enable = true;
             autofirma.enable = false;
         };
     };

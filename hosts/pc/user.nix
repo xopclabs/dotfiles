@@ -163,7 +163,6 @@ in {
             plover.enable = false;
             minecraft.enable = true;
             mangohud.enable = true;
-            androidcam.enable = true;
             phoneControl = {
                 enable = true;
                 notifications.enable = true;
