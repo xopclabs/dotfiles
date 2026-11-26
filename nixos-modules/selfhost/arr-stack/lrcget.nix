@@ -6,7 +6,9 @@ let
     arrCfg = config.homelab.arr-stack;
     arrProxyEnvFile = "/run/arr-proxy.env";
 
-    lrcgetPkg = inputs.lrcget-cli.packages.${pkgs.system}.default;
+    lrcgetPkg = inputs.lrcget-cli.packages.${pkgs.system}.default.overrideAttrs (old: {
+        buildInputs = (old.buildInputs or []) ++ [ pkgs.sqlite ];
+    });
 
     runScript = pkgs.writeShellApplication {
         name = "lrcget-watch-run";
