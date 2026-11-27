@@ -382,8 +382,6 @@ in {
                             color = "#${palette.base0E}";
                             mute_color = "#${palette.base08}";
                             actions = {
-                                left = "volume-mute";
-                                right = "panel-toggle control-center audio";
                                 scroll_up = "volume-up 5%";
                                 scroll_down = "volume-down 5%";
                             };
